@@ -77,5 +77,7 @@ function AppContent() {
 
   // Session mode - full screen wizard
   if (currentMode === 'session') {
+  }
+}
 
 export default App;
