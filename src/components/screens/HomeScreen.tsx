@@ -55,9 +55,8 @@ export default function HomeScreen({
             
             {/* Tap to begin text */}
             <div className="mt-6 text-center">
-              <p className="text-white/60 text-sm mb-1">Tap to begin with</p>
               <p className="text-white text-lg font-light">
-                {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
+                Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
               </p>
             </div>
           </div>
