@@ -1,180 +1,154 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import HomeScreen from './components/screens/HomeScreen';
+import ExploreScreen from './components/screens/ExploreScreen';
+import CreateScreen from './components/screens/CreateScreen';
+import FavoritesScreen from './components/screens/FavoritesScreen';
+import ProfileScreen from './components/screens/ProfileScreen';
+import NavigationTabs from './components/NavigationTabs';
+        // Failed to load saved state - using defaults
+import { GameStateProvider } from './components/GameStateManager';
+import { TabId } from './types/Navigation';
 
-interface UserState {
-  level: number;
-  experience: number;
-  currentState: 'calm' | 'focused' | 'stressed' | 'deep' | 'transcendent';
-  sessionStreak: number;
-  lastSessionTime: Date | null;
-  achievements: string[];
-  orbEnergy: number; // 0-1
-  depth: number; // 1-5
-  breathing: 'inhale' | 'hold' | 'exhale' | 'rest';
-  hp: number; // Homeostasis Points (0-100)
-  mp: number; // Motivation Points (0-100)
-  tokens: number; // In-app credits
-  plan: 'free' | 'pro_monthly' | 'pro_annual';
-  dailySessionsUsed: number;
-  lastSessionDate: string | null;
-}
+type AppMode = 'navigation' | 'session';
 
-interface GameState {
-  user: UserState;
-  updateUserState: (updates: Partial<UserState>) => void;
-  completeSession: (sessionType: string, duration: number) => void;
-  getOrbState: () => any;
-}
+function App() {
+  const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
+  const [activeTab, setActiveTab] = useState<TabId>('home');
+  const [selectedEgoState, setSelectedEgoState] = useState('guardian');
+  const [sessionConfig, setSessionConfig] = useState<any>(null);
 
-const GameStateContext = createContext<GameState | null>(null);
+  const handleOrbTap = () => {
+    // Start session with current ego state
+    setSessionConfig({
+      egoState: selectedEgoState,
+      action: null,
+      type: 'unified'
+    });
+    setCurrentMode('session');
+  };
 
-export const useGameState = () => {
-  const context = useContext(GameStateContext);
-  if (!context) {
-    throw new Error('useGameState must be used within GameStateProvider');
+  const handleActionSelect = (action: any) => {
+    // Start session with specific action + ego state
+    setSessionConfig({
+      egoState: selectedEgoState,
+      action: action,
+      type: 'unified'
+    });
+    setCurrentMode('session');
+  };
+
+  const handleProtocolSelect = (protocol: any) => {
+    // Start session with specific protocol
+    setSessionConfig({
+      egoState: selectedEgoState,
+      protocol: protocol,
+      type: 'protocol'
+    });
+    setCurrentMode('session');
+  };
+
+  const handleCustomProtocolCreate = (protocol: any) => {
+    // Save and optionally start custom protocol
+    console.log('Custom protocol created:', protocol);
+    // In real app, save to localStorage or API
+  };
+
+  const handleSessionComplete = () => {
+    setCurrentMode('navigation');
+    setSessionConfig(null);
+  };
+
+  const handleCancel = () => {
+    setCurrentMode('navigation');
+    setSessionConfig(null);
+  };
+
+  const handleFavoriteSessionSelect = (session: any) => {
+    // Start favorited session
+    setSessionConfig({
+      egoState: session.egoState,
+      action: session.action,
+      type: 'favorite',
+      session: session
+    });
+    setCurrentMode('session');
+  };
+
+  // Session mode - full screen wizard
+  if (currentMode === 'session') {
+    return (
+      <GameStateProvider>
+        <UnifiedSessionWorld 
+          onComplete={handleSessionComplete}
+          onCancel={handleCancel}
+          sessionConfig={sessionConfig}
+        />
+      </GameStateProvider>
+    );
   }
-  return context;
-};
 
-export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserState>({
-    level: 1,
-    experience: 0,
-    currentState: 'calm',
-    sessionStreak: 0,
-    lastSessionTime: null,
-    achievements: [],
-    orbEnergy: 0.3,
-    depth: 1,
-    breathing: 'rest',
-    hp: 80,
-    mp: 60,
-    tokens: 50,
-    plan: 'free',
-    dailySessionsUsed: 0,
-    lastSessionDate: null
-  });
-
-  // Load saved state
-  useEffect(() => {
-    const saved = localStorage.getItem('gameState');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setUser(prev => ({
-          ...prev,
-          ...parsed,
-          lastSessionTime: parsed.lastSessionTime ? new Date(parsed.lastSessionTime) : null
-        }));
-      } catch (e) {
-        console.log('Failed to load saved state');
-      }
-    }
-  }, []);
-
-  // Save state changes
-  useEffect(() => {
-    localStorage.setItem('gameState', JSON.stringify(user));
-  }, [user]);
-
-  const updateUserState = (updates: Partial<UserState>) => {
-    setUser(prev => ({ ...prev, ...updates }));
-  };
-
-  const completeSession = (sessionType: string, duration: number) => {
-    // XP calculation: floor(durationSec / 60) * baseMultiplier * depthMultiplier
-    const baseMultiplier = 10;
-    const depthMultiplier = 1 + (user.depth * 0.15);
-    const xpGained = Math.floor(duration / 60) * baseMultiplier * depthMultiplier;
-    
-    const newExperience = user.experience + xpGained;
-    // Level: floor(0.1 * sqrt(totalXP)) + 1 (smooth, slow growth)
-    const newLevel = Math.floor(0.1 * Math.sqrt(newExperience)) + 1;
-    
-    // HP/MP updates
-    const hpDelta = duration >= 300 ? 1 : 0; // +1 HP for sessions ≥5min
-    const mpDelta = duration >= 900 ? 1 : 0; // +1 MP for sessions ≥15min
-    
-    // Streak calculation (calendar-day based)
-    const today = new Date().toDateString();
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
-    const lastSessionDate = user.lastSessionDate;
-    
-    let newStreak = user.sessionStreak;
-    if (!lastSessionDate || lastSessionDate === yesterday) {
-      newStreak = user.sessionStreak + 1;
-    } else if (lastSessionDate !== today) {
-      newStreak = 1; // Reset streak if gap > 1 day
-    }
-    
-    // Token rewards
-    let tokenReward = 0;
-    if (newLevel > user.level) tokenReward += 10; // Level up bonus
-    if (newStreak > 0 && newStreak % 7 === 0) tokenReward += 25; // Weekly streak bonus
-    
-    setUser(prev => ({
-      ...prev,
-      experience: newExperience,
-      level: newLevel,
-      sessionStreak: newStreak,
-      lastSessionTime: new Date(),
-      lastSessionDate: today,
-      hp: Math.min(prev.hp + hpDelta, 100),
-      mp: Math.min(prev.mp + mpDelta, 100),
-      tokens: prev.tokens + tokenReward,
-      dailySessionsUsed: prev.lastSessionDate === today ? prev.dailySessionsUsed + 1 : 1,
-      orbEnergy: Math.min(prev.orbEnergy + 0.1, 1.0),
-      achievements: [
-        ...prev.achievements,
-        ...(newLevel > prev.level ? [`Level ${newLevel} Reached`] : [])
-      ]
-    }));
-  };
-
-  const getOrbState = () => ({
-    depth: user.depth,
-    breathing: user.breathing,
-    phase: user.currentState,
-    isListening: false,
-    isSpeaking: false,
-    emotion: user.currentState,
-    energy: user.orbEnergy
-  });
-
-  const canAccess = (feature: string) => {
-    switch (feature) {
-      case 'unlimited_sessions':
-        return user.plan !== 'free';
-      case 'hypoxia':
-        return user.plan !== 'free';
-      case 'premium_voices':
-        return user.plan !== 'free';
-      case 'custom_outlines':
-        return user.plan !== 'free';
-      case 'daily_session':
-        return user.plan === 'free' ? user.dailySessionsUsed < 1 : true;
+  // Render current tab content
+  const renderCurrentTab = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <HomeScreen
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+            onOrbTap={handleOrbTap}
+            onActionSelect={handleActionSelect}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        );
+      case 'explore':
+        return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
+      case 'create':
+        return <CreateScreen onProtocolCreate={handleCustomProtocolCreate} />;
+      case 'favorites':
+        return <FavoritesScreen onSessionSelect={handleFavoriteSessionSelect} />;
+      case 'profile':
+        return (
+          <ProfileScreen 
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+          />
+        );
       default:
-        return true;
+        return (
+          <HomeScreen
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+            onOrbTap={handleOrbTap}
+            onActionSelect={handleActionSelect}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        );
     }
   };
 
-  const spendTokens = (amount: number, feature: string) => {
-    if (user.tokens >= amount) {
-      setUser(prev => ({ ...prev, tokens: prev.tokens - amount }));
-      return true;
-    }
-    return false;
-  };
-
+  // Navigation mode - tabbed interface
   return (
-    <GameStateContext.Provider value={{
-      user,
-      updateUserState,
-      completeSession,
-      getOrbState,
-      canAccess,
-      spendTokens
-    }}>
-      {children}
-    </GameStateContext.Provider>
+    <GameStateProvider>
+      <div className="relative h-screen w-screen overflow-hidden bg-black">
+        <div className="flex h-full flex-col">
+          {/* Content region */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {renderCurrentTab()}
+          </div>
+          
+          {/* Bottom Navigation */}
+          <div className="flex-shrink-0 pb-[env(safe-area-inset-bottom)]">
+            <NavigationTabs
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
+          </div>
+        </div>
+      </div>
+    </GameStateProvider>
   );
-};
+}
+
+export default App;
