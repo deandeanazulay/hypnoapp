@@ -65,7 +65,7 @@ export default function HomeScreen({
         </div>
 
         {/* Center Section - Orb (perfectly centered) */}
-        <div className="flex-1 flex flex-col justify-center items-center space-y-6 min-h-0">
+        <div className="flex-1 flex flex-col justify-center items-center space-y-8 min-h-0">
           <div className="flex justify-center items-center">
             {/* Main WebGL Orb - responsive sizing */}
             <WebGLOrb 
@@ -78,26 +78,29 @@ export default function HomeScreen({
           </div>
 
           
-          {/* Tap to begin text */}
-          <div className="flex justify-center items-center">
-            {canAccess('daily_session') ? (
-              <p className="text-white/60 text-sm text-center">
-                Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
-                {selectedAction && (
-                  <span className="text-teal-400"> • {selectedAction.name}</span>
-                )}
-              </p>
-            ) : (
-              <div className="flex flex-col items-center space-y-1">
-                <p className="text-orange-400 text-sm">Daily limit reached</p>
-                <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* Bottom Section - Action Bar */}
-        <div className="flex-shrink-0 flex justify-center items-end pb-20">
+        {/* Tap to begin text - Between orb and action bar */}
+        <div className="flex-shrink-0 flex justify-center items-center py-4">
+          {canAccess('daily_session') ? (
+            <p className="text-white/60 text-sm text-center">
+              Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
+              {selectedAction && (
+                <span className="text-teal-400"> • {selectedAction.name}</span>
+              )}
+            </p>
+          ) : (
+            <div className="flex flex-col items-center justify-center space-y-1">
+              <p className="text-orange-400 text-sm">Daily limit reached</p>
+              <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Fixed Action Bar - Above bottom navigation */}
+      <div className="fixed bottom-20 left-0 right-0 z-20">
+        <div className="flex justify-center items-center px-4">
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}
             selectedAction={selectedAction}

@@ -17,8 +17,8 @@ const iconMap = {
 
 export default function NavigationTabs({ activeTab, onTabChange }: NavigationTabsProps) {
   return (
-    <nav className="w-full bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-3 z-50">
-      <div className="flex justify-between items-center space-x-4 max-w-md mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 w-full bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-3 z-50">
+      <div className="flex justify-between items-center space-around max-w-md mx-auto">
         {TABS.map((tab) => {
           const IconComponent = iconMap[tab.id];
           const isActive = activeTab === tab.id;
@@ -27,18 +27,18 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`flex flex-col items-center justify-center space-y-1 p-2 transition-all duration-200 flex-1 ${
+              className={`flex flex-col items-center justify-between space-y-1 p-2 transition-all duration-200 flex-1 ${
                 isActive 
                   ? 'text-teal-400 scale-110' 
                   : 'text-white/60 hover:text-white/80 hover:scale-105'
               }`}
             >
-              <div className="flex items-center justify-center">
+              <div className="flex items-center justify-center self-center">
                 <IconComponent size={22} />
               </div>
-              <span className="text-xs font-medium text-center">{tab.name}</span>
+              <span className="text-xs font-medium text-center self-center">{tab.name}</span>
               {isActive && (
-                <div className="w-1 h-1 bg-teal-400 rounded-full flex-shrink-0" />
+                <div className="w-1 h-1 bg-teal-400 rounded-full flex-shrink-0 self-center" />
               )}
             </button>
           );
