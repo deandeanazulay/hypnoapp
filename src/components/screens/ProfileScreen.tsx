@@ -48,73 +48,73 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
 
       <div className="relative z-10 h-full flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 pt-1 pb-0.5 px-4">
+        <div className="flex-shrink-0 pt-6 pb-4 px-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-white text-lg font-light mb-0.5">Profile</h1>
-              <p className="text-white/60 text-xs">Your transformation journey</p>
+              <h1 className="text-white text-2xl font-light mb-2">Profile</h1>
+              <p className="text-white/60 text-sm">Your transformation journey</p>
             </div>
-            <button className="w-6 h-6 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300">
-              <Settings size={14} className="text-white" />
+            <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300">
+              <Settings size={18} className="text-white" />
             </button>
           </div>
         </div>
 
         {/* Stats Overview */}
-        <div className="flex-shrink-0 px-4 mb-0.5">
-          <div className="grid grid-cols-4 gap-1">
-            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1 border border-white/10 text-center">
-              <TrendingUp size={16} className="text-teal-400 mx-auto mb-0.5" />
-              <div className="text-white text-sm font-semibold">{user.level}</div>
-              <div className="text-white/60 text-xs">Level</div>
+        <div className="flex-shrink-0 px-6 mb-6">
+          <div className="grid grid-cols-4 gap-4">
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 text-center">
+              <TrendingUp size={24} className="text-teal-400 mx-auto mb-2" />
+              <div className="text-white text-xl font-semibold">{user.level}</div>
+              <div className="text-white/60 text-sm">Level</div>
             </div>
             
-            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1 border border-white/10 text-center">
-              <Calendar size={16} className="text-orange-400 mx-auto mb-0.5" />
-              <div className="text-white text-sm font-semibold">{user.sessionStreak}</div>
-              <div className="text-white/60 text-xs">Streak</div>
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 text-center">
+              <Calendar size={24} className="text-orange-400 mx-auto mb-2" />
+              <div className="text-white text-xl font-semibold">{user.sessionStreak}</div>
+              <div className="text-white/60 text-sm">Streak</div>
             </div>
             
-            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1 border border-white/10 text-center">
-              <Target size={16} className="text-purple-400 mx-auto mb-0.5" />
-              <div className="text-white text-sm font-semibold">{totalSessions}</div>
-              <div className="text-white/60 text-xs">Sessions</div>
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 text-center">
+              <Target size={24} className="text-purple-400 mx-auto mb-2" />
+              <div className="text-white text-xl font-semibold">{totalSessions}</div>
+              <div className="text-white/60 text-sm">Sessions</div>
             </div>
             
-            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1 border border-white/10 text-center">
-              <Award size={16} className="text-yellow-400 mx-auto mb-0.5" />
-              <div className="text-white text-sm font-semibold">{user.achievements.length}</div>
-              <div className="text-white/60 text-xs">Awards</div>
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 text-center">
+              <Award size={24} className="text-yellow-400 mx-auto mb-2" />
+              <div className="text-white text-xl font-semibold">{user.achievements.length}</div>
+              <div className="text-white/60 text-sm">Awards</div>
             </div>
           </div>
         </div>
 
         {/* Level Progress */}
-        <div className="flex-shrink-0 px-4 mb-0.5">
-          <div className="bg-white/5 backdrop-blur-md rounded-lg p-2 border border-white/10">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-white font-medium text-xs">Level Progress</h3>
-              <span className="text-teal-400 text-xs font-medium">
+        <div className="flex-shrink-0 px-6 mb-6">
+          <div className="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white font-medium text-sm">Level Progress</h3>
+              <span className="text-teal-400 text-sm font-medium">
                 {user.experience % 100}/100 XP
               </span>
             </div>
-            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-2">
               <div 
                 className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
                 style={{ width: `${(user.experience % 100)}%` }}
               />
             </div>
-            <p className="text-white/60 text-xs mt-0.5">
+            <p className="text-white/60 text-sm">
               Next level in {100 - (user.experience % 100)} XP
             </p>
           </div>
         </div>
 
         {/* Ego State Selection */}
-        <div className="flex-shrink-0 mb-0.5">
-          <div className="px-4 mb-1">
-            <h3 className="text-white font-medium mb-0.5 text-xs">Current Ego State</h3>
-            <p className="text-white/60 text-xs">Choose your inner guide</p>
+        <div className="flex-shrink-0 mb-4">
+          <div className="px-6 mb-3">
+            <h3 className="text-white font-medium mb-1 text-sm">Current Ego State</h3>
+            <p className="text-white/60 text-sm">Choose your inner guide</p>
           </div>
           <EgoStatesRow 
             selectedEgoState={selectedEgoState}
@@ -123,49 +123,46 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
         </div>
 
         {/* Ego State Usage Analytics */}
-        <div className="flex-1 overflow-hidden px-4 min-h-0 pb-1">
-          <div className="bg-white/5 backdrop-blur-md rounded-lg p-1.5 border border-white/10 h-full overflow-hidden flex flex-col">
-            <h3 className="text-white font-medium mb-1 text-xs flex-shrink-0">Usage Analytics</h3>
+        <div className="flex-1 overflow-hidden px-6 min-h-0 pb-6">
+          <div className="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 h-full overflow-hidden flex flex-col">
+            <h3 className="text-white font-medium mb-4 text-sm flex-shrink-0">Usage Analytics</h3>
             
             {/* Most Used State Highlight */}
             {mostUsedState && (
-              <div className={`bg-gradient-to-br ${mostUsedState.color} rounded-lg p-1.5 mb-1 border border-white/20 flex-shrink-0`}>
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-sm">{mostUsedState.icon}</span>
+              <div className={`bg-gradient-to-br ${mostUsedState.color} rounded-lg p-3 mb-4 border border-white/20 flex-shrink-0`}>
+                <div className="flex items-center space-x-3">
+                  <span className="text-lg">{mostUsedState.icon}</span>
                   <div>
-                    <h4 className="text-white font-medium text-xs leading-tight">Most Used: {mostUsedState.name}</h4>
-                    <p className="text-white/70 text-xs leading-tight">{getUsagePercentage(egoStateUsage[mostUsedState.id as keyof typeof egoStateUsage])}% of sessions</p>
+                    <h4 className="text-white font-medium text-sm">Most Used: {mostUsedState.name}</h4>
+                    <p className="text-white/70 text-sm">{getUsagePercentage(egoStateUsage[mostUsedState.id as keyof typeof egoStateUsage])}% of sessions</p>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Usage Breakdown */}
-            <div className="grid grid-cols-4 gap-0.5 overflow-hidden flex-1 min-h-0">
+            <div className="grid grid-cols-3 gap-3 overflow-hidden flex-1 min-h-0">
               {EGO_STATES.map((state) => {
                 const usage = egoStateUsage[state.id as keyof typeof egoStateUsage] || 0;
                 const percentage = getUsagePercentage(usage);
                 
                 return (
-                  <div key={state.id} className="bg-white/5 rounded-md p-0.5 border border-white/10 flex flex-col">
-                    <div className="flex items-center justify-center mb-0.5">
-                      <span className="text-xs">{state.icon}</span>
+                  <div key={state.id} className="bg-white/5 rounded-lg p-3 border border-white/10 flex flex-col justify-between">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="text-sm">{state.icon}</span>
+                      <span className="text-white text-sm font-medium truncate">{state.name}</span>
                     </div>
                     
-                    <div className="text-center mb-0.5">
-                      <span className="text-white text-xs font-medium truncate block leading-tight">{state.name}</span>
-                      <span className="text-white/50 text-xs leading-tight">{usage}</span>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-white/70 text-sm">{usage} sessions</span>
+                      <span className="text-white/60 text-sm">{percentage}%</span>
                     </div>
                     
-                    <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden mb-0.5">
+                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
                       <div 
                         className={`h-full bg-gradient-to-r ${state.color.replace('from-', 'from-').replace('to-', 'to-')} rounded-full transition-all duration-500`}
                         style={{ width: `${percentage}%` }}
                       />
-                    </div>
-                    
-                    <div className="text-center">
-                      <span className="text-white/60 text-xs leading-tight">{percentage}%</span>
                     </div>
                   </div>
                 );
