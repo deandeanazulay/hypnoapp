@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
-import HomeScreen from './components/screens/HomeScreen';
-import ExploreScreen from './components/screens/ExploreScreen';
-import ExploreScreen from './ExploreScreen';
-import CreateScreen from './CreateScreen';
-import FavoritesScreen from './FavoritesScreen';
-import ProfileScreen from './ProfileScreen';
-import NavigationTabs from '../NavigationTabs';
-import UnifiedSessionWorld from '../UnifiedSessionWorld';
+import EgoStatesRow from '../EgoStatesRow';
+import EnhancedActionsBar from '../EnhancedActionsBar';
+import EnhancedWebGLOrb from '../EnhancedWebGLOrb';
 import { useGameState } from '../GameStateManager';
-import { TabId } from '../../types/Navigation';
-
+import { Clock, Zap, Target } from 'lucide-react';
 type AppMode = 'navigation' | 'session';
 
 function App() {
