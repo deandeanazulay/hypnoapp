@@ -10,6 +10,12 @@ interface UserState {
   orbEnergy: number; // 0-1
   depth: number; // 1-5
   breathing: 'inhale' | 'hold' | 'exhale' | 'rest';
+  hp: number; // Homeostasis Points (0-100)
+  mp: number; // Motivation Points (0-100)
+  tokens: number; // In-app credits
+  plan: 'free' | 'pro_monthly' | 'pro_annual';
+  dailySessionsUsed: number;
+  lastSessionDate: string | null;
 }
 
 interface GameState {
@@ -39,7 +45,13 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     achievements: [],
     orbEnergy: 0.3,
     depth: 1,
-    breathing: 'rest'
+    breathing: 'rest',
+    hp: 80,
+    mp: 60,
+    tokens: 50,
+    plan: 'free',
+    dailySessionsUsed: 0,
+    lastSessionDate: null
   });
 
   // Load saved state
@@ -69,16 +81,47 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const completeSession = (sessionType: string, duration: number) => {
-    const xpGained = Math.floor(duration / 60) * 10; // 10 XP per minute
+    // XP calculation: floor(durationSec / 60) * baseMultiplier * depthMultiplier
+    const baseMultiplier = 10;
+    const depthMultiplier = 1 + (user.depth * 0.15);
+    const xpGained = Math.floor(duration / 60) * baseMultiplier * depthMultiplier;
+    
     const newExperience = user.experience + xpGained;
-    const newLevel = Math.floor(newExperience / 100) + 1;
+    // Level: floor(0.1 * sqrt(totalXP)) + 1 (smooth, slow growth)
+    const newLevel = Math.floor(0.1 * Math.sqrt(newExperience)) + 1;
+    
+    // HP/MP updates
+    const hpDelta = duration >= 300 ? 1 : 0; // +1 HP for sessions ≥5min
+    const mpDelta = duration >= 900 ? 1 : 0; // +1 MP for sessions ≥15min
+    
+    // Streak calculation (calendar-day based)
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
+    const lastSessionDate = user.lastSessionDate;
+    
+    let newStreak = user.sessionStreak;
+    if (!lastSessionDate || lastSessionDate === yesterday) {
+      newStreak = user.sessionStreak + 1;
+    } else if (lastSessionDate !== today) {
+      newStreak = 1; // Reset streak if gap > 1 day
+    }
+    
+    // Token rewards
+    let tokenReward = 0;
+    if (newLevel > user.level) tokenReward += 10; // Level up bonus
+    if (newStreak > 0 && newStreak % 7 === 0) tokenReward += 25; // Weekly streak bonus
     
     setUser(prev => ({
       ...prev,
       experience: newExperience,
       level: newLevel,
-      sessionStreak: prev.sessionStreak + 1,
+      sessionStreak: newStreak,
       lastSessionTime: new Date(),
+      lastSessionDate: today,
+      hp: Math.min(prev.hp + hpDelta, 100),
+      mp: Math.min(prev.mp + mpDelta, 100),
+      tokens: prev.tokens + tokenReward,
+      dailySessionsUsed: prev.lastSessionDate === today ? prev.dailySessionsUsed + 1 : 1,
       orbEnergy: Math.min(prev.orbEnergy + 0.1, 1.0),
       achievements: [
         ...prev.achievements,
@@ -97,12 +140,39 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     energy: user.orbEnergy
   });
 
+  const canAccess = (feature: string) => {
+    switch (feature) {
+      case 'unlimited_sessions':
+        return user.plan !== 'free';
+      case 'hypoxia':
+        return user.plan !== 'free';
+      case 'premium_voices':
+        return user.plan !== 'free';
+      case 'custom_outlines':
+        return user.plan !== 'free';
+      case 'daily_session':
+        return user.plan === 'free' ? user.dailySessionsUsed < 1 : true;
+      default:
+        return true;
+    }
+  };
+
+  const spendTokens = (amount: number, feature: string) => {
+    if (user.tokens >= amount) {
+      setUser(prev => ({ ...prev, tokens: prev.tokens - amount }));
+      return true;
+    }
+    return false;
+  };
+
   return (
     <GameStateContext.Provider value={{
       user,
       updateUserState,
       completeSession,
-      getOrbState
+      getOrbState,
+      canAccess,
+      spendTokens
     }}>
       {children}
     </GameStateContext.Provider>

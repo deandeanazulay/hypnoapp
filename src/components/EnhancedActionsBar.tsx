@@ -15,7 +15,7 @@ interface Action {
 
 const ACTIONS: Action[] = [
   {
-    id: 'stress-relief',
+    id: 'stress_release',
     name: 'Stress Relief',
     description: 'Release tension and find calm',
     icon: <Shield size={16} className="text-blue-400" />,
@@ -24,8 +24,8 @@ const ACTIONS: Action[] = [
     egoStateBonus: ['guardian', 'healer']
   },
   {
-    id: 'deep-rest',
-    name: 'Deep Rest',
+    id: 'sleep_priming',
+    name: 'Sleep Prep',
     description: 'Prepare for restorative sleep',
     icon: <Moon size={16} className="text-purple-400" />,
     color: 'from-purple-500/20 to-indigo-500/20',
@@ -33,8 +33,8 @@ const ACTIONS: Action[] = [
     egoStateBonus: ['healer', 'mystic']
   },
   {
-    id: 'focus-boost',
-    name: 'Focus Boost',
+    id: 'focus',
+    name: 'Focus',
     description: 'Sharpen concentration and clarity',
     icon: <Zap size={16} className="text-yellow-400" />,
     color: 'from-yellow-500/20 to-orange-500/20',
@@ -42,8 +42,8 @@ const ACTIONS: Action[] = [
     egoStateBonus: ['sage', 'performer']
   },
   {
-    id: 'creative-flow',
-    name: 'Creative Flow',
+    id: 'creative_unlock',
+    name: 'Creative',
     description: 'Unlock imagination and inspiration',
     icon: <Lightbulb size={16} className="text-green-400" />,
     color: 'from-green-500/20 to-teal-500/20',
@@ -51,8 +51,8 @@ const ACTIONS: Action[] = [
     egoStateBonus: ['child', 'explorer']
   },
   {
-    id: 'confidence-boost',
-    name: 'Confidence Boost',
+    id: 'confidence',
+    name: 'Confidence',
     description: 'Build inner strength and self-assurance',
     icon: <Heart size={16} className="text-pink-400" />,
     color: 'from-pink-500/20 to-red-500/20',
@@ -87,9 +87,44 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
           </div>
           
           {/* Compact Level */}
-          <div className="flex items-center space-x-2">
-            <div className="text-teal-400 text-xs font-medium">lvl.{user.level}</div>
-            <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
+          <div className="flex items-center space-x-3">
+            {/* HP/MP indicators */}
+            <div className="hidden sm:flex items-center space-x-1">
+              <div className="text-red-400 text-xs">HP</div>
+              <div className="w-8 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-red-400 rounded-full transition-all duration-500"
+                  style={{ width: `${user.hp}%` }}
+                />
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center space-x-1">
+              <div className="text-blue-400 text-xs">MP</div>
+              <div className="w-8 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-400 rounded-full transition-all duration-500"
+                  style={{ width: `${user.mp}%` }}
+                />
+              </div>
+            </div>
+            
+            {/* Level and XP */}
+            <div className="flex items-center space-x-2">
+              <div className="text-teal-400 text-xs font-medium">lvl.{user.level}</div>
+              <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
+                  style={{ width: `${(user.experience % 100)}%` }}
+                />
+              </div>
+            </div>
+            
+            {/* Tokens */}
+            <div className="flex items-center space-x-1">
+              <span className="text-yellow-400 text-xs">⚡</span>
+              <span className="text-yellow-400 text-xs font-medium">{user.tokens}</span>
+            </div>
+          </div>
               <div 
                 className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
                 style={{ width: `${(user.experience % 100)}%` }}

@@ -20,6 +20,18 @@ export default function HomeScreen({
 }: HomeScreenProps) {
   const { user } = useGameState();
 
+  const { canAccess } = useGameState();
+
+  const handleOrbTap = () => {
+    // Check if user can access sessions
+    if (!canAccess('daily_session')) {
+      // Show upgrade prompt or token spend option
+      alert('Daily session limit reached. Upgrade to Pro for unlimited sessions!');
+      return;
+    }
+    onOrbTap();
+  };
+
   return (
     <div className="h-screen bg-black relative overflow-hidden flex flex-col">
       {/* Background gradient */}
@@ -46,7 +58,7 @@ export default function HomeScreen({
           <div className="flex flex-col items-center">
             {/* Main WebGL Orb - responsive sizing */}
             <WebGLOrb 
-              onTap={onOrbTap}
+              onTap={handleOrbTap}
               egoState={selectedEgoState}
               afterglow={user.lastSessionTime !== null}
               size={Math.min(window.innerWidth * 0.6, 240)}
@@ -54,9 +66,16 @@ export default function HomeScreen({
             
             {/* Compact text below orb */}
             <div className="mt-4 text-center">
-              <p className="text-white/60 text-sm">
-                Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
-              </p>
+              {canAccess('daily_session') ? (
+                <p className="text-white/60 text-sm">
+                  Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
+                </p>
+              ) : (
+                <div className="text-center">
+                  <p className="text-orange-400 text-sm mb-1">Daily limit reached</p>
+                  <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
