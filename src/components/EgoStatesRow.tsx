@@ -67,16 +67,7 @@ export default function EgoStatesRow({ selectedEgoState, onEgoStateChange }: Ego
       
       {/* Selected State Description */}
       <div className="text-center mt-4 min-h-[3rem] flex items-center justify-center">
-        {selectedEgoState && (
-          <div className="max-w-md">
-            <p className="text-white/80 text-sm font-medium mb-1">
-              {EGO_STATES.find(s => s.id === selectedEgoState)?.description}
-            </p>
-            <p className="text-white/50 text-xs">
-              Used for: {EGO_STATES.find(s => s.id === selectedEgoState)?.usedFor.join(', ')}
-            </p>
-          </div>
-        )}
+        {/* Description space reserved for future content */}
       </div>
     </div>
   );

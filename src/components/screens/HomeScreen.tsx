@@ -74,26 +74,7 @@ export default function HomeScreen({
         
         {/* Top Section - Header */}
         <div className="flex-shrink-0 pt-12 pb-4 px-6">
-          <div className="text-center">
-            <h1 className="text-white text-2xl font-light mb-2">{getGreeting()}</h1>
-            {lastSessionText && (
-              <p className="text-teal-400/80 text-sm mb-2">{lastSessionText}</p>
-            )}
-            <div className="flex items-center justify-center space-x-4 text-white/60 text-sm">
-              <div className="flex items-center space-x-1">
-                <Target size={14} />
-                <span>Level {user.level}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Zap size={14} />
-                <span>{user.streakDays}d streak</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Clock size={14} />
-                <span>{user.experience} sessions</span>
-              </div>
-            </div>
-          </div>
+          {/* Header space reserved for future content */}
         </div>
 
         {/* Ego States Row */}
