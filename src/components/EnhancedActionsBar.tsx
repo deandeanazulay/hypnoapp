@@ -42,6 +42,20 @@ export default function EnhancedActionsBar({
       icon: <Zap size={16} className="text-orange-400" />,
       color: 'from-orange-500/20 to-amber-500/20',
       description: 'Boost motivation and energy'
+    },
+    {
+      id: 'confidence',
+      name: 'Confidence',
+      icon: <Settings size={16} className="text-yellow-400" />,
+      color: 'from-yellow-500/20 to-amber-500/20',
+      description: 'Build self-assurance'
+    },
+    {
+      id: 'sleep-prep',
+      name: 'Sleep Prep',
+      icon: <Mic size={16} className="text-indigo-400" />,
+      color: 'from-indigo-500/20 to-purple-500/20',
+      description: 'Prepare for rest'
     }
   ];
 
@@ -55,12 +69,12 @@ export default function EnhancedActionsBar({
               <button
                 key={action.id}
                 onClick={() => onActionSelect(action)}
-                className={`flex-1 max-w-[110px] bg-gradient-to-br ${action.color} border border-white/20 rounded-xl p-2 hover:scale-105 transition-all duration-200 ${
+                className={`flex-1 max-w-[90px] bg-gradient-to-br ${action.color} border border-white/20 rounded-xl p-2 hover:scale-105 transition-all duration-200 ${
                   selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
                 }`}
               >
                 <div className="flex flex-col items-center space-y-1">
-                  <div className="w-6 h-6 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                     {action.icon}
                   </div>
                   <div className="text-center">
