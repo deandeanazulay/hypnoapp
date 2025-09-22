@@ -10,7 +10,6 @@ interface ProfileScreenProps {
 }
 
 export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: ProfileScreenProps) {
-        <div className="flex-shrink-0 pt-4 pb-2 px-4">
   const { user } = useGameState();
 
   // Mock data for ego state usage
