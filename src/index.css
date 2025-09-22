@@ -43,6 +43,15 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  
+  .animate-scroll-x {
+    animation: scroll-x 30s linear infinite;
+  }
+  
+  @keyframes scroll-x {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-33.333%); }
+  }
 }
 
 /* Custom scrollbar */
