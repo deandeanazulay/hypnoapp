@@ -237,80 +237,80 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
 
       <div className="relative z-10 h-full flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 pt-1 pb-2 px-4">
-          <h1 className="text-white text-xl font-light mb-1">Favorites</h1>
+        <div className="flex-shrink-0 pt-1 pb-1 px-4">
+          <h1 className="text-white text-lg font-light mb-0.5">Favorites</h1>
           <p className="text-white/60 text-xs">Your most effective sessions</p>
         </div>
 
         {/* Stats Overview */}
-        <div className="flex-shrink-0 px-4 mb-2">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-white/5 backdrop-blur-md rounded-lg p-2 border border-white/10 text-center">
-              <div className="text-teal-400 text-base font-semibold">{user.level}</div>
+        <div className="flex-shrink-0 px-4 mb-1">
+          <div className="grid grid-cols-3 gap-1.5">
+            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1.5 border border-white/10 text-center">
+              <div className="text-teal-400 text-sm font-semibold">{user.level}</div>
               <div className="text-white/60 text-xs">Level</div>
             </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-lg p-2 border border-white/10 text-center">
-              <div className="text-orange-400 text-base font-semibold">{user.sessionStreak}</div>
+            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1.5 border border-white/10 text-center">
+              <div className="text-orange-400 text-sm font-semibold">{user.sessionStreak}</div>
               <div className="text-white/60 text-xs">Streak</div>
             </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-lg p-2 border border-white/10 text-center">
-              <div className="text-purple-400 text-base font-semibold">{mockFavorites.length}</div>
+            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1.5 border border-white/10 text-center">
+              <div className="text-purple-400 text-sm font-semibold">{mockFavorites.length}</div>
               <div className="text-white/60 text-xs">Saved</div>
             </div>
           </div>
         </div>
 
         {/* Favorites List */}
-        <div className="flex-1 px-4 pb-2 min-h-0 flex flex-col">
+        <div className="flex-1 px-4 pb-1 min-h-0 flex flex-col">
           {mockFavorites.length > 0 ? (
             <>
               {/* 3x4 Grid */}
-              <div className="grid grid-cols-3 grid-rows-4 gap-2 flex-1 min-h-0">
+              <div className="grid grid-cols-3 grid-rows-4 gap-1.5 flex-1 min-h-0">
                 {currentPageFavorites.map((session) => (
                   <div
                     key={session.id}
-                    className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-lg p-2 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] flex flex-col justify-between min-h-0`}
+                    className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-lg p-1.5 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] flex flex-col justify-between min-h-0`}
                   >
                     {/* Header with ego state and buttons */}
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="w-5 h-5 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <div className="w-4 h-4 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                         <span className="text-xs">{getEgoStateIcon(session.egoState)}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-0.5">
                         <button
                           onClick={() => onSessionSelect(session)}
-                          className="w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300"
+                          className="w-4 h-4 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300"
                         >
-                          <Play size={8} className="text-white ml-0.5" />
+                          <Play size={6} className="text-white ml-0.5" />
                         </button>
-                        <button className="w-5 h-5 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300">
-                          <Trash2 size={8} className="text-red-400" />
+                        <button className="w-4 h-4 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300">
+                          <Trash2 size={6} className="text-red-400" />
                         </button>
                       </div>
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-white font-semibold text-xs mb-1 line-clamp-2 flex-1">{session.name}</h3>
+                    <h3 className="text-white font-semibold text-xs mb-0.5 line-clamp-2 flex-1">{session.name}</h3>
                     
                     {/* Stats */}
-                    <div className="flex items-center justify-between text-white/50 text-xs mb-1">
+                    <div className="flex items-center justify-between text-white/50 text-xs mb-0.5">
                       <div className="flex items-center space-x-1">
-                        <Clock size={8} />
+                        <Clock size={6} />
                         <span>{session.duration}m</span>
                       </div>
                       <div className="flex items-center space-x-1">
-                        <Heart size={8} />
+                        <Heart size={6} />
                         <span>{session.completedCount}</span>
                       </div>
                     </div>
                     
                     {/* Rating and last completed */}
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center justify-between mb-0.5">
                       <div className="flex items-center space-x-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            size={8}
+                            size={6}
                             className={star <= session.rating ? 'text-yellow-400 fill-current' : 'text-white/20'}
                           />
                         ))}
@@ -331,22 +331,22 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
               </div>
               {/* Navigation arrows and page dots */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center space-x-4 mt-2">
+                <div className="flex items-center justify-center space-x-3 mt-1">
                   <button
                     onClick={goToPreviousPage}
                     disabled={currentPage === 0}
-                    className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-6 h-6 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <ChevronLeft size={16} className="text-white" />
+                    <ChevronLeft size={12} className="text-white" />
                   </button>
                   
                   {/* Page dots */}
-                  <div className="flex space-x-1">
+                  <div className="flex space-x-0.5">
                     {Array.from({ length: totalPages }).map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setCurrentPage(index)}
-                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                           index === currentPage ? 'bg-teal-400' : 'bg-white/30'
                         }`}
                       />
@@ -356,9 +356,9 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                   <button
                     onClick={goToNextPage}
                     disabled={currentPage === totalPages - 1}
-                    className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-6 h-6 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <ChevronRight size={16} className="text-white" />
+                    <ChevronRight size={12} className="text-white" />
                   </button>
                 </div>
               )}
@@ -366,8 +366,8 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <Heart size={32} className="text-white/20 mx-auto mb-3" />
-                <h3 className="text-white/60 text-base font-medium mb-2">No favorites yet</h3>
+                <Heart size={24} className="text-white/20 mx-auto mb-2" />
+                <h3 className="text-white/60 text-sm font-medium mb-1">No favorites yet</h3>
                 <p className="text-white/40 text-sm">Complete sessions to add them to favorites</p>
               </div>
             </div>
