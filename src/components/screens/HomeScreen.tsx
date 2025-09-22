@@ -1,6 +1,6 @@
 import React from 'react';
 import StoriesRow from '../StoriesRow';
-import EnhancedWebGLOrb from '../EnhancedWebGLOrb';
+import WebGLOrb from '../WebGLOrb';
 import EnhancedActionsBar from '../EnhancedActionsBar';
 import { useGameState } from '../GameStateManager';
 import { EGO_STATES } from '../../types/EgoState';
@@ -31,7 +31,7 @@ export default function HomeScreen({
       </div>
 
       {/* Main Layout - Perfect vertical distribution */}
-      <div className="relative z-10 flex-1 flex flex-col justify-between pb-20">
+      <div className="relative z-10 flex-1 flex flex-col">
         
         {/* Top Section - Ego States */}
         <div className="flex-shrink-0 pt-8 pb-4">
@@ -42,28 +42,27 @@ export default function HomeScreen({
         </div>
 
         {/* Center Section - Orb (perfectly centered) */}
-        <div className="flex-1 flex items-center justify-center py-4">
+        <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center">
-            {/* Main WebGL Orb */}
-            <EnhancedWebGLOrb 
+            {/* Main WebGL Orb - using the hypno portal orb */}
+            <WebGLOrb 
               onTap={onOrbTap}
               egoState={selectedEgoState}
               afterglow={user.lastSessionTime !== null}
-              level={user.level}
               size={280}
             />
             
-            {/* Tap to begin text */}
+            {/* Single tap to begin text */}
             <div className="mt-6 text-center">
-              <p className="text-white text-lg font-light">
+              <p className="text-white/60 text-sm">
                 Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
               </p>
             </div>
           </div>
         </div>
 
-        {/* Bottom Section - Actions Bar */}
-        <div className="flex-shrink-0 pb-4">
+        {/* Bottom Section - Actions Bar positioned above bottom nav */}
+        <div className="flex-shrink-0 pb-20">
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}
             onActionSelect={onActionSelect}
