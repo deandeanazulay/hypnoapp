@@ -296,3 +296,4 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
       </div>
     </div>
   );
+}
