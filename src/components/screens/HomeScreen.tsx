@@ -125,7 +125,7 @@ export default function HomeScreen({
         </div>
 
         {/* Bottom Section - Actions Bar */}
-        <div className="flex-shrink-0 pb-4 sm:pb-6">
+        <div className="flex-shrink-0 pb-6 sm:pb-8">
           <div className="text-center mb-3">
             <p className="text-white/40 text-xs">Choose your session type</p>
           </div>
