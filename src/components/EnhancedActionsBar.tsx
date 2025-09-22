@@ -48,24 +48,24 @@ export default function EnhancedActionsBar({
   return (
     <>
       <div className="px-4">
-        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-3">
+        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2">
           {/* Quick Actions */}
-          <div className="flex justify-center space-x-3 mb-3">
+          <div className="flex justify-center space-x-2 mb-2">
             {quickActions.map((action) => (
               <button
                 key={action.id}
                 onClick={() => onActionSelect(action)}
-                className={`flex-1 max-w-[120px] bg-gradient-to-br ${action.color} border border-white/20 rounded-xl p-3 hover:scale-105 transition-all duration-200 ${
+                className={`flex-1 max-w-[110px] bg-gradient-to-br ${action.color} border border-white/20 rounded-xl p-2 hover:scale-105 transition-all duration-200 ${
                   selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
                 }`}
               >
-                <div className="flex flex-col items-center space-y-2">
-                  <div className="w-8 h-8 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                <div className="flex flex-col items-center space-y-1">
+                  <div className="w-6 h-6 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                     {action.icon}
                   </div>
                   <div className="text-center">
-                    <div className="text-white font-medium text-xs">{action.name}</div>
-                    <div className="text-white/60 text-xs mt-0.5 line-clamp-2">
+                    <div className="text-white font-medium text-xs leading-tight">{action.name}</div>
+                    <div className="text-white/60 text-xs mt-0.5 line-clamp-1">
                       {action.description}
                     </div>
                   </div>
@@ -76,7 +76,7 @@ export default function EnhancedActionsBar({
           
           {/* Level Progress - Compact */}
           <div className="pt-2 border-t border-white/10">
-            <div className="flex items-center justify-center space-x-3">
+            <div className="flex items-center justify-center space-x-2">
               <div className="text-teal-400 text-xs font-medium">
                 L{user.level}
               </div>

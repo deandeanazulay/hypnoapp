@@ -11,23 +11,23 @@ export default function EgoStatesRow({ selectedEgoState, onEgoStateChange }: Ego
 
   return (
     <div 
-      className="relative overflow-hidden w-full flex justify-center items-center py-2"
+      className="relative overflow-hidden w-full flex justify-center items-center py-1"
       onMouseEnter={() => setAnimationPaused(true)}
       onMouseLeave={() => setAnimationPaused(false)}
     >
       {/* Gradient overlays */}
-      <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
       
       {/* Scrolling container with pause on hover */}
-      <div className={`flex items-center justify-start space-x-3 px-4 ${animationPaused ? '' : 'animate-scroll-x'}`}>
+      <div className={`flex items-center justify-start space-x-2 px-3 ${animationPaused ? '' : 'animate-scroll-x'}`}>
         {/* Triple the states for seamless infinite scroll */}
         {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => (
           <div key={`${state.id}-${index}`} className="flex-shrink-0 flex justify-center items-center">
-            <div className="flex flex-col items-center justify-between space-y-2">
+            <div className="flex flex-col items-center justify-between space-y-1">
               <button
                 onClick={() => onEgoStateChange(state.id)}
-                className={`w-11 h-11 rounded-full bg-gradient-to-br ${state.color} p-1 cursor-pointer transition-all duration-300 ${state.glowColor} shadow-lg border-2 flex items-center justify-center ${
+                className={`w-9 h-9 rounded-full bg-gradient-to-br ${state.color} p-1 cursor-pointer transition-all duration-300 ${state.glowColor} shadow-lg border-2 flex items-center justify-center ${
                   selectedEgoState === state.id ? 'border-white/60 scale-110 opacity-100' : 'border-white/20 opacity-50 hover:opacity-75'
                 }`}
                 style={{
