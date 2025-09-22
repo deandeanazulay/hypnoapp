@@ -1,154 +1,132 @@
 import React, { useState } from 'react';
-import HomeScreen from './screens/HomeScreen';
-import ExploreScreen from './screens/ExploreScreen';
-import CreateScreen from './screens/CreateScreen';
-import FavoritesScreen from './screens/FavoritesScreen';
-import ProfileScreen from './screens/ProfileScreen';
-import NavigationTabs from './NavigationTabs';
-import UnifiedSessionWorld from './UnifiedSessionWorld';
-import { GameStateProvider } from './GameStateManager';
-import { TabId } from './types/Navigation';
+import { Target, Settings, Mic, ChevronDown, Zap, Heart } from 'lucide-react';
+import { useGameState } from './GameStateManager';
+import GoalPicker from './GoalPicker';
+import MethodPicker from './MethodPicker';
+import ModePicker from './ModePicker';
 
-type AppMode = 'navigation' | 'session';
+interface EnhancedActionsBarProps {
+  selectedEgoState: string;
+  selectedAction: any;
+  onActionSelect: (action: any) => void;
+}
 
-function App() {
-  const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
-  const [activeTab, setActiveTab] = useState<TabId>('home');
-  const [selectedEgoState, setSelectedEgoState] = useState('guardian');
-  const [sessionConfig, setSessionConfig] = useState<any>(null);
+export default function EnhancedActionsBar({ 
+  selectedEgoState,
+  selectedAction,
+  onActionSelect
+}: EnhancedActionsBarProps) {
+  const { user } = useGameState();
+  const [showGoalPicker, setShowGoalPicker] = useState(false);
+  const [showMethodPicker, setShowMethodPicker] = useState(false);
+  const [showModePicker, setShowModePicker] = useState(false);
 
-  const handleOrbTap = () => {
-    // Start session with current ego state
-    setSessionConfig({
-      egoState: selectedEgoState,
-      action: null,
-      type: 'unified'
-    });
-    setCurrentMode('session');
-  };
-
-  const handleActionSelect = (action: any) => {
-    // Start session with specific action + ego state
-    setSessionConfig({
-      egoState: selectedEgoState,
-      action: action,
-      type: 'unified'
-    });
-    setCurrentMode('session');
-  };
-
-  const handleProtocolSelect = (protocol: any) => {
-    // Start session with specific protocol
-    setSessionConfig({
-      egoState: selectedEgoState,
-      protocol: protocol,
-      type: 'protocol'
-    });
-    setCurrentMode('session');
-  };
-
-  const handleCustomProtocolCreate = (protocol: any) => {
-    // Save and optionally start custom protocol
-    console.log('Custom protocol created:', protocol);
-    // In real app, save to localStorage or API
-  };
-
-  const handleSessionComplete = () => {
-    setCurrentMode('navigation');
-    setSessionConfig(null);
-  };
-
-  const handleCancel = () => {
-    setCurrentMode('navigation');
-    setSessionConfig(null);
-  };
-
-  const handleFavoriteSessionSelect = (session: any) => {
-    // Start favorited session
-    setSessionConfig({
-      egoState: session.egoState,
-      action: session.action,
-      type: 'favorite',
-      session: session
-    });
-    setCurrentMode('session');
-  };
-
-  // Session mode - full screen wizard
-  if (currentMode === 'session') {
-    return (
-      <GameStateProvider>
-        <UnifiedSessionWorld 
-          onComplete={handleSessionComplete}
-          onCancel={handleCancel}
-          sessionConfig={sessionConfig}
-        />
-      </GameStateProvider>
-    );
-  }
-
-  // Render current tab content
-  const renderCurrentTab = () => {
-    switch (activeTab) {
-      case 'home':
-        return (
-          <HomeScreen
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
-            onOrbTap={handleOrbTap}
-            onActionSelect={handleActionSelect}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        );
-      case 'explore':
-        return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
-      case 'create':
-        return <CreateScreen onProtocolCreate={handleCustomProtocolCreate} />;
-      case 'favorites':
-        return <FavoritesScreen onSessionSelect={handleFavoriteSessionSelect} />;
-      case 'profile':
-        return (
-          <ProfileScreen 
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
-          />
-        );
-      default:
-        return (
-          <HomeScreen
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
-            onOrbTap={handleOrbTap}
-            onActionSelect={handleActionSelect}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        );
+  const quickActions = [
+    {
+      id: 'stress-relief',
+      name: 'Stress Relief',
+      icon: <Heart size={16} className="text-teal-400" />,
+      color: 'from-teal-500/20 to-cyan-500/20',
+      description: 'Release tension and find calm'
+    },
+    {
+      id: 'focus-boost',
+      name: 'Focus Boost',
+      icon: <Target size={16} className="text-purple-400" />,
+      color: 'from-purple-500/20 to-blue-500/20',
+      description: 'Sharpen concentration'
+    },
+    {
+      id: 'energy-up',
+      name: 'Energy Up',
+      icon: <Zap size={16} className="text-orange-400" />,
+      color: 'from-orange-500/20 to-amber-500/20',
+      description: 'Boost motivation and energy'
     }
-  };
+  ];
 
-  // Navigation mode - tabbed interface
   return (
-    <GameStateProvider>
-      <div className="relative h-screen w-screen overflow-hidden bg-black">
-        <div className="flex h-full flex-col">
-          {/* Content region */}
-          <div className="flex-1 min-h-0 overflow-hidden">
-            {renderCurrentTab()}
+    <>
+      <div className="px-4">
+        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-3">
+          {/* Quick Actions */}
+          <div className="flex justify-center space-x-3 mb-3">
+            {quickActions.map((action) => (
+              <button
+                key={action.id}
+                onClick={() => onActionSelect(action)}
+                className={`flex-1 max-w-[120px] bg-gradient-to-br ${action.color} border border-white/20 rounded-xl p-3 hover:scale-105 transition-all duration-200 ${
+                  selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
+                }`}
+              >
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="w-8 h-8 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                    {action.icon}
+                  </div>
+                  <div className="text-center">
+                    <div className="text-white font-medium text-xs">{action.name}</div>
+                    <div className="text-white/60 text-xs mt-0.5 line-clamp-2">
+                      {action.description}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
           
-          {/* Bottom Navigation */}
-          <div className="flex-shrink-0 pb-[env(safe-area-inset-bottom)]">
-            <NavigationTabs
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
+          {/* Level Progress - Compact */}
+          <div className="pt-2 border-t border-white/10">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="text-teal-400 text-xs font-medium">
+                L{user.level}
+              </div>
+              <div className="w-20 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
+                  style={{ width: `${(user.experience % 100)}%` }}
+                />
+              </div>
+              {user.sessionStreak > 0 && (
+                <div className="text-white/60 text-xs">
+                  {user.sessionStreak}d
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </GameStateProvider>
+
+      {/* Pickers */}
+      {showGoalPicker && (
+        <GoalPicker
+          onSelect={(goal) => {
+            onActionSelect(goal);
+            setShowGoalPicker(false);
+          }}
+          onClose={() => setShowGoalPicker(false)}
+        />
+      )}
+      
+      {showMethodPicker && (
+        <MethodPicker
+          selectedGoal={selectedAction}
+          onSelect={(method) => {
+            onActionSelect(method);
+            setShowMethodPicker(false);
+          }}
+          onClose={() => setShowMethodPicker(false)}
+        />
+      )}
+      
+      {showModePicker && (
+        <ModePicker
+          onSelect={(mode) => {
+            onActionSelect(mode);
+            setShowModePicker(false);
+          }}
+          onClose={() => setShowModePicker(false)}
+        />
+      )}
+    </>
   );
 }
-
-export default App;
