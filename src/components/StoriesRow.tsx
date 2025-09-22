@@ -7,7 +7,7 @@ interface StoriesRowProps {
 }
 
 export default function StoriesRow({ selectedEgoState, onEgoStateChange }: StoriesRowProps) {
-  const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
+  const [hoveredStateId, setHoveredStateId] = React.useState<string | null>(null);
 
   return (
     <div className="relative overflow-hidden w-full flex justify-center items-center py-4">
@@ -23,15 +23,15 @@ export default function StoriesRow({ selectedEgoState, onEgoStateChange }: Stori
             <div className="flex flex-col items-center justify-between space-y-3">
               <button
                 onClick={() => onEgoStateChange(state.id)}
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
+                onMouseEnter={() => setHoveredStateId(state.id)}
+                onMouseLeave={() => setHoveredStateId(null)}
                 className={`w-12 h-12 rounded-full bg-gradient-to-br ${state.color} p-1 cursor-pointer transition-all duration-300 ${state.glowColor} shadow-lg border-2 flex items-center justify-center ${
                   selectedEgoState === state.id ? 'border-white/60 scale-110 opacity-100' : 
-                  hoveredIndex === index ? 'border-white/40 scale-105 opacity-100' :
+                  hoveredStateId === state.id ? 'border-white/40 scale-105 opacity-100' :
                   'border-white/20 opacity-50 hover:opacity-75'
                 }`}
                 style={{
-                  boxShadow: selectedEgoState === state.id || hoveredIndex === index
+                  boxShadow: selectedEgoState === state.id || hoveredStateId === state.id
                     ? `0 0 20px ${state.glowColor.includes('blue') ? '#3b82f6' : 
                                   state.glowColor.includes('red') ? '#ef4444' : 
                                   state.glowColor.includes('green') ? '#22c55e' : 
@@ -58,7 +58,7 @@ export default function StoriesRow({ selectedEgoState, onEgoStateChange }: Stori
               {/* Ego state name */}
               <span className={`text-xs font-light tracking-wide transition-all duration-300 text-center flex items-center justify-center ${
                 selectedEgoState === state.id ? 'text-white opacity-100' :
-                hoveredIndex === index ? 'text-white/90 opacity-100' :
+                hoveredStateId === state.id ? 'text-white/90 opacity-100' :
                 'text-white/40 opacity-60'
               }`}>
                 {state.name}
