@@ -66,8 +66,8 @@ export default function HomeScreen({
 
         {/* Center Section - Orb (perfectly centered between states and action bar) */}
         <div className="flex-1 flex justify-center items-center min-h-0">
-          <div className="flex justify-center items-center space-x-8">
-            {/* Main WebGL Orb */}
+          <div className="flex flex-col justify-center items-center space-y-6">
+            {/* Main WebGL Orb - centered */}
             <WebGLOrb 
               onTap={handleOrbTap}
               egoState={selectedEgoState}
@@ -76,8 +76,8 @@ export default function HomeScreen({
               selectedGoal={selectedAction}
             />
             
-            {/* Tap to begin text - positioned to the right */}
-            <div className="flex flex-col justify-center items-start">
+            {/* Tap to begin text - positioned below orb */}
+            <div className="flex flex-col justify-center items-center text-center">
               {canAccess('daily_session') ? (
                 <div className="text-white/60 text-sm">
                   <p className="mb-1">Tap to begin with</p>
@@ -89,7 +89,7 @@ export default function HomeScreen({
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col items-start space-y-1">
+                <div className="flex flex-col items-center space-y-1">
                   <p className="text-orange-400 text-sm">Daily limit reached</p>
                   <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
                 </div>
