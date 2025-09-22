@@ -8,7 +8,6 @@ import ProfileScreen from './components/screens/ProfileScreen';
 import UnifiedSessionWorld from './components/UnifiedSessionWorld';
 import { GameStateProvider } from './components/GameStateManager';
 import { TabId } from './types/Navigation';
-import { EGO_STATES } from './types/EgoState';
 
 type AppMode = 'navigation' | 'session';
 
@@ -77,7 +76,66 @@ function App() {
 
   // Session mode - full screen wizard
   if (currentMode === 'session') {
+    return (
+      <GameStateProvider>
+        <UnifiedSessionWorld 
+          onComplete={handleSessionComplete}
+          onCancel={handleCancel}
+          sessionConfig={sessionConfig}
+        />
+      </GameStateProvider>
+    );
   }
+
+  // Navigation mode - tabbed interface
+  return (
+    <GameStateProvider>
+      <div className="h-screen bg-black overflow-hidden">
+        {/* Main Content Area */}
+        <div className="h-full pb-16">
+          {activeTab === 'home' && (
+            <HomeScreen
+              selectedEgoState={selectedEgoState}
+              onEgoStateChange={setSelectedEgoState}
+              onOrbTap={handleOrbTap}
+              onActionSelect={handleActionSelect}
+            />
+          )}
+          
+          {activeTab === 'explore' && (
+            <ExploreScreen
+              onProtocolSelect={handleProtocolSelect}
+            />
+          )}
+          
+          {activeTab === 'create' && (
+            <CreateScreen
+              onProtocolCreate={handleCustomProtocolCreate}
+            />
+          )}
+          
+          {activeTab === 'favorites' && (
+            <FavoritesScreen
+              onSessionSelect={handleFavoriteSessionSelect}
+            />
+          )}
+          
+          {activeTab === 'profile' && (
+            <ProfileScreen
+              selectedEgoState={selectedEgoState}
+              onEgoStateChange={setSelectedEgoState}
+            />
+          )}
+        </div>
+
+        {/* Bottom Navigation */}
+        <NavigationTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+      </div>
+    </GameStateProvider>
+  );
 }
 
 export default App;
