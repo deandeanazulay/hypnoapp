@@ -1,154 +1,96 @@
-import React, { useState } from 'react';
-import HomeScreen from './components/screens/HomeScreen';
-import ExploreScreen from './components/screens/ExploreScreen';
-import CreateScreen from './components/screens/CreateScreen';
-import FavoritesScreen from './components/screens/FavoritesScreen';
-import ProfileScreen from './components/screens/ProfileScreen';
-import NavigationTabs from './components/NavigationTabs';
-import UnifiedSessionWorld from './components/UnifiedSessionWorld';
-import { GameStateProvider } from './components/GameStateManager';
-import { TabId } from './types/Navigation';
+import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
 
-type AppMode = 'navigation' | 'session';
-
-function App() {
-  const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
-  const [activeTab, setActiveTab] = useState<TabId>('home');
-  const [selectedEgoState, setSelectedEgoState] = useState('guardian');
-  const [sessionConfig, setSessionConfig] = useState<any>(null);
-
-  const handleOrbTap = () => {
-    // Start session with current ego state
-    setSessionConfig({
-      egoState: selectedEgoState,
-      action: null,
-      type: 'unified'
-    });
-    setCurrentMode('session');
-  };
-
-  const handleActionSelect = (action: any) => {
-    // Start session with specific action + ego state
-    setSessionConfig({
-      egoState: selectedEgoState,
-      action: action,
-      type: 'unified'
-    });
-    setCurrentMode('session');
-  };
-
-  const handleProtocolSelect = (protocol: any) => {
-    // Start session with specific protocol
-    setSessionConfig({
-      egoState: selectedEgoState,
-      protocol: protocol,
-      type: 'protocol'
-    });
-    setCurrentMode('session');
-  };
-
-  const handleCustomProtocolCreate = (protocol: any) => {
-    // Save and optionally start custom protocol
-    console.log('Custom protocol created:', protocol);
-    // In real app, save to localStorage or API
-  };
-
-  const handleSessionComplete = () => {
-    setCurrentMode('navigation');
-    setSessionConfig(null);
-  };
-
-  const handleCancel = () => {
-    setCurrentMode('navigation');
-    setSessionConfig(null);
-  };
-
-  const handleFavoriteSessionSelect = (session: any) => {
-    // Start favorited session
-    setSessionConfig({
-      egoState: session.egoState,
-      action: session.action,
-      type: 'favorite',
-      session: session
-    });
-    setCurrentMode('session');
-  };
-
-  // Session mode - full screen wizard
-  if (currentMode === 'session') {
-    return (
-      <GameStateProvider>
-        <UnifiedSessionWorld 
-          onComplete={handleSessionComplete}
-          onCancel={handleCancel}
-          sessionConfig={sessionConfig}
-        />
-      </GameStateProvider>
-    );
-  }
-
-  // Render current tab content
-  const renderCurrentTab = () => {
-    switch (activeTab) {
-      case 'home':
-        return (
-          <HomeScreen
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
-            onOrbTap={handleOrbTap}
-            onActionSelect={handleActionSelect}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        );
-      case 'explore':
-        return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
-      case 'create':
-        return <CreateScreen onProtocolCreate={handleCustomProtocolCreate} />;
-      case 'favorites':
-        return <FavoritesScreen onSessionSelect={handleFavoriteSessionSelect} />;
-      case 'profile':
-        return (
-          <ProfileScreen 
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
-          />
-        );
-      default:
-        return (
-          <HomeScreen
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
-            onOrbTap={handleOrbTap}
-            onActionSelect={handleActionSelect}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-        )
-        );
-    }
-  };
-
-  // Navigation mode - tabbed interface
-  return (
-    <GameStateProvider>
-      <div className="relative h-screen w-screen overflow-hidden bg-black">
-        <div className="flex h-full flex-col">
-          {/* Content region */}
-          <div className="flex-1 min-h-0 overflow-hidden">
-            {renderCurrentTab()}
-          </div>
-          
-          {/* Bottom Navigation */}
-          <div className="flex-shrink-0 pb-[env(safe-area-inset-bottom)]">
-            <NavigationTabs
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
-          </div>
-        </div>
-      </div>
-    </GameStateProvider>
-  );
+interface LivingOrbProps {
+  onTap?: () => void;
+  size?: number;
+  className?: string;
 }
 
-export default App;
+export interface LivingOrbRef {
+  updateState: (state: any) => void;
+  setSpeaking: (speaking: boolean) => void;
+  setListening: (listening: boolean) => void;
+}
+
+const LivingOrb = forwardRef<LivingOrbRef, LivingOrbProps>(({
+  onTap,
+  size = 200,
+  className = ''
+}, ref) => {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [pulseIntensity, setPulseIntensity] = useState(1);
+
+  useImperativeHandle(ref, () => ({
+    updateState: (state: any) => {
+      if (state.pulseIntensity !== undefined) {
+        setPulseIntensity(state.pulseIntensity);
+      }
+    },
+    setSpeaking: (speaking: boolean) => {
+      setIsSpeaking(speaking);
+    },
+    setListening: (listening: boolean) => {
+      setIsListening(listening);
+    }
+  }));
+
+  useEffect(() => {
+    // Animate pulse based on speaking/listening state
+    if (isSpeaking || isListening) {
+      const interval = setInterval(() => {
+        setPulseIntensity(prev => prev === 1 ? 1.2 : 1);
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [isSpeaking, isListening]);
+
+  const getOrbColor = () => {
+    if (isSpeaking) return 'from-blue-400 to-blue-600';
+    if (isListening) return 'from-green-400 to-green-600';
+    return 'from-purple-400 to-purple-600';
+  };
+
+  return (
+    <div
+      className={`relative cursor-pointer transition-transform hover:scale-105 ${className}`}
+      onClick={onTap}
+      style={{ width: size, height: size }}
+    >
+      <div
+        className={`absolute inset-0 rounded-full bg-gradient-to-br ${getOrbColor()} transition-all duration-300`}
+        style={{
+          transform: `scale(${pulseIntensity})`,
+          filter: 'blur(0.5px)'
+        }}
+      />
+      
+      {/* Inner glow */}
+      <div
+        className="absolute inset-2 rounded-full bg-gradient-to-br from-white/20 to-transparent"
+        style={{
+          transform: `scale(${pulseIntensity * 0.9})`
+        }}
+      />
+      
+      {/* Activity indicators */}
+      {isSpeaking && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-4 h-4 bg-white rounded-full animate-ping" />
+        </div>
+      )}
+      
+      {isListening && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-6 h-1 bg-white rounded-full animate-pulse" />
+          <div className="w-4 h-1 bg-white rounded-full animate-pulse mx-1" />
+          <div className="w-6 h-1 bg-white rounded-full animate-pulse" />
+        </div>
+      )}
+    </div>
+  );
+});
+
+LivingOrb.displayName = 'LivingOrb';
+
+export default LivingOrb;
