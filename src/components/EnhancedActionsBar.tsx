@@ -61,25 +61,25 @@ export default function EnhancedActionsBar({
 
   return (
     <>
-      <div className="px-4">
-        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2">
+      <div className="px-2 sm:px-4">
+        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-2 sm:px-3 py-2">
           {/* Quick Actions */}
-          <div className="flex justify-center space-x-2 mb-2">
+          <div className="flex justify-center space-x-1 sm:space-x-2 mb-2">
             {quickActions.map((action) => (
               <button
                 key={action.id}
                 onClick={() => onActionSelect(action)}
-                className={`flex-1 max-w-[90px] bg-gradient-to-br ${action.color} border border-white/20 rounded-xl p-2 hover:scale-105 transition-all duration-200 ${
+                className={`flex-1 max-w-[70px] sm:max-w-[90px] bg-gradient-to-br ${action.color} border border-white/20 rounded-xl p-1.5 sm:p-2 hover:scale-105 transition-all duration-200 ${
                   selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
                 }`}
               >
-                <div className="flex flex-col items-center space-y-1">
-                  <div className="w-5 h-5 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                <div className="flex flex-col items-center space-y-0.5 sm:space-y-1">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                     {action.icon}
                   </div>
-                  <div className="text-center">
+                  <div className="text-center hidden sm:block">
                     <div className="text-white font-medium text-xs leading-tight">{action.name}</div>
-                    <div className="text-white/60 text-xs mt-0.5 line-clamp-1">
+                    <div className="text-white/60 text-xs mt-0.5 line-clamp-1 hidden md:block">
                       {action.description}
                     </div>
                   </div>
@@ -94,7 +94,7 @@ export default function EnhancedActionsBar({
               <div className="text-teal-400 text-xs font-medium">
                 L{user.level}
               </div>
-              <div className="w-20 h-1 bg-white/10 rounded-full overflow-hidden">
+              <div className="w-16 sm:w-20 h-1 bg-white/10 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
                   style={{ width: `${(user.experience % 100)}%` }}

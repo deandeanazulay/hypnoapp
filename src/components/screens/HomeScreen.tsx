@@ -73,7 +73,7 @@ export default function HomeScreen({
       <div className="relative z-50 flex-1 flex flex-col justify-between pb-16">
         
         {/* Ego States Row */}
-        <div className="flex-shrink-0 pt-2 pb-1">
+        <div className="flex-shrink-0 pt-2 sm:pt-4 pb-1">
           <EgoStatesRow 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={onEgoStateChange}
@@ -82,7 +82,7 @@ export default function HomeScreen({
 
         {/* Center Section - Orb (perfectly centered) */}
         <div className="flex-1 flex items-center justify-center py-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-7xl mx-auto px-2 sm:px-4">
             {/* Left Column - Desktop only */}
             <div className="hidden lg:block">
               {/* Future: Side content */}
@@ -94,7 +94,7 @@ export default function HomeScreen({
                 onTap={onOrbTap}
                 afterglow={user.lastSessionDate !== null}
                 egoState={selectedEgoState}
-                size={window.innerWidth < 768 ? Math.min(window.innerWidth * 0.45, 200) : 240}
+                size={window.innerWidth < 768 ? Math.min(window.innerWidth * 0.5, 220) : 260}
                 enhanced={true}
               />
             </div>
@@ -107,7 +107,7 @@ export default function HomeScreen({
         </div>
 
         {/* Bottom Section - Actions Bar */}
-        <div className="flex-shrink-0 pb-2">
+        <div className="flex-shrink-0 pb-1 sm:pb-2">
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}
             selectedAction={selectedAction}
