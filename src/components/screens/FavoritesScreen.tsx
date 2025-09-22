@@ -237,23 +237,23 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
 
       <div className="relative z-10 h-full flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 pt-1 pb-1 px-4">
+        <div className="flex-shrink-0 pt-1 pb-0.5 px-4">
           <h1 className="text-white text-lg font-light mb-0.5">Favorites</h1>
-          <p className="text-white/60 text-xs">Your most effective sessions</p>
+          <p className="text-white/60 text-xs leading-tight">Your most effective sessions</p>
         </div>
 
         {/* Stats Overview */}
-        <div className="flex-shrink-0 px-4 mb-1">
-          <div className="grid grid-cols-3 gap-1.5">
-            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1.5 border border-white/10 text-center">
+        <div className="flex-shrink-0 px-4 mb-0.5">
+          <div className="grid grid-cols-3 gap-1">
+            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1 border border-white/10 text-center">
               <div className="text-teal-400 text-sm font-semibold">{user.level}</div>
               <div className="text-white/60 text-xs">Level</div>
             </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1.5 border border-white/10 text-center">
+            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1 border border-white/10 text-center">
               <div className="text-orange-400 text-sm font-semibold">{user.sessionStreak}</div>
               <div className="text-white/60 text-xs">Streak</div>
             </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1.5 border border-white/10 text-center">
+            <div className="bg-white/5 backdrop-blur-md rounded-lg p-1 border border-white/10 text-center">
               <div className="text-purple-400 text-sm font-semibold">{mockFavorites.length}</div>
               <div className="text-white/60 text-xs">Saved</div>
             </div>
@@ -261,18 +261,18 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
         </div>
 
         {/* Favorites List */}
-        <div className="flex-1 px-4 pb-1 min-h-0 flex flex-col">
+        <div className="flex-1 px-4 min-h-0 flex flex-col overflow-hidden">
           {mockFavorites.length > 0 ? (
             <>
               {/* 3x4 Grid */}
-              <div className="grid grid-cols-3 grid-rows-4 gap-1.5 flex-1 min-h-0">
+              <div className="grid grid-cols-3 grid-rows-4 gap-1 flex-1 min-h-0 max-h-full overflow-hidden">
                 {currentPageFavorites.map((session) => (
                   <div
                     key={session.id}
-                    className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-lg p-1.5 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] flex flex-col justify-between min-h-0`}
+                    className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-lg p-1 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] flex flex-col justify-between min-h-0 max-h-full overflow-hidden`}
                   >
                     {/* Header with ego state and buttons */}
-                    <div className="flex items-center justify-between mb-0.5">
+                    <div className="flex items-center justify-between mb-0.5 flex-shrink-0">
                       <div className="w-4 h-4 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                         <span className="text-xs">{getEgoStateIcon(session.egoState)}</span>
                       </div>
@@ -290,10 +290,10 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-white font-semibold text-xs mb-0.5 line-clamp-2 flex-1">{session.name}</h3>
+                    <h3 className="text-white font-semibold text-xs mb-0.5 line-clamp-1 flex-1 min-h-0">{session.name}</h3>
                     
                     {/* Stats */}
-                    <div className="flex items-center justify-between text-white/50 text-xs mb-0.5">
+                    <div className="flex items-center justify-between text-white/50 text-xs mb-0.5 flex-shrink-0">
                       <div className="flex items-center space-x-1">
                         <Clock size={6} />
                         <span>{session.duration}m</span>
@@ -305,7 +305,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                     </div>
                     
                     {/* Rating and last completed */}
-                    <div className="flex items-center justify-between mb-0.5">
+                    <div className="flex items-center justify-between mb-0.5 flex-shrink-0">
                       <div className="flex items-center space-x-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
@@ -320,7 +320,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                       </span>
                     </div>
                     {/* Progress Bar */}
-                    <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden">
+                    <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden flex-shrink-0">
                       <div 
                         className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
                         style={{ width: `${Math.min((session.completedCount / 20) * 100, 100)}%` }}
@@ -331,7 +331,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
               </div>
               {/* Navigation arrows and page dots */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center space-x-3 mt-1">
+                <div className="flex items-center justify-center space-x-3 mt-0.5 flex-shrink-0">
                   <button
                     onClick={goToPreviousPage}
                     disabled={currentPage === 0}
