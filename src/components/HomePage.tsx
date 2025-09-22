@@ -1,101 +1,154 @@
-import React from 'react';
-import StoriesRow from './StoriesRow';
-import WebGLOrb from './WebGLOrb';
-import ActionsBar from './ActionsBar';
-import BottomNav from './BottomNav';
-import { useGameState } from './GameStateManager';
+import React, { useState } from 'react';
+  const { userState: user } = useGameState();
+import ExploreScreen from './components/screens/ExploreScreen';
+import CreateScreen from './components/screens/CreateScreen';
+import FavoritesScreen from './components/screens/FavoritesScreen';
+import ProfileScreen from './components/screens/ProfileScreen';
+import NavigationTabs from './components/NavigationTabs';
+import UnifiedSessionWorld from './components/UnifiedSessionWorld';
+import { GameStateProvider } from './components/GameStateManager';
+import { TabId } from './types/Navigation';
 
-interface HomePageProps {
-  onOrbTap: () => void;
-}
+type AppMode = 'navigation' | 'session';
 
-export default function HomePage({ onOrbTap }: HomePageProps) {
-  const { user } = useGameState();
-  const [selectedEgoState, setSelectedEgoState] = React.useState('protector');
-  const [selectedGoal, setSelectedGoal] = React.useState(null);
-  const [selectedMethod, setSelectedMethod] = React.useState(null);
-  const [selectedMode, setSelectedMode] = React.useState(null);
+function App() {
+  const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
+  const [activeTab, setActiveTab] = useState<TabId>('home');
+  const [selectedEgoState, setSelectedEgoState] = useState('guardian');
+  const [sessionConfig, setSessionConfig] = useState<any>(null);
 
-  // Get orb color based on ego state
-  const getOrbColor = () => {
-    const colors = {
-      protector: 'teal',
-      performer: 'cyan', 
-      nurturer: 'amber',
-      sage: 'yellow',
-      explorer: 'cyan'
-    };
-    return colors[selectedEgoState as keyof typeof colors] || 'teal';
+  const handleOrbTap = () => {
+    // Start session with current ego state
+    setSessionConfig({
+      egoState: selectedEgoState,
+      action: null,
+      type: 'unified'
+    });
+    setCurrentMode('session');
   };
 
-  return (
-    <div className="h-screen bg-black relative overflow-hidden flex flex-col z-50">
-      {/* Background gradient */}
-      <div className="fixed inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-teal-950/20 via-black to-purple-950/20" />
-        {user.lastSessionTime && (
-          <div className="absolute inset-0 bg-gradient-to-br from-teal-950/10 via-black to-orange-950/10" />
-        )}
-      </div>
+  const handleActionSelect = (action: any) => {
+    // Start session with specific action + ego state
+    setSessionConfig({
+      egoState: selectedEgoState,
+      action: action,
+      type: 'unified'
+    });
+    setCurrentMode('session');
+  };
 
-      {/* Main Layout - Perfect vertical distribution */}
-      <div className="relative z-50 flex-1 flex flex-col justify-between pb-20">
-        
-        {/* Top Section - Stories */}
-        <div className="flex-shrink-0 pt-2 pb-1">
-          <StoriesRow 
+  const handleProtocolSelect = (protocol: any) => {
+    // Start session with specific protocol
+    setSessionConfig({
+      egoState: selectedEgoState,
+      protocol: protocol,
+      type: 'protocol'
+    });
+    setCurrentMode('session');
+  };
+
+  const handleCustomProtocolCreate = (protocol: any) => {
+    // Save and optionally start custom protocol
+    console.log('Custom protocol created:', protocol);
+    // In real app, save to localStorage or API
+  };
+
+  const handleSessionComplete = () => {
+    setCurrentMode('navigation');
+    setSessionConfig(null);
+  };
+
+  const handleCancel = () => {
+    setCurrentMode('navigation');
+    setSessionConfig(null);
+  };
+
+  const handleFavoriteSessionSelect = (session: any) => {
+    // Start favorited session
+    setSessionConfig({
+      egoState: session.egoState,
+      action: session.action,
+      type: 'favorite',
+      session: session
+    });
+    setCurrentMode('session');
+  };
+
+  // Session mode - full screen wizard
+  if (currentMode === 'session') {
+    return (
+      <GameStateProvider>
+        <UnifiedSessionWorld 
+          onComplete={handleSessionComplete}
+          onCancel={handleCancel}
+          sessionConfig={sessionConfig}
+        />
+      </GameStateProvider>
+    );
+  }
+
+  // Render current tab content
+  const renderCurrentTab = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <HomeScreen
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+            onOrbTap={handleOrbTap}
+            onActionSelect={handleActionSelect}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        );
+      case 'explore':
+        return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
+      case 'create':
+        return <CreateScreen onProtocolCreate={handleCustomProtocolCreate} />;
+      case 'favorites':
+        return <FavoritesScreen onSessionSelect={handleFavoriteSessionSelect} />;
+      case 'profile':
+        return (
+          <ProfileScreen 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={setSelectedEgoState}
           />
-        </div>
+        );
+      default:
+        return (
+          <HomeScreen
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+            onOrbTap={handleOrbTap}
+            onActionSelect={handleActionSelect}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        );
+    }
+  };
 
-        {/* Center Section - Orb (perfectly centered) */}
-        <div className="flex-1 flex items-center justify-center py-2">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-7xl mx-auto px-4">
-            {/* Left Column - Desktop only */}
-            <div className="hidden lg:block">
-              {/* Future: Side content */}
-            </div>
-            
-            {/* Center Column - Orb */}
-            <div className="flex items-center justify-center">
-              <WebGLOrb 
-                onTap={onOrbTap}
-                afterglow={user.lastSessionTime !== null}
-                egoState={selectedEgoState}
-                selectedGoal={selectedGoal}
-              />
-            </div>
-            
-            {/* Right Column - Desktop only */}
-            <div className="hidden lg:block">
-              {/* Future: Side content */}
-            </div>
+  // Navigation mode - tabbed interface
+  return (
+    <GameStateProvider>
+      <div className="relative h-screen w-screen overflow-hidden bg-black">
+        <div className="flex h-full flex-col">
+          {/* Content region */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {renderCurrentTab()}
+          </div>
+          
+          {/* Bottom Navigation */}
+          <div className="flex-shrink-0 pb-[env(safe-area-inset-bottom)]">
+            <NavigationTabs
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
           </div>
         </div>
-
-        {/* Bottom Section - Actions Bar */}
-        <div className="flex-shrink-0 pb-1">
-          <ActionsBar 
-            selectedGoal={selectedGoal}
-            selectedMethod={selectedMethod}
-            selectedMode={selectedMode}
-            onGoalChange={setSelectedGoal}
-            onMethodChange={setSelectedMethod}
-            onModeChange={setSelectedMode}
-          />
-        </div>
       </div>
-
-      {/* Fixed Bottom Navigation */}
-      <BottomNav />
-
-      {/* Achievement notifications */}
-      {user.achievements.length > 0 && (
-        <div className="absolute top-20 right-4 bg-gradient-to-r from-amber-400 to-orange-400 text-black px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-20">
-          {user.achievements[user.achievements.length - 1]}
-        </div>
-      )}
-    </div>
+    </GameStateProvider>
   );
 }
+
+export default App;
