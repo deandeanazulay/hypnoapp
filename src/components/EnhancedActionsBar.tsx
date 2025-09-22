@@ -1,166 +1,180 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Shield, Moon, Zap, Lightbulb, Heart } from 'lucide-react';
 import { useGameState } from './GameStateManager';
-import { 
-  Zap, 
-  Shield, 
-  Heart, 
-  Brain, 
-  Target, 
-  Sparkles,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
+import { EGO_STATES } from '../types/EgoState';
+
+interface Action {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
+  duration: number;
+  egoStateBonus?: string[];
+}
+
+const ACTIONS: Action[] = [
+  {
+    id: 'stress_release',
+    name: 'Stress Relief',
+    description: 'Release tension and find calm',
+    icon: <Shield size={16} className="text-blue-400" />,
+    color: 'from-blue-500/20 to-cyan-500/20',
+    duration: 10,
+    egoStateBonus: ['guardian', 'healer']
+  },
+  {
+    id: 'sleep_priming',
+    name: 'Sleep Prep',
+    description: 'Prepare for restorative sleep',
+    icon: <Moon size={16} className="text-purple-400" />,
+    color: 'from-purple-500/20 to-indigo-500/20',
+    duration: 15,
+    egoStateBonus: ['healer', 'mystic']
+  },
+  {
+    id: 'focus',
+    name: 'Focus',
+    description: 'Sharpen concentration and clarity',
+    icon: <Zap size={16} className="text-yellow-400" />,
+    color: 'from-yellow-500/20 to-orange-500/20',
+    duration: 8,
+    egoStateBonus: ['sage', 'performer']
+  },
+  {
+    id: 'creative_unlock',
+    name: 'Creative',
+    description: 'Unlock imagination and inspiration',
+    icon: <Lightbulb size={16} className="text-green-400" />,
+    color: 'from-green-500/20 to-teal-500/20',
+    duration: 12,
+    egoStateBonus: ['child', 'explorer']
+  },
+  {
+    id: 'confidence',
+    name: 'Confidence',
+    description: 'Build inner strength and self-assurance',
+    icon: <Heart size={16} className="text-pink-400" />,
+    color: 'from-pink-500/20 to-red-500/20',
+    duration: 10,
+    egoStateBonus: ['performer', 'rebel']
+  }
+];
 
 interface EnhancedActionsBarProps {
   selectedEgoState: string;
   selectedAction?: any;
-  onActionSelect: (action: any) => void;
+  onActionSelect: (action: Action) => void;
 }
 
-const EnhancedActionsBar: React.FC<EnhancedActionsBarProps> = ({
-  selectedEgoState,
-  selectedAction,
-  onActionSelect
-}) => {
-  const { userState: user } = useGameState();
-  const [currentPage, setCurrentPage] = useState(0);
-
-  // Define actions based on ego state
-  const getActionsForEgoState = (egoState: string) => {
-    const baseActions = {
-      guardian: [
-        { id: 'protect', name: 'Protect', icon: Shield, color: 'blue', cost: 10 },
-        { id: 'heal', name: 'Heal', icon: Heart, color: 'green', cost: 15 },
-        { id: 'fortify', name: 'Fortify', icon: Target, color: 'purple', cost: 20 }
-      ],
-      warrior: [
-        { id: 'strike', name: 'Strike', icon: Zap, color: 'red', cost: 12 },
-        { id: 'charge', name: 'Charge', icon: Target, color: 'orange', cost: 18 },
-        { id: 'berserker', name: 'Berserker', icon: Sparkles, color: 'yellow', cost: 25 }
-      ],
-      sage: [
-        { id: 'analyze', name: 'Analyze', icon: Brain, color: 'indigo', cost: 8 },
-        { id: 'enlighten', name: 'Enlighten', icon: Sparkles, color: 'cyan', cost: 22 },
-        { id: 'transcend', name: 'Transcend', icon: Target, color: 'violet', cost: 30 }
-      ]
-    };
-
-    return baseActions[egoState as keyof typeof baseActions] || baseActions.guardian;
-  };
-
-  const actions = getActionsForEgoState(selectedEgoState);
-  const actionsPerPage = 3;
-  const totalPages = Math.ceil(actions.length / actionsPerPage);
-  const startIndex = currentPage * actionsPerPage;
-  const visibleActions = actions.slice(startIndex, startIndex + actionsPerPage);
-
-  const canAfford = (cost: number) => user?.energy >= cost;
-
-  const handleActionClick = (action: any) => {
-    if (canAfford(action.cost)) {
-      onActionSelect(action);
-    }
-  };
-
-  const nextPage = () => {
-    setCurrentPage((prev) => (prev + 1) % totalPages);
-  };
-
-  const prevPage = () => {
-    setCurrentPage((prev) => (prev - 1 + totalPages) % totalPages);
-  };
+export default function EnhancedActionsBar({ selectedEgoState, selectedAction, onActionSelect }: EnhancedActionsBarProps) {
+  const { user } = useGameState();
+  const currentEgoState = EGO_STATES.find(state => state.id === selectedEgoState);
 
   return (
-    <div className="px-4 py-3">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-gray-300">
-          {selectedEgoState.charAt(0).toUpperCase() + selectedEgoState.slice(1)} Actions
-        </h3>
-        {totalPages > 1 && (
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={prevPage}
-              className="p-1 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4 text-gray-400" />
-            </button>
-            <span className="text-xs text-gray-500">
-              {currentPage + 1}/{totalPages}
-            </span>
-            <button
-              onClick={nextPage}
-              className="p-1 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
-            >
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            </button>
+    <div className="w-full max-w-4xl bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 mx-auto min-h-[120px] flex flex-col justify-between">
+        
+      {/* Compact Header */}
+      <div className="flex items-center justify-between space-x-2 sm:space-x-4 mb-3 flex-shrink-0">
+        <div className="flex items-center justify-start space-x-3 flex-shrink-0">
+          <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${currentEgoState?.color} p-1 flex items-center justify-center`}>
+            <span className="text-xs">{currentEgoState?.icon}</span>
           </div>
-        )}
+          <div className="flex flex-col justify-center">
+            <h3 className="text-white font-medium text-xs sm:text-sm">{currentEgoState?.name} Mode</h3>
+            <p className="text-white/60 text-xs hidden sm:block">{currentEgoState?.role.split(',')[0]}</p>
+          </div>
+        </div>
+        
+        {/* Compact Level */}
+        <div className="flex items-center justify-end space-x-1 sm:space-x-3 flex-shrink-0">
+          {/* HP/MP indicators */}
+          <div className="hidden md:flex items-center justify-center space-x-1">
+            <div className="text-red-400 text-xs">HP</div>
+            <div className="w-8 h-1 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-red-400 rounded-full transition-all duration-500"
+                style={{ width: `${user.hp}%` }}
+              />
+            </div>
+          </div>
+          <div className="hidden md:flex items-center justify-center space-x-1">
+            <div className="text-blue-400 text-xs">MP</div>
+            <div className="w-8 h-1 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-blue-400 rounded-full transition-all duration-500"
+                style={{ width: `${user.mp}%` }}
+              />
+            </div>
+          </div>
+          
+          {/* Level and XP */}
+          <div className="flex items-center justify-center space-x-1 sm:space-x-2">
+            <div className="text-teal-400 text-xs font-medium">lvl.{user.level}</div>
+            <div className="w-8 sm:w-12 h-1 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
+                style={{ width: `${(user.experience % 100)}%` }}
+              />
+            </div>
+          </div>
+          
+          {/* Tokens */}
+          <div className="flex items-center justify-center space-x-1">
+            <span className="text-yellow-400 text-xs">⚡</span>
+            <span className="text-yellow-400 text-xs font-medium">{user.tokens}</span>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {visibleActions.map((action) => {
-          const Icon = action.icon;
-          const affordable = canAfford(action.cost);
+      {/* Action Grid - Responsive: 3 cols on mobile, 5 cols on desktop */}
+      <div className="grid grid-cols-5 gap-2 sm:gap-3 justify-items-center flex-shrink-0">
+        {ACTIONS.map((action) => {
+          const isRecommended = action.egoStateBonus?.includes(selectedEgoState);
           const isSelected = selectedAction?.id === action.id;
-
+          
           return (
             <button
               key={action.id}
-              onClick={() => handleActionClick(action)}
-              disabled={!affordable}
-              className={`
-                relative p-3 rounded-lg border transition-all duration-200
-                ${isSelected 
-                  ? `border-${action.color}-500 bg-${action.color}-500/20` 
-                  : affordable
-                    ? `border-gray-700 bg-gray-800/50 hover:border-${action.color}-500/50 hover:bg-${action.color}-500/10`
-                    : 'border-gray-800 bg-gray-900/50 opacity-50 cursor-not-allowed'
-                }
-              `}
+              onClick={() => onActionSelect(action)}
+              className={`w-full p-1.5 sm:p-2 lg:p-3 rounded-xl bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center space-y-1 lg:space-y-2 min-h-[60px] sm:min-h-[70px] ${
+                isSelected
+                  ? 'border-teal-400/60 ring-2 ring-teal-400/40 scale-105'
+                  : isRecommended 
+                    ? 'border-white/30 ring-1 ring-teal-400/20' 
+                    : 'border-white/10 hover:border-white/20'
+              }`}
             >
-              <div className="flex flex-col items-center space-y-1">
-                <Icon 
-                  className={`w-5 h-5 ${
-                    isSelected 
-                      ? `text-${action.color}-400` 
-                      : affordable 
-                        ? 'text-gray-300' 
-                        : 'text-gray-600'
-                  }`} 
-                />
-                <span className={`text-xs font-medium ${
-                  isSelected 
-                    ? `text-${action.color}-300` 
-                    : affordable 
-                      ? 'text-gray-300' 
-                      : 'text-gray-600'
-                }`}>
-                  {action.name}
-                </span>
-                <span className={`text-xs ${
-                  affordable ? 'text-gray-400' : 'text-red-400'
-                }`}>
-                  {action.cost} EN
-                </span>
+              <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0">
+                {action.icon}
               </div>
-
-              {isSelected && (
-                <div className={`absolute inset-0 rounded-lg border-2 border-${action.color}-400 pointer-events-none`} />
-              )}
+              <div className="text-center hidden sm:flex sm:flex-col sm:items-center sm:justify-center space-y-1">
+                <div className="flex items-center justify-center space-x-1">
+                  <h4 className="text-white font-medium text-xs leading-tight truncate max-w-[60px] sm:max-w-none">{action.name}</h4>
+                  {isSelected && (
+                    <span className="text-teal-400 text-xs">✓</span>
+                  )}
+                  {!isSelected && isRecommended && (
+                    <span className="text-teal-400 text-xs">✨</span>
+                  )}
+                </div>
+                <div className="text-white/60 text-xs flex items-center justify-center hidden lg:flex">
+                  {action.duration}m
+                </div>
+              </div>
+              {/* Mobile/Small screens: Show only recommended indicator */}
+              <div className="flex items-center justify-center sm:hidden">
+                {isSelected && (
+                  <span className="text-teal-400 text-xs">✓</span>
+                )}
+                {!isSelected && isRecommended && (
+                  <span className="text-teal-400 text-xs">✨</span>
+                )}
+              </div>
             </button>
           );
         })}
       </div>
-
-      {/* Energy indicator */}
-      <div className="mt-3 flex items-center justify-center">
-        <div className="flex items-center space-x-2 text-xs text-gray-400">
-          <Zap className="w-3 h-3" />
-          <span>Energy: {user?.energy || 0}/{user?.maxEnergy || 100}</span>
-        </div>
-      </div>
     </div>
   );
-};
-
-export default EnhancedActionsBar;
+}
