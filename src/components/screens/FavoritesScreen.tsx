@@ -328,7 +328,6 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                   </div>
                 ))}
               </div>
-                    </div>
               {/* Navigation arrows and page dots */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-center space-x-4 mt-2">
