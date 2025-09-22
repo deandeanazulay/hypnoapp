@@ -6,6 +6,13 @@ import { useGameState } from './GameStateManager';
 interface UnifiedSessionWorldProps {
   onComplete: () => void;
   onCancel: () => void;
+  config?: {
+    egoState: string;
+    action?: any;
+    protocol?: any;
+    type: 'unified' | 'protocol' | 'favorite';
+    session?: any;
+  };
 }
 
 type SessionPhase = 'preparation' | 'induction' | 'deepening' | 'transformation' | 'integration' | 'complete';
@@ -26,7 +33,7 @@ interface ChatMessage {
   timestamp: number;
 }
 
-export default function UnifiedSessionWorld({ onComplete, onCancel }: UnifiedSessionWorldProps) {
+export default function UnifiedSessionWorld({ onComplete, onCancel, config }: UnifiedSessionWorldProps) {
   const { user, updateUserState, completeSession } = useGameState();
   const [sessionState, setSessionState] = useState<SessionState>({
     phase: 'preparation',
@@ -35,7 +42,10 @@ export default function UnifiedSessionWorld({ onComplete, onCancel }: UnifiedSes
     isListening: false,
     isSpeaking: false,
     timer: 0,
-    phaseProgress: 0
+    deepeningComplete: false,
+    egoState: config?.egoState || 'guardian',
+    action: config?.action,
+    protocol: config?.protocol
   });
 
   const [conversation, setConversation] = useState<ChatMessage[]>([]);

@@ -1,31 +1,165 @@
 import React, { useState } from 'react';
-import HomePage from './components/HomePage';
-import SessionView from './components/SessionView';
+import NavigationTabs from './components/NavigationTabs';
+import HomeScreen from './components/screens/HomeScreen';
+import ExploreScreen from './components/screens/ExploreScreen';
+import CreateScreen from './components/screens/CreateScreen';
+import FavoritesScreen from './components/screens/FavoritesScreen';
+import ProfileScreen from './components/screens/ProfileScreen';
+import UnifiedSessionWorld from './components/UnifiedSessionWorld';
 import { GameStateProvider } from './components/GameStateManager';
+import { TabId } from './types/Navigation';
+import { EGO_STATES } from './types/EgoState';
 
-type AppMode = 'home' | 'session';
+type AppMode = 'navigation' | 'session';
 
 function AppContent() {
-  const [currentMode, setCurrentMode] = useState<AppMode>('home');
+  const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
+  const [activeTab, setActiveTab] = useState<TabId>('home');
+  const [selectedEgoState, setSelectedEgoState] = useState('guardian');
+  const [sessionConfig, setSessionConfig] = useState<any>(null);
 
   const handleOrbTap = () => {
+    // Start session with current ego state
+    setSessionConfig({
+      egoState: selectedEgoState,
+      action: null,
+      type: 'unified'
+    });
     setCurrentMode('session');
   };
 
+  const handleActionSelect = (action: any) => {
+    // Start session with specific action + ego state
+    setSessionConfig({
+      egoState: selectedEgoState,
+      action: action,
+      type: 'unified'
+    });
+    setCurrentMode('session');
+  };
+
+  const handleProtocolSelect = (protocol: any) => {
+    // Start session with specific protocol
+    setSessionConfig({
+      egoState: selectedEgoState,
+      protocol: protocol,
+      type: 'protocol'
+    });
+    setCurrentMode('session');
+  };
+
+  const handleCustomProtocolCreate = (protocol: any) => {
+    // Save and optionally start custom protocol
+    console.log('Custom protocol created:', protocol);
+    // In real app, save to localStorage or API
+  };
+
   const handleSessionComplete = () => {
-    setCurrentMode('home');
+    setCurrentMode('navigation');
+    setSessionConfig(null);
   };
 
   const handleCancel = () => {
-    setCurrentMode('home');
+    setCurrentMode('navigation');
+    setSessionConfig(null);
   };
 
-  // Single source of truth - only one mode mounts at a time
-  if (currentMode === 'home') {
-    return <HomePage onOrbTap={handleOrbTap} />;
+  const handleFavoriteSessionSelect = (session: any) => {
+    // Start favorited session
+    setSessionConfig({
+      egoState: session.egoState,
+      action: session.action,
+      type: 'favorite',
+      session: session
+    });
+    setCurrentMode('session');
+  };
+
+  // Session mode - full screen wizard
+  if (currentMode === 'session') {
+    return (
+      <UnifiedSessionWorld 
+        onComplete={handleSessionComplete}
+        onCancel={handleCancel}
+        config={sessionConfig}
+      />
+    );
   }
 
-  if (currentMode === 'session') {
+  // Navigation mode - tabbed interface
+  const renderCurrentScreen = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <HomeScreen
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+            onOrbTap={handleOrbTap}
+            onActionSelect={handleActionSelect}
+          />
+        );
+      
+      case 'explore':
+        return (
+          <ExploreScreen
+            onProtocolSelect={handleProtocolSelect}
+          />
+        );
+      
+      case 'create':
+        return (
+          <CreateScreen
+            onProtocolCreate={handleCustomProtocolCreate}
+          />
+        );
+      
+      case 'favorites':
+        return (
+          <FavoritesScreen
+            onSessionSelect={handleFavoriteSessionSelect}
+          />
+        );
+      
+      case 'profile':
+        return (
+          <ProfileScreen
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+          />
+        );
+      
+      default:
+        return (
+          <HomeScreen
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+            onOrbTap={handleOrbTap}
+            onActionSelect={handleActionSelect}
+          />
+        );
+    }
+  };
+
+  return (
+    <div className="relative">
+      {renderCurrentScreen()}
+      <NavigationTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <GameStateProvider>
+      <AppContent />
+    </GameStateProvider>
+  );
+}
+
+export default App;
     return (
       <SessionView 
         onComplete={handleSessionComplete}
