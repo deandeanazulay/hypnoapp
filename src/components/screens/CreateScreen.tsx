@@ -110,7 +110,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
         <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-black to-teal-950/20" />
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col pb-20">
+      <div className="relative z-10 flex-1 flex flex-col pb-24">
         {/* Header */}
         <div className="flex-shrink-0 pt-12 pb-2 px-6">
           <h1 className="text-white text-2xl font-light mb-2">Create Journey</h1>
