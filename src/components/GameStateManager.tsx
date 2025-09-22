@@ -1,162 +1,180 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// User state interface
-export interface UserState {
+interface UserState {
   level: number;
   experience: number;
-  hp: number;
-  mp: number;
-  completedSessions: number;
-  favoriteActions: string[];
-  unlockedEgoStates: string[];
+  currentState: 'calm' | 'focused' | 'stressed' | 'deep' | 'transcendent';
+  sessionStreak: number;
+  lastSessionTime: Date | null;
   achievements: string[];
-  stats: {
-    totalMinutes: number;
-    streakDays: number;
-    lastSessionDate?: string;
-  };
+  orbEnergy: number; // 0-1
+  depth: number; // 1-5
+  breathing: 'inhale' | 'hold' | 'exhale' | 'rest';
+  hp: number; // Homeostasis Points (0-100)
+  mp: number; // Motivation Points (0-100)
+  tokens: number; // In-app credits
+  plan: 'free' | 'pro_monthly' | 'pro_annual';
+  dailySessionsUsed: number;
+  lastSessionDate: string | null;
 }
 
-// Game state context interface
-interface GameStateContextType {
-  userState: UserState;
+interface GameState {
+  user: UserState;
   updateUserState: (updates: Partial<UserState>) => void;
-  getOrbState: (egoState: string) => {
-    color: string;
-    intensity: number;
-    unlocked: boolean;
-  };
-  canAccess: (feature: string) => boolean;
-  addExperience: (amount: number) => void;
-  completeSession: (sessionData: any) => void;
+  completeSession: (sessionType: string, duration: number) => void;
+  getOrbState: () => any;
 }
 
-// Default user state
-const defaultUserState: UserState = {
-  level: 1,
-  experience: 50,
-  hp: 85,
-  mp: 92,
-  completedSessions: 12,
-  favoriteActions: ['stress-relief', 'focus', 'creative'],
-  unlockedEgoStates: ['guardian', 'healer', 'explorer', 'mystic'],
-  achievements: ['first-session', 'week-streak', 'explorer'],
-  stats: {
-    totalMinutes: 240,
-    streakDays: 5,
-    lastSessionDate: new Date().toISOString().split('T')[0]
+const GameStateContext = createContext<GameState | null>(null);
+
+export const useGameState = () => {
+  const context = useContext(GameStateContext);
+  if (!context) {
+    throw new Error('useGameState must be used within GameStateProvider');
   }
+  return context;
 };
 
-// Create context
-const GameStateContext = createContext<GameStateContextType | undefined>(undefined);
-
-// Provider component
-export function GameStateProvider({ children }: { children: ReactNode }) {
-  const [userState, setUserState] = useState<UserState>(() => {
-    try {
-      const saved = localStorage.getItem('userState');
-      return saved ? JSON.parse(saved) : defaultUserState;
-    } catch (error) {
-      console.warn('Failed to load saved state - using defaults');
-      return defaultUserState;
-    }
+export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<UserState>({
+    level: 1,
+    experience: 0,
+    currentState: 'calm',
+    sessionStreak: 0,
+    lastSessionTime: null,
+    achievements: [],
+    orbEnergy: 0.3,
+    depth: 1,
+    breathing: 'rest',
+    hp: 80,
+    mp: 60,
+    tokens: 50,
+    plan: 'free',
+    dailySessionsUsed: 0,
+    lastSessionDate: null
   });
 
-  // Save to localStorage whenever state changes
+  // Load saved state
   useEffect(() => {
-    try {
-      localStorage.setItem('userState', JSON.stringify(userState));
-    } catch (error) {
-      console.warn('Failed to save state to localStorage');
+    const saved = localStorage.getItem('gameState');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setUser(prev => ({
+          ...prev,
+          ...parsed,
+          lastSessionTime: parsed.lastSessionTime ? new Date(parsed.lastSessionTime) : null
+        }));
+      } catch (e) {
+        console.log('Failed to load saved state');
+      }
     }
-  }, [userState]);
+  }, []);
+
+  // Save state changes
+  useEffect(() => {
+    localStorage.setItem('gameState', JSON.stringify(user));
+  }, [user]);
 
   const updateUserState = (updates: Partial<UserState>) => {
-    setUserState(prev => ({ ...prev, ...updates }));
+    setUser(prev => ({ ...prev, ...updates }));
   };
 
-  const getOrbState = (egoState: string) => {
-    const isUnlocked = userState.unlockedEgoStates.includes(egoState);
+  const completeSession = (sessionType: string, duration: number) => {
+    // XP calculation: floor(durationSec / 60) * baseMultiplier * depthMultiplier
+    const baseMultiplier = 10;
+    const depthMultiplier = 1 + (user.depth * 0.15);
+    const xpGained = Math.floor(duration / 60) * baseMultiplier * depthMultiplier;
     
-    const orbConfigs = {
-      guardian: { color: '#3B82F6', intensity: 0.8 },
-      healer: { color: '#10B981', intensity: 0.7 },
-      explorer: { color: '#F59E0B', intensity: 0.9 },
-      mystic: { color: '#8B5CF6', intensity: 0.85 },
-      sage: { color: '#6B7280', intensity: 0.6 },
-      rebel: { color: '#EF4444', intensity: 0.95 },
-      performer: { color: '#EC4899', intensity: 0.8 },
-      shadow: { color: '#1F2937', intensity: 0.5 },
-      child: { color: '#F97316', intensity: 0.9 }
-    };
-
-    return {
-      ...orbConfigs[egoState as keyof typeof orbConfigs] || orbConfigs.guardian,
-      unlocked: isUnlocked
-    };
+    const newExperience = user.experience + xpGained;
+    // Level: floor(0.1 * sqrt(totalXP)) + 1 (smooth, slow growth)
+    const newLevel = Math.floor(0.1 * Math.sqrt(newExperience)) + 1;
+    
+    // HP/MP updates
+    const hpDelta = duration >= 300 ? 1 : 0; // +1 HP for sessions ≥5min
+    const mpDelta = duration >= 900 ? 1 : 0; // +1 MP for sessions ≥15min
+    
+    // Streak calculation (calendar-day based)
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
+    const lastSessionDate = user.lastSessionDate;
+    
+    let newStreak = user.sessionStreak;
+    if (!lastSessionDate || lastSessionDate === yesterday) {
+      newStreak = user.sessionStreak + 1;
+    } else if (lastSessionDate !== today) {
+      newStreak = 1; // Reset streak if gap > 1 day
+    }
+    
+    // Token rewards
+    let tokenReward = 0;
+    if (newLevel > user.level) tokenReward += 10; // Level up bonus
+    if (newStreak > 0 && newStreak % 7 === 0) tokenReward += 25; // Weekly streak bonus
+    
+    setUser(prev => ({
+      ...prev,
+      experience: newExperience,
+      level: newLevel,
+      sessionStreak: newStreak,
+      lastSessionTime: new Date(),
+      lastSessionDate: today,
+      hp: Math.min(prev.hp + hpDelta, 100),
+      mp: Math.min(prev.mp + mpDelta, 100),
+      tokens: prev.tokens + tokenReward,
+      dailySessionsUsed: prev.lastSessionDate === today ? prev.dailySessionsUsed + 1 : 1,
+      orbEnergy: Math.min(prev.orbEnergy + 0.1, 1.0),
+      achievements: [
+        ...prev.achievements,
+        ...(newLevel > prev.level ? [`Level ${newLevel} Reached`] : [])
+      ]
+    }));
   };
+
+  const getOrbState = () => ({
+    depth: user.depth,
+    breathing: user.breathing,
+    phase: user.currentState,
+    isListening: false,
+    isSpeaking: false,
+    emotion: user.currentState,
+    energy: user.orbEnergy
+  });
 
   const canAccess = (feature: string) => {
-    const requirements = {
-      'advanced-sessions': userState.level >= 3,
-      'custom-protocols': userState.level >= 5,
-      'voice-commands': userState.completedSessions >= 5,
-      'ai-insights': userState.level >= 2
-    };
-
-    return requirements[feature as keyof typeof requirements] ?? true;
+    switch (feature) {
+      case 'unlimited_sessions':
+        return user.plan !== 'free';
+      case 'hypoxia':
+        return user.plan !== 'free';
+      case 'premium_voices':
+        return user.plan !== 'free';
+      case 'custom_outlines':
+        return user.plan !== 'free';
+      case 'daily_session':
+        return user.plan === 'free' ? user.dailySessionsUsed < 1 : true;
+      default:
+        return true;
+    }
   };
 
-  const addExperience = (amount: number) => {
-    setUserState(prev => {
-      const newExp = prev.experience + amount;
-      const newLevel = Math.floor(newExp / 100) + 1;
-      
-      return {
-        ...prev,
-        experience: newExp,
-        level: Math.max(prev.level, newLevel)
-      };
-    });
-  };
-
-  const completeSession = (sessionData: any) => {
-    setUserState(prev => ({
-      ...prev,
-      completedSessions: prev.completedSessions + 1,
-      stats: {
-        ...prev.stats,
-        totalMinutes: prev.stats.totalMinutes + (sessionData.duration || 10),
-        lastSessionDate: new Date().toISOString().split('T')[0]
-      }
-    }));
-    
-    // Add experience based on session
-    addExperience(sessionData.duration || 10);
-  };
-
-  const contextValue: GameStateContextType = {
-    userState,
-    updateUserState,
-    getOrbState,
-    canAccess,
-    addExperience,
-    completeSession
+  const spendTokens = (amount: number, feature: string) => {
+    if (user.tokens >= amount) {
+      setUser(prev => ({ ...prev, tokens: prev.tokens - amount }));
+      return true;
+    }
+    return false;
   };
 
   return (
-    <GameStateContext.Provider value={contextValue}>
+    <GameStateContext.Provider value={{
+      user,
+      updateUserState,
+      completeSession,
+      getOrbState,
+      canAccess,
+      spendTokens
+    }}>
       {children}
     </GameStateContext.Provider>
   );
-}
-
-// Hook to use game state
-export function useGameState() {
-  const context = useContext(GameStateContext);
-  if (context === undefined) {
-    throw new Error('useGameState must be used within a GameStateProvider');
-  }
-  return context;
-}
+};
