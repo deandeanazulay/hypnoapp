@@ -157,10 +157,10 @@ export default function EnhancedActionsBar({
                           onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
-                        <div className="break-words text-center">{action.name}</div>
+                        <div className="truncate text-center">{action.name}</div>
                       )}
                     </div>
-                    <div className="text-white/70 text-xs mt-0.5 line-clamp-2 hidden sm:block px-1">
+                    <div className="text-white/60 text-xs mt-0.5 truncate hidden sm:block">
                       {action.description}
                     </div>
                   </div>
@@ -178,7 +178,7 @@ export default function EnhancedActionsBar({
                   <Plus size={12} className="text-white/60" />
                 </div>
                 <div className="text-center">
-                  <div className="text-white/70 font-medium text-xs leading-tight px-1">Add New</div>
+                  <div className="text-white/70 font-medium text-xs leading-tight">Add New</div>
                 </div>
               </div>
             </button>

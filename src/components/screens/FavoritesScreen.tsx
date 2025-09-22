@@ -107,13 +107,13 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
 
       <div className="relative z-10 flex-1 flex flex-col pb-20">
         {/* Header */}
-        <div className="flex-shrink-0 pt-12 pb-6 px-6">
+        <div className="flex-shrink-0 pt-12 pb-4 px-6">
           <h1 className="text-white text-2xl font-light mb-2">Favorites</h1>
           <p className="text-white/60 text-sm">Your most effective sessions</p>
         </div>
 
         {/* Stats Overview */}
-        <div className="flex-shrink-0 px-6 mb-6">
+        <div className="flex-shrink-0 px-6 mb-4">
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center">
               <div className="text-teal-400 text-lg font-semibold">{user.level}</div>
@@ -131,21 +131,21 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
         </div>
 
         {/* Favorites List */}
-        <div className="flex-1 overflow-y-auto px-6 space-y-4">
+        <div className="flex-1 px-6 space-y-3">
           {mockFavorites.length > 0 ? (
             mockFavorites.map((session) => (
               <div
                 key={session.id}
-                className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-2xl p-4 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02]`}
+                className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-xl p-3 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02]`}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2">
                   <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                      <span className="text-lg">{getEgoStateIcon(session.egoState)}</span>
+                    <div className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                      <span className="text-sm">{getEgoStateIcon(session.egoState)}</span>
                     </div>
                     
                     <div className="flex-1">
-                      <h3 className="text-white font-semibold text-lg mb-1">{session.name}</h3>
+                      <h3 className="text-white font-semibold text-base mb-1">{session.name}</h3>
                       
                       <div className="flex items-center space-x-4 text-white/50 text-xs mb-2">
                         <div className="flex items-center space-x-1">
@@ -178,13 +178,13 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => onSessionSelect(session)}
-                      className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-105"
+                      className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-105"
                     >
-                      <Play size={14} className="text-white ml-0.5" />
+                      <Play size={12} className="text-white ml-0.5" />
                     </button>
                     
-                    <button className="w-10 h-10 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-105">
-                      <Trash2 size={14} className="text-red-400" />
+                    <button className="w-8 h-8 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-105">
+                      <Trash2 size={12} className="text-red-400" />
                     </button>
                   </div>
                 </div>

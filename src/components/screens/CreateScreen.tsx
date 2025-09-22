@@ -112,13 +112,13 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
 
       <div className="relative z-10 flex-1 flex flex-col pb-20">
         {/* Header */}
-        <div className="flex-shrink-0 pt-8 pb-3 px-6">
+        <div className="flex-shrink-0 pt-12 pb-4 px-6">
           <h1 className="text-white text-2xl font-light mb-2">Create Journey</h1>
           <p className="text-white/60 text-sm">Build your custom hypnosis protocol</p>
         </div>
 
         {/* Form */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-6">
+        <div className="flex-1 min-h-0 px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 h-full">
           
             {/* Left Column */}
@@ -181,7 +181,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             {/* Right Column */}
             <div className="space-y-3">
               {/* Goals */}
-              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 flex-1 min-h-0">
+              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10">
                 <label className="block text-white/80 text-sm font-medium mb-2">Goals & Suggestions</label>
                 
                 <div className="flex space-x-2 mb-2">
@@ -201,7 +201,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                   </button>
                 </div>
 
-                <div className="space-y-1 max-h-24 overflow-y-auto">
+                <div className="space-y-1 max-h-20 overflow-y-auto">
                   {protocol.goals?.slice(0, 4).map((goal, index) => (
                     <div key={index} className="flex items-center justify-between bg-white/5 rounded-lg px-2 py-1">
                       <span className="text-white/80 text-sm truncate">{goal}</span>
@@ -217,7 +217,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               </div>
 
               {/* Metaphors */}
-              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 flex-1 min-h-0">
+              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10">
                 <label className="block text-white/80 text-sm font-medium mb-2">Metaphors & Imagery</label>
                 
                 <div className="flex space-x-2 mb-2">
@@ -237,7 +237,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                   </button>
                 </div>
 
-                <div className="space-y-1 max-h-24 overflow-y-auto">
+                <div className="space-y-1 max-h-20 overflow-y-auto">
                   {protocol.metaphors?.slice(0, 4).map((metaphor, index) => (
                     <div key={index} className="flex items-center justify-between bg-white/5 rounded-lg px-2 py-1">
                       <span className="text-white/80 text-sm truncate">{metaphor}</span>
