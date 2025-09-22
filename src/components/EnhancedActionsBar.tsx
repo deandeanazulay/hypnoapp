@@ -15,7 +15,8 @@ interface Focus {
 interface FocusModalProps {
   isOpen: boolean;
   onClose: () => void;
-  sessionType: string;
+  sessionType?: string;
+  actionName?: string;
   focuses: Focus[];
   onSelectFocus: (focus: Focus) => void;
 }
@@ -175,7 +176,7 @@ const SESSION_FOCUS_MAPPING = {
   'sleep-prep': SLEEP_PREP_FOCUSES
 };
 
-function FocusModal({ isOpen, onClose, sessionType, focuses, onSelectFocus }: FocusModalProps) {
+function FocusModal({ isOpen, onClose, sessionType, actionName, focuses, onSelectFocus }: FocusModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -193,7 +194,7 @@ function FocusModal({ isOpen, onClose, sessionType, focuses, onSelectFocus }: Fo
 
         <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border border-teal-500/20">
           <p className="text-teal-400 text-sm">
-            <span className="font-medium">Session:</span> {sessionType}
+            <span className="font-medium">Session:</span> {sessionType || actionName}
           </p>
         </div>
 
@@ -222,6 +223,137 @@ function FocusModal({ isOpen, onClose, sessionType, focuses, onSelectFocus }: Fo
   );
 }
 
+const CORE_FOCUSES: Focus[] = [
+  {
+    id: 'calm',
+    name: 'Calm',
+    icon: <Waves size={16} className="text-blue-400" />,
+    description: 'Peace of mind, anxiety reduction',
+    orbColor: 'ocean-blue',
+    scriptTheme: 'peace',
+    aiSuggestion: 'Your mind becomes as calm as a still lake, peaceful and serene.'
+  },
+  {
+    id: 'healing',
+    name: 'Healing',
+    icon: <Heart size={16} className="text-green-400" />,
+    description: 'Body-mind repair, resilience',
+    orbColor: 'green-blue',
+    scriptTheme: 'recovery',
+    aiSuggestion: 'Your body and mind heal naturally, restoring balance and vitality.'
+  },
+  {
+    id: 'freedom',
+    name: 'Freedom',
+    icon: <Bird size={16} className="text-cyan-400" />,
+    description: 'Break limits, dissolve blocks',
+    orbColor: 'sky-blue',
+    scriptTheme: 'liberation',
+    aiSuggestion: 'You feel completely free, breaking through all limitations effortlessly.'
+  },
+  {
+    id: 'clarity',
+    name: 'Clarity',
+    icon: <Eye size={16} className="text-indigo-400" />,
+    description: 'Decision making, insight, vision',
+    orbColor: 'crystal-clear',
+    scriptTheme: 'insight',
+    aiSuggestion: 'Your mind clears like a calm lake, seeing everything with perfect clarity.'
+  },
+  {
+    id: 'discipline',
+    name: 'Discipline',
+    icon: <Shield size={16} className="text-gray-400" />,
+    description: 'Self-control, consistency, habits',
+    orbColor: 'steel-gray',
+    scriptTheme: 'structure',
+    aiSuggestion: 'You feel completely in control, disciplined and focused on what matters.'
+  },
+  {
+    id: 'power',
+    name: 'Power',
+    icon: <Zap size={16} className="text-red-400" />,
+    description: 'Inner strength, charisma, influence',
+    orbColor: 'red-gold',
+    scriptTheme: 'strength',
+    aiSuggestion: 'You feel powerful and strong, radiating confidence and inner strength.'
+  },
+  {
+    id: 'courage',
+    name: 'Courage',
+    icon: <Flame size={16} className="text-orange-400" />,
+    description: 'Overcoming fear, taking action',
+    orbColor: 'flame-orange',
+    scriptTheme: 'bravery',
+    aiSuggestion: 'You feel brave and courageous, ready to face any challenge with confidence.'
+  }
+];
+
+const ADVANCED_FOCUSES: Focus[] = [
+  {
+    id: 'magnetism',
+    name: 'Magnetism',
+    icon: <Sparkles size={16} className="text-yellow-400" />,
+    description: 'Presence, attraction, charisma',
+    orbColor: 'magnetic-gold',
+    scriptTheme: 'attraction',
+    aiSuggestion: 'People feel drawn to your magnetic energy and natural charisma.'
+  },
+  {
+    id: 'abundance',
+    name: 'Abundance',
+    icon: <DollarSign size={16} className="text-yellow-400" />,
+    description: 'Attract opportunities, dissolve scarcity',
+    orbColor: 'golden',
+    scriptTheme: 'prosperity',
+    aiSuggestion: 'Opportunities flow to you naturally, abundance is your natural state.'
+  },
+  {
+    id: 'spirituality',
+    name: 'Spirituality',
+    icon: <Star size={16} className="text-violet-400" />,
+    description: 'Higher connection, meaning',
+    orbColor: 'cosmic-violet',
+    scriptTheme: 'transcendence',
+    aiSuggestion: 'You connect with deeper peace and spiritual tranquility as you rest.'
+  },
+  {
+    id: 'joy',
+    name: 'Joy',
+    icon: <Sun size={16} className="text-yellow-400" />,
+    description: 'Raise vibration, happiness baseline',
+    orbColor: 'sunshine-yellow',
+    scriptTheme: 'bliss',
+    aiSuggestion: 'Pure joy flows through you, lifting your spirit and energy naturally.'
+  },
+  {
+    id: 'shadow-work',
+    name: 'Shadow Work',
+    icon: <Moon size={16} className="text-gray-400" />,
+    description: 'Integrate hidden parts of self',
+    orbColor: 'shadow-purple',
+    scriptTheme: 'integration',
+    aiSuggestion: 'You embrace all parts of yourself, integrating shadow into wholeness.'
+  },
+  {
+    id: 'purpose',
+    name: 'Purpose',
+    icon: <Rocket size={16} className="text-blue-400" />,
+    description: 'Align with mission, drive forward',
+    orbColor: 'mission-blue',
+    scriptTheme: 'alignment',
+    aiSuggestion: 'You feel deeply aligned with your purpose and mission in life.'
+  }
+];
+
+const ACTION_FOCUS_MAPPING = {
+  'stress-relief': ['calm', 'healing', 'freedom'],
+  'focus-boost': ['clarity', 'discipline', 'power'],
+  'energy-up': ['power', 'joy', 'courage'],
+  'confidence': ['power', 'magnetism', 'abundance'],
+  'sleep-prep': ['calm', 'healing', 'spirituality']
+};
+
 interface EnhancedActionsBarProps {
   selectedEgoState: string;
   selectedAction: any;
@@ -235,12 +367,12 @@ export default function EnhancedActionsBar({
 }: EnhancedActionsBarProps) {
   const { user } = useGameState();
   const [showFocusModal, setShowFocusModal] = useState(false);
-  const [currentSessionType, setCurrentSessionType] = useState<string>('');
+  const [currentAction, setCurrentAction] = useState<any>(null);
   const [customActions, setCustomActions] = useState<any[]>([]);
   const [editingAction, setEditingAction] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
 
-  const sessionTypes = [
+  const quickActions = [
     {
       id: 'stress-relief',
       name: 'Stress Relief',
@@ -278,40 +410,37 @@ export default function EnhancedActionsBar({
     }
   ];
 
-  const allActions = [...sessionTypes, ...customActions];
+  const allActions = [...quickActions, ...customActions];
 
   const handleActionClick = (action: any) => {
     if (action.isCustom) {
       // For custom actions, just select directly
       onActionSelect(action.id === selectedAction?.id ? null : action);
     } else {
-      // For session types, open focus modal
-      setCurrentSessionType(action.name);
+      // For built-in actions, open focus modal
+      setCurrentAction(action);
       setShowFocusModal(true);
     }
   };
 
   const handleFocusSelect = (focus: Focus) => {
-    const sessionWithFocus = {
-      id: `${currentSessionType.toLowerCase().replace(' ', '-')}-${focus.id}`,
-      name: `${currentSessionType}: ${focus.name}`,
+    const actionWithFocus = {
+      ...currentAction,
       focus: focus,
-      sessionType: currentSessionType,
-      orbColor: focus.orbColor,
-      scriptTheme: focus.scriptTheme,
-      aiSuggestion: focus.aiSuggestion
+      name: `${currentAction.name}: ${focus.name}`
     };
-    onActionSelect(sessionWithFocus);
+    onActionSelect(actionWithFocus);
     setShowFocusModal(false);
-    setCurrentSessionType('');
+    setCurrentAction(null);
   };
 
-  const getSessionFocuses = (sessionType: string): Focus[] => {
-    const sessionKey = sessionType.toLowerCase().replace(' ', '-') as keyof typeof SESSION_FOCUS_MAPPING;
-    return SESSION_FOCUS_MAPPING[sessionKey] || [];
+  const getActionFocuses = (actionId: string): Focus[] => {
+    const focusMap = ACTION_FOCUS_MAPPING[actionId as keyof typeof ACTION_FOCUS_MAPPING] || [];
+    return [...CORE_FOCUSES, ...ADVANCED_FOCUSES].filter(focus => 
+      focusMap.includes(focus.id)
+    );
   };
-  },
-  {
+
   const addCustomAction = () => {
     const newAction = {
       id: `custom-${Date.now()}`,
@@ -453,15 +582,15 @@ export default function EnhancedActionsBar({
       </div>
 
       {/* Focus Selection Modal */}
-      {showFocusModal && currentSessionType && (
+      {showFocusModal && currentAction && (
         <FocusModal
           isOpen={showFocusModal}
           onClose={() => {
             setShowFocusModal(false);
-            setCurrentSessionType('');
+            setCurrentAction(null);
           }}
-          sessionType={currentSessionType}
-          focuses={getSessionFocuses(currentSessionType)}
+          actionName={currentAction.name}
+          focuses={getActionFocuses(currentAction.id)}
           onSelectFocus={handleFocusSelect}
         />
       )}
