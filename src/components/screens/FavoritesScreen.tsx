@@ -99,21 +99,21 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   };
 
   return (
-    <div className="h-screen bg-black relative overflow-hidden flex flex-col">
+    <div className="h-full bg-black relative overflow-hidden flex flex-col">
       {/* Background gradient */}
       <div className="fixed inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-pink-950/20 via-black to-purple-950/20" />
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col">
+      <div className="relative z-10 h-full flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 pt-12 pb-4 px-6">
+        <div className="flex-shrink-0 pt-12 pb-3 px-6">
           <h1 className="text-white text-2xl font-light mb-2">Favorites</h1>
           <p className="text-white/60 text-sm">Your most effective sessions</p>
         </div>
 
         {/* Stats Overview */}
-        <div className="flex-shrink-0 px-6 mb-4">
+        <div className="flex-shrink-0 px-6 mb-3">
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center">
               <div className="text-teal-400 text-lg font-semibold">{user.level}</div>
@@ -131,7 +131,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
         </div>
 
         {/* Favorites List */}
-        <div className="flex-1 px-6 space-y-3 pb-6">
+        <div className="flex-1 px-6 space-y-3 pb-4 overflow-y-auto min-h-0">
           {mockFavorites.length > 0 ? (
             mockFavorites.map((session) => (
               <div
@@ -199,7 +199,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
               </div>
             ))
           ) : (
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <Heart size={48} className="text-white/20 mx-auto mb-4" />
                 <h3 className="text-white/60 text-lg font-medium mb-2">No favorites yet</h3>

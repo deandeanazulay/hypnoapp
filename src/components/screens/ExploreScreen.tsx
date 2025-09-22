@@ -35,28 +35,27 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   };
 
   return (
-    <div className="flex-1 bg-black relative overflow-hidden flex flex-col">
+    <div className="h-full bg-black relative overflow-hidden flex flex-col">
       {/* Background gradient */}
       <div className="fixed inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-950/20 via-black to-purple-950/20" />
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col justify-between">
+      <div className="relative z-10 h-full flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 flex flex-col justify-start items-start pt-12 pb-6 px-6">
+        <div className="flex-shrink-0 pt-12 pb-4 px-6">
           <h1 className="text-white text-2xl font-light mb-2">Explore Protocols</h1>
           <p className="text-white/60 text-sm">Discover hypnosis journeys and techniques</p>
         </div>
 
         {/* Filters */}
-        <div className="flex-shrink-0 flex flex-col justify-start items-stretch px-6 mb-6 space-y-4">
-          <div className="flex justify-start items-center space-x-4">
-            <div className="flex items-center justify-start space-x-2">
+        <div className="flex-shrink-0 px-6 mb-4">
+          <div className="flex space-x-2 mb-3">
               {['all', 'induction', 'deepener', 'complete'].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setSelectedFilter(filter as any)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center justify-center ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
                     selectedFilter === filter
                       ? 'bg-teal-500/20 text-teal-400 border border-teal-500/40'
                       : 'bg-white/10 text-white/60 border border-white/20 hover:bg-white/20'
@@ -65,15 +64,14 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                   {filter.charAt(0).toUpperCase() + filter.slice(1)}
                 </button>
               ))}
-            </div>
           </div>
 
-          <div className="flex justify-start items-center space-x-2">
+          <div className="flex space-x-2">
             {['all', 'beginner', 'intermediate', 'advanced'].map((difficulty) => (
               <button
                 key={difficulty}
                 onClick={() => setSelectedDifficulty(difficulty as any)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center justify-center ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
                   selectedDifficulty === difficulty
                     ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
                     : 'bg-white/10 text-white/60 border border-white/20 hover:bg-white/20'
@@ -86,7 +84,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
         </div>
 
         {/* Protocol List - Fixed height grid */}
-        <div className="flex-1 px-6 min-h-0">
+        <div className="flex-1 px-6 min-h-0 pb-4">
           <div className="h-full grid grid-rows-2 grid-flow-col auto-cols-[minmax(280px,1fr)] gap-3 overflow-x-auto overflow-y-hidden">
           {filteredProtocols.map((protocol) => (
             <div
@@ -143,7 +141,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
 
         {/* Empty State */}
         {filteredProtocols.length === 0 && (
-          <div className="flex-1 flex items-center justify-center px-6">
+          <div className="absolute inset-0 flex items-center justify-center px-6">
             <div className="flex flex-col items-center justify-center space-y-4">
               <Filter size={48} className="text-white/20 mx-auto mb-4" />
               <h3 className="text-white/60 text-lg font-medium mb-2">No protocols found</h3>

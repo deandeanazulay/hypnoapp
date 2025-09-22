@@ -104,27 +104,27 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
   const isValid = protocol.name && protocol.induction && protocol.deepener;
 
   return (
-    <div className="h-screen bg-black relative overflow-hidden flex flex-col">
+    <div className="h-full bg-black relative overflow-hidden flex flex-col">
       {/* Background gradient */}
       <div className="fixed inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-black to-teal-950/20" />
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col">
+      <div className="relative z-10 h-full flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 pt-12 pb-2 px-6">
+        <div className="flex-shrink-0 pt-12 pb-3 px-6">
           <h1 className="text-white text-2xl font-light mb-2">Create Journey</h1>
           <p className="text-white/60 text-sm">Build your custom hypnosis protocol</p>
         </div>
 
         {/* Form */}
-        <div className="flex-1 min-h-0 px-6 mb-2">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 h-full">
+        <div className="flex-1 min-h-0 px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 h-full max-h-full overflow-hidden">
           
             {/* Left Column */}
-            <div className="space-y-3">
+            <div className="space-y-2 overflow-y-auto">
               {/* Protocol Name */}
-              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10">
+              <div className="bg-white/5 backdrop-blur-md rounded-xl p-2 border border-white/10">
                 <label className="block text-white/80 text-sm font-medium mb-2">Protocol Name</label>
                 <input
                   type="text"
@@ -136,9 +136,9 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               </div>
 
               {/* Induction Selection */}
-              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10">
+              <div className="bg-white/5 backdrop-blur-md rounded-xl p-2 border border-white/10">
                 <label className="block text-white/80 text-sm font-medium mb-2">Induction Technique</label>
-                <div className="space-y-1">
+                <div className="space-y-1 max-h-32 overflow-y-auto">
                   {inductionOptions.slice(0, 3).map((option) => (
                     <button
                       key={option.id}
@@ -157,9 +157,9 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               </div>
 
               {/* Deepener Selection */}
-              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 pb-4">
+              <div className="bg-white/5 backdrop-blur-md rounded-xl p-2 border border-white/10">
                 <label className="block text-white/80 text-sm font-medium mb-2">Deepening Method</label>
-                <div className="space-y-1">
+                <div className="space-y-1 max-h-32 overflow-y-auto">
                   {deepenerOptions.slice(0, 3).map((option) => (
                     <button
                       key={option.id}
@@ -179,9 +179,9 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             </div>
 
             {/* Right Column */}
-            <div className="space-y-3">
+            <div className="space-y-2 overflow-y-auto">
               {/* Goals */}
-              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10">
+              <div className="bg-white/5 backdrop-blur-md rounded-xl p-2 border border-white/10">
                 <label className="block text-white/80 text-sm font-medium mb-2">Goals & Suggestions</label>
                 
                 <div className="flex space-x-2 mb-2">
@@ -217,7 +217,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               </div>
 
               {/* Metaphors */}
-              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10">
+              <div className="bg-white/5 backdrop-blur-md rounded-xl p-2 border border-white/10">
                 <label className="block text-white/80 text-sm font-medium mb-2">Metaphors & Imagery</label>
                 
                 <div className="flex space-x-2 mb-2">
@@ -253,7 +253,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               </div>
 
               {/* Duration */}
-              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10">
+              <div className="bg-white/5 backdrop-blur-md rounded-xl p-2 border border-white/10">
                 <label className="block text-white/80 text-sm font-medium mb-2">Duration (minutes)</label>
                 <input
                   type="range"
@@ -274,7 +274,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex-shrink-0 px-6 pt-2 pb-6">
+        <div className="flex-shrink-0 px-6 py-3">
           <div className="flex space-x-3">
             <button
               onClick={handleSave}
