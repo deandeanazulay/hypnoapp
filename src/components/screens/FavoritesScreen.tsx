@@ -134,7 +134,7 @@ const mockFavorites: FavoriteSession[] = [
     completedCount: 10,
     lastCompleted: new Date(Date.now() - 8 * 60 * 60 * 1000),
     rating: 4
-  }
+  },
   {
     id: '2',
     name: 'Mystic Deep Rest',
