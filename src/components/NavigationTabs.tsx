@@ -21,7 +21,7 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 w-full bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-3 z-50">
+    <nav className="w-full bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
       <div className="flex justify-between items-center space-around max-w-md mx-auto">
         {TABS.map((tab) => {
           const IconComponent = iconMap[tab.id];
