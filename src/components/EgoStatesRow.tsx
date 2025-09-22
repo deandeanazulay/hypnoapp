@@ -8,13 +8,7 @@ interface EgoStatesRowProps {
 
 export default function EgoStatesRow({ selectedEgoState, onEgoStateChange }: EgoStatesRowProps) {
   return (
-    <div className="px-4 py-3">
-      {/* Title */}
-      <div className="text-center mb-4">
-        <h2 className="text-white/80 text-sm font-medium tracking-wide">THE 9 EGO STATES</h2>
-        <p className="text-white/50 text-xs mt-1">Choose your inner guide</p>
-      </div>
-
+    <div className="px-4 py-2">
       {/* Ego States Grid - Responsive */}
       <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3 justify-items-center">
         {EGO_STATES.map((state) => (

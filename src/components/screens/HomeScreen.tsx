@@ -72,13 +72,8 @@ export default function HomeScreen({
       {/* Main Layout - Perfect vertical distribution */}
       <div className="relative z-50 flex-1 flex flex-col justify-between pb-20">
         
-        {/* Top Section - Header */}
-        <div className="flex-shrink-0 pt-12 pb-4 px-6">
-          {/* Header space reserved for future content */}
-        </div>
-
         {/* Ego States Row */}
-        <div className="flex-shrink-0 pb-4">
+        <div className="flex-shrink-0 pt-8 pb-2">
           <EgoStatesRow 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={onEgoStateChange}
@@ -86,7 +81,7 @@ export default function HomeScreen({
         </div>
 
         {/* Center Section - Orb (perfectly centered) */}
-        <div className="flex-1 flex items-center justify-center py-4">
+        <div className="flex-1 flex items-center justify-center py-2">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-7xl mx-auto px-4">
             {/* Left Column - Desktop only */}
             <div className="hidden lg:block">
