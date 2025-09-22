@@ -111,7 +111,7 @@ export default function EnhancedActionsBar({
             {allActions.map((action) => (
               <button
                 key={action.id}
-                onClick={() => onActionSelect(action)}
+                onClick={() => onActionSelect(action.id === selectedAction?.id ? null : action)}
                 className={`flex-shrink-0 w-[80px] bg-gradient-to-br ${action.color} border border-white/20 rounded-lg p-2 hover:scale-105 transition-all duration-200 relative group ${
                   selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
                 }`}

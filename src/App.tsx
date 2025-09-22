@@ -15,30 +15,25 @@ function App() {
   const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [selectedEgoState, setSelectedEgoState] = useState('guardian');
+  const [selectedAction, setSelectedAction] = useState<any>(null);
   const [sessionConfig, setSessionConfig] = useState<any>(null);
 
   const handleOrbTap = () => {
     // Start session with current ego state
     setSessionConfig({
       egoState: selectedEgoState,
-      action: null,
+      action: selectedAction, // Pass the selected action from HomeScreen
       type: 'unified'
     });
     setCurrentMode('session');
   };
 
   const handleActionSelect = (action: any) => {
-    // Start session with specific action + ego state
-    setSessionConfig({
-      egoState: selectedEgoState,
-      action: action,
-      type: 'unified'
-    });
-    setCurrentMode('session');
+    setSelectedAction(action);
   };
 
   const handleProtocolSelect = (protocol: any) => {
-    // Start session with specific protocol
+    // Start session with current ego state and any selected action
     setSessionConfig({
       egoState: selectedEgoState,
       protocol: protocol,
@@ -96,9 +91,10 @@ function App() {
             selectedEgoState={selectedEgoState}
             onEgoStateChange={setSelectedEgoState}
             onOrbTap={handleOrbTap}
-            onActionSelect={handleActionSelect}
             activeTab={activeTab}
             onTabChange={setActiveTab}
+            selectedAction={selectedAction}
+            onActionSelect={handleActionSelect}
           />
         );
       case 'explore':

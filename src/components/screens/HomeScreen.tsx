@@ -10,21 +10,22 @@ interface HomeScreenProps {
   selectedEgoState: string;
   onEgoStateChange: (egoState: string) => void;
   onOrbTap: () => void;
-  onActionSelect: (action: any) => void;
   activeTab: TabId;
   onTabChange: (tabId: TabId) => void;
+  selectedAction: any;
+  onActionSelect: (action: any) => void;
 }
 
 export default function HomeScreen({ 
   selectedEgoState, 
   onEgoStateChange, 
   onOrbTap, 
-  onActionSelect,
   activeTab,
-  onTabChange 
+  onTabChange,
+  selectedAction,
+  onActionSelect
 }: HomeScreenProps) {
   const { user } = useGameState();
-  const [selectedAction, setSelectedAction] = useState<any>(null);
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -53,12 +54,11 @@ export default function HomeScreen({
   };
 
   const handleActionSelect = (action: any) => {
-    setSelectedAction(action);
     onActionSelect(action);
   };
 
   const handleOrbTap = () => {
-    // Pass the selected action configuration to the session
+    // Start session with selected action (if any) and ego state
     onOrbTap();
   };
   const lastSessionText = getLastSessionText();
@@ -113,6 +113,9 @@ export default function HomeScreen({
                       {selectedAction.name} ready
                     </p>
                   )}
+                  <p className="text-white/40 text-xs mt-0.5">
+                    {selectedAction ? 'Tap orb to begin' : 'Select action & tap orb'}
+                  </p>
                 </div>
               </div>
             </div>
