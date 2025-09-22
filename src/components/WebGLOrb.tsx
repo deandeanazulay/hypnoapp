@@ -6,6 +6,8 @@ interface WebGLOrbProps {
   className?: string;
   breathPhase?: 'inhale' | 'hold' | 'exhale' | 'rest';
   size?: number;
+  egoState?: string;
+  selectedGoal?: any;
 }
 
 export default function WebGLOrb({ 
@@ -13,12 +15,42 @@ export default function WebGLOrb({
   afterglow = false, 
   className = '', 
   breathPhase = 'rest',
-  size 
+  size,
+  egoState = 'protector',
+  selectedGoal
 }: WebGLOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const [isPressed, setIsPressed] = useState(false);
 
+  // Get ego state colors
+  const getEgoStateColor = () => {
+    const colors = {
+      protector: { primary: [0.2, 0.8, 0.8], secondary: [0.1, 0.6, 0.6] }, // Teal
+      performer: { primary: [0.2, 0.7, 1.0], secondary: [0.1, 0.5, 0.8] }, // Cyan
+      nurturer: { primary: [1.0, 0.7, 0.2], secondary: [0.8, 0.5, 0.1] }, // Amber
+      sage: { primary: [1.0, 0.9, 0.2], secondary: [0.8, 0.7, 0.1] }, // Gold
+      explorer: { primary: [0.2, 0.8, 0.7], secondary: [0.1, 0.6, 0.5] } // Aqua
+    };
+    return colors[egoState as keyof typeof colors] || colors.protector;
+  };
+
+  // Get goal sigil/glyph
+  const getGoalSigil = () => {
+    if (!selectedGoal) return null;
+    
+    const sigils = {
+      stress: '◈', // Shield
+      focus: '◉', // Target
+      confidence: '★', // Star
+      sleep: '◐', // Moon
+      cravings: '◆', // Diamond
+      pain: '❅', // Snowflake
+      creative: '◈' // Lightbulb-like
+    };
+    
+    return sigils[selectedGoal.id as keyof typeof sigils] || '◉';
+  };
   // Breathing animation based on phase
   const getBreathScale = () => {
     switch (breathPhase) {
@@ -372,6 +404,9 @@ export default function WebGLOrb({
     };
   }, []);
 
+  const egoColors = getEgoStateColor();
+  const goalSigil = getGoalSigil();
+
   const handlePointerDown = () => {
     setIsPressed(true);
   };
@@ -398,7 +433,7 @@ export default function WebGLOrb({
             borderRadius: '50%',
             overflow: 'hidden',
             background: 'rgba(0,0,0,0.2)',
-            filter: afterglow ? 'brightness(1.2) saturate(1.1)' : 'none',
+            filter: afterglow ? 'brightness(1.2) saturate(1.1)' : `hue-rotate(${egoState === 'nurturer' ? '30deg' : egoState === 'sage' ? '60deg' : egoState === 'performer' ? '-30deg' : '0deg'})`,
             transform: `scale(${getBreathScale()})`,
             transition: 'transform 4s ease-in-out',
             aspectRatio: '1 / 1'
@@ -414,9 +449,29 @@ export default function WebGLOrb({
             style={{ display: 'block' }}
           />
           
+          {/* Goal Sigil Overlay */}
+          {goalSigil && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div 
+                className="text-white/30 text-4xl font-light"
+                style={{
+                  textShadow: `0 0 20px rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, 0.5)`,
+                  filter: 'blur(0.5px)'
+                }}
+              >
+                {goalSigil}
+              </div>
+            </div>
+          )}
+          
           {/* Fallback CSS orb if WebGL fails */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-48 h-48 rounded-full bg-gradient-to-br from-teal-400/60 via-blue-500/40 to-orange-400/60 animate-pulse" />
+            <div 
+              className="w-48 h-48 rounded-full animate-pulse"
+              style={{
+                background: `radial-gradient(circle, rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, 0.6) 0%, rgba(${egoColors.secondary[0] * 255}, ${egoColors.secondary[1] * 255}, ${egoColors.secondary[2] * 255}, 0.4) 100%)`
+              }}
+            />
           </div>
         </div>
         

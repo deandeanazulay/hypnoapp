@@ -11,6 +11,22 @@ interface HomePageProps {
 
 export default function HomePage({ onOrbTap }: HomePageProps) {
   const { user } = useGameState();
+  const [selectedEgoState, setSelectedEgoState] = React.useState('protector');
+  const [selectedGoal, setSelectedGoal] = React.useState(null);
+  const [selectedMethod, setSelectedMethod] = React.useState(null);
+  const [selectedMode, setSelectedMode] = React.useState(null);
+
+  // Get orb color based on ego state
+  const getOrbColor = () => {
+    const colors = {
+      protector: 'teal',
+      performer: 'cyan', 
+      nurturer: 'amber',
+      sage: 'yellow',
+      explorer: 'cyan'
+    };
+    return colors[selectedEgoState as keyof typeof colors] || 'teal';
+  };
 
   return (
     <div className="h-screen bg-black relative overflow-hidden flex flex-col z-50">
@@ -27,7 +43,10 @@ export default function HomePage({ onOrbTap }: HomePageProps) {
         
         {/* Top Section - Stories */}
         <div className="flex-shrink-0 pt-2 pb-1">
-          <StoriesRow />
+          <StoriesRow 
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+          />
         </div>
 
         {/* Center Section - Orb (perfectly centered) */}
@@ -43,6 +62,8 @@ export default function HomePage({ onOrbTap }: HomePageProps) {
               <WebGLOrb 
                 onTap={onOrbTap}
                 afterglow={user.lastSessionTime !== null}
+                egoState={selectedEgoState}
+                selectedGoal={selectedGoal}
               />
             </div>
             
@@ -55,7 +76,14 @@ export default function HomePage({ onOrbTap }: HomePageProps) {
 
         {/* Bottom Section - Actions Bar */}
         <div className="flex-shrink-0 pb-1">
-          <ActionsBar />
+          <ActionsBar 
+            selectedGoal={selectedGoal}
+            selectedMethod={selectedMethod}
+            selectedMode={selectedMode}
+            onGoalChange={setSelectedGoal}
+            onMethodChange={setSelectedMethod}
+            onModeChange={setSelectedMode}
+          />
         </div>
       </div>
 
