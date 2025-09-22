@@ -499,6 +499,7 @@ export default function WebGLOrb({
           </div>
         </div>
     </div>
+    </div>
   );
 }
   
