@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import EgoStatesRow from '../EgoStatesRow';
-import EnhancedActionsBar from '../EnhancedActionsBar';
-import EnhancedWebGLOrb from '../EnhancedWebGLOrb';
+import ActionsBar from '../ActionsBar';
+import WebGLOrb from '../WebGLOrb';
 import { useGameState } from '../GameStateManager';
 import { Clock, Zap, Target } from 'lucide-react';
 import { TabId } from '../../types/Navigation';
@@ -95,12 +95,11 @@ export default function HomeScreen({
             {/* Center Column - Orb */}
             <div className="flex items-center justify-center">
               <div className="flex flex-col items-center">
-                <EnhancedWebGLOrb
+                <WebGLOrb
                 onTap={onOrbTap}
                 afterglow={user.lastSessionDate !== null}
                 egoState={selectedEgoState}
                 size={window.innerWidth < 768 ? Math.min(window.innerWidth * 0.4, 180) : 220}
-                enhanced={true}
               />
                 
                 {/* Session configuration display - moved closer to orb */}
@@ -132,7 +131,7 @@ export default function HomeScreen({
           <div className="text-center mb-1">
             <p className="text-white/40 text-xs">Choose session type</p>
           </div>
-          <EnhancedActionsBar 
+          <ActionsBar 
             selectedEgoState={selectedEgoState}
             selectedAction={selectedAction}
             onActionSelect={handleActionSelect}

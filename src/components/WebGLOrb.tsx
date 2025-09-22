@@ -1,7 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { EGO_STATES } from '../types/EgoState';
 
-interface WebGLOrbProps {
+export interface WebGLOrbRef {
+  updateState: (state: any) => void;
+}
+
+export interface WebGLOrbProps {
   onTap: () => void;
   afterglow?: boolean;
   className?: string;
@@ -11,7 +15,7 @@ interface WebGLOrbProps {
   selectedGoal?: any;
 }
 
-export default function WebGLOrb({ 
+const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({ 
   onTap, 
   afterglow = false, 
   className = '', 
@@ -19,7 +23,13 @@ export default function WebGLOrb({
   size,
   egoState = 'protector',
   selectedGoal
-}: WebGLOrbProps) {
+}, ref) => {
+  
+  React.useImperativeHandle(ref, () => ({
+    updateState: (state: any) => {
+      // Handle state updates
+    }
+  }));
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const [isPressed, setIsPressed] = useState(false);
@@ -497,5 +507,9 @@ export default function WebGLOrb({
     </div>
     </div>
   );
-}
+});
+
+WebGLOrb.displayName = 'WebGLOrb';
+
+export default WebGLOrb;
   
