@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import HomeScreen from './components/screens/HomeScreen';
 import ExploreScreen from './components/screens/ExploreScreen';
-        />
-        );
+import CreateScreen from './components/screens/CreateScreen';
+import FavoritesScreen from './components/screens/FavoritesScreen';
 import ProfileScreen from './components/screens/ProfileScreen';
 import NavigationTabs from './components/NavigationTabs';
 import UnifiedSessionWorld from './components/UnifiedSessionWorld';
