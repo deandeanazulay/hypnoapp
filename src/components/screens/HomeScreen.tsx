@@ -1,108 +1,154 @@
-import React from 'react';
-import StoriesRow from '../StoriesRow';
-import WebGLOrb from '../WebGLOrb';
-import EnhancedActionsBar from '../EnhancedActionsBar';
-import NavigationTabs from '../NavigationTabs';
-import { useGameState } from '../GameStateManager';
+import React, { useState } from 'react';
+import HomeScreen from './components/screens/HomeScreen';
+import ExploreScreen from './components/screens/ExploreScreen';
+import CreateScreen from './components/screens/CreateScreen';
+import FavoritesScreen from './components/screens/FavoritesScreen';
+import ProfileScreen from './components/screens/ProfileScreen';
+import NavigationTabs from './components/NavigationTabs';
+import UnifiedSessionWorld from './components/UnifiedSessionWorld';
+import { GameStateProvider } from './components/GameStateManager';
+import { TabId } from './types/Navigation';
 
-interface HomeScreenProps {
-  selectedEgoState: string;
-  onEgoStateChange: (egoStateId: string) => void;
-  onOrbTap: () => void;
-  onActionSelect: (action: any) => void;
-  activeTab: string;
-  onTabChange: (tabId: string) => void;
-}
+type AppMode = 'navigation' | 'session';
 
-export default function HomeScreen({ 
-  selectedEgoState, 
-  onEgoStateChange, 
-  onOrbTap, 
-  onActionSelect,
-  activeTab,
-  onTabChange
-}: HomeScreenProps) {
-  const { user } = useGameState();
-  const [selectedAction, setSelectedAction] = React.useState<any>(null);
-
-  const { canAccess } = useGameState();
+function App() {
+  const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
+  const [activeTab, setActiveTab] = useState<TabId>('home');
+  const [selectedEgoState, setSelectedEgoState] = useState('guardian');
+  const [sessionConfig, setSessionConfig] = useState<any>(null);
 
   const handleOrbTap = () => {
-    // Check if user can access sessions
-    if (!canAccess('daily_session')) {
-      // Show upgrade prompt or token spend option
-      alert('Daily session limit reached. Upgrade to Pro for unlimited sessions!');
-      return;
-    }
-    // Pass selected action to the session
-    if (selectedAction) {
-      onActionSelect(selectedAction);
-    } else {
-      onOrbTap();
-    }
+    // Start session with current ego state
+    setSessionConfig({
+      egoState: selectedEgoState,
+      action: null,
+      type: 'unified'
+    });
+    setCurrentMode('session');
   };
 
   const handleActionSelect = (action: any) => {
-    setSelectedAction(action);
-    // Visual feedback that action is selected
+    // Start session with specific action + ego state
+    setSessionConfig({
+      egoState: selectedEgoState,
+      action: action,
+      type: 'unified'
+    });
+    setCurrentMode('session');
   };
 
-  return (
-    <div className="h-screen bg-black relative overflow-hidden flex flex-col">
-      {/* Background gradient */}
-      <div className="fixed inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-teal-950/20 via-black to-purple-950/20" />
-        {user.lastSessionTime && (
-          <div className="absolute inset-0 bg-gradient-to-br from-teal-950/10 via-black to-orange-950/10" />
-        )}
-      </div>
+  const handleProtocolSelect = (protocol: any) => {
+    // Start session with specific protocol
+    setSessionConfig({
+      egoState: selectedEgoState,
+      protocol: protocol,
+      type: 'protocol'
+    });
+    setCurrentMode('session');
+  };
 
-      {/* Main Layout - 4 sections */}
-      <div className="relative z-10 flex-1 flex flex-col pb-20">
-        
-        {/* 1. States Row */}
-        <div className="flex-shrink-0 pt-2 pb-1">
-          <StoriesRow 
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={onEgoStateChange}
-          />
-        </div>
+  const handleCustomProtocolCreate = (protocol: any) => {
+    // Save and optionally start custom protocol
+    console.log('Custom protocol created:', protocol);
+    // In real app, save to localStorage or API
+  };
 
-        {/* 2. Orb Component (with built-in text) */}
-        <div className="flex-1 flex justify-center items-center py-2 relative">
-          <WebGLOrb 
-            onTap={handleOrbTap}
-            egoState={selectedEgoState}
-            afterglow={user.lastSessionTime !== null}
-            size={Math.min(window.innerWidth * 0.5, 200)}
-            selectedGoal={selectedAction}
-          />
-        </div>
+  const handleSessionComplete = () => {
+    setCurrentMode('navigation');
+    setSessionConfig(null);
+  };
 
-        {/* 3. Actions Bar */}
-        <div className="flex-shrink-0 px-4 pb-2 pt-4 min-h-[120px] flex items-end">
-          <EnhancedActionsBar 
-            selectedEgoState={selectedEgoState}
-            selectedAction={selectedAction}
-            onActionSelect={handleActionSelect}
-          />
-        </div>
-      </div>
+  const handleCancel = () => {
+    setCurrentMode('navigation');
+    setSessionConfig(null);
+  };
 
-      {/* 4. Bottom Tab Bar */}
-      <div className="flex-shrink-0">
-        <NavigationTabs
-          activeTab={activeTab}
-          onTabChange={onTabChange}
+  const handleFavoriteSessionSelect = (session: any) => {
+    // Start favorited session
+    setSessionConfig({
+      egoState: session.egoState,
+      action: session.action,
+      type: 'favorite',
+      session: session
+    });
+    setCurrentMode('session');
+  };
+
+  // Session mode - full screen wizard
+  if (currentMode === 'session') {
+    return (
+      <GameStateProvider>
+        <UnifiedSessionWorld 
+          onComplete={handleSessionComplete}
+          onCancel={handleCancel}
+          sessionConfig={sessionConfig}
         />
-      </div>
+      </GameStateProvider>
+    );
+  }
 
-      {/* Achievement notifications - positioned to not interfere */}
-      {user.achievements.length > 0 && (
-        <div className="absolute top-16 right-4 flex justify-center items-center bg-gradient-to-r from-amber-400 to-orange-400 text-black px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-20">
-          {user.achievements[user.achievements.length - 1]}
+  // Render current tab content
+  const renderCurrentTab = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <HomeScreen
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+            onOrbTap={handleOrbTap}
+            onActionSelect={handleActionSelect}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        );
+      case 'explore':
+        return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
+      case 'create':
+        return <CreateScreen onProtocolCreate={handleCustomProtocolCreate} />;
+      case 'favorites':
+        return <FavoritesScreen onSessionSelect={handleFavoriteSessionSelect} />;
+      case 'profile':
+        return (
+          <ProfileScreen 
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+          />
+        );
+      default:
+        return (
+          <HomeScreen
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+            onOrbTap={handleOrbTap}
+            onActionSelect={handleActionSelect}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        );
+    }
+  };
+
+  // Navigation mode - tabbed interface
+  return (
+    <GameStateProvider>
+      <div className="relative h-screen w-screen overflow-hidden bg-black">
+        <div className="flex h-full flex-col">
+          {/* Content region */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {renderCurrentTab()}
+          </div>
+          
+          {/* Bottom Navigation */}
+          <div className="flex-shrink-0 pb-[env(safe-area-inset-bottom)]">
+            <NavigationTabs
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </GameStateProvider>
   );
 }
+
+export default App;
