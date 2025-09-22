@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Play, Clock, Trash2, Star } from 'lucide-react';
+import { Heart, Play, Clock, Trash2, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 
 interface FavoriteSession {
@@ -163,6 +163,26 @@ interface FavoritesScreenProps {
 
 export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProps) {
   const { user } = useGameState();
+  const [currentPage, setCurrentPage] = React.useState(0);
+  const itemsPerPage = 12; // 3 columns × 4 rows
+  
+  const totalPages = Math.ceil(mockFavorites.length / itemsPerPage);
+  const currentPageFavorites = mockFavorites.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
+  
+  const goToNextPage = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  
+  const goToPreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   const formatLastCompleted = (date: Date) => {
     const now = new Date();
@@ -241,73 +261,108 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
         </div>
 
         {/* Favorites List */}
-        <div className="flex-1 px-4 space-y-2 pb-2 overflow-y-auto min-h-0">
+        <div className="flex-1 px-4 pb-2 min-h-0 flex flex-col">
           {mockFavorites.length > 0 ? (
-            mockFavorites.map((session) => (
-              <div
-                key={session.id}
-                className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-lg p-2 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02]`}
-              >
-                <div className="flex items-start justify-between mb-1">
-                  <div className="flex items-start space-x-2">
-                    <div className="w-6 h-6 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                      <span className="text-xs">{getEgoStateIcon(session.egoState)}</span>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="text-white font-semibold text-sm mb-1">{session.name}</h3>
-                      
-                      <div className="flex items-center space-x-3 text-white/50 text-xs mb-1">
-                        <div className="flex items-center space-x-1">
-                          <Clock size={10} />
-                          <span>{session.duration} min</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Heart size={10} />
-                          <span>{session.completedCount} times</span>
-                        </div>
+            <>
+              {/* 3x4 Grid */}
+              <div className="grid grid-cols-3 grid-rows-4 gap-2 flex-1 min-h-0">
+                {currentPageFavorites.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-lg p-2 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] flex flex-col justify-between min-h-0`}
+                  >
+                    {/* Header with ego state and buttons */}
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="w-5 h-5 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                        <span className="text-xs">{getEgoStateIcon(session.egoState)}</span>
                       </div>
-                      
                       <div className="flex items-center space-x-1">
-                        <div className="flex items-center space-x-0.5">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              size={10}
-                              className={star <= session.rating ? 'text-yellow-400 fill-current' : 'text-white/20'}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-white/40 text-xs ml-1">
-                          Last: {formatLastCompleted(session.lastCompleted)}
-                        </span>
+                        <button
+                          onClick={() => onSessionSelect(session)}
+                          className="w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300"
+                        >
+                          <Play size={8} className="text-white ml-0.5" />
+                        </button>
+                        <button className="w-5 h-5 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300">
+                          <Trash2 size={8} className="text-red-400" />
+                        </button>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center space-x-1">
-                    <button
-                      onClick={() => onSessionSelect(session)}
-                      className="w-6 h-6 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-105"
-                    >
-                      <Play size={10} className="text-white ml-0.5" />
-                    </button>
+                    {/* Title */}
+                    <h3 className="text-white font-semibold text-xs mb-1 line-clamp-2 flex-1">{session.name}</h3>
                     
-                    <button className="w-6 h-6 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-105">
-                      <Trash2 size={10} className="text-red-400" />
-                    </button>
+                    {/* Stats */}
+                    <div className="flex items-center justify-between text-white/50 text-xs mb-1">
+                      <div className="flex items-center space-x-1">
+                        <Clock size={8} />
+                        <span>{session.duration}m</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Heart size={8} />
+                        <span>{session.completedCount}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Rating and last completed */}
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center space-x-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            size={8}
+                            className={star <= session.rating ? 'text-yellow-400 fill-current' : 'text-white/20'}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-white/40 text-xs">
+                        {formatLastCompleted(session.lastCompleted)}
+                      </span>
+                    {/* Progress Bar */}
+                    <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((session.completedCount / 20) * 100, 100)}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden mt-1">
-                  <div 
-                    className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min((session.completedCount / 20) * 100, 100)}%` }}
-                  />
-                </div>
+                ))}
               </div>
-            ))
+                    </div>
+              {/* Navigation arrows and page dots */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center space-x-4 mt-2">
+                  <button
+                    onClick={goToPreviousPage}
+                    disabled={currentPage === 0}
+                    className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft size={16} className="text-white" />
+                  </button>
+                  
+                  {/* Page dots */}
+                  <div className="flex space-x-1">
+                    {Array.from({ length: totalPages }).map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentPage(index)}
+                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                          index === currentPage ? 'bg-teal-400' : 'bg-white/30'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  
+                  <button
+                    onClick={goToNextPage}
+                    disabled={currentPage === totalPages - 1}
+                    className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight size={16} className="text-white" />
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
