@@ -66,8 +66,8 @@ export default function HomeScreen({
 
         {/* Center Section - Orb (perfectly centered between states and action bar) */}
         <div className="flex-1 flex justify-center items-center min-h-0">
-          <div className="flex flex-col justify-center items-center space-y-6">
-            {/* Main WebGL Orb - responsive sizing */}
+          <div className="flex justify-center items-center space-x-8">
+            {/* Main WebGL Orb */}
             <WebGLOrb 
               onTap={handleOrbTap}
               egoState={selectedEgoState}
@@ -75,23 +75,26 @@ export default function HomeScreen({
               size={Math.min(window.innerWidth * 0.6, 240)}
               selectedGoal={selectedAction}
             />
-          </div>
-          
-          {/* Tap to begin text */}
-          <div className="flex justify-center items-center">
-            {canAccess('daily_session') ? (
-              <p className="text-white/60 text-sm text-center">
-                Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
-                {selectedAction && (
-                  <span className="text-teal-400"> • {selectedAction.name}</span>
-                )}
-              </p>
-            ) : (
-              <div className="flex flex-col items-center justify-center space-y-1">
-                <p className="text-orange-400 text-sm">Daily limit reached</p>
-                <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
-              </div>
+            
+            {/* Tap to begin text - positioned to the right */}
+            <div className="flex flex-col justify-center items-start">
+              {canAccess('daily_session') ? (
+                <div className="text-white/60 text-sm">
+                  <p className="mb-1">Tap to begin with</p>
+                  <p className="text-teal-400 font-medium">
+                    {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
+                  </p>
+                  {selectedAction && (
+                    <p className="text-orange-400 text-xs mt-1">• {selectedAction.name}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-start space-y-1">
+                  <p className="text-orange-400 text-sm">Daily limit reached</p>
+                  <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
+                </div>
               )}
+            </div>
           </div>
         </div>
 
