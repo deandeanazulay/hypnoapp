@@ -103,14 +103,16 @@ export default function HomeScreen({
                 enhanced={true}
               />
                 
-                {/* Session configuration display */}
-                <div className="mt-4 text-center">
-                  <p className="text-white/60 text-xs mb-1">
-                    {selectedAction ? `${selectedAction.name} session ready` : 'Tap to begin'}
-                  </p>
-                  <p className="text-teal-400 text-xs">
+                {/* Session configuration display - moved closer to orb */}
+                <div className="mt-2 text-center">
+                  <p className="text-teal-400 text-xs font-medium">
                     {selectedEgoState.charAt(0).toUpperCase() + selectedEgoState.slice(1)} Mode
                   </p>
+                  {selectedAction && (
+                    <p className="text-orange-400 text-xs mt-0.5">
+                      {selectedAction.name} ready
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -123,8 +125,8 @@ export default function HomeScreen({
         </div>
 
         {/* Bottom Section - Actions Bar */}
-        <div className="flex-shrink-0 pb-1 sm:pb-2">
-          <div className="text-center mb-2">
+        <div className="flex-shrink-0 pb-2 sm:pb-3">
+          <div className="text-center mb-3">
             <p className="text-white/40 text-xs">Choose your session type</p>
           </div>
           <EnhancedActionsBar 

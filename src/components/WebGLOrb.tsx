@@ -487,17 +487,7 @@ export default function WebGLOrb({
         </div>
         
         {/* Text below orb - always rendered */}
-        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 w-max z-10">
-          <div className="flex flex-col items-center text-center space-y-1">
-            <p className="text-white/80 text-xs mb-1">Tap to begin with</p>
-            <p className="text-teal-400 font-medium text-xs">
-              {EGO_STATES.find(s => s.id === egoState)?.name} Mode
-            </p>
-            {selectedGoal && (
-              <p className="text-orange-400 text-xs mt-0.5">• {selectedGoal.name}</p>
-            )}
-          </div>
-        </div>
+        {/* Removed duplicate text - handled by parent component */}
     </div>
     </div>
   );
