@@ -2,21 +2,25 @@ import React from 'react';
 import StoriesRow from '../StoriesRow';
 import WebGLOrb from '../WebGLOrb';
 import EnhancedActionsBar from '../EnhancedActionsBar';
+import NavigationTabs from '../NavigationTabs';
 import { useGameState } from '../GameStateManager';
-import { EGO_STATES } from '../../types/EgoState';
 
 interface HomeScreenProps {
   selectedEgoState: string;
   onEgoStateChange: (egoStateId: string) => void;
   onOrbTap: () => void;
   onActionSelect: (action: any) => void;
+  activeTab: string;
+  onTabChange: (tabId: string) => void;
 }
 
 export default function HomeScreen({ 
   selectedEgoState, 
   onEgoStateChange, 
   onOrbTap, 
-  onActionSelect 
+  onActionSelect,
+  activeTab,
+  onTabChange
 }: HomeScreenProps) {
   const { user } = useGameState();
   const [selectedAction, setSelectedAction] = React.useState<any>(null);
@@ -44,7 +48,7 @@ export default function HomeScreen({
   };
 
   return (
-    <div className="flex-1 bg-black relative overflow-hidden flex flex-col">
+    <div className="h-screen bg-black relative overflow-hidden flex flex-col">
       {/* Background gradient */}
       <div className="fixed inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-950/20 via-black to-purple-950/20" />
@@ -53,66 +57,44 @@ export default function HomeScreen({
         )}
       </div>
 
-      {/* Main Layout - Perfect flexbox distribution */}
-      <div className="relative z-10 flex-1 flex flex-col justify-between min-h-0">
+      {/* Main Layout - 4 sections */}
+      <div className="relative z-10 flex-1 flex flex-col pb-20">
         
-        {/* Top Section - Ego States */}
-        <div className="flex-shrink-0 flex justify-center items-center pt-4 pb-2">
+        {/* 1. States Row */}
+        <div className="flex-shrink-0 pt-4 pb-2">
           <StoriesRow 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={onEgoStateChange}
           />
         </div>
 
-        {/* Center Section - Orb (perfectly centered between states and action bar) */}
-        <div className="flex-1 flex justify-center items-center min-h-0">
-          <div className="flex flex-col justify-center items-center space-y-6">
-            {/* Main WebGL Orb - centered */}
-            <WebGLOrb 
-              onTap={handleOrbTap}
-              egoState={selectedEgoState}
-              afterglow={user.lastSessionTime !== null}
-              size={Math.min(window.innerWidth * 0.6, 240)}
-              selectedGoal={selectedAction}
-            />
-            
-            {/* Tap to begin text - positioned below orb */}
-            <div className="flex flex-col justify-center items-center text-center space-y-1">
-              {canAccess('daily_session') ? (
-                <div className="text-white/80 text-sm">
-                  <p className="mb-1">Tap to begin with</p>
-                  <p className="text-teal-400 font-medium">
-                    {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
-                  </p>
-                  {selectedAction && (
-                    <p className="text-orange-400 text-xs mt-1">• {selectedAction.name}</p>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center space-y-1">
-                  <p className="text-orange-400 text-sm font-medium">Daily limit reached</p>
-                  <p className="text-white/60 text-xs">Upgrade to Pro for unlimited sessions</p>
-                </div>
-              )}
-            </div>
-          </div>
+        {/* 2. Orb Component (with built-in text) */}
+        <div className="flex-1 flex justify-center items-center py-8">
+          <WebGLOrb 
+            onTap={handleOrbTap}
+            egoState={selectedEgoState}
+            afterglow={user.lastSessionTime !== null}
+            size={Math.min(window.innerWidth * 0.6, 240)}
+            selectedGoal={selectedAction}
+          />
         </div>
 
-        {/* Bottom spacer to balance the layout */}
-        <div className="flex-shrink-0 h-32">
-          {/* This creates space for the fixed action bar */}
-        </div>
-      </div>
-
-      {/* Fixed Action Bar - Above bottom navigation */}
-      <div className="fixed bottom-20 left-0 right-0 z-20">
-        <div className="flex justify-center items-center px-4">
+        {/* 3. Actions Bar */}
+        <div className="flex-shrink-0 px-4 pb-4">
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}
             selectedAction={selectedAction}
             onActionSelect={handleActionSelect}
           />
         </div>
+      </div>
+
+      {/* 4. Bottom Tab Bar */}
+      <div className="flex-shrink-0">
+        <NavigationTabs
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+        />
       </div>
 
       {/* Achievement notifications - positioned to not interfere */}

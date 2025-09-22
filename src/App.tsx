@@ -99,6 +99,8 @@ function App() {
               onEgoStateChange={setSelectedEgoState}
               onOrbTap={handleOrbTap}
               onActionSelect={handleActionSelect}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
             />
           )}
           
@@ -128,13 +130,6 @@ function App() {
           )}
         </div>
 
-        {/* Bottom Navigation */}
-        <div className="flex-shrink-0">
-          <NavigationTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        </div>
       </div>
     </GameStateProvider>
   );

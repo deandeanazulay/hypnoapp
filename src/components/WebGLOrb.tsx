@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { EGO_STATES } from '../types/EgoState';
 
 interface WebGLOrbProps {
   onTap: () => void;
@@ -485,7 +486,18 @@ export default function WebGLOrb({
           </div>
         </div>
         
-      </div>
+        {/* Text below orb - always rendered */}
+        <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 w-max">
+          <div className="flex flex-col items-center text-center space-y-1">
+            <p className="text-white/80 text-sm mb-1">Tap to begin with</p>
+            <p className="text-teal-400 font-medium text-sm">
+              {EGO_STATES.find(s => s.id === egoState)?.name} Mode
+            </p>
+            {selectedGoal && (
+              <p className="text-orange-400 text-xs mt-1">• {selectedGoal.name}</p>
+            )}
+          </div>
+        </div>
     </div>
   );
 }
