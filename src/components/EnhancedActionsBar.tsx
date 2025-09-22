@@ -88,7 +88,7 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
           
           {/* Compact Level */}
           <div className="flex items-center space-x-2">
-            <div className="text-teal-400 text-xs font-medium">L{user.level}</div>
+            <div className="text-teal-400 text-xs font-medium">lvl.{user.level}</div>
             <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
