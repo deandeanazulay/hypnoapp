@@ -131,20 +131,18 @@ function App() {
   // Navigation mode - tabbed interface
   return (
     <GameStateProvider>
-      <div className="relative h-screen w-screen overflow-hidden bg-black">
+      <div className="h-screen w-screen bg-black flex flex-col">
+        {/* Main Body Content */}
         <div className="flex h-full flex-col">
-          {/* Content region */}
-          <div className="flex-1 min-h-0 overflow-hidden pb-20">
-            {renderCurrentTab()}
-          </div>
-          
-          {/* Bottom Navigation */}
-          <div className="flex-shrink-0 fixed bottom-0 left-0 right-0 z-50">
-            <NavigationTabs
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
-          </div>
+          {renderCurrentTab()}
+        </div>
+        
+        {/* Bottom Navigation Tabs */}
+        <div className="flex-shrink-0">
+          <NavigationTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
         </div>
       </div>
     </GameStateProvider>

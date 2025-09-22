@@ -74,7 +74,7 @@ export default function HomeScreen({
       </div>
 
       {/* Main Layout - Perfect vertical distribution */}
-      <div className="relative z-50 flex-1 flex flex-col justify-between pb-4">
+      <div className="relative z-10 flex-1 flex flex-col justify-between">
         
         {/* Ego States Row */}
         <div className="flex-shrink-0 pt-2 sm:pt-4 pb-1">
