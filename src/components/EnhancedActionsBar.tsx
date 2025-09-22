@@ -112,7 +112,7 @@ export default function EnhancedActionsBar({
               <button
                 key={action.id}
                 onClick={() => onActionSelect(action)}
-                className={`flex-shrink-0 w-[70px] sm:w-[90px] bg-gradient-to-br ${action.color} border border-white/20 rounded-xl p-1.5 sm:p-2 hover:scale-105 transition-all duration-200 relative group ${
+                className={`flex-shrink-0 w-[100px] sm:w-[130px] bg-gradient-to-br ${action.color} border border-white/20 rounded-xl p-2 sm:p-3 hover:scale-105 transition-all duration-200 relative group ${
                   selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
                 }`}
               >
@@ -140,12 +140,12 @@ export default function EnhancedActionsBar({
                   </div>
                 )}
                 
-                <div className="flex flex-col items-center space-y-1 sm:space-y-1.5">
+                <div className="flex flex-col items-center space-y-1 sm:space-y-2">
                   <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                     {action.icon}
                   </div>
                   <div className="text-center">
-                    <div className="text-white font-medium text-xs leading-tight w-full">
+                    <div className="text-white font-medium text-xs leading-tight w-full mb-1">
                       {editingAction === action.id ? (
                         <input
                           type="text"
@@ -161,7 +161,7 @@ export default function EnhancedActionsBar({
                         <div className="truncate text-center">{action.name}</div>
                       )}
                     </div>
-                    <div className="text-white/60 text-xs mt-1 truncate hidden sm:block">
+                    <div className="text-white/70 text-xs leading-tight line-clamp-2 hidden sm:block">
                       {action.description}
                     </div>
                   </div>
@@ -172,9 +172,9 @@ export default function EnhancedActionsBar({
             {/* Add New Action Button */}
             <button
               onClick={addCustomAction}
-              className="flex-shrink-0 w-[70px] sm:w-[90px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-xl p-1.5 sm:p-2 hover:scale-105 transition-all duration-200 hover:border-white/50"
+              className="flex-shrink-0 w-[100px] sm:w-[130px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-xl p-2 sm:p-3 hover:scale-105 transition-all duration-200 hover:border-white/50"
             >
-              <div className="flex flex-col items-center space-y-1 sm:space-y-1.5">
+              <div className="flex flex-col items-center space-y-1 sm:space-y-2">
                 <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                   <Plus size={12} className="text-white/60" />
                 </div>
