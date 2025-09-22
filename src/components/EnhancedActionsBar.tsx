@@ -110,8 +110,8 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-2 mb-3">
+        {/* Action Buttons - Mobile Optimized */}
+        <div className="space-y-1.5 mb-2">
           {displayActions.map((action) => {
             const isRecommended = action.egoStateBonus?.includes(selectedEgoState);
             
@@ -119,30 +119,29 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
               <button
                 key={action.id}
                 onClick={() => onActionSelect(action)}
-                className={`w-full p-3 rounded-xl bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] ${
+                className={`w-full p-2.5 rounded-lg bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] ${
                   isRecommended 
                     ? 'border-white/30 ring-1 ring-teal-400/20' 
                     : 'border-white/10 hover:border-white/20'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-6 h-6 rounded-md bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                       {action.icon}
                     </div>
                     <div className="text-left">
                       <div className="flex items-center space-x-2">
                         <h4 className="text-white font-medium text-sm">{action.name}</h4>
                         {isRecommended && (
-                          <span className="px-1.5 py-0.5 bg-teal-400/20 text-teal-400 text-xs rounded-full border border-teal-400/30">
+                          <span className="px-1 py-0.5 bg-teal-400/20 text-teal-400 text-xs rounded-full border border-teal-400/30">
                             ✨
                           </span>
                         )}
                       </div>
-                      <p className="text-white/70 text-xs">{action.description}</p>
                     </div>
                   </div>
-                  <div className="text-white/50 text-xs">
+                  <div className="text-white/60 text-xs font-medium">
                     {action.duration}m
                   </div>
                 </div>
@@ -155,26 +154,26 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
         {!showAllActions && recommendedActions.length < ACTIONS.length && (
           <button
             onClick={() => setShowAllActions(true)}
-            className="w-full py-2 text-white/60 hover:text-white/80 text-sm flex items-center justify-center space-x-1 transition-colors"
+            className="w-full py-1.5 text-white/60 hover:text-white/80 text-xs flex items-center justify-center space-x-1 transition-colors"
           >
             <span>Show all actions</span>
-            <ChevronDown size={14} />
+            <ChevronDown size={12} />
           </button>
         )}
         
         {showAllActions && (
           <button
             onClick={() => setShowAllActions(false)}
-            className="w-full py-2 text-white/60 hover:text-white/80 text-sm flex items-center justify-center space-x-1 transition-colors"
+            className="w-full py-1.5 text-white/60 hover:text-white/80 text-xs flex items-center justify-center space-x-1 transition-colors"
           >
             <span>Show recommended</span>
-            <ChevronDown size={14} className="rotate-180" />
+            <ChevronDown size={12} className="rotate-180" />
           </button>
         )}
 
         {/* Streak Indicator */}
         {user.sessionStreak > 0 && (
-          <div className="pt-3 border-t border-white/10 mt-3">
+          <div className="pt-2 border-t border-white/10 mt-2">
             <div className="flex items-center justify-center space-x-2">
               <div className="text-orange-400 text-xs">🔥</div>
               <div className="text-white/60 text-xs">
