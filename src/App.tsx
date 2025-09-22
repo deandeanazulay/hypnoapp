@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import AppShell from './layouts/AppShell';
 import HomeScreen from './components/screens/HomeScreen';
-import Explore from './pages/Explore';
-import Create from './pages/Create';
-import Favorites from './pages/Favorites';
-import Profile from './pages/Profile';
+import ExploreScreen from './components/screens/ExploreScreen';
+import CreateScreen from './components/screens/CreateScreen';
+import FavoritesScreen from './components/screens/FavoritesScreen';
+import ProfileScreen from './components/screens/ProfileScreen';
+import NavigationTabs from './components/NavigationTabs';
 import UnifiedSessionWorld from './components/UnifiedSessionWorld';
 import { GameStateProvider } from './components/GameStateManager';
 import { TabId } from './types/Navigation';
@@ -88,50 +87,66 @@ function App() {
     );
   }
 
+  // Render current tab content
+  const renderCurrentTab = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <HomeScreen
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+            onOrbTap={handleOrbTap}
+            onActionSelect={handleActionSelect}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        );
+      case 'explore':
+        return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
+      case 'create':
+        return <CreateScreen onProtocolCreate={handleCustomProtocolCreate} />;
+      case 'favorites':
+        return <FavoritesScreen onSessionSelect={handleFavoriteSessionSelect} />;
+      case 'profile':
+        return (
+          <ProfileScreen 
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+          />
+        );
+      default:
+        return (
+          <HomeScreen
+            selectedEgoState={selectedEgoState}
+            onEgoStateChange={setSelectedEgoState}
+            onOrbTap={handleOrbTap}
+            onActionSelect={handleActionSelect}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        );
+    }
+  };
+
   // Navigation mode - tabbed interface
   return (
     <GameStateProvider>
-      <Router>
-        <AppShell activeTab={activeTab} onTabChange={setActiveTab}>
-          <Routes>
-            <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route 
-              path="/home" 
-              element={
-                <HomeScreen
-                  selectedEgoState={selectedEgoState}
-                  onEgoStateChange={setSelectedEgoState}
-                  onOrbTap={handleOrbTap}
-                  onActionSelect={handleActionSelect}
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
-                />
-              } 
+      <div className="relative h-screen w-screen overflow-hidden bg-black">
+        <div className="flex h-full flex-col">
+          {/* Content region */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {renderCurrentTab()}
+          </div>
+          
+          {/* Bottom Navigation */}
+          <div className="flex-shrink-0 pb-[env(safe-area-inset-bottom)]">
+            <NavigationTabs
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
             />
-            <Route 
-              path="/explore" 
-              element={<Explore onProtocolSelect={handleProtocolSelect} />} 
-            />
-            <Route 
-              path="/create" 
-              element={<Create onProtocolCreate={handleCustomProtocolCreate} />} 
-            />
-            <Route 
-              path="/favorites" 
-              element={<Favorites onSessionSelect={handleFavoriteSessionSelect} />} 
-            />
-            <Route 
-              path="/profile" 
-              element={
-                <Profile 
-                  selectedEgoState={selectedEgoState}
-                  onEgoStateChange={setSelectedEgoState}
-                />
-              } 
-            />
-          </Routes>
-        </AppShell>
-      </Router>
+          </div>
+        </div>
+      </div>
     </GameStateProvider>
   );
 }

@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Search, Plus, Heart, User } from 'lucide-react';
 import { TABS, TabId } from '../types/Navigation';
 
@@ -17,21 +16,9 @@ const iconMap = {
 };
 
 export default function NavigationTabs({ activeTab, onTabChange }: NavigationTabsProps) {
-  const navigate = useNavigate();
-  const location = useLocation();
-
   const handleTabClick = (tabId: TabId) => {
     onTabChange(tabId);
-    navigate(`/${tabId}`);
   };
-
-  // Sync active tab with current route
-  React.useEffect(() => {
-    const path = location.pathname.slice(1) as TabId;
-    if (TABS.find(tab => tab.id === path)) {
-      onTabChange(path);
-    }
-  }, [location.pathname, onTabChange]);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 w-full bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-3 z-50">
