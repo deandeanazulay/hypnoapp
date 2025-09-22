@@ -218,9 +218,8 @@ export default function EnhancedActionsBar({
   onActionSelect
 }: EnhancedActionsBarProps) {
   const { user } = useGameState();
-  const [showGoalPicker, setShowGoalPicker] = useState(false);
-  const [showMethodPicker, setShowMethodPicker] = useState(false);
-  const [showModePicker, setShowModePicker] = useState(false);
+  const [showFocusModal, setShowFocusModal] = useState(false);
+  const [currentAction, setCurrentAction] = useState<any>(null);
   const [customActions, setCustomActions] = useState<any[]>([]);
   const [editingAction, setEditingAction] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
@@ -265,6 +264,34 @@ export default function EnhancedActionsBar({
 
   const allActions = [...quickActions, ...customActions];
 
+  const handleActionClick = (action: any) => {
+    if (action.isCustom) {
+      // For custom actions, just select directly
+      onActionSelect(action.id === selectedAction?.id ? null : action);
+    } else {
+      // For built-in actions, open focus modal
+      setCurrentAction(action);
+      setShowFocusModal(true);
+    }
+  };
+
+  const handleFocusSelect = (focus: Focus) => {
+    const actionWithFocus = {
+      ...currentAction,
+      focus: focus,
+      name: `${currentAction.name}: ${focus.name}`
+    };
+    onActionSelect(actionWithFocus);
+    setShowFocusModal(false);
+    setCurrentAction(null);
+  };
+
+  const getActionFocuses = (actionId: string): Focus[] => {
+    const focusMap = ACTION_FOCUS_MAPPING[actionId as keyof typeof ACTION_FOCUS_MAPPING] || [];
+    return [...CORE_FOCUSES, ...ADVANCED_FOCUSES].filter(focus => 
+      focusMap.includes(focus.id)
+    );
+  };
   const addCustomAction = () => {
     const newAction = {
       id: `custom-${Date.now()}`,
@@ -312,7 +339,7 @@ export default function EnhancedActionsBar({
             {allActions.map((action) => (
               <button
                 key={action.id}
-                onClick={() => onActionSelect(action.id === selectedAction?.id ? null : action)}
+                onClick={() => handleActionClick(action)}
                 className={`flex-shrink-0 w-[80px] bg-gradient-to-br ${action.color} border border-white/20 rounded-lg p-2 hover:scale-105 hover:z-50 transition-all duration-200 relative group ${
                   selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
                 }`}
@@ -405,35 +432,17 @@ export default function EnhancedActionsBar({
         </div>
       </div>
 
-      {/* Pickers */}
-      {showGoalPicker && (
-        <GoalPicker
-          onSelect={(goal) => {
-            onActionSelect(goal);
-            setShowGoalPicker(false);
+      {/* Focus Selection Modal */}
+      {showFocusModal && currentAction && (
+        <FocusModal
+          isOpen={showFocusModal}
+          onClose={() => {
+            setShowFocusModal(false);
+            setCurrentAction(null);
           }}
-          onClose={() => setShowGoalPicker(false)}
-        />
-      )}
-      
-      {showMethodPicker && (
-        <MethodPicker
-          selectedGoal={selectedAction}
-          onSelect={(method) => {
-            onActionSelect(method);
-            setShowMethodPicker(false);
-          }}
-          onClose={() => setShowMethodPicker(false)}
-        />
-      )}
-      
-      {showModePicker && (
-        <ModePicker
-          onSelect={(mode) => {
-            onActionSelect(mode);
-            setShowModePicker(false);
-          }}
-          onClose={() => setShowModePicker(false)}
+          actionName={currentAction.name}
+          focuses={getActionFocuses(currentAction.id)}
+          onSelectFocus={handleFocusSelect}
         />
       )}
     </>
