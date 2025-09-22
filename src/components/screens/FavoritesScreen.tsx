@@ -26,6 +26,116 @@ const mockFavorites: FavoriteSession[] = [
     rating: 5
   },
   {
+    id: '4',
+    name: 'Healer Recovery',
+    egoState: 'healer',
+    action: 'healing',
+    duration: 12,
+    completedCount: 9,
+    lastCompleted: new Date(Date.now() - 5 * 60 * 60 * 1000),
+    rating: 4
+  },
+  {
+    id: '5',
+    name: 'Explorer Adventure',
+    egoState: 'explorer',
+    action: 'creativity',
+    duration: 8,
+    completedCount: 7,
+    lastCompleted: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    rating: 5
+  },
+  {
+    id: '6',
+    name: 'Sage Wisdom',
+    egoState: 'sage',
+    action: 'clarity',
+    duration: 20,
+    completedCount: 11,
+    lastCompleted: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    rating: 4
+  },
+  {
+    id: '7',
+    name: 'Child Joy',
+    egoState: 'child',
+    action: 'happiness',
+    duration: 6,
+    completedCount: 18,
+    lastCompleted: new Date(Date.now() - 30 * 60 * 1000),
+    rating: 5
+  },
+  {
+    id: '8',
+    name: 'Rebel Freedom',
+    egoState: 'rebel',
+    action: 'liberation',
+    duration: 14,
+    completedCount: 6,
+    lastCompleted: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    rating: 4
+  },
+  {
+    id: '9',
+    name: 'Shadow Integration',
+    egoState: 'shadow',
+    action: 'shadow-work',
+    duration: 25,
+    completedCount: 4,
+    lastCompleted: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    rating: 5
+  },
+  {
+    id: '10',
+    name: 'Guardian Protection',
+    egoState: 'guardian',
+    action: 'safety',
+    duration: 11,
+    completedCount: 13,
+    lastCompleted: new Date(Date.now() - 4 * 60 * 60 * 1000),
+    rating: 4
+  },
+  {
+    id: '11',
+    name: 'Mystic Transcendence',
+    egoState: 'mystic',
+    action: 'spirituality',
+    duration: 18,
+    completedCount: 5,
+    lastCompleted: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    rating: 5
+  },
+  {
+    id: '12',
+    name: 'Performer Charisma',
+    egoState: 'performer',
+    action: 'magnetism',
+    duration: 9,
+    completedCount: 16,
+    lastCompleted: new Date(Date.now() - 1 * 60 * 60 * 1000),
+    rating: 4
+  },
+  {
+    id: '13',
+    name: 'Healer Compassion',
+    egoState: 'healer',
+    action: 'love',
+    duration: 13,
+    completedCount: 8,
+    lastCompleted: new Date(Date.now() - 6 * 60 * 60 * 1000),
+    rating: 5
+  },
+  {
+    id: '14',
+    name: 'Explorer Discovery',
+    egoState: 'explorer',
+    action: 'curiosity',
+    duration: 7,
+    completedCount: 10,
+    lastCompleted: new Date(Date.now() - 8 * 60 * 60 * 1000),
+    rating: 4
+  }
+  {
     id: '2',
     name: 'Mystic Deep Rest',
     egoState: 'mystic',
