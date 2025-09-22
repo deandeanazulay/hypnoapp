@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Heart, Play, Clock, Trash2, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 
@@ -163,17 +163,25 @@ interface FavoritesScreenProps {
 
 export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProps) {
   const { user } = useGameState();
-  const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 12;
+  const [currentPage, setCurrentPage] = React.useState(0);
+  const itemsPerPage = 12; // 3 columns × 4 rows
+  
   const totalPages = Math.ceil(mockFavorites.length / itemsPerPage);
-  const currentPageFavorites = mockFavorites.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-
+  const currentPageFavorites = mockFavorites.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
+  
   const goToNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1));
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    }
   };
-
+  
   const goToPreviousPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 0));
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   const formatLastCompleted = (date: Date) => {
