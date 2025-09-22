@@ -1,126 +1,83 @@
 import React from 'react';
-import { Shield, Heart, Zap, Brain, Star, Crown } from 'lucide-react';
-import { useGameState } from './GameStateManager';
+import { EGO_STATES, EgoState } from '../types/EgoState';
 
 interface EgoStatesRowProps {
   selectedEgoState: string;
-  onEgoStateChange: (egoState: string) => void;
+  onEgoStateChange: (egoStateId: string) => void;
 }
 
-const EgoStatesRow: React.FC<EgoStatesRowProps> = ({
-  selectedEgoState,
-  onEgoStateChange
-}) => {
-  const { userState: user } = useGameState();
-
-  const egoStates = [
-    {
-      id: 'guardian',
-      name: 'Guardian',
-      icon: Shield,
-      color: 'from-blue-500 to-cyan-500',
-      unlocked: true
-    },
-    {
-      id: 'lover',
-      name: 'Lover',
-      icon: Heart,
-      color: 'from-pink-500 to-rose-500',
-      unlocked: user.level >= 2
-    },
-    {
-      id: 'warrior',
-      name: 'Warrior',
-      icon: Zap,
-      color: 'from-orange-500 to-red-500',
-      unlocked: user.level >= 5
-    },
-    {
-      id: 'sage',
-      name: 'Sage',
-      icon: Brain,
-      color: 'from-purple-500 to-indigo-500',
-      unlocked: user.level >= 10
-    },
-    {
-      id: 'creator',
-      name: 'Creator',
-      icon: Star,
-      color: 'from-yellow-500 to-amber-500',
-      unlocked: user.level >= 15
-    },
-    {
-      id: 'ruler',
-      name: 'Ruler',
-      icon: Crown,
-      color: 'from-emerald-500 to-teal-500',
-      unlocked: user.level >= 20
-    }
-  ];
-
+export default function EgoStatesRow({ selectedEgoState, onEgoStateChange }: EgoStatesRowProps) {
   return (
-    <div className="flex gap-2 px-4 py-2 overflow-x-auto">
-      {egoStates.map((state) => {
-        const Icon = state.icon;
-        const isSelected = selectedEgoState === state.id;
-        const isUnlocked = state.unlocked;
+    <div className="px-4 py-3">
+      {/* Title */}
+      <div className="text-center mb-4">
+        <h2 className="text-white/80 text-sm font-medium tracking-wide">THE 9 EGO STATES</h2>
+        <p className="text-white/50 text-xs mt-1">Choose your inner guide</p>
+      </div>
 
-        return (
-          <button
-            key={state.id}
-            onClick={() => isUnlocked && onEgoStateChange(state.id)}
-            disabled={!isUnlocked}
-            className={`
-              flex-shrink-0 relative p-2 rounded-xl transition-all duration-300
-              ${isSelected 
-                ? `bg-gradient-to-br ${state.color} shadow-lg scale-105` 
-                : isUnlocked
-                  ? 'bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600'
-                  : 'bg-gray-900/50 border border-gray-800 opacity-50'
-              }
-            `}
-          >
-            <div className="flex flex-col items-center gap-1">
-              <Icon 
-                size={20} 
-                className={`
-                  ${isSelected 
-                    ? 'text-white' 
-                    : isUnlocked 
-                      ? 'text-gray-300' 
-                      : 'text-gray-600'
-                  }
-                `} 
-              />
-              <span className={`
-                text-xs font-medium
-                ${isSelected 
-                  ? 'text-white' 
-                  : isUnlocked 
-                    ? 'text-gray-300' 
-                    : 'text-gray-600'
-                }
-              `}>
+      {/* Ego States Grid - Responsive */}
+      <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3 justify-items-center">
+        {EGO_STATES.map((state) => (
+          <div key={state.id} className="flex flex-col items-center space-y-2">
+            <button
+              onClick={() => onEgoStateChange(state.id)}
+              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br ${state.color} p-1 cursor-pointer transition-all duration-300 hover:scale-105 ${state.glowColor} shadow-lg border-2 ${
+                selectedEgoState === state.id ? 'border-white/80 scale-110 ring-2 ring-white/30' : 'border-white/20'
+              }`}
+              style={{
+                boxShadow: selectedEgoState === state.id 
+                  ? `0 0 25px ${state.glowColor.includes('blue') ? '#3b82f6' : 
+                                state.glowColor.includes('red') ? '#ef4444' : 
+                                state.glowColor.includes('green') ? '#22c55e' : 
+                                state.glowColor.includes('yellow') ? '#eab308' : 
+                                state.glowColor.includes('purple') ? '#a855f7' : 
+                                state.glowColor.includes('gray') ? '#9ca3af' : 
+                                state.glowColor.includes('orange') ? '#f97316' : 
+                                state.glowColor.includes('pink') ? '#ec4899' : '#6366f1'}80, inset 0 0 15px rgba(255,255,255,0.2)`
+                  : `0 0 15px ${state.glowColor.includes('blue') ? '#3b82f6' : 
+                                state.glowColor.includes('red') ? '#ef4444' : 
+                                state.glowColor.includes('green') ? '#22c55e' : 
+                                state.glowColor.includes('yellow') ? '#eab308' : 
+                                state.glowColor.includes('purple') ? '#a855f7' : 
+                                state.glowColor.includes('gray') ? '#9ca3af' : 
+                                state.glowColor.includes('orange') ? '#f97316' : 
+                                state.glowColor.includes('pink') ? '#ec4899' : '#6366f1'}60, inset 0 0 10px rgba(255,255,255,0.1)`
+              }}
+            >
+              <div className="w-full h-full rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                <span className="text-lg">{state.icon}</span>
+              </div>
+            </button>
+            
+            <div className="text-center">
+              <span className={`text-xs font-semibold tracking-wide transition-colors duration-300 ${
+                selectedEgoState === state.id ? 'text-white' : 'text-white/70'
+              }`}>
                 {state.name}
               </span>
+              {selectedEgoState === state.id && (
+                <p className="text-white/60 text-xs mt-1 max-w-20 leading-tight">
+                  {state.role.split(',')[0]}
+                </p>
+              )}
             </div>
-            
-            {!isUnlocked && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-                <span className="text-xs text-gray-400">Lv {
-                  state.id === 'lover' ? 2 :
-                  state.id === 'warrior' ? 5 :
-                  state.id === 'sage' ? 10 :
-                  state.id === 'creator' ? 15 :
-                  state.id === 'ruler' ? 20 : 1
-                }</span>
-              </div>
-            )}
-          </button>
-        );
-      })}
+          </div>
+        ))}
+      </div>
+      
+      {/* Selected State Description */}
+      <div className="text-center mt-4 min-h-[3rem] flex items-center justify-center">
+        {selectedEgoState && (
+          <div className="max-w-md">
+            <p className="text-white/80 text-sm font-medium mb-1">
+              {EGO_STATES.find(s => s.id === selectedEgoState)?.description}
+            </p>
+            <p className="text-white/50 text-xs">
+              Used for: {EGO_STATES.find(s => s.id === selectedEgoState)?.usedFor.join(', ')}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
-
-export default EgoStatesRow;
+}

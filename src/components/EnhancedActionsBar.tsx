@@ -13,7 +13,7 @@ import {
 
 interface EnhancedActionsBarProps {
   selectedEgoState: string;
-  selectedAction: any;
+  selectedAction?: any;
   onActionSelect: (action: any) => void;
 }
 
@@ -27,33 +27,25 @@ const EnhancedActionsBar: React.FC<EnhancedActionsBarProps> = ({
 
   // Define actions based on ego state
   const getActionsForEgoState = (egoState: string) => {
-    const actionSets = {
+    const baseActions = {
       guardian: [
-        { id: 'protect', name: 'Protect', icon: Shield, cost: 10, description: 'Shield yourself from harm' },
-        { id: 'heal', name: 'Heal', icon: Heart, cost: 15, description: 'Restore your vitality' },
-        { id: 'fortify', name: 'Fortify', icon: Target, cost: 20, description: 'Strengthen your defenses' },
-        { id: 'sanctuary', name: 'Sanctuary', icon: Sparkles, cost: 25, description: 'Create a safe space' }
+        { id: 'protect', name: 'Protect', icon: Shield, color: 'blue', cost: 10 },
+        { id: 'heal', name: 'Heal', icon: Heart, color: 'green', cost: 15 },
+        { id: 'fortify', name: 'Fortify', icon: Target, color: 'purple', cost: 20 }
       ],
-      explorer: [
-        { id: 'discover', name: 'Discover', icon: Target, cost: 12, description: 'Uncover hidden paths' },
-        { id: 'venture', name: 'Venture', icon: Zap, cost: 18, description: 'Take bold risks' },
-        { id: 'map', name: 'Map', icon: Brain, cost: 22, description: 'Chart new territories' },
-        { id: 'pioneer', name: 'Pioneer', icon: Sparkles, cost: 28, description: 'Blaze new trails' }
-      ],
-      creator: [
-        { id: 'inspire', name: 'Inspire', icon: Sparkles, cost: 14, description: 'Spark new ideas' },
-        { id: 'craft', name: 'Craft', icon: Target, cost: 16, description: 'Build something new' },
-        { id: 'innovate', name: 'Innovate', icon: Brain, cost: 24, description: 'Revolutionary thinking' },
-        { id: 'manifest', name: 'Manifest', icon: Zap, cost: 30, description: 'Bring visions to life' }
+      warrior: [
+        { id: 'strike', name: 'Strike', icon: Zap, color: 'red', cost: 12 },
+        { id: 'charge', name: 'Charge', icon: Target, color: 'orange', cost: 18 },
+        { id: 'berserker', name: 'Berserker', icon: Sparkles, color: 'yellow', cost: 25 }
       ],
       sage: [
-        { id: 'contemplate', name: 'Contemplate', icon: Brain, cost: 8, description: 'Deep reflection' },
-        { id: 'analyze', name: 'Analyze', icon: Target, cost: 16, description: 'Examine thoroughly' },
-        { id: 'synthesize', name: 'Synthesize', icon: Sparkles, cost: 20, description: 'Combine knowledge' },
-        { id: 'transcend', name: 'Transcend', icon: Zap, cost: 35, description: 'Rise above limitations' }
+        { id: 'analyze', name: 'Analyze', icon: Brain, color: 'indigo', cost: 8 },
+        { id: 'enlighten', name: 'Enlighten', icon: Sparkles, color: 'cyan', cost: 22 },
+        { id: 'transcend', name: 'Transcend', icon: Target, color: 'violet', cost: 30 }
       ]
     };
-    return actionSets[egoState as keyof typeof actionSets] || actionSets.guardian;
+
+    return baseActions[egoState as keyof typeof baseActions] || baseActions.guardian;
   };
 
   const actions = getActionsForEgoState(selectedEgoState);
@@ -62,9 +54,9 @@ const EnhancedActionsBar: React.FC<EnhancedActionsBarProps> = ({
   const startIndex = currentPage * actionsPerPage;
   const visibleActions = actions.slice(startIndex, startIndex + actionsPerPage);
 
-  const canAfford = (cost: number) => user.energy >= cost;
+  const canAfford = (cost: number) => user?.energy >= cost;
 
-  const handleActionSelect = (action: any) => {
+  const handleActionClick = (action: any) => {
     if (canAfford(action.cost)) {
       onActionSelect(action);
     }
@@ -81,23 +73,25 @@ const EnhancedActionsBar: React.FC<EnhancedActionsBarProps> = ({
   return (
     <div className="px-4 py-3">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-white/80">Actions</h3>
+        <h3 className="text-sm font-medium text-gray-300">
+          {selectedEgoState.charAt(0).toUpperCase() + selectedEgoState.slice(1)} Actions
+        </h3>
         {totalPages > 1 && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center space-x-2">
             <button
               onClick={prevPage}
-              className="p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              className="p-1 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
             >
-              <ChevronLeft className="w-3 h-3 text-white/60" />
+              <ChevronLeft className="w-4 h-4 text-gray-400" />
             </button>
-            <span className="text-xs text-white/40">
+            <span className="text-xs text-gray-500">
               {currentPage + 1}/{totalPages}
             </span>
             <button
               onClick={nextPage}
-              className="p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              className="p-1 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
             >
-              <ChevronRight className="w-3 h-3 text-white/60" />
+              <ChevronRight className="w-4 h-4 text-gray-400" />
             </button>
           </div>
         )}
@@ -105,57 +99,66 @@ const EnhancedActionsBar: React.FC<EnhancedActionsBarProps> = ({
 
       <div className="grid grid-cols-3 gap-2">
         {visibleActions.map((action) => {
-          const IconComponent = action.icon;
+          const Icon = action.icon;
           const affordable = canAfford(action.cost);
           const isSelected = selectedAction?.id === action.id;
 
           return (
             <button
               key={action.id}
-              onClick={() => handleActionSelect(action)}
+              onClick={() => handleActionClick(action)}
               disabled={!affordable}
               className={`
                 relative p-3 rounded-lg border transition-all duration-200
                 ${isSelected 
-                  ? 'bg-purple-500/30 border-purple-400/50 shadow-lg shadow-purple-500/20' 
+                  ? `border-${action.color}-500 bg-${action.color}-500/20` 
                   : affordable
-                    ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-                    : 'bg-white/5 border-white/5 opacity-50 cursor-not-allowed'
+                    ? `border-gray-700 bg-gray-800/50 hover:border-${action.color}-500/50 hover:bg-${action.color}-500/10`
+                    : 'border-gray-800 bg-gray-900/50 opacity-50 cursor-not-allowed'
                 }
               `}
             >
-              <div className="flex flex-col items-center gap-1">
-                <IconComponent className={`w-4 h-4 ${
-                  isSelected ? 'text-purple-300' : affordable ? 'text-white/70' : 'text-white/30'
-                }`} />
+              <div className="flex flex-col items-center space-y-1">
+                <Icon 
+                  className={`w-5 h-5 ${
+                    isSelected 
+                      ? `text-${action.color}-400` 
+                      : affordable 
+                        ? 'text-gray-300' 
+                        : 'text-gray-600'
+                  }`} 
+                />
                 <span className={`text-xs font-medium ${
-                  isSelected ? 'text-purple-200' : affordable ? 'text-white/80' : 'text-white/40'
+                  isSelected 
+                    ? `text-${action.color}-300` 
+                    : affordable 
+                      ? 'text-gray-300' 
+                      : 'text-gray-600'
                 }`}>
                   {action.name}
                 </span>
-                <div className={`flex items-center gap-1 text-xs ${
-                  affordable ? 'text-yellow-400' : 'text-white/30'
+                <span className={`text-xs ${
+                  affordable ? 'text-gray-400' : 'text-red-400'
                 }`}>
-                  <Zap className="w-2.5 h-2.5" />
-                  <span>{action.cost}</span>
-                </div>
+                  {action.cost} EN
+                </span>
               </div>
-              
+
               {isSelected && (
-                <div className="absolute inset-0 rounded-lg bg-purple-400/10 animate-pulse" />
+                <div className={`absolute inset-0 rounded-lg border-2 border-${action.color}-400 pointer-events-none`} />
               )}
             </button>
           );
         })}
       </div>
 
-      {selectedAction && (
-        <div className="mt-3 p-2 rounded-lg bg-white/5 border border-white/10">
-          <p className="text-xs text-white/60 text-center">
-            {selectedAction.description}
-          </p>
+      {/* Energy indicator */}
+      <div className="mt-3 flex items-center justify-center">
+        <div className="flex items-center space-x-2 text-xs text-gray-400">
+          <Zap className="w-3 h-3" />
+          <span>Energy: {user?.energy || 0}/{user?.maxEnergy || 100}</span>
         </div>
-      )}
+      </div>
     </div>
   );
 };

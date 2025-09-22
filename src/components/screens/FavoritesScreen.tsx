@@ -1,138 +1,214 @@
 import React from 'react';
-import { Heart, Clock, Star, Play } from 'lucide-react';
+import { Heart, Play, Clock, Trash2, Star } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 
-interface FavoritesScreenProps {
-  onSessionSelect: (session: any) => void;
+interface FavoriteSession {
+  id: string;
+  name: string;
+  egoState: string;
+  action: string;
+  duration: number;
+  completedCount: number;
+  lastCompleted: Date;
+  rating: number;
 }
 
-const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ onSessionSelect }) => {
-  const { userState: user } = useGameState();
+// Mock data - in real app this would come from storage/API
+const mockFavorites: FavoriteSession[] = [
+  {
+    id: '1',
+    name: 'Guardian Stress Relief',
+    egoState: 'guardian',
+    action: 'stress-relief',
+    duration: 10,
+    completedCount: 12,
+    lastCompleted: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    rating: 5
+  },
+  {
+    id: '2',
+    name: 'Mystic Deep Rest',
+    egoState: 'mystic',
+    action: 'deep-rest',
+    duration: 15,
+    completedCount: 8,
+    lastCompleted: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    rating: 4
+  },
+  {
+    id: '3',
+    name: 'Performer Confidence',
+    egoState: 'performer',
+    action: 'confidence-boost',
+    duration: 10,
+    completedCount: 15,
+    lastCompleted: new Date(Date.now() - 3 * 60 * 60 * 1000),
+    rating: 5
+  }
+];
 
-  // Mock favorite sessions data
-  const favoriteSessions = [
-    {
-      id: 1,
-      name: "Morning Meditation",
-      egoState: "guardian",
-      action: { name: "Meditate", icon: "🧘", energyCost: 10 },
-      duration: "15 min",
-      lastUsed: "2 days ago",
-      rating: 5,
-      completions: 12
-    },
-    {
-      id: 2,
-      name: "Creative Flow",
-      egoState: "creator",
-      action: { name: "Create", icon: "🎨", energyCost: 15 },
-      duration: "30 min",
-      lastUsed: "1 week ago",
-      rating: 4,
-      completions: 8
-    },
-    {
-      id: 3,
-      name: "Power Focus",
-      egoState: "warrior",
-      action: { name: "Focus", icon: "⚡", energyCost: 20 },
-      duration: "45 min",
-      lastUsed: "3 days ago",
-      rating: 5,
-      completions: 15
-    }
-  ];
+interface FavoritesScreenProps {
+  onSessionSelect: (session: FavoriteSession) => void;
+}
 
-  const handleSessionSelect = (session: any) => {
-    onSessionSelect(session);
+export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProps) {
+  const { user } = useGameState();
+
+  const formatLastCompleted = (date: Date) => {
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    
+    return date.toLocaleDateString();
+  };
+
+  const getEgoStateColor = (egoState: string) => {
+    const colorMap: { [key: string]: string } = {
+      guardian: 'from-blue-500/20 to-blue-600/20',
+      rebel: 'from-red-500/20 to-red-600/20',
+      healer: 'from-green-500/20 to-green-600/20',
+      explorer: 'from-yellow-500/20 to-yellow-600/20',
+      mystic: 'from-purple-500/20 to-purple-600/20',
+      sage: 'from-gray-400/20 to-gray-500/20',
+      child: 'from-orange-500/20 to-orange-600/20',
+      performer: 'from-pink-500/20 to-pink-600/20',
+      shadow: 'from-indigo-500/20 to-indigo-900/20'
+    };
+    return colorMap[egoState] || 'from-white/10 to-gray-500/10';
+  };
+
+  const getEgoStateIcon = (egoState: string) => {
+    const iconMap: { [key: string]: string } = {
+      guardian: '🛡️',
+      rebel: '🔥',
+      healer: '🌿',
+      explorer: '🌍',
+      mystic: '✨',
+      sage: '📜',
+      child: '🎈',
+      performer: '🎭',
+      shadow: '🌑'
+    };
+    return iconMap[egoState] || '⭐';
   };
 
   return (
-    <div className="h-full bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 overflow-y-auto">
-      <div className="p-4 space-y-4">
+    <div className="h-screen bg-black relative overflow-hidden flex flex-col">
+      {/* Background gradient */}
+      <div className="fixed inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-950/20 via-black to-purple-950/20" />
+      </div>
+
+      <div className="relative z-10 flex-1 flex flex-col pb-20">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-white mb-2">Favorites</h1>
-          <p className="text-purple-200 text-sm">Your most loved sessions</p>
+        <div className="flex-shrink-0 pt-12 pb-6 px-6">
+          <h1 className="text-white text-2xl font-light mb-2">Favorites</h1>
+          <p className="text-white/60 text-sm">Your most effective sessions</p>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center">
-            <Heart className="w-5 h-5 text-pink-400 mx-auto mb-1" />
-            <div className="text-white font-semibold text-sm">{favoriteSessions.length}</div>
-            <div className="text-purple-200 text-xs">Favorites</div>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center">
-            <Clock className="w-5 h-5 text-blue-400 mx-auto mb-1" />
-            <div className="text-white font-semibold text-sm">
-              {favoriteSessions.reduce((total, session) => total + session.completions, 0)}
+        {/* Stats Overview */}
+        <div className="flex-shrink-0 px-6 mb-6">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center">
+              <div className="text-teal-400 text-lg font-semibold">{user.level}</div>
+              <div className="text-white/60 text-xs">Level</div>
             </div>
-            <div className="text-purple-200 text-xs">Sessions</div>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center">
-            <Star className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
-            <div className="text-white font-semibold text-sm">
-              {(favoriteSessions.reduce((total, session) => total + session.rating, 0) / favoriteSessions.length).toFixed(1)}
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center">
+              <div className="text-orange-400 text-lg font-semibold">{user.sessionStreak}</div>
+              <div className="text-white/60 text-xs">Streak</div>
             </div>
-            <div className="text-purple-200 text-xs">Avg Rating</div>
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center">
+              <div className="text-purple-400 text-lg font-semibold">{mockFavorites.length}</div>
+              <div className="text-white/60 text-xs">Saved</div>
+            </div>
           </div>
         </div>
 
-        {/* Favorite Sessions */}
-        <div className="space-y-3">
-          {favoriteSessions.map((session) => (
-            <div
-              key={session.id}
-              className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl">{session.action.icon}</div>
-                  <div>
-                    <h3 className="text-white font-semibold text-sm">{session.name}</h3>
-                    <p className="text-purple-200 text-xs capitalize">{session.egoState} • {session.duration}</p>
+        {/* Favorites List */}
+        <div className="flex-1 overflow-y-auto px-6 space-y-4">
+          {mockFavorites.length > 0 ? (
+            mockFavorites.map((session) => (
+              <div
+                key={session.id}
+                className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-2xl p-4 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02]`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                      <span className="text-lg">{getEgoStateIcon(session.egoState)}</span>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h3 className="text-white font-semibold text-lg mb-1">{session.name}</h3>
+                      
+                      <div className="flex items-center space-x-4 text-white/50 text-xs mb-2">
+                        <div className="flex items-center space-x-1">
+                          <Clock size={12} />
+                          <span>{session.duration} min</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Heart size={12} />
+                          <span>{session.completedCount} times</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={12}
+                              className={star <= session.rating ? 'text-yellow-400 fill-current' : 'text-white/20'}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-white/40 text-xs">
+                          Last: {formatLastCompleted(session.lastCompleted)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => onSessionSelect(session)}
+                      className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-105"
+                    >
+                      <Play size={14} className="text-white ml-0.5" />
+                    </button>
+                    
+                    <button className="w-10 h-10 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-105">
+                      <Trash2 size={14} className="text-red-400" />
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleSessionSelect(session)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-colors"
-                >
-                  <Play className="w-4 h-4" />
-                </button>
+
+                {/* Progress Bar */}
+                <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min((session.completedCount / 20) * 100, 100)}%` }}
+                  />
+                </div>
               </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-1">
-                    <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                    <span className="text-purple-200">{session.rating}</span>
-                  </div>
-                  <div className="text-purple-200">
-                    {session.completions} completions
-                  </div>
-                </div>
-                <div className="text-purple-300">
-                  {session.lastUsed}
-                </div>
+            ))
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <Heart size={48} className="text-white/20 mx-auto mb-4" />
+                <h3 className="text-white/60 text-lg font-medium mb-2">No favorites yet</h3>
+                <p className="text-white/40 text-sm">Complete sessions to add them to favorites</p>
               </div>
             </div>
-          ))}
+          )}
         </div>
-
-        {/* Empty State */}
-        {favoriteSessions.length === 0 && (
-          <div className="text-center py-12">
-            <Heart className="w-12 h-12 text-purple-400 mx-auto mb-4 opacity-50" />
-            <h3 className="text-white font-semibold mb-2">No favorites yet</h3>
-            <p className="text-purple-200 text-sm">
-              Complete sessions and mark them as favorites to see them here
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
-};
-
-export default FavoritesScreen;
+}
