@@ -107,90 +107,90 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
 
       <div className="relative z-10 h-full flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 pt-12 pb-3 px-6">
-          <h1 className="text-white text-2xl font-light mb-2">Favorites</h1>
-          <p className="text-white/60 text-sm">Your most effective sessions</p>
+        <div className="flex-shrink-0 pt-1 pb-2 px-4">
+          <h1 className="text-white text-xl font-light mb-1">Favorites</h1>
+          <p className="text-white/60 text-xs">Your most effective sessions</p>
         </div>
 
         {/* Stats Overview */}
-        <div className="flex-shrink-0 px-6 mb-3">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center">
-              <div className="text-teal-400 text-lg font-semibold">{user.level}</div>
+        <div className="flex-shrink-0 px-4 mb-2">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-white/5 backdrop-blur-md rounded-lg p-2 border border-white/10 text-center">
+              <div className="text-teal-400 text-base font-semibold">{user.level}</div>
               <div className="text-white/60 text-xs">Level</div>
             </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center">
-              <div className="text-orange-400 text-lg font-semibold">{user.sessionStreak}</div>
+            <div className="bg-white/5 backdrop-blur-md rounded-lg p-2 border border-white/10 text-center">
+              <div className="text-orange-400 text-base font-semibold">{user.sessionStreak}</div>
               <div className="text-white/60 text-xs">Streak</div>
             </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center">
-              <div className="text-purple-400 text-lg font-semibold">{mockFavorites.length}</div>
+            <div className="bg-white/5 backdrop-blur-md rounded-lg p-2 border border-white/10 text-center">
+              <div className="text-purple-400 text-base font-semibold">{mockFavorites.length}</div>
               <div className="text-white/60 text-xs">Saved</div>
             </div>
           </div>
         </div>
 
         {/* Favorites List */}
-        <div className="flex-1 px-6 space-y-3 pb-4 overflow-y-auto min-h-0">
+        <div className="flex-1 px-4 space-y-2 pb-2 overflow-y-auto min-h-0">
           {mockFavorites.length > 0 ? (
             mockFavorites.map((session) => (
               <div
                 key={session.id}
-                className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-xl p-3 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02]`}
+                className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-lg p-2 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02]`}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                      <span className="text-sm">{getEgoStateIcon(session.egoState)}</span>
+                <div className="flex items-start justify-between mb-1">
+                  <div className="flex items-start space-x-2">
+                    <div className="w-6 h-6 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                      <span className="text-xs">{getEgoStateIcon(session.egoState)}</span>
                     </div>
                     
                     <div className="flex-1">
-                      <h3 className="text-white font-semibold text-base mb-1">{session.name}</h3>
+                      <h3 className="text-white font-semibold text-sm mb-1">{session.name}</h3>
                       
-                      <div className="flex items-center space-x-4 text-white/50 text-xs mb-2">
+                      <div className="flex items-center space-x-3 text-white/50 text-xs mb-1">
                         <div className="flex items-center space-x-1">
-                          <Clock size={12} />
+                          <Clock size={10} />
                           <span>{session.duration} min</span>
                         </div>
                         <div className="flex items-center space-x-1">
-                          <Heart size={12} />
+                          <Heart size={10} />
                           <span>{session.completedCount} times</span>
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1">
                         <div className="flex items-center space-x-0.5">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
                               key={star}
-                              size={12}
+                              size={10}
                               className={star <= session.rating ? 'text-yellow-400 fill-current' : 'text-white/20'}
                             />
                           ))}
                         </div>
-                        <span className="text-white/40 text-xs">
+                        <span className="text-white/40 text-xs ml-1">
                           Last: {formatLastCompleted(session.lastCompleted)}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
                     <button
                       onClick={() => onSessionSelect(session)}
-                      className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-105"
+                      className="w-6 h-6 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-105"
                     >
-                      <Play size={12} className="text-white ml-0.5" />
+                      <Play size={10} className="text-white ml-0.5" />
                     </button>
                     
-                    <button className="w-8 h-8 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-105">
-                      <Trash2 size={12} className="text-red-400" />
+                    <button className="w-6 h-6 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-105">
+                      <Trash2 size={10} className="text-red-400" />
                     </button>
                   </div>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden mt-1">
                   <div 
                     className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min((session.completedCount / 20) * 100, 100)}%` }}
@@ -201,8 +201,8 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <Heart size={48} className="text-white/20 mx-auto mb-4" />
-                <h3 className="text-white/60 text-lg font-medium mb-2">No favorites yet</h3>
+                <Heart size={32} className="text-white/20 mx-auto mb-3" />
+                <h3 className="text-white/60 text-base font-medium mb-2">No favorites yet</h3>
                 <p className="text-white/40 text-sm">Complete sessions to add them to favorites</p>
               </div>
             </div>
