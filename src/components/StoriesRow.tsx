@@ -21,9 +21,9 @@ export default function StoriesRow({ selectedEgoState, onEgoStateChange }: Stori
       <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
       
       {/* Scrolling container with pause on hover */}
-      <div className={`flex items-center justify-start space-x-3 px-4 ${animationPaused ? '' : 'animate-scroll-x'}`}>
+      <div className={`flex items-center justify-start space-x-2 px-4 ${animationPaused ? '' : 'animate-scroll-x'}`}>
         {/* Quintuple the states for better coverage and seamless infinite scroll */}
-        {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => (
+        {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => (
           <div key={`${state.id}-${index}`} className="flex-shrink-0 flex justify-center items-center space-around">
             <div className="flex flex-col items-center justify-between space-y-2">
               <button

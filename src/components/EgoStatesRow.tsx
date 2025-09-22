@@ -20,7 +20,7 @@ export default function EgoStatesRow({ selectedEgoState, onEgoStateChange }: Ego
       <div className="absolute right-0 top-0 bottom-0 w-4 sm:w-6 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
       
       {/* Scrolling container with pause on hover */}
-      <div className={`flex items-center justify-start space-x-1.5 sm:space-x-2 px-2 sm:px-3 ${animationPaused ? '' : 'animate-scroll-x'}`}>
+      <div className={`flex items-center justify-start space-x-1 sm:space-x-1.5 px-2 sm:px-3 ${animationPaused ? '' : 'animate-scroll-x'}`}>
         {/* Triple the states for seamless infinite scroll */}
         {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => {
           const isSelected = selectedEgoState === state.id;

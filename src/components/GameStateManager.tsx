@@ -23,6 +23,8 @@ interface GameState {
   updateUserState: (updates: Partial<UserState>) => void;
   completeSession: (sessionType: string, duration: number) => void;
   getOrbState: () => any;
+  canAccess: (feature: string) => boolean;
+  spendTokens: (amount: number, feature: string) => boolean;
 }
 
 const GameStateContext = createContext<GameState | null>(null);
