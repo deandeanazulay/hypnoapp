@@ -72,24 +72,24 @@ export default function EnhancedActionsBar({ selectedEgoState, selectedAction, o
   const currentEgoState = EGO_STATES.find(state => state.id === selectedEgoState);
 
   return (
-    <div className="w-full max-w-4xl bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 mx-auto">
+    <div className="w-full max-w-4xl bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 mx-auto min-h-[120px] flex flex-col justify-between">
         
       {/* Compact Header */}
-      <div className="flex items-center justify-between space-x-4 mb-3">
+      <div className="flex items-center justify-between space-x-2 sm:space-x-4 mb-3 flex-shrink-0">
         <div className="flex items-center justify-start space-x-3 flex-shrink-0">
           <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${currentEgoState?.color} p-1 flex items-center justify-center`}>
             <span className="text-xs">{currentEgoState?.icon}</span>
           </div>
           <div className="flex flex-col justify-center">
-            <h3 className="text-white font-medium text-sm">{currentEgoState?.name} Mode</h3>
-            <p className="text-white/60 text-xs">{currentEgoState?.role.split(',')[0]}</p>
+            <h3 className="text-white font-medium text-xs sm:text-sm">{currentEgoState?.name} Mode</h3>
+            <p className="text-white/60 text-xs hidden sm:block">{currentEgoState?.role.split(',')[0]}</p>
           </div>
         </div>
         
         {/* Compact Level */}
-        <div className="flex items-center justify-end space-around space-x-3 flex-shrink-0">
+        <div className="flex items-center justify-end space-x-1 sm:space-x-3 flex-shrink-0">
           {/* HP/MP indicators */}
-          <div className="hidden sm:flex items-center justify-center space-x-1">
+          <div className="hidden md:flex items-center justify-center space-x-1">
             <div className="text-red-400 text-xs">HP</div>
             <div className="w-8 h-1 bg-white/10 rounded-full overflow-hidden">
               <div 
@@ -98,7 +98,7 @@ export default function EnhancedActionsBar({ selectedEgoState, selectedAction, o
               />
             </div>
           </div>
-          <div className="hidden sm:flex items-center justify-center space-x-1">
+          <div className="hidden md:flex items-center justify-center space-x-1">
             <div className="text-blue-400 text-xs">MP</div>
             <div className="w-8 h-1 bg-white/10 rounded-full overflow-hidden">
               <div 
@@ -109,9 +109,9 @@ export default function EnhancedActionsBar({ selectedEgoState, selectedAction, o
           </div>
           
           {/* Level and XP */}
-          <div className="flex items-center justify-center space-x-2">
+          <div className="flex items-center justify-center space-x-1 sm:space-x-2">
             <div className="text-teal-400 text-xs font-medium">lvl.{user.level}</div>
-            <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
+            <div className="w-8 sm:w-12 h-1 bg-white/10 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
                 style={{ width: `${(user.experience % 100)}%` }}
@@ -128,7 +128,7 @@ export default function EnhancedActionsBar({ selectedEgoState, selectedAction, o
       </div>
 
       {/* Action Grid - Responsive: 3 cols on mobile, 5 cols on desktop */}
-      <div className="grid grid-cols-5 gap-3 justify-items-center">
+      <div className="grid grid-cols-5 gap-2 sm:gap-3 justify-items-center flex-shrink-0">
         {ACTIONS.map((action) => {
           const isRecommended = action.egoStateBonus?.includes(selectedEgoState);
           const isSelected = selectedAction?.id === action.id;
@@ -137,7 +137,7 @@ export default function EnhancedActionsBar({ selectedEgoState, selectedAction, o
             <button
               key={action.id}
               onClick={() => onActionSelect(action)}
-              className={`w-full p-2 lg:p-3 rounded-xl bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center space-y-1 lg:space-y-2 ${
+              className={`w-full p-1.5 sm:p-2 lg:p-3 rounded-xl bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center space-y-1 lg:space-y-2 min-h-[60px] sm:min-h-[70px] ${
                 isSelected
                   ? 'border-teal-400/60 ring-2 ring-teal-400/40 scale-105'
                   : isRecommended 
@@ -145,12 +145,12 @@ export default function EnhancedActionsBar({ selectedEgoState, selectedAction, o
                     : 'border-white/10 hover:border-white/20'
               }`}
             >
-              <div className="w-6 h-6 lg:w-8 lg:h-8 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0">
                 {action.icon}
               </div>
-              <div className="text-center hidden lg:flex lg:flex-col lg:items-center lg:justify-center space-y-1">
+              <div className="text-center hidden sm:flex sm:flex-col sm:items-center sm:justify-center space-y-1">
                 <div className="flex items-center justify-center space-x-1">
-                  <h4 className="text-white font-medium text-xs leading-tight">{action.name}</h4>
+                  <h4 className="text-white font-medium text-xs leading-tight truncate max-w-[60px] sm:max-w-none">{action.name}</h4>
                   {isSelected && (
                     <span className="text-teal-400 text-xs">✓</span>
                   )}
@@ -158,12 +158,12 @@ export default function EnhancedActionsBar({ selectedEgoState, selectedAction, o
                     <span className="text-teal-400 text-xs">✨</span>
                   )}
                 </div>
-                <div className="text-white/60 text-xs flex items-center justify-center">
+                <div className="text-white/60 text-xs flex items-center justify-center hidden lg:flex">
                   {action.duration}m
                 </div>
               </div>
-              {/* Mobile: Show only recommended indicator */}
-              <div className="flex items-center justify-center lg:hidden">
+              {/* Mobile/Small screens: Show only recommended indicator */}
+              <div className="flex items-center justify-center sm:hidden">
                 {isSelected && (
                   <span className="text-teal-400 text-xs">✓</span>
                 )}

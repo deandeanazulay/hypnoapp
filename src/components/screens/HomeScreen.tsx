@@ -80,7 +80,7 @@ export default function HomeScreen({
         </div>
 
         {/* 3. Actions Bar */}
-        <div className="flex-shrink-0 px-4 pb-4">
+        <div className="flex-shrink-0 px-4 pb-4 min-h-[140px] flex items-end">
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}
             selectedAction={selectedAction}
