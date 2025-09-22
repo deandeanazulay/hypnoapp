@@ -144,3 +144,5 @@ function App() {
     </GameStateProvider>
   );
 }
+
+export default App;
