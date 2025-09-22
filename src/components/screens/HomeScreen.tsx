@@ -3,6 +3,7 @@ import StoriesRow from '../StoriesRow';
 import EnhancedWebGLOrb from '../EnhancedWebGLOrb';
 import EnhancedActionsBar from '../EnhancedActionsBar';
 import { useGameState } from '../GameStateManager';
+import { EGO_STATES } from '../../types/EgoState';
 
 interface HomeScreenProps {
   selectedEgoState: string;
@@ -42,25 +43,22 @@ export default function HomeScreen({
 
         {/* Center Section - Orb (perfectly centered) */}
         <div className="flex-1 flex items-center justify-center py-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-7xl mx-auto px-4">
-            {/* Left Column - Desktop only */}
-            <div className="hidden lg:block">
-              {/* Future: Side content */}
-            </div>
+          <div className="flex flex-col items-center">
+            {/* Main WebGL Orb */}
+            <EnhancedWebGLOrb 
+              onTap={onOrbTap}
+              egoState={selectedEgoState}
+              afterglow={user.lastSessionTime !== null}
+              level={user.level}
+              size={280}
+            />
             
-            {/* Center Column - Orb */}
-            <div className="flex items-center justify-center">
-              <EnhancedWebGLOrb 
-                onTap={onOrbTap}
-                egoState={selectedEgoState}
-                afterglow={user.lastSessionTime !== null}
-                level={user.level}
-              />
-            </div>
-            
-            {/* Right Column - Desktop only */}
-            <div className="hidden lg:block">
-              {/* Future: Side content */}
+            {/* Tap to begin text */}
+            <div className="mt-6 text-center">
+              <p className="text-white/60 text-sm mb-1">Tap to begin with</p>
+              <p className="text-white text-lg font-light">
+                {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
+              </p>
             </div>
           </div>
         </div>
