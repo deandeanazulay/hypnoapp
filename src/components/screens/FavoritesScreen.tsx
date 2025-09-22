@@ -106,6 +106,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col pb-24">
+      <div className="relative z-10 flex-1 flex flex-col pb-32">
         {/* Header */}
         <div className="flex-shrink-0 pt-12 pb-4 px-6">
           <h1 className="text-white text-2xl font-light mb-2">Favorites</h1>

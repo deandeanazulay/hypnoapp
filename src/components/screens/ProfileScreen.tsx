@@ -47,6 +47,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col pb-24">
+      <div className="relative z-10 flex-1 flex flex-col pb-32">
         {/* Header */}
         <div className="flex-shrink-0 pt-12 pb-6 px-6">
           <div className="flex items-center justify-between">
