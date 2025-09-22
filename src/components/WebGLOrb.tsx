@@ -35,7 +35,13 @@ export default function WebGLOrb({
       sage: { primary: [0.8, 0.8, 0.8], secondary: [0.6, 0.6, 0.6] }, // Gray/White
       child: { primary: [1.0, 0.6, 0.2], secondary: [0.8, 0.4, 0.1] }, // Orange
       performer: { primary: [0.9, 0.2, 0.6], secondary: [0.7, 0.1, 0.4] }, // Pink
-      shadow: { primary: [0.3, 0.2, 0.5], secondary: [0.1, 0.1, 0.3] } // Dark Purple
+      shadow: { primary: [0.3, 0.2, 0.5], secondary: [0.1, 0.1, 0.3] }, // Dark Purple
+      builder: { primary: [0.5, 0.5, 0.5], secondary: [1.0, 0.6, 0.2] }, // Steel Grey/Orange
+      seeker: { primary: [0.3, 0.2, 0.8], secondary: [0.2, 0.8, 0.8] }, // Indigo/Teal
+      lover: { primary: [0.9, 0.4, 0.6], secondary: [1.0, 0.7, 0.8] }, // Deep Rose/Pink
+      trickster: { primary: [0.2, 1.0, 0.2], secondary: [0.6, 0.2, 1.0] }, // Neon Green/Purple
+      warrior: { primary: [0.8, 0.1, 0.1], secondary: [0.1, 0.1, 0.1] }, // Blood Red/Black
+      visionary: { primary: [0.6, 0.2, 1.0], secondary: [0.4, 0.7, 1.0] } // Cosmic Violet/Starlight Blue
     };
     return colorMap[egoState as keyof typeof colorMap] || colorMap.guardian;
   };

@@ -109,5 +109,71 @@ export const EGO_STATES: EgoState[] = [
     description: 'Black/Indigo — Integration of hidden aspects',
     usedFor: ['Integration of fear', 'Destructive habits', 'Trauma release'],
     orbAnimation: 'flicker'
+  },
+  {
+    id: 'builder',
+    name: 'Builder',
+    role: 'Creator, Manifestor, System Architect',
+    color: 'from-gray-600 to-orange-600',
+    glowColor: 'shadow-orange-500/50',
+    icon: '🛠️',
+    description: 'Steel Grey/Orange — Grounding visions into reality',
+    usedFor: ['Productivity', 'Goal manifestation', 'Structure building', 'Grounding'],
+    orbAnimation: 'shield'
+  },
+  {
+    id: 'seeker',
+    name: 'Seeker',
+    role: 'Student, Pilgrim, Learner',
+    color: 'from-indigo-600 to-teal-600',
+    glowColor: 'shadow-teal-500/50',
+    icon: '🔭',
+    description: 'Indigo/Teal — Expanding awareness and growth',
+    usedFor: ['Learning', 'Research', 'Curiosity', 'Awareness expansion'],
+    orbAnimation: 'ripple'
+  },
+  {
+    id: 'lover',
+    name: 'Lover',
+    role: 'Connector, Empath, Heart-Driven',
+    color: 'from-rose-600 to-pink-500',
+    glowColor: 'shadow-rose-500/50',
+    icon: '💞',
+    description: 'Deep Rose/Pink — Heart connection and vulnerability',
+    usedFor: ['Intimacy', 'Empathy', 'Emotional healing', 'Connection'],
+    orbAnimation: 'wave'
+  },
+  {
+    id: 'trickster',
+    name: 'Trickster',
+    role: 'Jester, Disruptor, Pattern Breaker',
+    color: 'from-green-500 to-purple-600',
+    glowColor: 'shadow-green-500/50',
+    icon: '🎭',
+    description: 'Neon Green/Purple — Breaking rigid patterns',
+    usedFor: ['Pattern breaking', 'Flexibility', 'Creative disruption', 'Freedom'],
+    orbAnimation: 'flicker'
+  },
+  {
+    id: 'warrior',
+    name: 'Warrior',
+    role: 'Fighter, Disciplined Doer, Courage',
+    color: 'from-red-700 to-black',
+    glowColor: 'shadow-red-600/50',
+    icon: '⚔️',
+    description: 'Blood Red/Black — Courage and perseverance',
+    usedFor: ['Courage building', 'Discipline', 'Breaking resistance', 'Perseverance'],
+    orbAnimation: 'flare'
+  },
+  {
+    id: 'visionary',
+    name: 'Visionary',
+    role: 'Prophet, Dreamer, Future Architect',
+    color: 'from-violet-600 to-blue-400',
+    glowColor: 'shadow-violet-500/50',
+    icon: '🌌',
+    description: 'Cosmic Violet/Starlight Blue — Future-self connection',
+    usedFor: ['Future visioning', 'Strategic planning', 'Imagination', 'Foresight'],
+    orbAnimation: 'spiral'
   }
 ];
