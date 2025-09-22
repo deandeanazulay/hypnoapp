@@ -43,13 +43,13 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
 
       <div className="relative z-10 h-full flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 pt-12 pb-4 px-6">
+        <div className="flex-shrink-0 pt-4 pb-3 px-6">
           <h1 className="text-white text-2xl font-light mb-2">Explore Protocols</h1>
           <p className="text-white/60 text-sm">Discover hypnosis journeys and techniques</p>
         </div>
 
         {/* Filters */}
-        <div className="flex-shrink-0 px-6 mb-4">
+        <div className="flex-shrink-0 px-6 mb-3">
           <div className="flex space-x-2 mb-3">
               {['all', 'induction', 'deepener', 'complete'].map((filter) => (
                 <button
