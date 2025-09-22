@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Target, Settings, Mic, ChevronDown, Zap, Moon, Shield, Lightbulb, Heart } from 'lucide-react';
+import React from 'react';
+import { Shield, Moon, Zap, Lightbulb, Heart } from 'lucide-react';
 import { useGameState } from './GameStateManager';
 import { EGO_STATES } from '../types/EgoState';
 
@@ -68,29 +68,17 @@ interface EnhancedActionsBarProps {
 
 export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }: EnhancedActionsBarProps) {
   const { user } = useGameState();
-  const [showAllActions, setShowAllActions] = useState(false);
-
   const currentEgoState = EGO_STATES.find(state => state.id === selectedEgoState);
-  
-  // Get recommended actions based on ego state
-  const getRecommendedActions = () => {
-    return ACTIONS.filter(action => 
-      action.egoStateBonus?.includes(selectedEgoState)
-    ).slice(0, 3);
-  };
-
-  const recommendedActions = getRecommendedActions();
-  const displayActions = showAllActions ? ACTIONS : recommendedActions;
 
   return (
     <div className="px-4">
-      <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-4">
+      <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
         
-        {/* Header with Ego State Info */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${currentEgoState?.color} p-1.5 flex items-center justify-center`}>
-              <span className="text-sm">{currentEgoState?.icon}</span>
+        {/* Compact Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${currentEgoState?.color} p-1 flex items-center justify-center`}>
+              <span className="text-xs">{currentEgoState?.icon}</span>
             </div>
             <div>
               <h3 className="text-white font-medium text-sm">{currentEgoState?.name} Mode</h3>
@@ -98,10 +86,10 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
             </div>
           </div>
           
-          {/* Level Indicator */}
+          {/* Compact Level */}
           <div className="flex items-center space-x-2">
-            <div className="text-teal-400 text-sm font-medium">L{user.level}</div>
-            <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+            <div className="text-teal-400 text-xs font-medium">L{user.level}</div>
+            <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
                 style={{ width: `${(user.experience % 100)}%` }}
@@ -110,35 +98,33 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
           </div>
         </div>
 
-        {/* Action Buttons - Mobile Optimized */}
-        <div className="grid grid-cols-3 gap-2 mb-2">
-          {displayActions.map((action) => {
+        {/* Action Grid - Responsive: 3 cols on mobile, 5 cols on desktop */}
+        <div className="grid grid-cols-3 lg:grid-cols-5 gap-2">
+          {ACTIONS.map((action) => {
             const isRecommended = action.egoStateBonus?.includes(selectedEgoState);
             
             return (
               <button
                 key={action.id}
                 onClick={() => onActionSelect(action)}
-                className={`p-2 rounded-lg bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] ${
+                className={`p-3 rounded-xl bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] ${
                   isRecommended 
                     ? 'border-white/30 ring-1 ring-teal-400/20' 
                     : 'border-white/10 hover:border-white/20'
                 }`}
               >
-                <div className="flex flex-col items-center space-y-1">
-                  <div className="flex items-center justify-center">
-                    <div className="w-6 h-6 rounded-md bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                      {action.icon}
-                    </div>
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="w-8 h-8 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                    {action.icon}
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center space-x-1">
-                      <h4 className="text-white font-medium text-xs">{action.name}</h4>
+                      <h4 className="text-white font-medium text-xs leading-tight">{action.name}</h4>
                       {isRecommended && (
                         <span className="text-teal-400 text-xs">✨</span>
                       )}
                     </div>
-                    <div className="text-white/60 text-xs">
+                    <div className="text-white/60 text-xs mt-0.5">
                       {action.duration}m
                     </div>
                   </div>
@@ -147,39 +133,6 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
             );
           })}
         </div>
-
-        {/* Show More/Less Toggle */}
-        {!showAllActions && recommendedActions.length < ACTIONS.length && (
-          <button
-            onClick={() => setShowAllActions(true)}
-            className="w-full py-1.5 text-white/60 hover:text-white/80 text-xs flex items-center justify-center space-x-1 transition-colors"
-          >
-            <span>Show all actions</span>
-            <ChevronDown size={12} />
-          </button>
-        )}
-        
-        {showAllActions && (
-          <button
-            onClick={() => setShowAllActions(false)}
-            className="w-full py-1.5 text-white/60 hover:text-white/80 text-xs flex items-center justify-center space-x-1 transition-colors"
-          >
-            <span>Show recommended</span>
-            <ChevronDown size={12} className="rotate-180" />
-          </button>
-        )}
-
-        {/* Streak Indicator */}
-        {user.sessionStreak > 0 && (
-          <div className="pt-2 border-t border-white/10 mt-2">
-            <div className="flex items-center justify-center space-x-2">
-              <div className="text-orange-400 text-xs">🔥</div>
-              <div className="text-white/60 text-xs">
-                {user.sessionStreak} day streak
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
