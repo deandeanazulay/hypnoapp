@@ -283,8 +283,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                         >
                           <Play size={12} className="text-white ml-0.5" />
                         </button>
-                        <button className="w-4 h-4 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300">
-                          <button className="w-8 h-8 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-110">
+                        <button className="w-8 h-8 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-110">
                           <Trash2 size={12} className="text-red-400" />
                         </button>
                       </div>
@@ -348,6 +347,8 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                       <button
                         key={index}
                         onClick={() => setCurrentPage(index)}
+                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                          index === currentPage ? 'bg-white' : 'bg-white/30'
                         }`}
                       />
                     ))}
@@ -376,3 +377,4 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
       </div>
     </div>
   );
+}
