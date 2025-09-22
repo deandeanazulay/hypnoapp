@@ -112,7 +112,7 @@ export default function EnhancedActionsBar({
               <button
                 key={action.id}
                 onClick={() => onActionSelect(action.id === selectedAction?.id ? null : action)}
-                className={`flex-shrink-0 w-[80px] bg-gradient-to-br ${action.color} border border-white/20 rounded-lg p-2 hover:scale-105 transition-all duration-200 relative group ${
+                className={`flex-shrink-0 w-[80px] bg-gradient-to-br ${action.color} border border-white/20 rounded-lg p-2 hover:scale-105 hover:z-50 transition-all duration-200 relative group ${
                   selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
                 }`}
               >
@@ -169,7 +169,7 @@ export default function EnhancedActionsBar({
             {/* Add New Action Button */}
             <button
               onClick={addCustomAction}
-              className="flex-shrink-0 w-[80px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-lg p-2 hover:scale-105 transition-all duration-200 hover:border-white/50"
+              className="flex-shrink-0 w-[80px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-lg p-2 hover:scale-105 hover:z-50 transition-all duration-200 hover:border-white/50"
             >
               <div className="flex flex-col items-center space-y-1">
                 <div className="w-4 h-4 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
