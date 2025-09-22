@@ -123,6 +123,7 @@ function App() {
             onActionSelect={handleActionSelect}
             activeTab={activeTab}
             onTabChange={setActiveTab}
+        )
         );
     }
   };
