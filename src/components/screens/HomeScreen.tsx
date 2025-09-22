@@ -57,6 +57,10 @@ export default function HomeScreen({
     onActionSelect(action);
   };
 
+  const handleOrbTap = () => {
+    // Pass the selected action configuration to the session
+    onOrbTap();
+  };
   const lastSessionText = getLastSessionText();
 
   return (
@@ -90,13 +94,25 @@ export default function HomeScreen({
             
             {/* Center Column - Orb */}
             <div className="flex items-center justify-center">
-              <EnhancedWebGLOrb 
+              <div className="flex flex-col items-center">
+                  onTap={handleOrbTap}
                 onTap={onOrbTap}
                 afterglow={user.lastSessionDate !== null}
                 egoState={selectedEgoState}
                 size={window.innerWidth < 768 ? Math.min(window.innerWidth * 0.5, 220) : 260}
                 enhanced={true}
               />
+                
+                {/* Session configuration display */}
+                <div className="mt-4 text-center">
+                  <p className="text-white/60 text-xs mb-1">
+                    {selectedAction ? `${selectedAction.name} session ready` : 'Tap to begin'}
+                  </p>
+                  <p className="text-teal-400 text-xs">
+                    {selectedEgoState.charAt(0).toUpperCase() + selectedEgoState.slice(1)} Mode
+                  </p>
+                </div>
+              </div>
             </div>
             
             {/* Right Column - Desktop only */}
@@ -108,6 +124,9 @@ export default function HomeScreen({
 
         {/* Bottom Section - Actions Bar */}
         <div className="flex-shrink-0 pb-1 sm:pb-2">
+          <div className="text-center mb-2">
+            <p className="text-white/40 text-xs">Choose your session type</p>
+          </div>
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}
             selectedAction={selectedAction}
