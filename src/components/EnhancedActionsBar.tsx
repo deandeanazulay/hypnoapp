@@ -1,13 +1,4 @@
 import React, { useState } from 'react';
-  const { userState: user } = useGameState();
-import ExploreScreen from './components/screens/ExploreScreen';
-import CreateScreen from './components/screens/CreateScreen';
-import FavoritesScreen from './components/screens/FavoritesScreen';
-import ProfileScreen from './components/screens/ProfileScreen';
-import NavigationTabs from './components/NavigationTabs';
-import UnifiedSessionWorld from './components/UnifiedSessionWorld';
-import { GameStateProvider } from './components/GameStateManager';
-import { TabId } from './types/Navigation';
 
 type AppMode = 'navigation' | 'session';
 
