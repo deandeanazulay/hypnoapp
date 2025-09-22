@@ -57,16 +57,16 @@ export default function HomeScreen({
       <div className="relative z-10 flex-1 flex flex-col justify-between min-h-0">
         
         {/* Top Section - Ego States */}
-        <div className="flex-shrink-0 flex justify-center items-start pt-4">
+        <div className="flex-shrink-0 flex justify-center items-center pt-4 pb-2">
           <StoriesRow 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={onEgoStateChange}
           />
         </div>
 
-        {/* Center Section - Orb (perfectly centered) */}
-        <div className="flex-1 flex flex-col justify-center items-center space-y-8 min-h-0">
-          <div className="flex justify-center items-center">
+        {/* Center Section - Orb (perfectly centered between states and action bar) */}
+        <div className="flex-1 flex justify-center items-center min-h-0">
+          <div className="flex flex-col justify-center items-center space-y-6">
             {/* Main WebGL Orb - responsive sizing */}
             <WebGLOrb 
               onTap={handleOrbTap}
@@ -76,25 +76,28 @@ export default function HomeScreen({
               selectedGoal={selectedAction}
             />
           </div>
-
           
+          {/* Tap to begin text */}
+          <div className="flex justify-center items-center">
+            {canAccess('daily_session') ? (
+              <p className="text-white/60 text-sm text-center">
+                Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
+                {selectedAction && (
+                  <span className="text-teal-400"> • {selectedAction.name}</span>
+                )}
+              </p>
+            ) : (
+              <div className="flex flex-col items-center justify-center space-y-1">
+                <p className="text-orange-400 text-sm">Daily limit reached</p>
+                <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
+              </div>
+              )}
+          </div>
         </div>
 
-        {/* Tap to begin text - Between orb and action bar */}
-        <div className="flex-shrink-0 flex justify-center items-center py-4">
-          {canAccess('daily_session') ? (
-            <p className="text-white/60 text-sm text-center">
-              Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
-              {selectedAction && (
-                <span className="text-teal-400"> • {selectedAction.name}</span>
-              )}
-            </p>
-          ) : (
-            <div className="flex flex-col items-center justify-center space-y-1">
-              <p className="text-orange-400 text-sm">Daily limit reached</p>
-              <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
-            </div>
-          )}
+        {/* Bottom spacer to balance the layout */}
+        <div className="flex-shrink-0 h-32">
+          {/* This creates space for the fixed action bar */}
         </div>
       </div>
 
