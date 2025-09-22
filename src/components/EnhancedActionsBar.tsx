@@ -4,9 +4,9 @@ import ExploreScreen from './screens/ExploreScreen';
 import CreateScreen from './screens/CreateScreen';
 import FavoritesScreen from './screens/FavoritesScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import NavigationTabs from './components/NavigationTabs';
-import UnifiedSessionWorld from './components/UnifiedSessionWorld';
-import { GameStateProvider } from './components/GameStateManager';
+import NavigationTabs from './NavigationTabs';
+import UnifiedSessionWorld from './UnifiedSessionWorld';
+import { GameStateProvider } from './GameStateManager';
 import { TabId } from './types/Navigation';
 
 type AppMode = 'navigation' | 'session';
