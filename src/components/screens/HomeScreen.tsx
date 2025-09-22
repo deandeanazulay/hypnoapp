@@ -95,7 +95,7 @@ export default function HomeScreen({
             {/* Center Column - Orb */}
             <div className="flex items-center justify-center">
               <div className="flex flex-col items-center">
-                  onTap={handleOrbTap}
+                <EnhancedWebGLOrb
                 onTap={onOrbTap}
                 afterglow={user.lastSessionDate !== null}
                 egoState={selectedEgoState}
