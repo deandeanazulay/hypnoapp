@@ -44,7 +44,7 @@ export default function HomeScreen({
   };
 
   return (
-    <div className="h-screen bg-black relative overflow-hidden flex flex-col">
+    <div className="flex-1 bg-black relative overflow-hidden flex flex-col">
       {/* Background gradient */}
       <div className="fixed inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-950/20 via-black to-purple-950/20" />
@@ -53,20 +53,20 @@ export default function HomeScreen({
         )}
       </div>
 
-      {/* Main Layout - Fit to screen with proper spacing */}
-      <div className="relative z-10 flex-1 flex flex-col min-h-0">
+      {/* Main Layout - Perfect flexbox distribution */}
+      <div className="relative z-10 flex-1 flex flex-col justify-between min-h-0">
         
-        {/* Top Section - Ego States (compact) */}
-        <div className="flex-shrink-0 pt-4 pb-2">
+        {/* Top Section - Ego States */}
+        <div className="flex-shrink-0 flex justify-center items-start pt-4">
           <StoriesRow 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={onEgoStateChange}
           />
         </div>
 
-        {/* Center Section - Orb (flexible, takes available space) */}
-        <div className="flex-1 flex items-center justify-center min-h-0 py-4">
-          <div className="flex flex-col items-center">
+        {/* Center Section - Orb (perfectly centered) */}
+        <div className="flex-1 flex flex-col justify-center items-center space-y-6 min-h-0">
+          <div className="flex justify-center items-center">
             {/* Main WebGL Orb - responsive sizing */}
             <WebGLOrb 
               onTap={handleOrbTap}
@@ -76,27 +76,28 @@ export default function HomeScreen({
               selectedGoal={selectedAction}
             />
           </div>
+
+          
+          {/* Tap to begin text */}
+          <div className="flex justify-center items-center">
+            {canAccess('daily_session') ? (
+              <p className="text-white/60 text-sm text-center">
+                Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
+                {selectedAction && (
+                  <span className="text-teal-400"> • {selectedAction.name}</span>
+                )}
+              </p>
+            ) : (
+              <div className="flex flex-col items-center space-y-1">
+                <p className="text-orange-400 text-sm">Daily limit reached</p>
+                <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Tap to begin text - positioned between orb and action bar */}
-        <div className="flex-shrink-0 text-center pb-4">
-          {canAccess('daily_session') ? (
-            <p className="text-white/60 text-sm">
-              Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
-              {selectedAction && (
-                <span className="text-teal-400"> • {selectedAction.name}</span>
-              )}
-            </p>
-          ) : (
-            <div className="text-center">
-              <p className="text-orange-400 text-sm mb-1">Daily limit reached</p>
-              <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
-            </div>
-          )}
-        </div>
-
-        {/* Bottom Section - Action Bar (fixed above bottom nav) */}
-        <div className="flex-shrink-0 pb-20">
+        {/* Bottom Section - Action Bar */}
+        <div className="flex-shrink-0 flex justify-center items-end pb-20">
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}
             selectedAction={selectedAction}
@@ -107,7 +108,7 @@ export default function HomeScreen({
 
       {/* Achievement notifications - positioned to not interfere */}
       {user.achievements.length > 0 && (
-        <div className="absolute top-16 right-4 bg-gradient-to-r from-amber-400 to-orange-400 text-black px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-20">
+        <div className="absolute top-16 right-4 flex justify-center items-center bg-gradient-to-r from-amber-400 to-orange-400 text-black px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-20">
           {user.achievements[user.achievements.length - 1]}
         </div>
       )}

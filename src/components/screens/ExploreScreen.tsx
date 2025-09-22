@@ -35,28 +35,28 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   };
 
   return (
-    <div className="h-screen bg-black relative overflow-hidden flex flex-col">
+    <div className="flex-1 bg-black relative overflow-hidden flex flex-col">
       {/* Background gradient */}
       <div className="fixed inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-950/20 via-black to-purple-950/20" />
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col pb-20">
+      <div className="relative z-10 flex-1 flex flex-col justify-between pb-20">
         {/* Header */}
-        <div className="flex-shrink-0 pt-12 pb-6 px-6">
+        <div className="flex-shrink-0 flex flex-col justify-start items-start pt-12 pb-6 px-6">
           <h1 className="text-white text-2xl font-light mb-2">Explore Protocols</h1>
           <p className="text-white/60 text-sm">Discover hypnosis journeys and techniques</p>
         </div>
 
         {/* Filters */}
-        <div className="flex-shrink-0 px-6 mb-6">
-          <div className="flex space-x-4 mb-4">
-            <div className="flex space-x-2">
+        <div className="flex-shrink-0 flex flex-col justify-start items-stretch px-6 mb-6 space-y-4">
+          <div className="flex justify-start items-center space-x-4">
+            <div className="flex items-center justify-start space-x-2">
               {['all', 'induction', 'deepener', 'complete'].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setSelectedFilter(filter as any)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center justify-center ${
                     selectedFilter === filter
                       ? 'bg-teal-500/20 text-teal-400 border border-teal-500/40'
                       : 'bg-white/10 text-white/60 border border-white/20 hover:bg-white/20'
@@ -68,12 +68,12 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
             </div>
           </div>
 
-          <div className="flex space-x-2">
+          <div className="flex justify-start items-center space-x-2">
             {['all', 'beginner', 'intermediate', 'advanced'].map((difficulty) => (
               <button
                 key={difficulty}
                 onClick={() => setSelectedDifficulty(difficulty as any)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center justify-center ${
                   selectedDifficulty === difficulty
                     ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
                     : 'bg-white/10 text-white/60 border border-white/20 hover:bg-white/20'
@@ -86,15 +86,15 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
         </div>
 
         {/* Protocol List */}
-        <div className="flex-1 overflow-y-auto px-6 space-y-4">
+        <div className="flex-1 overflow-y-auto px-6 flex flex-col justify-start items-stretch space-y-4">
           {filteredProtocols.map((protocol) => (
             <div
               key={protocol.id}
-              className={`bg-gradient-to-br ${getTypeColor(protocol.type)} backdrop-blur-md rounded-2xl p-4 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02]`}
+              className={`bg-gradient-to-br ${getTypeColor(protocol.type)} backdrop-blur-md rounded-2xl p-4 border border-white/10 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] flex flex-col justify-between`}
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
+              <div className="flex items-start justify-between space-x-4 mb-3">
+                <div className="flex-1 flex flex-col justify-start">
+                  <div className="flex items-center justify-start space-x-2 mb-1">
                     <h3 className="text-white font-semibold text-lg">{protocol.name}</h3>
                     <span className={`text-xs font-medium ${getDifficultyColor(protocol.difficulty)}`}>
                       {protocol.difficulty}
@@ -102,32 +102,34 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                   </div>
                   <p className="text-white/70 text-sm mb-2">{protocol.description}</p>
                   
-                  <div className="flex items-center space-x-4 text-white/50 text-xs">
-                    <div className="flex items-center space-x-1">
+                  <div className="flex items-center justify-start space-x-4 text-white/50 text-xs">
+                    <div className="flex items-center justify-center space-x-1">
                       <Clock size={12} />
                       <span>{protocol.duration} min</span>
                     </div>
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center justify-center space-x-1">
                       <Star size={12} />
                       <span>{protocol.type}</span>
                     </div>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => onProtocolSelect(protocol)}
-                  className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-105"
-                >
-                  <Play size={16} className="text-white ml-0.5" />
-                </button>
+                <div className="flex-shrink-0 flex items-center justify-center">
+                  <button
+                    onClick={() => onProtocolSelect(protocol)}
+                    className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-105"
+                  >
+                    <Play size={16} className="text-white ml-0.5" />
+                  </button>
+                </div>
               </div>
 
               {/* Tags */}
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap justify-start items-center gap-1">
                 {protocol.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-2 py-0.5 bg-white/10 text-white/60 text-xs rounded-full"
+                    className="px-2 py-0.5 bg-white/10 text-white/60 text-xs rounded-full flex items-center justify-center"
                   >
                     {tag}
                   </span>
@@ -140,7 +142,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
         {/* Empty State */}
         {filteredProtocols.length === 0 && (
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
+            <div className="flex flex-col items-center justify-center space-y-4">
               <Filter size={48} className="text-white/20 mx-auto mb-4" />
               <h3 className="text-white/60 text-lg font-medium mb-2">No protocols found</h3>
               <p className="text-white/40 text-sm">Try adjusting your filters</p>

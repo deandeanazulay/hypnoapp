@@ -90,9 +90,9 @@ function App() {
   // Navigation mode - tabbed interface
   return (
     <GameStateProvider>
-      <div className="h-screen bg-black overflow-hidden">
+      <div className="h-screen bg-black overflow-hidden flex flex-col">
         {/* Main Content Area */}
-        <div className="h-full">
+        <div className="flex-1 flex flex-col min-h-0">
           {activeTab === 'home' && (
             <HomeScreen
               selectedEgoState={selectedEgoState}
@@ -129,10 +129,12 @@ function App() {
         </div>
 
         {/* Bottom Navigation */}
-        <NavigationTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        <div className="flex-shrink-0">
+          <NavigationTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </div>
       </div>
     </GameStateProvider>
   );
