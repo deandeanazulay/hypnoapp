@@ -74,10 +74,10 @@ export default function HomeScreen({
       </div>
 
       {/* Main Layout - Perfect vertical distribution */}
-      <div className="relative z-10 h-full flex flex-col justify-between">
+      <div className="relative z-10 h-full flex flex-col">
         
         {/* Ego States Row */}
-        <div className="flex-shrink-0 pt-2 sm:pt-4 pb-1">
+        <div className="flex-shrink-0 pt-1 pb-1">
           <EgoStatesRow 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={onEgoStateChange}
@@ -85,7 +85,7 @@ export default function HomeScreen({
         </div>
 
         {/* Center Section - Orb (perfectly centered) */}
-        <div className="flex-1 flex items-center justify-center py-0">
+        <div className="flex-1 flex items-center justify-center">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-7xl mx-auto px-2 sm:px-4">
             {/* Left Column - Desktop only */}
             <div className="hidden lg:block">
@@ -99,17 +99,17 @@ export default function HomeScreen({
                 onTap={onOrbTap}
                 afterglow={user.lastSessionDate !== null}
                 egoState={selectedEgoState}
-                size={window.innerWidth < 768 ? Math.min(window.innerWidth * 0.5, 220) : 260}
+                size={window.innerWidth < 768 ? Math.min(window.innerWidth * 0.4, 180) : 220}
                 enhanced={true}
               />
                 
                 {/* Session configuration display - moved closer to orb */}
-                <div className="mt-2 text-center">
-                  <p className="text-teal-400 text-xs font-medium">
+                <div className="mt-1 text-center">
+                  <p className="text-teal-400 text-xs">
                     {selectedEgoState.charAt(0).toUpperCase() + selectedEgoState.slice(1)} Mode
                   </p>
                   {selectedAction && (
-                    <p className="text-orange-400 text-xs mt-0.5">
+                    <p className="text-orange-400 text-xs">
                       {selectedAction.name} ready
                     </p>
                   )}
@@ -125,9 +125,9 @@ export default function HomeScreen({
         </div>
 
         {/* Bottom Section - Actions Bar */}
-        <div className="flex-shrink-0 pb-4">
-          <div className="text-center mb-3">
-            <p className="text-white/40 text-xs">Choose your session type</p>
+        <div className="flex-shrink-0 pb-2">
+          <div className="text-center mb-1">
+            <p className="text-white/40 text-xs">Choose session type</p>
           </div>
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}

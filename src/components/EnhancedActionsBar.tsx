@@ -105,47 +105,47 @@ export default function EnhancedActionsBar({
   return (
     <>
       <div className="px-2 sm:px-4">
-        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-2 sm:px-3 py-2">
+        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl px-2 py-1.5">
           {/* Actions - Horizontal Scrollable */}
-          <div className="flex space-x-2 sm:space-x-3 mb-2 overflow-x-auto scrollbar-hide pb-1">
+          <div className="flex space-x-1.5 mb-1.5 overflow-x-auto scrollbar-hide pb-1">
             {allActions.map((action) => (
               <button
                 key={action.id}
                 onClick={() => onActionSelect(action)}
-                className={`flex-shrink-0 w-[100px] sm:w-[130px] bg-gradient-to-br ${action.color} border border-white/20 rounded-xl p-2 sm:p-3 hover:scale-105 transition-all duration-200 relative group ${
+                className={`flex-shrink-0 w-[80px] bg-gradient-to-br ${action.color} border border-white/20 rounded-lg p-2 hover:scale-105 transition-all duration-200 relative group ${
                   selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
                 }`}
               >
                 {/* Edit/Delete buttons for custom actions */}
                 {action.isCustom && (
-                  <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                  <div className="absolute -top-0.5 -right-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-0.5">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         startEdit(action);
                       }}
-                      className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center"
+                      className="w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center"
                     >
-                      <Edit2 size={8} className="text-white" />
+                      <Edit2 size={6} className="text-white" />
                     </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteCustomAction(action.id);
                       }}
-                      className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center"
+                      className="w-3 h-3 bg-red-500 rounded-full flex items-center justify-center"
                     >
-                      <X size={8} className="text-white" />
+                      <X size={6} className="text-white" />
                     </button>
                   </div>
                 )}
                 
-                <div className="flex flex-col items-center space-y-1 sm:space-y-2">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                <div className="flex flex-col items-center space-y-1">
+                  <div className="w-4 h-4 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                     {action.icon}
                   </div>
                   <div className="text-center">
-                    <div className="text-white font-medium text-xs leading-tight w-full mb-1">
+                    <div className="text-white font-medium text-xs leading-tight w-full">
                       {editingAction === action.id ? (
                         <input
                           type="text"
@@ -161,9 +161,6 @@ export default function EnhancedActionsBar({
                         <div className="truncate text-center">{action.name}</div>
                       )}
                     </div>
-                    <div className="text-white/70 text-xs leading-tight line-clamp-2 hidden sm:block">
-                      {action.description}
-                    </div>
                   </div>
                 </div>
               </button>
@@ -172,26 +169,26 @@ export default function EnhancedActionsBar({
             {/* Add New Action Button */}
             <button
               onClick={addCustomAction}
-              className="flex-shrink-0 w-[100px] sm:w-[130px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-xl p-2 sm:p-3 hover:scale-105 transition-all duration-200 hover:border-white/50"
+              className="flex-shrink-0 w-[80px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-lg p-2 hover:scale-105 transition-all duration-200 hover:border-white/50"
             >
-              <div className="flex flex-col items-center space-y-1 sm:space-y-2">
-                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+              <div className="flex flex-col items-center space-y-1">
+                <div className="w-4 h-4 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                   <Plus size={12} className="text-white/60" />
                 </div>
                 <div className="text-center">
-                  <div className="text-white/70 font-medium text-xs leading-tight">Add New</div>
+                  <div className="text-white/70 font-medium text-xs leading-tight">Add</div>
                 </div>
               </div>
             </button>
           </div>
           
           {/* Level Progress - Compact */}
-          <div className="pt-2 border-t border-white/10">
-            <div className="flex items-center justify-center space-x-2">
+          <div className="pt-1 border-t border-white/10">
+            <div className="flex items-center justify-center space-x-1.5">
               <div className="text-teal-400 text-xs font-medium">
                 L{user.level}
               </div>
-              <div className="w-16 sm:w-20 h-1 bg-white/10 rounded-full overflow-hidden">
+              <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
                   style={{ width: `${(user.experience % 100)}%` }}
