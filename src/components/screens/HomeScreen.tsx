@@ -69,18 +69,18 @@ export default function HomeScreen({
         </div>
 
         {/* 2. Orb Component (with built-in text) */}
-        <div className="flex-1 flex justify-center items-center py-2">
+        <div className="flex-1 flex justify-center items-center py-2 relative">
           <WebGLOrb 
             onTap={handleOrbTap}
             egoState={selectedEgoState}
             afterglow={user.lastSessionTime !== null}
-            size={Math.min(window.innerWidth * 0.6, 240)}
+            size={Math.min(window.innerWidth * 0.5, 200)}
             selectedGoal={selectedAction}
           />
         </div>
 
         {/* 3. Actions Bar */}
-        <div className="flex-shrink-0 px-4 pb-2 min-h-[120px] flex items-end">
+        <div className="flex-shrink-0 px-4 pb-2 pt-4 min-h-[120px] flex items-end">
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}
             selectedAction={selectedAction}
