@@ -1,154 +1,116 @@
-import React, { useState } from 'react';
-import HomeScreen from './components/screens/HomeScreen';
-import ExploreScreen from './components/screens/ExploreScreen';
-import CreateScreen from './components/screens/CreateScreen';
-import FavoritesScreen from './components/screens/FavoritesScreen';
-import ProfileScreen from './components/screens/ProfileScreen';
-import NavigationTabs from './components/NavigationTabs';
-import UnifiedSessionWorld from './components/UnifiedSessionWorld';
-import { GameStateProvider } from './components/GameStateManager';
-import { TabId } from './types/Navigation';
+import React from 'react';
+import { useGameState } from '../GameStateManager';
+import { EgoStatesRow } from '../EgoStatesRow';
+import { EnhancedActionsBar } from '../EnhancedActionsBar';
+import { EnhancedWebGLOrb } from '../EnhancedWebGLOrb';
+import { TabId } from '../../types/Navigation';
 
-type AppMode = 'navigation' | 'session';
-
-function App() {
-  const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
-  const [activeTab, setActiveTab] = useState<TabId>('home');
-  const [selectedEgoState, setSelectedEgoState] = useState('guardian');
-  const [sessionConfig, setSessionConfig] = useState<any>(null);
-
-  const handleOrbTap = () => {
-    // Start session with current ego state
-    setSessionConfig({
-      egoState: selectedEgoState,
-      action: null,
-      type: 'unified'
-    });
-    setCurrentMode('session');
-  };
-
-  const handleActionSelect = (action: any) => {
-    // Start session with specific action + ego state
-    setSessionConfig({
-      egoState: selectedEgoState,
-      action: action,
-      type: 'unified'
-    });
-    setCurrentMode('session');
-  };
-
-  const handleProtocolSelect = (protocol: any) => {
-    // Start session with specific protocol
-    setSessionConfig({
-      egoState: selectedEgoState,
-      protocol: protocol,
-      type: 'protocol'
-    });
-    setCurrentMode('session');
-  };
-
-  const handleCustomProtocolCreate = (protocol: any) => {
-    // Save and optionally start custom protocol
-    console.log('Custom protocol created:', protocol);
-    // In real app, save to localStorage or API
-  };
-
-  const handleSessionComplete = () => {
-    setCurrentMode('navigation');
-    setSessionConfig(null);
-  };
-
-  const handleCancel = () => {
-    setCurrentMode('navigation');
-    setSessionConfig(null);
-  };
-
-  const handleFavoriteSessionSelect = (session: any) => {
-    // Start favorited session
-    setSessionConfig({
-      egoState: session.egoState,
-      action: session.action,
-      type: 'favorite',
-      session: session
-    });
-    setCurrentMode('session');
-  };
-
-  // Session mode - full screen wizard
-  if (currentMode === 'session') {
-    return (
-      <GameStateProvider>
-        <UnifiedSessionWorld 
-          onComplete={handleSessionComplete}
-          onCancel={handleCancel}
-          sessionConfig={sessionConfig}
-        />
-      </GameStateProvider>
-    );
-  }
-
-  // Render current tab content
-  const renderCurrentTab = () => {
-    switch (activeTab) {
-      case 'home':
-        return (
-          <HomeScreen
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
-            onOrbTap={handleOrbTap}
-            onActionSelect={handleActionSelect}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        );
-      case 'explore':
-        return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
-      case 'create':
-        return <CreateScreen onProtocolCreate={handleCustomProtocolCreate} />;
-      case 'favorites':
-        return <FavoritesScreen onSessionSelect={handleFavoriteSessionSelect} />;
-      case 'profile':
-        return (
-          <ProfileScreen 
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
-          />
-        );
-      default:
-        return (
-          <HomeScreen
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
-            onOrbTap={handleOrbTap}
-            onActionSelect={handleActionSelect}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        );
-    }
-  };
-
-  // Navigation mode - tabbed interface
-  return (
-    <GameStateProvider>
-      <div className="relative h-screen w-screen overflow-hidden bg-black">
-        <div className="flex h-full flex-col">
-          {/* Content region */}
-          <div className="flex-1 min-h-0 overflow-hidden">
-            {renderCurrentTab()}
-          </div>
-          
-          {/* Bottom Navigation */}
-          <div className="flex-shrink-0 pb-[env(safe-area-inset-bottom)]">
-            <NavigationTabs
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
-          </div>
-        </div>
-      </div>
-    </GameStateProvider>
-  );
+interface HomeScreenProps {
+  selectedEgoState: string;
+  onEgoStateChange: (state: string) => void;
+  onOrbTap: () => void;
+  onActionSelect: (action: any) => void;
+  activeTab: TabId;
+  onTabChange: (tab: TabId) => void;
 }
 
-export default App;
+const HomeScreen: React.FC<HomeScreenProps> = ({
+  selectedEgoState,
+  onEgoStateChange,
+  onOrbTap,
+  onActionSelect,
+  activeTab,
+  onTabChange
+}) => {
+  const { user, updateUserState } = useGameState();
+
+  const handleOrbTap = () => {
+    // Update last session time
+    updateUserState({
+      stats: {
+        ...user.stats,
+        lastSessionDate: new Date().toISOString()
+      }
+    });
+    onOrbTap();
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const getLastSessionText = () => {
+    if (!user.stats.lastSessionDate) {
+      return 'Welcome! Ready for your first session?';
+    }
+    
+    const lastSession = new Date(user.stats.lastSessionDate);
+    const now = new Date();
+    const diffHours = Math.floor((now.getTime() - lastSession.getTime()) / (1000 * 60 * 60));
+    
+    if (diffHours < 1) return 'Welcome back! Just finished a session.';
+    if (diffHours < 24) return `Welcome back! Last session was ${diffHours} hours ago.`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    return `Welcome back! Last session was ${diffDays} days ago.`;
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-gradient-to-b from-gray-900 via-black to-gray-900">
+      {/* Header */}
+      <div className="flex-shrink-0 px-6 pt-12 pb-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-light text-white mb-2">
+            {getGreeting()}
+          </h1>
+          <p className="text-gray-400 text-sm">
+            {getLastSessionText()}
+          </p>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6">
+        {/* Orb */}
+        <div className="mb-8">
+          <EnhancedWebGLOrb
+            egoState={selectedEgoState}
+            isActive={true}
+            onTap={handleOrbTap}
+            size={200}
+          />
+        </div>
+
+        {/* Ego States */}
+        <div className="w-full mb-8">
+          <EgoStatesRow
+            selectedState={selectedEgoState}
+            onStateChange={onEgoStateChange}
+          />
+        </div>
+
+        {/* Actions Bar */}
+        <div className="w-full">
+          <EnhancedActionsBar
+            selectedEgoState={selectedEgoState}
+            onActionSelect={onActionSelect}
+          />
+        </div>
+      </div>
+
+      {/* Stats Footer */}
+      <div className="flex-shrink-0 px-6 pb-6">
+        <div className="flex justify-between text-xs text-gray-500">
+          <span>Level {user.level}</span>
+          <span>{user.experience} XP</span>
+          <span>Sessions: {user.stats.totalSessions}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default HomeScreen;
