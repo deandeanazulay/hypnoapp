@@ -1,5 +1,5 @@
 import React from 'react';
-import EgoStatesRow from '../EgoStatesRow';
+import StoriesRow from '../StoriesRow';
 import EnhancedWebGLOrb from '../EnhancedWebGLOrb';
 import EnhancedActionsBar from '../EnhancedActionsBar';
 import { useGameState } from '../GameStateManager';
@@ -34,7 +34,7 @@ export default function HomeScreen({
         
         {/* Top Section - Ego States */}
         <div className="flex-shrink-0 pt-8 pb-4">
-          <EgoStatesRow 
+          <StoriesRow 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={onEgoStateChange}
           />

@@ -1,56 +1,6 @@
 import React from 'react';
 
-interface EgoState {
-  id: string;
-  label: string;
-  color: string;
-  glowColor: string;
-  description: string;
-  voiceTone: string;
-}
-
-const egoStates: EgoState[] = [
-  { 
-    id: 'protector', 
-    label: 'Calm', 
-    color: 'from-teal-400 to-cyan-400', 
-    glowColor: 'shadow-teal-400/50',
-    description: 'Safe, supported, steady',
-    voiceTone: 'parasympathetic'
-  },
-  { 
-    id: 'performer', 
-    label: 'Focus', 
-    color: 'from-cyan-400 to-blue-400', 
-    glowColor: 'shadow-cyan-400/50',
-    description: 'Sharp, precise, on command',
-    voiceTone: 'crisp'
-  },
-  { 
-    id: 'nurturer', 
-    label: 'Stress', 
-    color: 'from-amber-400 to-orange-400', 
-    glowColor: 'shadow-amber-400/50',
-    description: 'Gentle, softening, unwinding',
-    voiceTone: 'gentle'
-  },
-  { 
-    id: 'sage', 
-    label: 'Joy', 
-    color: 'from-yellow-400 to-amber-400', 
-    glowColor: 'shadow-yellow-400/50',
-    description: 'Expansive, grateful, clear',
-    voiceTone: 'upbeat'
-  },
-  { 
-    id: 'explorer', 
-    label: 'Curiosity', 
-    color: 'from-cyan-400 to-teal-400', 
-    glowColor: 'shadow-cyan-400/50',
-    description: 'Curious, playful, flexible',
-    voiceTone: 'playful'
-  }
-];
+import { EGO_STATES } from '../types/EgoState';
 
 interface StoriesRowProps {
   selectedEgoState: string;
@@ -59,42 +9,54 @@ interface StoriesRowProps {
 
 export default function StoriesRow({ selectedEgoState, onEgoStateChange }: StoriesRowProps) {
   return (
-    <div className="px-4 py-2">
-      <div className="flex justify-center items-center space-x-3 sm:space-x-4">
-        {egoStates.map((state) => (
-          <div key={state.id} className="flex flex-col items-center space-y-1">
+    <div className="relative overflow-hidden py-4">
+      {/* Auto-scrolling container */}
+      <div className="flex animate-scroll space-x-4 px-4" style={{ 
+        animation: 'scroll 30s linear infinite',
+        width: 'calc(100% + 400px)'
+      }}>
+        {/* Duplicate the states for seamless loop */}
+        {[...EGO_STATES, ...EGO_STATES].map((state, index) => (
+          <div key={`${state.id}-${index}`} className="flex-shrink-0">
             <button
               onClick={() => onEgoStateChange(state.id)}
-              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br ${state.color} p-1 cursor-pointer transition-all duration-300 hover:scale-105 ${state.glowColor} shadow-lg border-2 ${
+              className={`w-12 h-12 rounded-full bg-gradient-to-br ${state.color} p-1 cursor-pointer transition-all duration-300 hover:scale-105 ${state.glowColor} shadow-lg border-2 ${
                 selectedEgoState === state.id ? 'border-white/60 scale-110' : 'border-white/20'
               }`}
               style={{
                 boxShadow: selectedEgoState === state.id 
-                  ? `0 0 20px ${state.glowColor.includes('teal') ? '#14b8a6' : state.glowColor.includes('cyan') ? '#06b6d4' : state.glowColor.includes('amber') ? '#f59e0b' : state.glowColor.includes('yellow') ? '#eab308' : '#14b8a6'}80, inset 0 0 10px rgba(255,255,255,0.2)`
-                  : `0 0 15px ${state.glowColor.includes('teal') ? '#14b8a6' : state.glowColor.includes('cyan') ? '#06b6d4' : state.glowColor.includes('amber') ? '#f59e0b' : state.glowColor.includes('yellow') ? '#eab308' : '#14b8a6'}60, inset 0 0 10px rgba(255,255,255,0.1)`
+                  ? `0 0 20px ${state.glowColor.includes('blue') ? '#3b82f6' : 
+                                state.glowColor.includes('red') ? '#ef4444' : 
+                                state.glowColor.includes('green') ? '#22c55e' : 
+                                state.glowColor.includes('yellow') ? '#eab308' : 
+                                state.glowColor.includes('purple') ? '#a855f7' : 
+                                state.glowColor.includes('gray') ? '#9ca3af' : 
+                                state.glowColor.includes('orange') ? '#f97316' : 
+                                state.glowColor.includes('pink') ? '#ec4899' : '#6366f1'}80, inset 0 0 10px rgba(255,255,255,0.2)`
+                  : `0 0 15px ${state.glowColor.includes('blue') ? '#3b82f6' : 
+                                state.glowColor.includes('red') ? '#ef4444' : 
+                                state.glowColor.includes('green') ? '#22c55e' : 
+                                state.glowColor.includes('yellow') ? '#eab308' : 
+                                state.glowColor.includes('purple') ? '#a855f7' : 
+                                state.glowColor.includes('gray') ? '#9ca3af' : 
+                                state.glowColor.includes('orange') ? '#f97316' : 
+                                state.glowColor.includes('pink') ? '#ec4899' : '#6366f1'}60, inset 0 0 10px rgba(255,255,255,0.1)`
               }}
             >
               <div className="w-full h-full rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                <div className={`w-2 h-2 rounded-full bg-gradient-to-br ${state.color} opacity-80 ${
-                  selectedEgoState === state.id ? 'animate-pulse' : ''
-                }`} />
+                <span className="text-lg">{state.icon}</span>
               </div>
             </button>
-            <span className={`text-xs sm:text-xs font-semibold tracking-wide transition-colors duration-300 ${
-              selectedEgoState === state.id ? 'text-white' : 'text-white/70'
-            }`}>
-              {state.label}
-            </span>
           </div>
         ))}
       </div>
-      
-      {/* Selected state description */}
-      <div className="text-center mt-2">
-        <p className="text-white/60 text-xs">
-          {egoStates.find(s => s.id === selectedEgoState)?.description || 'Select your current state'}
-        </p>
-      </div>
+
+      <style jsx>{`
+        @keyframes scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
     </div>
   );
 }
