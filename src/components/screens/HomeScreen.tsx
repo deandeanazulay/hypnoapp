@@ -77,9 +77,9 @@ export default function HomeScreen({
             />
             
             {/* Tap to begin text - positioned below orb */}
-            <div className="flex flex-col justify-center items-center text-center">
+            <div className="flex flex-col justify-center items-center text-center space-y-1">
               {canAccess('daily_session') ? (
-                <div className="text-white/60 text-sm">
+                <div className="text-white/80 text-sm">
                   <p className="mb-1">Tap to begin with</p>
                   <p className="text-teal-400 font-medium">
                     {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
@@ -90,8 +90,8 @@ export default function HomeScreen({
                 </div>
               ) : (
                 <div className="flex flex-col items-center space-y-1">
-                  <p className="text-orange-400 text-sm">Daily limit reached</p>
-                  <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
+                  <p className="text-orange-400 text-sm font-medium">Daily limit reached</p>
+                  <p className="text-white/60 text-xs">Upgrade to Pro for unlimited sessions</p>
                 </div>
               )}
             </div>
