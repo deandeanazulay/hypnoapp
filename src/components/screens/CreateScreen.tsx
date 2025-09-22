@@ -157,7 +157,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               </div>
 
               {/* Deepener Selection */}
-              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10">
+              <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 pb-4">
                 <label className="block text-white/80 text-sm font-medium mb-2">Deepening Method</label>
                 <div className="space-y-1">
                   {deepenerOptions.slice(0, 3).map((option) => (

@@ -131,7 +131,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
         </div>
 
         {/* Favorites List */}
-        <div className="flex-1 px-6 space-y-3">
+        <div className="flex-1 px-6 space-y-3 pb-6">
           {mockFavorites.length > 0 ? (
             mockFavorites.map((session) => (
               <div
