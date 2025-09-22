@@ -173,10 +173,6 @@ export default function ActionsBar({
                 <Plus size={12} className="text-white/60" />
               </div>
               <div className="text-center">
-                <div className="text-white/70 font-medium text-xs leading-tight">Add</div>
-              </div>
-            </div>
-          </button>
         </div>
         
         {/* Level Progress - Compact */}
