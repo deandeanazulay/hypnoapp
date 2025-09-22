@@ -25,14 +25,18 @@ export default function WebGLOrb({
 
   // Get ego state colors
   const getEgoStateColor = () => {
-    const colors = {
-      protector: { primary: [0.2, 0.8, 0.8], secondary: [0.1, 0.6, 0.6] }, // Teal
-      performer: { primary: [0.2, 0.7, 1.0], secondary: [0.1, 0.5, 0.8] }, // Cyan
-      nurturer: { primary: [1.0, 0.7, 0.2], secondary: [0.8, 0.5, 0.1] }, // Amber
-      sage: { primary: [1.0, 0.9, 0.2], secondary: [0.8, 0.7, 0.1] }, // Gold
-      explorer: { primary: [0.2, 0.8, 0.7], secondary: [0.1, 0.6, 0.5] } // Aqua
+    const colorMap = {
+      guardian: { primary: [0.2, 0.4, 0.8], secondary: [0.1, 0.3, 0.6] }, // Blue
+      rebel: { primary: [0.8, 0.2, 0.2], secondary: [0.6, 0.1, 0.1] }, // Red
+      healer: { primary: [0.2, 0.8, 0.4], secondary: [0.1, 0.6, 0.3] }, // Green
+      explorer: { primary: [0.9, 0.8, 0.2], secondary: [0.7, 0.6, 0.1] }, // Yellow
+      mystic: { primary: [0.6, 0.2, 0.8], secondary: [0.4, 0.1, 0.6] }, // Purple
+      sage: { primary: [0.8, 0.8, 0.8], secondary: [0.6, 0.6, 0.6] }, // Gray/White
+      child: { primary: [1.0, 0.6, 0.2], secondary: [0.8, 0.4, 0.1] }, // Orange
+      performer: { primary: [0.9, 0.2, 0.6], secondary: [0.7, 0.1, 0.4] }, // Pink
+      shadow: { primary: [0.3, 0.2, 0.5], secondary: [0.1, 0.1, 0.3] } // Dark Purple
     };
-    return colors[egoState as keyof typeof colors] || colors.protector;
+    return colorMap[egoState as keyof typeof colorMap] || colorMap.guardian;
   };
 
   // Get goal sigil/glyph
@@ -81,6 +85,8 @@ export default function WebGLOrb({
       uniform sampler2D sound;
       uniform float hypnoticMode;
       uniform float tranceDepth;
+      uniform vec3 primaryColor;
+      uniform vec3 secondaryColor;
       varying vec4 v_color;
 
       #define PI 3.14159265359
@@ -265,12 +271,9 @@ export default function WebGLOrb({
         
         gl_Position = mat * wp;
 
-        // Hypnotic color patterns
-        float hypnoticHue = spiralAngle * 0.1 + time * 0.2;
-        vec3 baseColor = mix(
-           vec3(0.2, 0.8, 0.8), // Teal
-           vec3(0.8, 0.4, 0.2), // Orange
-           sin(hypnoticHue) * 0.5 + 0.5);
+        // Ego state color patterns
+        float colorMix = sin(spiralAngle * 0.1 + time * 0.2) * 0.5 + 0.5;
+        vec3 baseColor = mix(primaryColor, secondaryColor, colorMix);
            
         // Add spiral color bands for fixation
         float spiralBands = sin(spiralRadius * 10.0 - spiralTime * 3.0) * hypnoticMode;
@@ -334,6 +337,8 @@ export default function WebGLOrb({
     const resolutionLocation = gl.getUniformLocation(program, 'resolution');
     const hypnoticModeLocation = gl.getUniformLocation(program, 'hypnoticMode');
     const tranceDepthLocation = gl.getUniformLocation(program, 'tranceDepth');
+    const primaryColorLocation = gl.getUniformLocation(program, 'primaryColor');
+    const secondaryColorLocation = gl.getUniformLocation(program, 'secondaryColor');
 
     // Create vertex buffer
     const numVertices = 2048;
@@ -383,6 +388,11 @@ export default function WebGLOrb({
       
       gl.uniform1f(hypnoticModeLocation, hypnoticIntensity);
       gl.uniform1f(tranceDepthLocation, tranceLevel);
+      
+      // Set ego state colors
+      const egoColors = getEgoStateColor();
+      gl.uniform3f(primaryColorLocation, egoColors.primary[0], egoColors.primary[1], egoColors.primary[2]);
+      gl.uniform3f(secondaryColorLocation, egoColors.secondary[0], egoColors.secondary[1], egoColors.secondary[2]);
 
       // Set attributes
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
