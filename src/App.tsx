@@ -134,7 +134,7 @@ function App() {
       <div className="relative h-screen w-screen overflow-hidden bg-black">
         <div className="flex h-full flex-col">
           {/* Content region */}
-          <div className="flex-1 min-h-0 overflow-hidden pb-16">
+          <div className="flex-1 min-h-0 overflow-hidden pb-20">
             {renderCurrentTab()}
           </div>
           

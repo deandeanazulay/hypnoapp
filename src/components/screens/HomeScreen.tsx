@@ -74,7 +74,7 @@ export default function HomeScreen({
       </div>
 
       {/* Main Layout - Perfect vertical distribution */}
-      <div className="relative z-50 flex-1 flex flex-col justify-between">
+      <div className="relative z-50 flex-1 flex flex-col justify-between pb-4">
         
         {/* Ego States Row */}
         <div className="flex-shrink-0 pt-2 sm:pt-4 pb-1">
@@ -125,7 +125,7 @@ export default function HomeScreen({
         </div>
 
         {/* Bottom Section - Actions Bar */}
-        <div className="flex-shrink-0 pb-0">
+        <div className="flex-shrink-0 pb-2">
           <div className="text-center mb-3">
             <p className="text-white/40 text-xs">Choose your session type</p>
           </div>
