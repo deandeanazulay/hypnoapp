@@ -107,7 +107,7 @@ export default function EnhancedActionsBar({
       <div className="px-2 sm:px-4">
         <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-2 sm:px-3 py-2">
           {/* Actions - Horizontal Scrollable */}
-          <div className="flex space-x-1 sm:space-x-2 mb-2 overflow-x-auto scrollbar-hide pb-1">
+          <div className="flex space-x-2 sm:space-x-3 mb-2 overflow-x-auto scrollbar-hide pb-1">
             {allActions.map((action) => (
               <button
                 key={action.id}
@@ -141,7 +141,7 @@ export default function EnhancedActionsBar({
                 )}
                 
                 <div className="flex flex-col items-center space-y-1 sm:space-y-2">
-                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                     {action.icon}
                   </div>
                   <div className="text-center">
@@ -175,7 +175,7 @@ export default function EnhancedActionsBar({
               className="flex-shrink-0 w-[100px] sm:w-[130px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-xl p-2 sm:p-3 hover:scale-105 transition-all duration-200 hover:border-white/50"
             >
               <div className="flex flex-col items-center space-y-1 sm:space-y-2">
-                <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                   <Plus size={12} className="text-white/60" />
                 </div>
                 <div className="text-center">

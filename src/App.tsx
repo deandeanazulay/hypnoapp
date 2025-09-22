@@ -131,10 +131,10 @@ function App() {
   // Navigation mode - tabbed interface
   return (
     <GameStateProvider>
-      <div className="relative h-screen w-screen overflow-hidden bg-black pb-16">
+      <div className="relative h-screen w-screen overflow-hidden bg-black">
         <div className="flex h-full flex-col">
           {/* Content region */}
-          <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-hidden pb-16">
             {renderCurrentTab()}
           </div>
           

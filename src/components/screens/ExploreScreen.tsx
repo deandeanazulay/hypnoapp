@@ -41,7 +41,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
         <div className="absolute inset-0 bg-gradient-to-br from-blue-950/20 via-black to-purple-950/20" />
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col justify-between pb-20">
+      <div className="relative z-10 flex-1 flex flex-col justify-between">
         {/* Header */}
         <div className="flex-shrink-0 flex flex-col justify-start items-start pt-12 pb-6 px-6">
           <h1 className="text-white text-2xl font-light mb-2">Explore Protocols</h1>
