@@ -143,7 +143,7 @@ export default function EnhancedActionsBar({
                   <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                     {action.icon}
                   </div>
-                  <div className="text-center hidden sm:block">
+                  <div className="text-center">
                     <div className="text-white font-medium text-xs leading-tight truncate w-full">
                       {editingAction === action.id ? (
                         <input
@@ -152,7 +152,7 @@ export default function EnhancedActionsBar({
                           onChange={(e) => setEditText(e.target.value)}
                           onBlur={() => saveEdit(action.id)}
                           onKeyPress={(e) => e.key === 'Enter' && saveEdit(action.id)}
-                          className="w-full bg-transparent text-white text-xs text-center border-none outline-none"
+                          className="w-full bg-transparent text-white text-xs text-center border-none outline-none font-medium"
                           autoFocus
                           onClick={(e) => e.stopPropagation()}
                         />
@@ -160,7 +160,7 @@ export default function EnhancedActionsBar({
                         action.name
                       )}
                     </div>
-                    <div className="text-white/60 text-xs mt-0.5 line-clamp-1 hidden md:block">
+                    <div className="text-white/70 text-xs mt-0.5 line-clamp-1 hidden sm:block">
                       {action.description}
                     </div>
                   </div>
@@ -177,8 +177,8 @@ export default function EnhancedActionsBar({
                 <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                   <Plus size={12} className="text-white/60" />
                 </div>
-                <div className="text-center hidden sm:block">
-                  <div className="text-white/60 font-medium text-xs leading-tight">Add New</div>
+                <div className="text-center">
+                  <div className="text-white/70 font-medium text-xs leading-tight">Add New</div>
                 </div>
               </div>
             </button>
