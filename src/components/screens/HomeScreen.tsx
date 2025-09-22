@@ -23,7 +23,7 @@ export default function HomeScreen({
   activeTab,
   onTabChange 
 }: HomeScreenProps) {
-  const { userState } = useGameState();
+  const { user } = useGameState();
   const [selectedAction, setSelectedAction] = useState<any>(null);
 
   // Get greeting based on time of day
@@ -36,9 +36,9 @@ export default function HomeScreen({
 
   // Format last session time
   const getLastSessionText = () => {
-    if (!userState.stats.lastSessionDate) return null;
+    if (!user.lastSessionDate) return null;
     
-    const lastSession = new Date(userState.stats.lastSessionDate);
+    const lastSession = new Date(user.lastSessionDate);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - lastSession.getTime()) / (1000 * 60 * 60));
     
@@ -64,7 +64,7 @@ export default function HomeScreen({
       {/* Background gradient */}
       <div className="fixed inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-950/20 via-black to-purple-950/20" />
-        {userState.stats.lastSessionDate && (
+        {user.lastSessionDate && (
           <div className="absolute inset-0 bg-gradient-to-br from-teal-950/10 via-black to-orange-950/10" />
         )}
       </div>
@@ -82,15 +82,15 @@ export default function HomeScreen({
             <div className="flex items-center justify-center space-x-4 text-white/60 text-sm">
               <div className="flex items-center space-x-1">
                 <Target size={14} />
-                <span>Level {userState.level}</span>
+                <span>Level {user.level}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Zap size={14} />
-                <span>{userState.stats.streakDays}d streak</span>
+                <span>{user.streakDays}d streak</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Clock size={14} />
-                <span>{userState.completedSessions} sessions</span>
+                <span>{user.experience} sessions</span>
               </div>
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function HomeScreen({
             <div className="flex items-center justify-center">
               <EnhancedWebGLOrb 
                 onTap={onOrbTap}
-                afterglow={userState.stats.lastSessionDate !== null}
+                afterglow={user.lastSessionDate !== null}
                 egoState={selectedEgoState}
                 size={280}
                 enhanced={true}
@@ -141,9 +141,9 @@ export default function HomeScreen({
       </div>
 
       {/* Achievement notifications */}
-      {userState.achievements.length > 0 && (
+      {user.achievements.length > 0 && (
         <div className="absolute top-20 right-4 bg-gradient-to-r from-amber-400 to-orange-400 text-black px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-20">
-          {userState.achievements[userState.achievements.length - 1]}
+          {user.achievements[user.achievements.length - 1]}
         </div>
       )}
     </div>
