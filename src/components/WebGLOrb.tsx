@@ -501,5 +501,4 @@ export default function WebGLOrb({
     </div>
   );
 }
-  )
 }
