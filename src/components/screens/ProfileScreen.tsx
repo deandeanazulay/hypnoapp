@@ -141,23 +141,39 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
             )}
 
             {/* Usage Breakdown */}
-            <div className="space-y-1 overflow-y-auto flex-1 min-h-0">
+            <div className="grid grid-cols-2 gap-1 overflow-y-auto flex-1 min-h-0">
               {EGO_STATES.map((state) => {
                 const usage = egoStateUsage[state.id as keyof typeof egoStateUsage] || 0;
                 const percentage = getUsagePercentage(usage);
                 
                 return (
-                  <div key={state.id} className="flex items-center justify-between py-0.5">
-                    <div className="flex items-center space-x-2">
+                  <div key={state.id} className="bg-white/5 rounded-lg p-1 border border-white/10">
+                    <div className="flex items-center space-x-1 mb-1">
                       <span className="text-sm">{state.icon}</span>
-                      <div>
-                        <span className="text-white text-xs font-medium">{state.name}</span>
-                        <div className="text-white/50 text-xs">{usage} sessions</div>
-                      </div>
+                      <span className="text-white text-xs font-medium truncate">{state.name}</span>
                     </div>
                     
-                    <div className="flex items-center space-x-1">
-                      <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-white/50 text-xs">{usage}</span>
+                      <span className="text-white/60 text-xs">{percentage}%</span>
+                    </div>
+                    
+                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full bg-gradient-to-r ${state.color.replace('from-', 'from-').replace('to-', 'to-')} rounded-full transition-all duration-500`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
                         <div 
                           className={`h-full bg-gradient-to-r ${state.color.replace('from-', 'from-').replace('to-', 'to-')} rounded-full transition-all duration-500`}
                           style={{ width: `${percentage}%` }}
