@@ -30,30 +30,30 @@ export default function HomeScreen({
         )}
       </div>
 
-      {/* Main Layout - Perfect vertical distribution */}
-      <div className="relative z-10 flex-1 flex flex-col">
+      {/* Main Layout - Fit to screen with proper spacing */}
+      <div className="relative z-10 flex-1 flex flex-col min-h-0">
         
-        {/* Top Section - Ego States */}
-        <div className="flex-shrink-0 pt-8 pb-4">
+        {/* Top Section - Ego States (compact) */}
+        <div className="flex-shrink-0 pt-4 pb-2">
           <StoriesRow 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={onEgoStateChange}
           />
         </div>
 
-        {/* Center Section - Orb (perfectly centered) */}
-        <div className="flex-1 flex items-center justify-center">
+        {/* Center Section - Orb (flexible, takes available space) */}
+        <div className="flex-1 flex items-center justify-center min-h-0 py-4">
           <div className="flex flex-col items-center">
-            {/* Main WebGL Orb - using the hypno portal orb */}
+            {/* Main WebGL Orb - responsive sizing */}
             <WebGLOrb 
               onTap={onOrbTap}
               egoState={selectedEgoState}
               afterglow={user.lastSessionTime !== null}
-              size={280}
+              size={Math.min(window.innerWidth * 0.6, 240)}
             />
             
-            {/* Single tap to begin text */}
-            <div className="mt-6 text-center">
+            {/* Compact text below orb */}
+            <div className="mt-4 text-center">
               <p className="text-white/60 text-sm">
                 Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
               </p>
@@ -61,8 +61,8 @@ export default function HomeScreen({
           </div>
         </div>
 
-        {/* Bottom Section - Actions Bar positioned above bottom nav */}
-        <div className="flex-shrink-0 pb-20">
+        {/* Bottom Section - Action Bar (fixed above bottom nav) */}
+        <div className="flex-shrink-0 pb-16">
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}
             onActionSelect={onActionSelect}
@@ -70,9 +70,9 @@ export default function HomeScreen({
         </div>
       </div>
 
-      {/* Achievement notifications */}
+      {/* Achievement notifications - positioned to not interfere */}
       {user.achievements.length > 0 && (
-        <div className="absolute top-20 right-4 bg-gradient-to-r from-amber-400 to-orange-400 text-black px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-20">
+        <div className="absolute top-16 right-4 bg-gradient-to-r from-amber-400 to-orange-400 text-black px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-20">
           {user.achievements[user.achievements.length - 1]}
         </div>
       )}

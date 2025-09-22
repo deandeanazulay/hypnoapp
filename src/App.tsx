@@ -92,7 +92,7 @@ function App() {
     <GameStateProvider>
       <div className="h-screen bg-black overflow-hidden">
         {/* Main Content Area */}
-        <div className="h-full pb-16">
+        <div className="h-full">
           {activeTab === 'home' && (
             <HomeScreen
               selectedEgoState={selectedEgoState}
