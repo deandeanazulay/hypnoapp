@@ -48,10 +48,19 @@ export default function UnifiedSessionWorld({ onComplete, onCancel }: UnifiedSes
     { id: '2', type: 'fear', title: 'Fear of rejection', content: 'What if others judge me negatively?' },
     { id: '3', type: 'desire', title: 'Inner peace', content: 'I want to feel calm and centered always' }
   ]);
+  const [therapeuticPlan, setTherapeuticPlan] = useState({
+    phase: 'calibration',
+    extractedInfo: [],
+    targetBeliefs: [],
+    anchorsSet: [],
+    nextQuestion: null
+  });
+  const [guidanceTimer, setGuidanceTimer] = useState(0);
 
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const orbRef = useRef<any>(null);
+  const continuousGuidanceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize speech systems
   useEffect(() => {
@@ -87,15 +96,146 @@ export default function UnifiedSessionWorld({ onComplete, onCancel }: UnifiedSes
     return () => clearInterval(interval);
   }, []);
 
-  // Continuous AI guidance - never stops talking
+  // Robust continuous AI guidance system - NEVER stops talking
   useEffect(() => {
-    const continuousGuidance = () => {
+    const startContinuousGuidance = () => {
+      if (continuousGuidanceRef.current) {
+        clearInterval(continuousGuidanceRef.current);
+      }
+      
+      continuousGuidanceRef.current = setInterval(() => {
+        setGuidanceTimer(prev => prev + 1);
+        
+        // Only guide if not currently speaking or listening
+        if (!sessionState.isSpeaking && !sessionState.isListening) {
+          const guidance = generateTherapeuticGuidance();
+          if (guidance) {
+            setConversation(prev => [...prev, { 
+              role: 'ai', 
+              content: guidance, 
+              timestamp: Date.now() 
+            }]);
+            
+            if (isVoiceEnabled) {
+              speakAI(guidance);
+            }
+            
+            setLastAIMessageTime(Date.now());
+          }
+        }
+      }, 6000); // Every 6 seconds - aggressive continuous guidance
+    };
+
+    startContinuousGuidance();
+    
+    return () => {
+      if (continuousGuidanceRef.current) {
+        clearInterval(continuousGuidanceRef.current);
+      }
+    };
+  }, [sessionState.phase, sessionState.isSpeaking, sessionState.isListening, isVoiceEnabled, therapeuticPlan]);
+
+  // Generate therapeutic guidance with strategic plan
+  const generateTherapeuticGuidance = () => {
+    const { phase, timer } = sessionState;
+    const planPhase = therapeuticPlan.phase;
+    
+    // Calibration phase - extract information
+    if (phase === 'preparation' || planPhase === 'calibration') {
+      const calibrationQuestions = [
+        "That's perfect... as you focus on the center... tell me, what brought you here today? What would you like to change?",
+        "Good... your breathing is becoming more natural... and as you relax deeper... what's been weighing on your mind lately?",
+        "Excellent... notice how your body is beginning to let go... and I'm curious... when you think about your goal... what comes up for you?",
+        "Beautiful... you're doing so well... and as you continue to watch the patterns... what would your life look like if this issue was completely resolved?",
+        "Perfect... your unconscious mind is opening... tell me about a time when you felt completely confident and in control...",
+        "That's right... deeper and deeper... and what stops you from feeling that way more often? What gets in the way?",
+        "Wonderful... as you go even deeper... describe the feeling you want to have instead... how would that feel in your body?"
+      ];
+      
+      return calibrationQuestions[Math.floor(Math.random() * calibrationQuestions.length)];
+    }
+    
+    // Induction phase - deepen while extracting
+    if (phase === 'induction' || planPhase === 'induction') {
+      const inductionGuidance = [
+        "Deeper now... with each breath... and as you go deeper... that old pattern you mentioned... just let it float away... what does it feel like as it dissolves?",
+        "That's it... your unconscious mind is completely open now... and you can feel those old limitations melting away... tell me what you're experiencing...",
+        "Perfect... going deeper with each word I speak... and as those old beliefs fade... what new truth is emerging in their place?",
+        "Excellent... you're in a beautiful state of deep relaxation... and your mind is ready for change... what would you like to install in place of the old pattern?",
+        "Beautiful... deeper and deeper... and as you access this resourceful state... how do you want to feel when you encounter that old trigger?",
+        "That's right... your unconscious mind is doing the work now... releasing what no longer serves... what are you ready to let go of completely?",
+        "Wonderful... in this deep state... your mind is like fertile soil... ready for new seeds... what empowering belief wants to take root?"
+      ];
+      
+      return inductionGuidance[Math.floor(Math.random() * inductionGuidance.length)];
+    }
+    
+    // Deepening phase - active change work
+    if (phase === 'deepening' || planPhase === 'deepening') {
+      const deepeningWork = [
+        "Yes... I can feel the shift happening... that old pattern is dissolving completely... and in its place... a new strength is growing... tell me what you feel...",
+        "Perfect... your unconscious mind is rewiring itself right now... old neural pathways dissolving... new ones forming... what's different already?",
+        "Excellent... the transformation is happening at the cellular level... and you can feel it... that new confidence... that inner strength... describe it to me...",
+        "Beautiful... you're releasing years of old programming... and installing something much more powerful... what does this new you feel like?",
+        "That's right... the old you is fading away... and the real you... the confident, powerful you... is emerging... how does that feel?",
+        "Wonderful... this change is becoming permanent... hardwired into your nervous system... and when you think about your goal now... what's different?",
+        "Yes... you can feel it integrating... this new way of being... becoming your natural state... tell me about this transformation..."
+      ];
+      
+      return deepeningWork[Math.floor(Math.random() * deepeningWork.length)];
+    }
+    
+    // Transformation phase - lock in changes
+    if (phase === 'transformation' || planPhase === 'transformation') {
+      const transformationWork = [
+        "Perfect... this new programming is locking in... becoming part of your DNA... and you can feel how permanent this is... how solid... how real...",
+        "Excellent... your unconscious mind has accepted this change completely... and it's spreading through every cell... every fiber of your being...",
+        "Beautiful... this transformation is complete... and when you return to full awareness... you'll carry this new strength with you always...",
+        "That's right... the old pattern is gone forever... replaced by this powerful new way of being... and it feels so natural... so right...",
+        "Wonderful... your nervous system has rewired itself... new neural pathways are now your default... this is who you are now...",
+        "Yes... this change is permanent... unshakeable... and you can feel the confidence flowing through you... stronger than ever before...",
+        "Perfect... the integration is complete... this new you is your reality now... and it feels amazing... doesn't it?"
+      ];
+      
+      return transformationWork[Math.floor(Math.random() * transformationWork.length)];
+    }
+    
+    // Integration phase - anchor and future pace
+    if (phase === 'integration' || planPhase === 'integration') {
+      const integrationWork = [
+        "Now... as this settles into every cell... create an anchor... take a deep breath and say 'I am strong'... feel how that locks in this state...",
+        "Perfect... and now imagine yourself tomorrow... next week... next month... carrying this transformation with you... how does that look?",
+        "Excellent... this is your new normal... and whenever you take a deep breath... you'll remember this strength... this confidence...",
+        "Beautiful... see yourself handling challenges with this new mindset... watch how differently you respond... how powerful you are...",
+        "That's right... this change is permanent... and you have everything you need... this inner strength is always available to you...",
+        "Wonderful... and when you're ready... you can begin to return... bringing this transformation with you... knowing it's permanent...",
+        "Yes... this is who you are now... transformed... empowered... ready to live this new reality... take your time coming back..."
+      ];
+      
+      return integrationWork[Math.floor(Math.random() * integrationWork.length)];
+    }
+    
+    // Default continuous guidance
+    const defaultGuidance = [
+      "That's it... just continue to relax... going deeper with each breath...",
+      "Perfect... your unconscious mind is open and receptive... ready for positive change...",
+      "Excellent... you're doing beautifully... just let yourself drift deeper...",
+      "Good... feel how relaxed and peaceful you are... this is your natural state...",
+      "Beautiful... deeper and deeper... your mind is calm and focused...",
+      "That's right... just let go completely... you're safe and supported here..."
+    ];
+    
+    return defaultGuidance[Math.floor(Math.random() * defaultGuidance.length)];
+  };
+
+  // Old continuous guidance function - remove this
+  const oldContinuousGuidance = () => {
       const now = Date.now();
       const timeSinceLastMessage = now - lastAIMessageTime;
       
       // Send new AI message every 8-15 seconds if no recent activity
       if (timeSinceLastMessage > 8000 && !sessionState.isSpeaking && !sessionState.isListening) {
-        const guidance = generateContinuousGuidance(sessionState.phase, sessionState.timer);
+        const guidance = generateTherapeuticGuidance();
         
         setConversation(prev => [...prev, { 
           role: 'ai', 
@@ -109,11 +249,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel }: UnifiedSes
         
         setLastAIMessageTime(now);
       }
-    };
-
-    const interval = setInterval(continuousGuidance, 2000); // Check every 2 seconds
-    return () => clearInterval(interval);
-  }, [sessionState.phase, sessionState.timer, sessionState.isSpeaking, sessionState.isListening, lastAIMessageTime, isVoiceEnabled]);
+  };
 
   // Session progression timer
   useEffect(() => {
@@ -321,16 +457,80 @@ export default function UnifiedSessionWorld({ onComplete, onCancel }: UnifiedSes
     setConversation(prev => [...prev, { role: 'user', content: transcript, timestamp }]);
     setLastAIMessageTime(timestamp);
     
+    // Analyze user response and update therapeutic plan
+    analyzeUserResponse(transcript);
+    
     setTimeout(() => {
-      const aiResponse = generateAIResponse(transcript, sessionState.phase);
+      const aiResponse = generateTherapeuticResponse(transcript);
       setConversation(prev => [...prev, { role: 'ai', content: aiResponse, timestamp: timestamp + 1000 }]);
       setLastAIMessageTime(timestamp + 1000);
       if (isVoiceEnabled) {
         speakAI(aiResponse);
       }
-    }, 1000);
+    }, 800); // Faster response for better flow
 
     setSessionState(prev => ({ ...prev, isListening: false }));
+  };
+
+  // Analyze user responses to extract therapeutic information
+  const analyzeUserResponse = (transcript: string) => {
+    const lowerTranscript = transcript.toLowerCase();
+    
+    // Extract emotional states
+    if (lowerTranscript.includes('anxious') || lowerTranscript.includes('worried') || lowerTranscript.includes('stressed')) {
+      setTherapeuticPlan(prev => ({
+        ...prev,
+        extractedInfo: [...prev.extractedInfo, { type: 'emotion', value: 'anxiety', timestamp: Date.now() }]
+      }));
+    }
+    
+    // Extract limiting beliefs
+    if (lowerTranscript.includes("can't") || lowerTranscript.includes("impossible") || lowerTranscript.includes("not good enough")) {
+      setTherapeuticPlan(prev => ({
+        ...prev,
+        extractedInfo: [...prev.extractedInfo, { type: 'limiting_belief', value: transcript, timestamp: Date.now() }]
+      }));
+    }
+    
+    // Extract goals and desires
+    if (lowerTranscript.includes('want to') || lowerTranscript.includes('wish') || lowerTranscript.includes('hope')) {
+      setTherapeuticPlan(prev => ({
+        ...prev,
+        extractedInfo: [...prev.extractedInfo, { type: 'goal', value: transcript, timestamp: Date.now() }]
+      }));
+    }
+  };
+
+  // Generate therapeutic responses based on extracted information
+  const generateTherapeuticResponse = (userInput: string) => {
+    const lowerInput = userInput.toLowerCase();
+    
+    // Respond to emotional content
+    if (lowerInput.includes('anxious') || lowerInput.includes('worried')) {
+      return "Yes... I can hear that anxiety in your voice... and as you continue to breathe deeply... notice how that feeling is already beginning to soften... to dissolve... with each exhale... let it go... and tell me... what would you feel instead if that anxiety was completely gone?";
+    }
+    
+    // Respond to limiting beliefs
+    if (lowerInput.includes("can't") || lowerInput.includes("not good enough")) {
+      return "I hear that old programming... that limiting belief... and it's interesting how the unconscious mind holds onto these patterns... but they're not true, are they? Deep down... you know your real power... your real capability... what would you be able to do if that belief was completely dissolved?";
+    }
+    
+    // Respond to goals and desires
+    if (lowerInput.includes('want to') || lowerInput.includes('confident')) {
+      return "Beautiful... yes... that desire for confidence... I can feel how important this is to you... and your unconscious mind is already beginning to create that reality... can you imagine how it will feel when that confidence is your natural state? Describe that feeling to me...";
+    }
+    
+    // Default therapeutic response
+    const therapeuticResponses = [
+      "Yes... that's very important information... and as you share this with me... your unconscious mind is already beginning to process and transform... what else comes up for you?",
+      "Perfect... I can sense the shift happening already... just by speaking this truth... you're creating change... tell me more about what you're experiencing...",
+      "Excellent... your awareness of this is the first step to transformation... and as you go deeper... what would you like to feel instead?",
+      "Beautiful... thank you for sharing that... your unconscious mind is listening... and it's ready to create something new... what does that new reality look like?",
+      "That's very insightful... and as you continue to relax deeper... your mind is already working on solutions... what feels ready to change?",
+      "Wonderful... I can feel the energy shifting as you speak... transformation is already beginning... what else wants to be released?"
+    ];
+    
+    return therapeuticResponses[Math.floor(Math.random() * therapeuticResponses.length)];
   };
 
   const speakAI = (text: string) => {
@@ -382,13 +582,13 @@ export default function UnifiedSessionWorld({ onComplete, onCancel }: UnifiedSes
   useEffect(() => {
     if (conversation.length === 0) {
       setTimeout(() => {
-        const welcomeMessage = "Focus your eyes on the center of the orb... you can follow the breathing guide if you like... and as you watch the spirals... notice how they draw your attention deeper and deeper inward... your eyelids may begin to feel heavy... that's perfectly natural...";
+        const welcomeMessage = "Perfect... focus your eyes on the center of the orb... and as you watch the patterns... notice how they draw your attention deeper and deeper inward... your breathing is becoming more natural... more relaxed... and I'm curious... what brought you here today? What would you like to transform?";
         setConversation([{ role: 'ai', content: welcomeMessage, timestamp: Date.now() }]);
         setLastAIMessageTime(Date.now());
         if (isVoiceEnabled) {
           speakAI(welcomeMessage);
         }
-      }, 2000);
+      }, 1500); // Start faster
     }
   }, [isVoiceEnabled]);
 
