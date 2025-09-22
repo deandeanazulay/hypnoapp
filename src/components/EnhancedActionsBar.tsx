@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, Settings, Mic, ChevronDown, Zap, Heart, Plus, Edit2, X, DollarSign, Sparkles, Palette, Waves, Bird, Brain, Sun, Rope, Eye, Shield, Flame, Star, Om, Moon, Rocket } from 'lucide-react';
+import { Target, Settings, Mic, ChevronDown, Zap, Heart, Plus, Edit2, X, DollarSign, Sparkles, Palette, Waves, Bird, Brain, Sun, Hop as Rope, Eye, Shield, Flame, Star, AArrowDown as Om, Moon, Rocket } from 'lucide-react';
 import { useGameState } from './GameStateManager';
 
 interface Focus {
@@ -218,8 +218,9 @@ export default function EnhancedActionsBar({
   onActionSelect
 }: EnhancedActionsBarProps) {
   const { user } = useGameState();
-  const [showFocusModal, setShowFocusModal] = useState(false);
-  const [selectedActionForFocus, setSelectedActionForFocus] = useState<string | null>(null);
+  const [showGoalPicker, setShowGoalPicker] = useState(false);
+  const [showMethodPicker, setShowMethodPicker] = useState(false);
+  const [showModePicker, setShowModePicker] = useState(false);
   const [customActions, setCustomActions] = useState<any[]>([]);
   const [editingAction, setEditingAction] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
@@ -230,82 +231,39 @@ export default function EnhancedActionsBar({
       name: 'Stress Relief',
       icon: <Heart size={16} className="text-teal-400" />,
       color: 'from-teal-500/20 to-cyan-500/20',
-      description: 'Release tension and find calm',
-      focuses: ['calm', 'healing', 'freedom']
+      description: 'Release tension and find calm'
     },
     {
       id: 'focus-boost',
       name: 'Focus Boost',
       icon: <Target size={16} className="text-purple-400" />,
       color: 'from-purple-500/20 to-blue-500/20',
-      description: 'Sharpen concentration',
-      focuses: ['clarity', 'discipline', 'power']
+      description: 'Sharpen concentration'
     },
     {
       id: 'energy-up',
       name: 'Energy Up',
       icon: <Zap size={16} className="text-orange-400" />,
       color: 'from-orange-500/20 to-amber-500/20',
-      description: 'Boost motivation and energy',
-      focuses: ['power', 'joy', 'courage']
+      description: 'Boost motivation and energy'
     },
     {
       id: 'confidence',
       name: 'Confidence',
       icon: <Settings size={16} className="text-yellow-400" />,
       color: 'from-yellow-500/20 to-amber-500/20',
-      description: 'Build self-assurance',
-      focuses: ['power', 'magnetism', 'abundance']
+      description: 'Build self-assurance'
     },
     {
       id: 'sleep-prep',
       name: 'Sleep Prep',
       icon: <Mic size={16} className="text-indigo-400" />,
       color: 'from-indigo-500/20 to-purple-500/20',
-      description: 'Prepare for rest',
-      focuses: ['calm', 'healing', 'spirituality']
+      description: 'Prepare for rest'
     }
   ];
 
   const allActions = [...quickActions, ...customActions];
-  const allFocuses = [...CORE_FOCUSES, ...ADVANCED_FOCUSES];
-
-  const handleActionClick = (action: any) => {
-    if (action.id === selectedAction?.id) {
-      // Deselect if clicking the same action
-      onActionSelect(null);
-    } else if (action.focuses && action.focuses.length > 0) {
-      // Show focus modal for actions with focuses
-      setSelectedActionForFocus(action.id);
-      setShowFocusModal(true);
-    } else {
-      // Select action directly if no focuses
-      onActionSelect(action);
-    }
-  };
-
-  const handleFocusSelect = (focus: Focus) => {
-    const baseAction = quickActions.find(a => a.id === selectedActionForFocus);
-    if (baseAction) {
-      const actionWithFocus = {
-        ...baseAction,
-        focus: focus,
-        name: `${baseAction.name} • ${focus.name}`,
-        orbColor: focus.orbColor,
-        scriptTheme: focus.scriptTheme
-      };
-      onActionSelect(actionWithFocus);
-    }
-    setShowFocusModal(false);
-    setSelectedActionForFocus(null);
-  };
-
-  const getAvailableFocuses = (actionId: string) => {
-    const action = quickActions.find(a => a.id === actionId);
-    if (!action || !action.focuses) return [];
-    
-    return allFocuses.filter(focus => action.focuses.includes(focus.id));
-  };
 
   const addCustomAction = () => {
     const newAction = {
@@ -354,7 +312,7 @@ export default function EnhancedActionsBar({
             {allActions.map((action) => (
               <button
                 key={action.id}
-                onClick={() => handleActionClick(action)}
+                onClick={() => onActionSelect(action.id === selectedAction?.id ? null : action)}
                 className={`flex-shrink-0 w-[80px] bg-gradient-to-br ${action.color} border border-white/20 rounded-lg p-2 hover:scale-105 hover:z-50 transition-all duration-200 relative group ${
                   selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
                 }`}
@@ -447,17 +405,35 @@ export default function EnhancedActionsBar({
         </div>
       </div>
 
-      {/* Focus Modal */}
-      {showFocusModal && selectedActionForFocus && (
-        <FocusModal
-          isOpen={showFocusModal}
-          onClose={() => {
-            setShowFocusModal(false);
-            setSelectedActionForFocus(null);
+      {/* Pickers */}
+      {showGoalPicker && (
+        <GoalPicker
+          onSelect={(goal) => {
+            onActionSelect(goal);
+            setShowGoalPicker(false);
           }}
-          actionName={quickActions.find(a => a.id === selectedActionForFocus)?.name || ''}
-          focuses={getAvailableFocuses(selectedActionForFocus)}
-          onSelectFocus={handleFocusSelect}
+          onClose={() => setShowGoalPicker(false)}
+        />
+      )}
+      
+      {showMethodPicker && (
+        <MethodPicker
+          selectedGoal={selectedAction}
+          onSelect={(method) => {
+            onActionSelect(method);
+            setShowMethodPicker(false);
+          }}
+          onClose={() => setShowMethodPicker(false)}
+        />
+      )}
+      
+      {showModePicker && (
+        <ModePicker
+          onSelect={(mode) => {
+            onActionSelect(mode);
+            setShowModePicker(false);
+          }}
+          onClose={() => setShowModePicker(false)}
         />
       )}
     </>
