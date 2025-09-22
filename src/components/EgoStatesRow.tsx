@@ -22,16 +22,18 @@ export default function EgoStatesRow({ selectedEgoState, onEgoStateChange }: Ego
       {/* Scrolling container with pause on hover */}
       <div className={`flex items-center justify-start space-x-2 px-3 ${animationPaused ? '' : 'animate-scroll-x'}`}>
         {/* Triple the states for seamless infinite scroll */}
-        {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => (
+        {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => {
+          const isSelected = selectedEgoState === state.id;
+          return (
           <div key={`${state.id}-${index}`} className="flex-shrink-0 flex justify-center items-center">
             <div className="flex flex-col items-center justify-between space-y-1">
               <button
                 onClick={() => onEgoStateChange(state.id)}
                 className={`w-9 h-9 rounded-full bg-gradient-to-br ${state.color} p-1 cursor-pointer transition-all duration-300 ${state.glowColor} shadow-lg border-2 flex items-center justify-center ${
-                  selectedEgoState === state.id ? 'border-white/60 scale-110 opacity-100' : 'border-white/20 opacity-50 hover:opacity-75'
+                  isSelected ? 'border-white/60 scale-110 opacity-100' : 'border-white/20 opacity-50 hover:opacity-75'
                 }`}
                 style={{
-                  boxShadow: selectedEgoState === state.id
+                  boxShadow: isSelected
                     ? `0 0 20px ${state.glowColor.includes('blue') ? '#3b82f6' : 
                                   state.glowColor.includes('red') ? '#ef4444' : 
                                   state.glowColor.includes('green') ? '#22c55e' : 
@@ -57,13 +59,14 @@ export default function EgoStatesRow({ selectedEgoState, onEgoStateChange }: Ego
               
               {/* Ego state name */}
               <span className={`text-xs font-light tracking-wide transition-all duration-300 text-center flex items-center justify-center ${
-                selectedEgoState === state.id ? 'text-white opacity-100' : 'text-white/40 opacity-60'
+                isSelected ? 'text-white opacity-100' : 'text-white/40 opacity-60'
               }`}>
                 {state.name}
               </span>
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
     </div>
   );
