@@ -160,23 +160,3 @@ function App() {
 }
 
 export default App;
-    return (
-      <SessionView 
-        onComplete={handleSessionComplete}
-        onCancel={handleCancel}
-      />
-    );
-  }
-
-  return null;
-}
-
-function App() {
-  return (
-    <GameStateProvider>
-      <AppContent />
-    </GameStateProvider>
-  );
-}
-
-export default App;
