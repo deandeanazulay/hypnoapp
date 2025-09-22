@@ -112,13 +112,13 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
 
       <div className="relative z-10 flex-1 flex flex-col pb-20">
         {/* Header */}
-        <div className="flex-shrink-0 pt-12 pb-4 px-6">
+        <div className="flex-shrink-0 pt-12 pb-3 px-6">
           <h1 className="text-white text-2xl font-light mb-2">Create Journey</h1>
           <p className="text-white/60 text-sm">Build your custom hypnosis protocol</p>
         </div>
 
         {/* Form */}
-        <div className="flex-1 min-h-0 px-6">
+        <div className="flex-1 min-h-0 px-6 mb-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 h-full">
           
             {/* Left Column */}
@@ -274,7 +274,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex-shrink-0 px-6 pt-3">
+        <div className="flex-shrink-0 px-6 pt-3 pb-4">
           <div className="flex space-x-3">
             <button
               onClick={handleSave}

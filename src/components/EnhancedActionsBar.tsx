@@ -101,6 +101,7 @@ export default function EnhancedActionsBar({
     setEditingAction(action.id);
     setEditText(action.name);
   };
+  
   return (
     <>
       <div className="px-2 sm:px-4">
@@ -139,13 +140,11 @@ export default function EnhancedActionsBar({
                   </div>
                 )}
                 
-                <div className="flex flex-col items-center space-y-0.5 sm:space-y-1">
                 <div className="flex flex-col items-center space-y-1 sm:space-y-1.5">
                   <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                     {action.icon}
                   </div>
                   <div className="text-center">
-                    <div className="text-white font-medium text-xs leading-tight w-full px-1">
                     <div className="text-white font-medium text-xs leading-tight w-full">
                       {editingAction === action.id ? (
                         <input
@@ -162,7 +161,6 @@ export default function EnhancedActionsBar({
                         <div className="truncate text-center">{action.name}</div>
                       )}
                     </div>
-                    <div className="text-white/60 text-xs mt-0.5 truncate hidden sm:block">
                     <div className="text-white/60 text-xs mt-1 truncate hidden sm:block">
                       {action.description}
                     </div>
@@ -173,12 +171,9 @@ export default function EnhancedActionsBar({
             
             {/* Add New Action Button */}
             <button
-              className={`flex-shrink-0 w-[85px] sm:w-[110px] bg-gradient-to-br ${action.color} border border-white/20 rounded-xl p-2 sm:p-3 hover:scale-105 transition-all duration-200 relative group ${
               onClick={addCustomAction}
               className="flex-shrink-0 w-[70px] sm:w-[90px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-xl p-1.5 sm:p-2 hover:scale-105 transition-all duration-200 hover:border-white/50"
-              className="flex-shrink-0 w-[85px] sm:w-[110px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-xl p-2 sm:p-3 hover:scale-105 transition-all duration-200 hover:border-white/50"
             >
-              <div className="flex flex-col items-center space-y-0.5 sm:space-y-1">
               <div className="flex flex-col items-center space-y-1 sm:space-y-1.5">
                 <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                   <Plus size={12} className="text-white/60" />
