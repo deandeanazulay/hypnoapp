@@ -63,10 +63,11 @@ const ACTIONS: Action[] = [
 
 interface EnhancedActionsBarProps {
   selectedEgoState: string;
+  selectedAction?: any;
   onActionSelect: (action: Action) => void;
 }
 
-export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }: EnhancedActionsBarProps) {
+export default function EnhancedActionsBar({ selectedEgoState, selectedAction, onActionSelect }: EnhancedActionsBarProps) {
   const { user } = useGameState();
   const currentEgoState = EGO_STATES.find(state => state.id === selectedEgoState);
 
@@ -131,15 +132,18 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
         <div className="grid grid-cols-5 gap-2">
           {ACTIONS.map((action) => {
             const isRecommended = action.egoStateBonus?.includes(selectedEgoState);
+            const isSelected = selectedAction?.id === action.id;
             
             return (
               <button
                 key={action.id}
                 onClick={() => onActionSelect(action)}
                 className={`p-2 lg:p-3 rounded-xl bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] ${
-                  isRecommended 
-                    ? 'border-white/30 ring-1 ring-teal-400/20' 
-                    : 'border-white/10 hover:border-white/20'
+                  isSelected
+                    ? 'border-teal-400/60 ring-2 ring-teal-400/40 scale-105'
+                    : isRecommended 
+                      ? 'border-white/30 ring-1 ring-teal-400/20' 
+                      : 'border-white/10 hover:border-white/20'
                 }`}
               >
                 <div className="flex flex-col items-center space-y-1 lg:space-y-2">
@@ -149,7 +153,10 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
                   <div className="text-center hidden lg:block">
                     <div className="flex items-center justify-center space-x-1">
                       <h4 className="text-white font-medium text-xs leading-tight">{action.name}</h4>
-                      {isRecommended && (
+                      {isSelected && (
+                        <span className="text-teal-400 text-xs">✓</span>
+                      )}
+                      {!isSelected && isRecommended && (
                         <span className="text-teal-400 text-xs">✨</span>
                       )}
                     </div>
@@ -158,7 +165,10 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
                     </div>
                   </div>
                   {/* Mobile: Show only recommended indicator */}
-                  {isRecommended && (
+                  {isSelected && (
+                    <span className="text-teal-400 text-xs lg:hidden">✓</span>
+                  )}
+                  {!isSelected && isRecommended && (
                     <span className="text-teal-400 text-xs lg:hidden">✨</span>
                   )}
                 </div>

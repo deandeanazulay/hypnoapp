@@ -19,6 +19,7 @@ export default function HomeScreen({
   onActionSelect 
 }: HomeScreenProps) {
   const { user } = useGameState();
+  const [selectedAction, setSelectedAction] = React.useState<any>(null);
 
   const { canAccess } = useGameState();
 
@@ -29,7 +30,17 @@ export default function HomeScreen({
       alert('Daily session limit reached. Upgrade to Pro for unlimited sessions!');
       return;
     }
-    onOrbTap();
+    // Pass selected action to the session
+    if (selectedAction) {
+      onActionSelect(selectedAction);
+    } else {
+      onOrbTap();
+    }
+  };
+
+  const handleActionSelect = (action: any) => {
+    setSelectedAction(action);
+    // Visual feedback that action is selected
   };
 
   return (
@@ -62,29 +73,34 @@ export default function HomeScreen({
               egoState={selectedEgoState}
               afterglow={user.lastSessionTime !== null}
               size={Math.min(window.innerWidth * 0.6, 240)}
+              selectedGoal={selectedAction}
             />
-            
-            {/* Compact text below orb */}
-            <div className="mt-4 text-center">
-              {canAccess('daily_session') ? (
-                <p className="text-white/60 text-sm">
-                  Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
-                </p>
-              ) : (
-                <div className="text-center">
-                  <p className="text-orange-400 text-sm mb-1">Daily limit reached</p>
-                  <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
+        {/* Tap to begin text - positioned between orb and action bar */}
+        <div className="flex-shrink-0 text-center pb-4">
+          {canAccess('daily_session') ? (
+            <p className="text-white/60 text-sm">
+              Tap to begin with {EGO_STATES.find(s => s.id === selectedEgoState)?.name} Mode
+              {selectedAction && (
+                <span className="text-teal-400"> • {selectedAction.name}</span>
+              )}
+            </p>
+          ) : (
+            <div className="text-center">
+              <p className="text-orange-400 text-sm mb-1">Daily limit reached</p>
+              <p className="text-white/40 text-xs">Upgrade to Pro for unlimited sessions</p>
+            </div>
+          )}
+        </div>
+
         {/* Bottom Section - Action Bar (fixed above bottom nav) */}
-        <div className="flex-shrink-0 pb-16">
+        <div className="flex-shrink-0 pb-20">
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}
-            onActionSelect={onActionSelect}
+            selectedAction={selectedAction}
+            onActionSelect={handleActionSelect}
           />
         </div>
       </div>
