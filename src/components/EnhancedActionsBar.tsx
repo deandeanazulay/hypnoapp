@@ -111,7 +111,7 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
         </div>
 
         {/* Action Buttons - Mobile Optimized */}
-        <div className="space-y-1.5 mb-2">
+        <div className="grid grid-cols-3 gap-2 mb-2">
           {displayActions.map((action) => {
             const isRecommended = action.egoStateBonus?.includes(selectedEgoState);
             
@@ -119,30 +119,28 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
               <button
                 key={action.id}
                 onClick={() => onActionSelect(action)}
-                className={`w-full p-2.5 rounded-lg bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] ${
+                className={`p-2 rounded-lg bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] ${
                   isRecommended 
                     ? 'border-white/30 ring-1 ring-teal-400/20' 
                     : 'border-white/10 hover:border-white/20'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2.5">
+                <div className="flex flex-col items-center space-y-1">
+                  <div className="flex items-center justify-center">
                     <div className="w-6 h-6 rounded-md bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                       {action.icon}
                     </div>
-                    <div className="text-left">
-                      <div className="flex items-center space-x-2">
-                        <h4 className="text-white font-medium text-sm">{action.name}</h4>
-                        {isRecommended && (
-                          <span className="px-1 py-0.5 bg-teal-400/20 text-teal-400 text-xs rounded-full border border-teal-400/30">
-                            ✨
-                          </span>
-                        )}
-                      </div>
-                    </div>
                   </div>
-                  <div className="text-white/60 text-xs font-medium">
-                    {action.duration}m
+                  <div className="text-center">
+                    <div className="flex items-center justify-center space-x-1">
+                      <h4 className="text-white font-medium text-xs">{action.name}</h4>
+                      {isRecommended && (
+                        <span className="text-teal-400 text-xs">✨</span>
+                      )}
+                    </div>
+                    <div className="text-white/60 text-xs">
+                      {action.duration}m
+                    </div>
                   </div>
                 </div>
               </button>
