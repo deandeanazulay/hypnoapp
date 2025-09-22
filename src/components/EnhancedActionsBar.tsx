@@ -99,7 +99,7 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
         </div>
 
         {/* Action Grid - Responsive: 3 cols on mobile, 5 cols on desktop */}
-        <div className="grid grid-cols-3 lg:grid-cols-5 gap-2">
+        <div className="grid grid-cols-5 gap-2">
           {ACTIONS.map((action) => {
             const isRecommended = action.egoStateBonus?.includes(selectedEgoState);
             
@@ -107,17 +107,17 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
               <button
                 key={action.id}
                 onClick={() => onActionSelect(action)}
-                className={`p-3 rounded-xl bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] ${
+                className={`p-2 lg:p-3 rounded-xl bg-gradient-to-br ${action.color} border transition-all duration-200 hover:scale-[1.02] ${
                   isRecommended 
                     ? 'border-white/30 ring-1 ring-teal-400/20' 
                     : 'border-white/10 hover:border-white/20'
                 }`}
               >
-                <div className="flex flex-col items-center space-y-2">
-                  <div className="w-8 h-8 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                <div className="flex flex-col items-center space-y-1 lg:space-y-2">
+                  <div className="w-6 h-6 lg:w-8 lg:h-8 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                     {action.icon}
                   </div>
-                  <div className="text-center">
+                  <div className="text-center hidden lg:block">
                     <div className="flex items-center justify-center space-x-1">
                       <h4 className="text-white font-medium text-xs leading-tight">{action.name}</h4>
                       {isRecommended && (
@@ -128,6 +128,10 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
                       {action.duration}m
                     </div>
                   </div>
+                  {/* Mobile: Show only recommended indicator */}
+                  {isRecommended && (
+                    <span className="text-teal-400 text-xs lg:hidden">✨</span>
+                  )}
                 </div>
               </button>
             );
