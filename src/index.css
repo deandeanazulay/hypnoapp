@@ -50,7 +50,12 @@
   
   @keyframes scroll-x {
     0% { transform: translateX(0); }
-    100% { transform: translateX(-33.333%); }
+    100% { transform: translateX(-40%); }
+  }
+  
+  /* Ensure animation doesn't cause empty states */
+  .animate-scroll-x:hover {
+    animation-play-state: paused;
   }
 }
 
