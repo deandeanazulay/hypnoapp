@@ -61,7 +61,7 @@ export default function HomeScreen({
       <div className="relative z-10 flex-1 flex flex-col pb-20">
         
         {/* 1. States Row */}
-        <div className="flex-shrink-0 pt-4 pb-2">
+        <div className="flex-shrink-0 pt-2 pb-1">
           <StoriesRow 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={onEgoStateChange}
@@ -69,7 +69,7 @@ export default function HomeScreen({
         </div>
 
         {/* 2. Orb Component (with built-in text) */}
-        <div className="flex-1 flex justify-center items-center py-8">
+        <div className="flex-1 flex justify-center items-center py-2">
           <WebGLOrb 
             onTap={handleOrbTap}
             egoState={selectedEgoState}
@@ -80,7 +80,7 @@ export default function HomeScreen({
         </div>
 
         {/* 3. Actions Bar */}
-        <div className="flex-shrink-0 px-4 pb-4 min-h-[140px] flex items-end">
+        <div className="flex-shrink-0 px-4 pb-2 min-h-[120px] flex items-end">
           <EnhancedActionsBar 
             selectedEgoState={selectedEgoState}
             selectedAction={selectedAction}

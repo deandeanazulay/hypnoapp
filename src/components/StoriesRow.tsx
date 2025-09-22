@@ -10,22 +10,22 @@ export default function StoriesRow({ selectedEgoState, onEgoStateChange }: Stori
   const [hoveredStateId, setHoveredStateId] = React.useState<string | null>(null);
 
   return (
-    <div className="relative overflow-hidden w-full flex justify-center items-center py-4">
+    <div className="relative overflow-hidden w-full flex justify-center items-center py-2">
       {/* Gradient overlays */}
       <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
       
       {/* Infinite scrolling container */}
-      <div className="flex items-center justify-start space-x-4 px-4 animate-scroll-x">
+      <div className="flex items-center justify-start space-x-3 px-4 animate-scroll-x">
         {/* Triple the states for seamless infinite scroll */}
         {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => (
           <div key={`${state.id}-${index}`} className="flex-shrink-0 flex justify-center items-center space-around">
-            <div className="flex flex-col items-center justify-between space-y-3">
+            <div className="flex flex-col items-center justify-between space-y-2">
               <button
                 onClick={() => onEgoStateChange(state.id)}
                 onMouseEnter={() => setHoveredStateId(state.id)}
                 onMouseLeave={() => setHoveredStateId(null)}
-                className={`w-12 h-12 rounded-full bg-gradient-to-br ${state.color} p-1 cursor-pointer transition-all duration-300 ${state.glowColor} shadow-lg border-2 flex items-center justify-center ${
+                className={`w-11 h-11 rounded-full bg-gradient-to-br ${state.color} p-1 cursor-pointer transition-all duration-300 ${state.glowColor} shadow-lg border-2 flex items-center justify-center ${
                   selectedEgoState === state.id ? 'border-white/60 scale-110 opacity-100' : 
                   hoveredStateId === state.id ? 'border-white/40 scale-105 opacity-100' :
                   'border-white/20 opacity-50 hover:opacity-75'
@@ -51,7 +51,7 @@ export default function StoriesRow({ selectedEgoState, onEgoStateChange }: Stori
                 }}
               >
                 <div className="w-full h-full rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg">{state.icon}</span>
+                  <span className="text-base">{state.icon}</span>
                 </div>
               </button>
               
