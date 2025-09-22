@@ -12,7 +12,7 @@ import { EGO_STATES } from './types/EgoState';
 
 type AppMode = 'navigation' | 'session';
 
-function AppContent() {
+function App() {
   const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [selectedEgoState, setSelectedEgoState] = useState('guardian');
