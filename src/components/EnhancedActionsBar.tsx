@@ -125,12 +125,6 @@ export default function EnhancedActionsBar({ selectedEgoState, onActionSelect }:
               <span className="text-yellow-400 text-xs font-medium">{user.tokens}</span>
             </div>
           </div>
-              <div 
-                className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
-                style={{ width: `${(user.experience % 100)}%` }}
-              />
-            </div>
-          </div>
         </div>
 
         {/* Action Grid - Responsive: 3 cols on mobile, 5 cols on desktop */}
