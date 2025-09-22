@@ -127,13 +127,13 @@ function App() {
   // Navigation mode - tabbed interface
   return (
     <GameStateProvider>
-      <div className="h-screen w-screen bg-black flex flex-col">
-        {/* Main Body Content */}
-        <div className="flex h-full flex-col">
+      <div className="h-screen w-screen bg-black flex flex-col overflow-hidden">
+        {/* Main Content - Takes remaining space above navigation */}
+        <div className="flex-1 min-h-0 flex flex-col">
           {renderCurrentTab()}
         </div>
         
-        {/* Bottom Navigation Tabs */}
+        {/* Bottom Navigation Tabs - Fixed at bottom */}
         <div className="flex-shrink-0">
           <NavigationTabs
             activeTab={activeTab}
@@ -144,5 +144,3 @@ function App() {
     </GameStateProvider>
   );
 }
-
-export default App;
