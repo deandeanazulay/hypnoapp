@@ -174,20 +174,3 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
     </div>
   );
 }
-                        <div 
-                          className={`h-full bg-gradient-to-r ${state.color.replace('from-', 'from-').replace('to-', 'to-')} rounded-full transition-all duration-500`}
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                      <span className="text-white/60 text-xs w-6 text-right">{percentage}%</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
