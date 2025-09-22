@@ -123,46 +123,49 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
         </div>
 
         {/* Ego State Usage Analytics */}
-        <div className="flex-1 overflow-hidden px-4 min-h-0">
-          <div className="bg-white/5 backdrop-blur-md rounded-lg p-2 border border-white/10 h-full overflow-hidden flex flex-col">
-            <h3 className="text-white font-medium mb-2 text-xs flex-shrink-0">Usage Analytics</h3>
+        <div className="flex-1 overflow-hidden px-4 min-h-0 pb-1">
+          <div className="bg-white/5 backdrop-blur-md rounded-lg p-1.5 border border-white/10 h-full overflow-hidden flex flex-col">
+            <h3 className="text-white font-medium mb-1 text-xs flex-shrink-0">Usage Analytics</h3>
             
             {/* Most Used State Highlight */}
             {mostUsedState && (
-              <div className={`bg-gradient-to-br ${mostUsedState.color} rounded-lg p-2 mb-2 border border-white/20 flex-shrink-0`}>
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg">{mostUsedState.icon}</span>
+              <div className={`bg-gradient-to-br ${mostUsedState.color} rounded-lg p-1.5 mb-1 border border-white/20 flex-shrink-0`}>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-sm">{mostUsedState.icon}</span>
                   <div>
-                    <h4 className="text-white font-medium text-xs">Most Used: {mostUsedState.name}</h4>
-                    <p className="text-white/70 text-xs">{getUsagePercentage(egoStateUsage[mostUsedState.id as keyof typeof egoStateUsage])}% of sessions</p>
+                    <h4 className="text-white font-medium text-xs leading-tight">Most Used: {mostUsedState.name}</h4>
+                    <p className="text-white/70 text-xs leading-tight">{getUsagePercentage(egoStateUsage[mostUsedState.id as keyof typeof egoStateUsage])}% of sessions</p>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Usage Breakdown */}
-            <div className="grid grid-cols-2 gap-1 overflow-y-auto flex-1 min-h-0">
+            <div className="grid grid-cols-4 gap-0.5 overflow-hidden flex-1 min-h-0">
               {EGO_STATES.map((state) => {
                 const usage = egoStateUsage[state.id as keyof typeof egoStateUsage] || 0;
                 const percentage = getUsagePercentage(usage);
                 
                 return (
-                  <div key={state.id} className="bg-white/5 rounded-lg p-1 border border-white/10">
-                    <div className="flex items-center space-x-1 mb-1">
-                      <span className="text-sm">{state.icon}</span>
-                      <span className="text-white text-xs font-medium truncate">{state.name}</span>
+                  <div key={state.id} className="bg-white/5 rounded-md p-0.5 border border-white/10 flex flex-col">
+                    <div className="flex items-center justify-center mb-0.5">
+                      <span className="text-xs">{state.icon}</span>
                     </div>
                     
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-white/50 text-xs">{usage}</span>
-                      <span className="text-white/60 text-xs">{percentage}%</span>
+                    <div className="text-center mb-0.5">
+                      <span className="text-white text-xs font-medium truncate block leading-tight">{state.name}</span>
+                      <span className="text-white/50 text-xs leading-tight">{usage}</span>
                     </div>
                     
-                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                    <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden mb-0.5">
                       <div 
                         className={`h-full bg-gradient-to-r ${state.color.replace('from-', 'from-').replace('to-', 'to-')} rounded-full transition-all duration-500`}
                         style={{ width: `${percentage}%` }}
                       />
+                    </div>
+                    
+                    <div className="text-center">
+                      <span className="text-white/60 text-xs leading-tight">{percentage}%</span>
                     </div>
                   </div>
                 );
