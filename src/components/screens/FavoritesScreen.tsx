@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Heart, Play, Clock, Trash2, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 
@@ -163,25 +163,17 @@ interface FavoritesScreenProps {
 
 export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProps) {
   const { user } = useGameState();
-  const [currentPage, setCurrentPage] = React.useState(0);
-  const itemsPerPage = 12; // 3 columns × 4 rows
-  
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 12;
   const totalPages = Math.ceil(mockFavorites.length / itemsPerPage);
-  const currentPageFavorites = mockFavorites.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
-  );
-  
+  const currentPageFavorites = mockFavorites.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+
   const goToNextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1));
   };
-  
+
   const goToPreviousPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
+    setCurrentPage((prev) => Math.max(prev - 1, 0));
   };
 
   const formatLastCompleted = (date: Date) => {
@@ -318,6 +310,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                       <span className="text-white/40 text-xs">
                         {formatLastCompleted(session.lastCompleted)}
                       </span>
+                    </div>
                     {/* Progress Bar */}
                     <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden">
                       <div 
