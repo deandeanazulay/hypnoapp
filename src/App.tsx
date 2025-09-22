@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import NavigationTabs from './components/NavigationTabs';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import AppShell from './layouts/AppShell';
 import HomeScreen from './components/screens/HomeScreen';
-import ExploreScreen from './components/screens/ExploreScreen';
-import CreateScreen from './components/screens/CreateScreen';
-import FavoritesScreen from './components/screens/FavoritesScreen';
-import ProfileScreen from './components/screens/ProfileScreen';
+import Explore from './pages/Explore';
+import Create from './pages/Create';
+import Favorites from './pages/Favorites';
+import Profile from './pages/Profile';
 import UnifiedSessionWorld from './components/UnifiedSessionWorld';
 import { GameStateProvider } from './components/GameStateManager';
 import { TabId } from './types/Navigation';
@@ -90,47 +91,47 @@ function App() {
   // Navigation mode - tabbed interface
   return (
     <GameStateProvider>
-      <div className="h-screen bg-black overflow-hidden flex flex-col">
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-h-0">
-          {activeTab === 'home' && (
-            <HomeScreen
-              selectedEgoState={selectedEgoState}
-              onEgoStateChange={setSelectedEgoState}
-              onOrbTap={handleOrbTap}
-              onActionSelect={handleActionSelect}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
+      <Router>
+        <AppShell activeTab={activeTab} onTabChange={setActiveTab}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route 
+              path="/home" 
+              element={
+                <HomeScreen
+                  selectedEgoState={selectedEgoState}
+                  onEgoStateChange={setSelectedEgoState}
+                  onOrbTap={handleOrbTap}
+                  onActionSelect={handleActionSelect}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                />
+              } 
             />
-          )}
-          
-          {activeTab === 'explore' && (
-            <ExploreScreen
-              onProtocolSelect={handleProtocolSelect}
+            <Route 
+              path="/explore" 
+              element={<Explore onProtocolSelect={handleProtocolSelect} />} 
             />
-          )}
-          
-          {activeTab === 'create' && (
-            <CreateScreen
-              onProtocolCreate={handleCustomProtocolCreate}
+            <Route 
+              path="/create" 
+              element={<Create onProtocolCreate={handleCustomProtocolCreate} />} 
             />
-          )}
-          
-          {activeTab === 'favorites' && (
-            <FavoritesScreen
-              onSessionSelect={handleFavoriteSessionSelect}
+            <Route 
+              path="/favorites" 
+              element={<Favorites onSessionSelect={handleFavoriteSessionSelect} />} 
             />
-          )}
-          
-          {activeTab === 'profile' && (
-            <ProfileScreen
-              selectedEgoState={selectedEgoState}
-              onEgoStateChange={setSelectedEgoState}
+            <Route 
+              path="/profile" 
+              element={
+                <Profile 
+                  selectedEgoState={selectedEgoState}
+                  onEgoStateChange={setSelectedEgoState}
+                />
+              } 
             />
-          )}
-        </div>
-
-      </div>
+          </Routes>
+        </AppShell>
+      </Router>
     </GameStateProvider>
   );
 }
