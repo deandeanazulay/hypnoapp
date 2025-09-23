@@ -190,13 +190,13 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
           </div>
 
           {/* Content Grid */}
-          <div className="relative z-10 h-full grid grid-rows-[auto,1fr,auto] gap-3 px-4 pb-4 overflow-y-auto">
+          <div className="relative z-10 h-full flex flex-col gap-4 px-4 pb-4 overflow-y-auto">
             
             {/* Row 1: Ego State Showcase */}
-            <div className="card-premium p-4 animate-stagger-in bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-purple-500/30" style={{ animationDelay: '100ms' }}>
+            <div className="card-premium p-4 animate-stagger-in bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-purple-500/30 flex-shrink-0" style={{ animationDelay: '100ms' }}>
               <div className="flex items-center space-x-4">
                 {/* Living Orb */}
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 hidden sm:block">
                   <WebGLOrb
                     onTap={openEgoModal}
                     size={80}
@@ -207,19 +207,38 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 </div>
                 
                 {/* Current State Info */}
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-white font-bold text-lg mb-1">Current Archetype</h2>
-                  <h3 className="text-purple-300 font-semibold text-xl mb-2">{currentState.name}</h3>
-                  <p className="text-white/80 text-sm mb-3 line-clamp-2">{getDailyIntention()}</p>
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-center space-x-3 sm:hidden">
+                    <WebGLOrb
+                      onTap={openEgoModal}
+                      size={50}
+                      egoState={activeEgoState}
+                      afterglow={true}
+                      className="cursor-pointer hover:scale-110 transition-transform duration-300"
+                    />
+                    <div>
+                      <h2 className="text-white font-bold text-base">Current Archetype</h2>
+                      <h3 className="text-purple-300 font-semibold text-lg">{currentState.name}</h3>
+                    </div>
+                  </div>
+                  
+                  <div className="hidden sm:block">
+                    <h2 className="text-white font-bold text-lg mb-1">Current Archetype</h2>
+                    <h3 className="text-purple-300 font-semibold text-xl mb-2">{currentState.name}</h3>
+                  </div>
+                  
+                  <p className="text-white/80 text-sm mb-3 leading-relaxed">
+                    {getDailyIntention()}
+                  </p>
                   
                   <div className="flex space-x-2">
                     <button
                       onClick={openEgoModal}
-                      className="px-3 py-1.5 bg-purple-500/30 border border-purple-400/50 text-purple-200 rounded-lg text-xs font-medium hover:bg-purple-500/40 transition-all duration-300 hover:scale-105"
+                      className="px-3 py-2 bg-purple-500/30 border border-purple-400/50 text-purple-200 rounded-lg text-xs font-medium hover:bg-purple-500/40 transition-all duration-300 hover:scale-105"
                     >
                       Switch State
                     </button>
-                    <button className="px-3 py-1.5 bg-white/10 border border-white/20 text-white/80 rounded-lg text-xs font-medium hover:bg-white/20 transition-all duration-300 hover:scale-105">
+                    <button className="px-3 py-2 bg-white/10 border border-white/20 text-white/80 rounded-lg text-xs font-medium hover:bg-white/20 transition-all duration-300 hover:scale-105">
                       Reflect
                     </button>
                   </div>
@@ -227,8 +246,8 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               </div>
             </div>
 
-            {/* Row 2: Main Content Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-0 overflow-y-auto">
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
               
               {/* Transformation Dashboard */}
               <div className="space-y-4">
@@ -242,8 +261,9 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                     <h3 className="text-white font-semibold">Energy Map</h3>
                   </div>
                   
-                  {personaEvolution.slice(0, 3).map((item, index) => (
-                    <div key={item.state.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-0">
+                  <div className="space-y-3">
+                    {personaEvolution.slice(0, 3).map((item, index) => (
+                      <div key={item.state.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-0">
                       <div className="flex items-center space-x-3">
                         <span className="text-lg">{item.state.icon}</span>
                         <span className="text-white/90 text-sm font-medium">{item.state.name}</span>
@@ -257,8 +277,9 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                         </div>
                         <span className="text-teal-400 text-xs font-semibold">{item.count}</span>
                       </div>
-                    </div>
-                  ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Breakthrough Moments */}
@@ -311,7 +332,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                   
                   <div className="space-y-2">
                     <div className="text-white/80 text-sm">
-                      🌱 Started exploring: <span className="text-white font-medium">Guardian</span>
+                      🌱 Began with: <span className="text-white font-medium">Guardian</span>
                     </div>
                     <div className="text-white/80 text-sm">
                       🔄 Currently mastering: <span className="text-white font-medium">{currentState.name}</span>
@@ -393,15 +414,15 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               </div>
             </div>
 
-            {/* Row 3: Quick Actions */}
-            <div className="flex space-x-3 flex-shrink-0">
-              <button className="flex-1 px-4 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 flex items-center justify-center space-x-2">
+            {/* Bottom Actions */}
+            <div className="flex space-x-3 flex-shrink-0 pt-2">
+              <button className="flex-1 px-4 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 flex items-center justify-center space-x-2" style={{ minHeight: '48px' }}>
                 <Play size={16} />
                 <span>Start Session</span>
               </button>
               <button 
                 onClick={openEgoModal}
-                className="px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium rounded-xl transition-all duration-300 hover:scale-105"
+                className="px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium rounded-xl transition-all duration-300 hover:scale-105" style={{ minHeight: '48px' }}
               >
                 <Eye size={16} />
               </button>
