@@ -258,10 +258,10 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                   value={protocol.name}
                   onChange={(e) => setProtocol(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="My Transformation Journey"
-                  className="w-full bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/20 focus:border-teal-400/60 rounded-2xl px-6 py-4 text-white text-lg font-medium placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-teal-400/20 transition-all duration-300"
+                  className="w-full bg-gradient-to-r from-black/40 to-black/20 border-2 border-white/20 focus:border-teal-400/60 rounded-2xl px-6 py-4 text-white text-lg font-medium placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-teal-400/20 transition-all duration-300"
                   autoFocus
                 />
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-teal-400/10 to-purple-400/10 opacity-0 focus-within:opacity-100 transition-opacity pointer-events-none" />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-teal-400/20 to-purple-400/20 opacity-0 focus-within:opacity-100 transition-opacity pointer-events-none" />
               </div>
               
               <div className="space-y-2">
