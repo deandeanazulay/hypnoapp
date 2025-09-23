@@ -173,15 +173,20 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
             
             <div className="flex-1 overflow-hidden px-2 sm:px-14">
               <div 
-                className="grid h-full pb-4 transition-transform duration-300 ease-out gap-4" 
+                className="flex h-full pb-4 transition-transform duration-300 ease-out gap-4" 
                 style={{ 
-                  gridTemplateColumns: `repeat(${Math.max(filteredProtocols.length, maxVisibleCards)}, 1fr)`,
-                  transform: `translateX(-${currentIndex * (100 / maxVisibleCards)}%)`,
-                  width: `${Math.ceil(filteredProtocols.length / maxVisibleCards) * 100}%`
+                  transform: `translateX(-${currentIndex * (100 / filteredProtocols.length)}%)`,
+                  width: `${filteredProtocols.length * 100}%`
                 }}
               >
-                {filteredProtocols.map((protocol) => (
-                  renderProtocolCard(protocol)
+                {filteredProtocols.map((protocol, index) => (
+                  <div 
+                    key={protocol.id}
+                    className="flex-shrink-0"
+                    style={{ width: `${100 / filteredProtocols.length}%` }}
+                  >
+                    {renderProtocolCard(protocol)}
+                  </div>
                 ))}
               </div>
             </div>
@@ -190,12 +195,12 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
             {filteredProtocols.length > maxVisibleCards && (
               <div className="flex justify-center mt-4">
                 <div className="flex space-x-1.5">
-                  {Array.from({ length: Math.ceil(filteredProtocols.length / maxVisibleCards) }).map((_, index) => (
+                  {filteredProtocols.map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentIndex(index * maxVisibleCards)}
+                      onClick={() => setCurrentIndex(index)}
                       className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                        Math.floor(currentIndex / maxVisibleCards) === index 
+                        currentIndex === index 
                           ? 'bg-teal-400 scale-110' 
                           : 'bg-white/30 hover:bg-white/50 hover:scale-105'
                       }`}
