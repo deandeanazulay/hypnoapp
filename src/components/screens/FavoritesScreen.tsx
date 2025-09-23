@@ -301,8 +301,8 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
 
   const header = (
     <div className="bg-black/60 backdrop-blur-xl">
-      <div className="px-4 pt-4 pb-3">
-        <h1 className="text-white text-2xl font-light mb-2">Favorites</h1>
+      <div className="px-4 pt-2 pb-3">
+        <h1 className="text-white text-lg font-light mb-2">Favorites</h1>
         <p className="text-white/60 text-sm">Your most effective sessions</p>
       </div>
       

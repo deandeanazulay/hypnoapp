@@ -99,8 +99,8 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
               </div>
 
               {/* Header */}
-              <div className="relative z-30 px-4 pt-4 pb-4 sticky top-0 bg-black/95 backdrop-blur-xl border-b border-white/10">
-                <h1 className="text-[var(--ink-1)] text-xl font-bold mb-1 text-shadow-premium">Explore Protocols</h1>
+              <div className="relative z-30 px-4 pt-2 pb-4 sticky top-0 bg-black/95 backdrop-blur-xl border-b border-white/10">
+                <h1 className="text-[var(--ink-1)] text-lg font-bold mb-1 text-shadow-premium">Explore Protocols</h1>
                 <p className="text-[var(--ink-dim)] text-sm">Discover hypnosis journeys and techniques</p>
                 
                 {/* Filters Row */}

@@ -9,6 +9,7 @@ import ProfileScreen from './components/screens/ProfileScreen';
 import NavigationTabs from './components/NavigationTabs';
 import UnifiedSessionWorld from './components/UnifiedSessionWorld';
 import { GameStateProvider } from './components/GameStateManager';
+import GlobalHUD from './components/HUD/GlobalHUD';
 import EgoStatesModal from './components/modals/EgoStatesModal';
 import ToastManager from './components/layout/ToastManager';
 import AuthModal from './components/auth/AuthModal';
@@ -198,12 +199,15 @@ function App() {
   const MainApp = () => (
     <GameStateProvider>
       <>
+        {/* Global HUD - MapleStory style */}
+        <GlobalHUD />
+        
         <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
           {/* Sacred Orb Background Protection */}
           <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900/50 to-black pointer-events-none z-0" />
           
           {/* Main Content */}
-          <div className="flex-1 min-h-0 flex flex-col relative z-10">
+          <div className="flex-1 min-h-0 flex flex-col relative z-10 pt-16">
             {renderCurrentTab()}
           </div>
           

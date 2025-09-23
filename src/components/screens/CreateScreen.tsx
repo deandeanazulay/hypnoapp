@@ -147,8 +147,8 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
   const isValid = protocol.name && protocol.induction && protocol.deepener;
 
   const header = (
-    <div className="bg-black/60 backdrop-blur-xl px-4 pt-4 pb-3 flex-shrink-0">
-      <h1 className="text-white text-2xl font-light mb-2">Create Journey</h1>
+    <div className="bg-black/60 backdrop-blur-xl px-4 pt-2 pb-3 flex-shrink-0">
+      <h1 className="text-white text-lg font-light mb-2">Create Journey</h1>
       <p className="text-white/60 text-sm">Design your personalized hypnosis experience</p>
     </div>
   );

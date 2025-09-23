@@ -138,9 +138,9 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   };
 
   const header = (
-    <div className="relative z-10 px-4 pt-4 pb-2 flex items-center justify-between">
+    <div className="relative z-10 px-4 pt-2 pb-2 flex items-center justify-between">
       <div>
-        <h1 className="text-[var(--ink-1)] text-xl font-bold mb-1 text-shadow-premium">
+        <h1 className="text-[var(--ink-1)] text-lg font-bold mb-1 text-shadow-premium">
           {authUser?.email ? `Welcome, ${authUser.email.split('@')[0]}` : 'Profile'}
         </h1>
         <p className="text-[var(--ink-dim)] text-xs font-medium uppercase tracking-wide">Your transformation journey</p>
