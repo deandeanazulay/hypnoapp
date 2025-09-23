@@ -119,24 +119,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
   };
 
   const handleCardClick = (action: () => void) => {
-    if (!isAuthenticated) {
-      showToast({
-        type: 'warning',
-        message: 'Sign in to create custom protocols',
-        duration: 3000
-      });
-      return;
-    }
-    
-    if (!canCreateCustom) {
-      showToast({
-        type: 'info',
-        message: 'Upgrade to Pro to create custom protocols',
-        duration: 4000
-      });
-      return;
-    }
-    
+    // Allow all users to interact with the form
     action();
   };
 
