@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Save, Play, Trash2, Clock, Zap, ChevronRight, Edit3, Target, Sparkles } from 'lucide-react';
+import { Plus, Save, Clock, Zap, Target, Sparkles, Edit3, FileText } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
 import { useUIStore } from '../../state/uiStore';
-import '../../styles/glass.css';
 
 interface CustomProtocol {
   id: string;
@@ -20,7 +19,7 @@ interface CreateScreenProps {
 
 export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
   const [protocol, setProtocol] = useState<Partial<CustomProtocol>>({
-    name: '',
+    name: 'Untitled Journey',
     induction: 'progressive-relaxation',
     deepener: 'staircase',
     goals: [],
@@ -56,7 +55,6 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
     { id: 'counting', name: 'Counting Down', description: 'Simple number countdown', emoji: '🔢' }
   ];
 
-  // Modal handlers
   const openNameModal = () => {
     setTempName(protocol.name || '');
     setShowNameModal(true);
@@ -133,7 +131,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
       
       // Reset form
       setProtocol({
-        name: '',
+        name: 'Untitled Journey',
         induction: 'progressive-relaxation',
         deepener: 'staircase',
         goals: [],
@@ -146,121 +144,113 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
   const isValid = protocol.name && protocol.induction && protocol.deepener;
 
   return (
-    <>
-      <div className="h-full bg-black relative overflow-hidden flex flex-col">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-black to-teal-950/20" />
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
-        </div>
+    <div className="h-full bg-black relative overflow-hidden flex flex-col">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/20 to-black" />
 
-        
-        {/* Header - Compact */}
-        <div className="flex-shrink-0 pt-2 pb-4">
-          <h1 className="text-white text-lg font-light mb-1">Create Journey</h1>
-          <p className="text-white/60 text-sm">Design your personalized hypnosis experience</p>
-        </div>
+      {/* Header */}
+      <div className="flex-shrink-0 px-4 pt-4 pb-6 border-b border-white/10">
+        <h1 className="text-white text-xl font-light mb-1">Create Journey</h1>
+        <p className="text-white/60 text-sm">Design your personalized hypnosis experience</p>
+      </div>
 
-        {/* Content Grid - Fills available space */}
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pb-4">
+      {/* Content - Scrollable Cards */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4">
+        <div className="space-y-4 pb-24">
           
           {/* Protocol Name Card */}
-          <div 
+          <button
             onClick={openNameModal}
-            className="glass-card-premium p-4 bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20 hover:border-violet-500/40 cursor-pointer group transition-all duration-300 hover:scale-[1.02]"
+            className="w-full bg-gradient-to-r from-violet-900/80 to-purple-900/80 border border-violet-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-violet-500/40 group"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/30 to-purple-500/30 flex items-center justify-center">
-                  <span className="text-lg">📝</span>
+                <div className="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-500/40 flex items-center justify-center">
+                  <FileText size={20} className="text-violet-400" />
                 </div>
-                <div>
-                  <h3 className="text-white font-medium text-sm">Protocol Name</h3>
-                  <div className="text-violet-400 font-semibold text-base">
-                    {protocol.name || 'Untitled Journey'}
-                  </div>
+                <div className="text-left">
+                  <div className="text-white/80 text-sm font-medium">Protocol Name</div>
+                  <div className="text-violet-400 text-base font-semibold">{protocol.name}</div>
                 </div>
               </div>
-              <Edit3 size={16} className="text-violet-400 opacity-60 group-hover:opacity-100" />
+              <Edit3 size={18} className="text-violet-400/60 group-hover:text-violet-400 transition-colors" />
             </div>
-          </div>
+          </button>
 
           {/* Duration Card */}
-          <div 
+          <button
             onClick={openDurationModal}
-            className="glass-card-premium p-4 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/20 hover:border-amber-500/40 cursor-pointer group transition-all duration-300 hover:scale-[1.02]"
+            className="w-full bg-gradient-to-r from-orange-900/80 to-amber-900/80 border border-orange-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-orange-500/40 group"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/30 to-orange-500/30 flex items-center justify-center">
-                  <Clock size={16} className="text-amber-300" />
+                <div className="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center">
+                  <Clock size={20} className="text-orange-400" />
                 </div>
-                <div>
-                  <h3 className="text-white font-medium text-sm">Duration</h3>
-                  <div className="text-amber-400 font-semibold text-base">
-                    {protocol.duration}m
-                  </div>
+                <div className="text-left">
+                  <div className="text-white/80 text-sm font-medium">Duration</div>
+                  <div className="text-orange-400 text-base font-semibold">{protocol.duration}m</div>
                 </div>
               </div>
-              <Edit3 size={16} className="text-amber-400 opacity-60 group-hover:opacity-100" />
+              <Edit3 size={18} className="text-orange-400/60 group-hover:text-orange-400 transition-colors" />
             </div>
-          </div>
+          </button>
 
           {/* Induction Card */}
-          <div 
+          <button
             onClick={() => setShowInductionModal(true)}
-            className="glass-card-premium p-4 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-cyan-500/20 hover:border-cyan-500/40 cursor-pointer group transition-all duration-300 hover:scale-[1.02]"
+            className="w-full bg-gradient-to-r from-cyan-900/80 to-blue-900/80 border border-cyan-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-cyan-500/40 group"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/30 to-blue-500/30 flex items-center justify-center">
-                  <Zap size={16} className="text-cyan-300" />
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center">
+                  <Zap size={20} className="text-cyan-400" />
                 </div>
-                <div>
-                  <h3 className="text-white font-medium text-sm">Induction</h3>
-                  <div className="text-cyan-400 font-semibold text-base">
-                    {inductionOptions.find(opt => opt.id === protocol.induction)?.name || 'Select Method'}
+                <div className="text-left">
+                  <div className="text-white/80 text-sm font-medium">Induction</div>
+                  <div className="text-cyan-400 text-base font-semibold">
+                    {inductionOptions.find(opt => opt.id === protocol.induction)?.name || 'Progressive Relaxation'}
                   </div>
                 </div>
               </div>
-              <Edit3 size={16} className="text-cyan-400 opacity-60 group-hover:opacity-100" />
+              <Edit3 size={18} className="text-cyan-400/60 group-hover:text-cyan-400 transition-colors" />
             </div>
-          </div>
+          </button>
 
           {/* Deepener Card */}
-          <div 
+          <button
             onClick={() => setShowDeepenerModal(true)}
-            className="glass-card-premium p-4 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border-emerald-500/20 hover:border-emerald-500/40 cursor-pointer group transition-all duration-300 hover:scale-[1.02]"
+            className="w-full bg-gradient-to-r from-teal-900/80 to-emerald-900/80 border border-teal-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-teal-500/40 group"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/30 to-teal-500/30 flex items-center justify-center">
-                  <span className="text-lg">🌀</span>
+                <div className="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center">
+                  <span className="text-xl">🌀</span>
                 </div>
-                <div>
-                  <h3 className="text-white font-medium text-sm">Deepener</h3>
-                  <div className="text-emerald-400 font-semibold text-base">
-                    {deepenerOptions.find(opt => opt.id === protocol.deepener)?.name || 'Select Method'}
+                <div className="text-left">
+                  <div className="text-white/80 text-sm font-medium">Deepener</div>
+                  <div className="text-teal-400 text-base font-semibold">
+                    {deepenerOptions.find(opt => opt.id === protocol.deepener)?.name || 'Staircase'}
                   </div>
                 </div>
               </div>
-              <Edit3 size={16} className="text-emerald-400 opacity-60 group-hover:opacity-100" />
+              <Edit3 size={18} className="text-teal-400/60 group-hover:text-teal-400 transition-colors" />
             </div>
-          </div>
+          </button>
 
           {/* Goals Card */}
-          <div 
+          <button
             onClick={() => setShowGoalsModal(true)}
-            className="glass-card-premium p-4 bg-gradient-to-br from-rose-500/10 to-pink-500/10 border-rose-500/20 hover:border-rose-500/40 cursor-pointer group transition-all duration-300 hover:scale-[1.02]"
+            className="w-full bg-gradient-to-r from-rose-900/80 to-pink-900/80 border border-rose-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-rose-500/40 group"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500/30 to-pink-500/30 flex items-center justify-center">
-                  <Target size={16} className="text-rose-300" />
+                <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center">
+                  <Target size={20} className="text-rose-400" />
                 </div>
-                <div>
-                  <h3 className="text-white font-medium text-sm">Goals</h3>
-                  <div className="text-rose-400 font-semibold text-base">
+                <div className="text-left">
+                  <div className="text-white/80 text-sm font-medium">Goals</div>
+                  <div className="text-rose-400 text-base font-semibold">
                     {protocol.goals && protocol.goals.length > 0 ? 
                       `${protocol.goals.length} goal${protocol.goals.length > 1 ? 's' : ''} set` : 
                       'Add goals'}
@@ -268,27 +258,27 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-rose-400 text-xs bg-rose-500/20 px-2 py-0.5 rounded-full font-medium border border-rose-500/30">
-                  {protocol.goals?.length || 0}
-                </span>
-                <Edit3 size={16} className="text-rose-400 opacity-60 group-hover:opacity-100" />
+                <div className="w-6 h-6 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center">
+                  <span className="text-rose-400 text-xs font-bold">{protocol.goals?.length || 0}</span>
+                </div>
+                <Edit3 size={18} className="text-rose-400/60 group-hover:text-rose-400 transition-colors" />
               </div>
             </div>
-          </div>
+          </button>
 
           {/* Metaphors Card */}
-          <div 
+          <button
             onClick={() => setShowMetaphorsModal(true)}
-            className="glass-card-premium p-4 bg-gradient-to-br from-yellow-500/10 to-lime-500/10 border-yellow-500/20 hover:border-yellow-500/40 cursor-pointer group transition-all duration-300 hover:scale-[1.02]"
+            className="w-full bg-gradient-to-r from-yellow-900/80 to-lime-900/80 border border-yellow-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-yellow-500/40 group"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-500/30 to-lime-500/30 flex items-center justify-center">
-                  <Sparkles size={16} className="text-yellow-300" />
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center">
+                  <Sparkles size={20} className="text-yellow-400" />
                 </div>
-                <div>
-                  <h3 className="text-white font-medium text-sm">Metaphors</h3>
-                  <div className="text-yellow-400 font-semibold text-base">
+                <div className="text-left">
+                  <div className="text-white/80 text-sm font-medium">Metaphors</div>
+                  <div className="text-yellow-400 text-base font-semibold">
                     {protocol.metaphors && protocol.metaphors.length > 0 ? 
                       `${protocol.metaphors.length} metaphor${protocol.metaphors.length > 1 ? 's' : ''} added` : 
                       'Add imagery'}
@@ -296,38 +286,26 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-yellow-400 text-xs bg-yellow-500/20 px-2 py-0.5 rounded-full font-medium border border-yellow-500/30">
-                  {protocol.metaphors?.length || 0}
-                </span>
-                <Edit3 size={16} className="text-yellow-400 opacity-60 group-hover:opacity-100" />
+                <div className="w-6 h-6 rounded-full bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center">
+                  <span className="text-yellow-400 text-xs font-bold">{protocol.metaphors?.length || 0}</span>
+                </div>
+                <Edit3 size={18} className="text-yellow-400/60 group-hover:text-yellow-400 transition-colors" />
               </div>
             </div>
-          </div>
+          </button>
         </div>
+      </div>
 
-        {/* Bottom Actions - Fixed */}
-        <div className="flex-shrink-0 py-4">
-          <div className="flex space-x-3">
-            <button
-              onClick={handleSave}
-              disabled={!isValid}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 text-black font-semibold rounded-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-400/20 hover:shadow-teal-400/40"
-              style={{ minHeight: '44px' }}
-            >
-              <Save size={16} className="inline mr-2" />
-              Save Protocol
-            </button>
-            
-            <button
-              onClick={() => {/* Preview functionality */}}
-              disabled={!isValid}
-              className="px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105"
-              style={{ minHeight: '44px' }}
-            >
-              <Play size={16} />
-            </button>
-          </div>
-        </div>
+      {/* Save Button - Fixed at Bottom */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/95 to-transparent backdrop-blur-sm">
+        <button
+          onClick={handleSave}
+          disabled={!isValid}
+          className="w-full px-6 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl text-black font-bold text-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl shadow-teal-500/20 flex items-center justify-center space-x-3"
+        >
+          <Save size={20} />
+          <span>Save Protocol</span>
+        </button>
       </div>
 
       {/* Protocol Name Modal */}
@@ -339,14 +317,14 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
           <div className="flex space-x-3">
             <button
               onClick={() => setShowNameModal(false)}
-              className="flex-1 glass-button bg-white/10 hover:bg-white/20 text-white"
+              className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300"
             >
               Cancel
             </button>
             <button
               onClick={saveNameModal}
               disabled={!tempName.trim()}
-              className="flex-1 glass-button bg-gradient-to-r from-violet-400 to-purple-400 text-black font-semibold disabled:opacity-50"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-violet-400 to-purple-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 disabled:opacity-50"
             >
               Save Name
             </button>
@@ -361,7 +339,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               value={tempName}
               onChange={(e) => setTempName(e.target.value)}
               placeholder="My Confidence Builder"
-              className="glass-input focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/20 text-lg font-medium"
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-violet-400/50 focus:bg-white/15"
               autoFocus
             />
           </div>
@@ -377,13 +355,13 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
           <div className="flex space-x-3">
             <button
               onClick={() => setShowDurationModal(false)}
-              className="flex-1 glass-button bg-white/10 hover:bg-white/20 text-white"
+              className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300"
             >
               Cancel
             </button>
             <button
               onClick={saveDurationModal}
-              className="flex-1 glass-button bg-gradient-to-r from-amber-400 to-orange-400 text-black font-semibold"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-400 to-amber-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
             >
               Set Duration
             </button>
@@ -391,10 +369,10 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
         }
       >
         <div className="space-y-4">
-          <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-xl p-6 border border-amber-500/20">
+          <div className="bg-gradient-to-br from-orange-500/10 to-amber-500/10 rounded-xl p-6 border border-orange-500/20">
             <div className="text-center mb-6">
-              <div className="text-6xl font-bold text-amber-400 mb-2">{tempDuration}m</div>
-              <p className="text-amber-400/80">Perfect for deep transformation</p>
+              <div className="text-6xl font-bold text-orange-400 mb-2">{tempDuration}m</div>
+              <p className="text-orange-400/80">Perfect for deep transformation</p>
             </div>
             
             <input
@@ -403,10 +381,10 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               max="30"
               value={tempDuration}
               onChange={(e) => setTempDuration(parseInt(e.target.value))}
-              className="glass-slider w-full mb-4"
+              className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer mb-4"
             />
             
-            <div className="flex justify-between text-amber-400/60 text-sm">
+            <div className="flex justify-between text-orange-400/60 text-sm">
               <span>5 min</span>
               <span>Quick</span>
               <span>Standard</span>
@@ -431,17 +409,17 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 setProtocol(prev => ({ ...prev, induction: option.id }));
                 setShowInductionModal(false);
               }}
-              className={`w-full p-4 glass-card text-left glass-hover-lift glass-scale transition-all duration-300 ${
+              className={`w-full p-4 rounded-xl text-left transition-all duration-300 hover:scale-[1.02] ${
                 protocol.induction === option.id
-                  ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400 shadow-lg shadow-cyan-500/20 ring-state'
-                  : 'text-white/70 hover:bg-white/10'
+                  ? 'bg-cyan-500/20 border-2 border-cyan-500/40 shadow-lg shadow-cyan-500/20'
+                  : 'bg-white/5 border border-white/20 hover:bg-white/10'
               }`}
             >
               <div className="flex items-center space-x-4">
                 <span className="text-3xl">{option.emoji}</span>
                 <div>
-                  <div className="font-medium text-lg">{option.name}</div>
-                  <div className="text-sm opacity-70">{option.description}</div>
+                  <div className="text-white font-medium text-lg">{option.name}</div>
+                  <div className="text-white/60 text-sm">{option.description}</div>
                 </div>
               </div>
             </button>
@@ -463,17 +441,17 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 setProtocol(prev => ({ ...prev, deepener: option.id }));
                 setShowDeepenerModal(false);
               }}
-              className={`w-full p-4 glass-card text-left glass-hover-lift glass-scale transition-all duration-300 ${
+              className={`w-full p-4 rounded-xl text-left transition-all duration-300 hover:scale-[1.02] ${
                 protocol.deepener === option.id
-                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-lg shadow-emerald-500/20 ring-state'
-                  : 'text-white/70 hover:bg-white/10'
+                  ? 'bg-teal-500/20 border-2 border-teal-500/40 shadow-lg shadow-teal-500/20'
+                  : 'bg-white/5 border border-white/20 hover:bg-white/10'
               }`}
             >
               <div className="flex items-center space-x-4">
                 <span className="text-3xl">{option.emoji}</span>
                 <div>
-                  <div className="font-medium text-lg">{option.name}</div>
-                  <div className="text-sm opacity-70">{option.description}</div>
+                  <div className="text-white font-medium text-lg">{option.name}</div>
+                  <div className="text-white/60 text-sm">{option.description}</div>
                 </div>
               </div>
             </button>
@@ -489,7 +467,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
         footer={
           <button
             onClick={() => setShowGoalsModal(false)}
-            className="w-full glass-button bg-gradient-to-r from-rose-400 to-pink-400 text-black font-semibold"
+            className="w-full px-4 py-3 bg-gradient-to-r from-rose-400 to-pink-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
           >
             Done
           </button>
@@ -504,13 +482,13 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 value={newGoal}
                 onChange={(e) => setNewGoal(e.target.value)}
                 placeholder="Build confidence..."
-                className="flex-1 glass-input focus:border-rose-400/60 focus:ring-2 focus:ring-rose-400/20"
+                className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-rose-400/50 focus:bg-white/15"
                 onKeyPress={(e) => e.key === 'Enter' && addGoal()}
               />
               <button
                 onClick={addGoal}
                 disabled={!newGoal.trim()}
-                className="glass-button px-4 py-2 bg-rose-500/20 border border-rose-500/40 text-rose-400 hover:bg-rose-500/30 disabled:opacity-50"
+                className="px-4 py-3 bg-rose-500/20 border border-rose-500/40 rounded-lg text-rose-400 hover:bg-rose-500/30 transition-all duration-300 disabled:opacity-50"
               >
                 <Plus size={16} />
               </button>
@@ -521,13 +499,13 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             <div className="space-y-2">
               <h4 className="text-white font-medium">Your Goals ({protocol.goals.length})</h4>
               {protocol.goals.map((goal, index) => (
-                <div key={index} className="flex items-center justify-between bg-white/10 rounded-lg px-4 py-3 border border-white/20 hover:bg-white/15 transition-colors group/item">
+                <div key={index} className="flex items-center justify-between bg-white/10 rounded-lg px-4 py-3 border border-white/20 hover:bg-white/15 transition-colors group">
                   <span className="text-white font-medium flex-1">{goal}</span>
                   <button
                     onClick={() => removeGoal(index)}
-                    className="text-red-400 hover:text-red-300 transition-colors ml-3 opacity-0 group-hover/item:opacity-100"
+                    className="text-red-400 hover:text-red-300 transition-colors ml-3 opacity-0 group-hover:opacity-100"
                   >
-                    <Trash2 size={16} />
+                    <span className="text-lg">×</span>
                   </button>
                 </div>
               ))}
@@ -544,7 +522,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
         footer={
           <button
             onClick={() => setShowMetaphorsModal(false)}
-            className="w-full glass-button bg-gradient-to-r from-yellow-400 to-lime-400 text-black font-semibold"
+            className="w-full px-4 py-3 bg-gradient-to-r from-yellow-400 to-lime-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
           >
             Done
           </button>
@@ -559,13 +537,13 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 value={newMetaphor}
                 onChange={(e) => setNewMetaphor(e.target.value)}
                 placeholder="Strong oak tree..."
-                className="flex-1 glass-input focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/20"
+                className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-yellow-400/50 focus:bg-white/15"
                 onKeyPress={(e) => e.key === 'Enter' && addMetaphor()}
               />
               <button
                 onClick={addMetaphor}
                 disabled={!newMetaphor.trim()}
-                className="glass-button px-4 py-2 bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/30 disabled:opacity-50"
+                className="px-4 py-3 bg-yellow-500/20 border border-yellow-500/40 rounded-lg text-yellow-400 hover:bg-yellow-500/30 transition-all duration-300 disabled:opacity-50"
               >
                 <Plus size={16} />
               </button>
@@ -576,13 +554,13 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             <div className="space-y-2">
               <h4 className="text-white font-medium">Your Metaphors ({protocol.metaphors.length})</h4>
               {protocol.metaphors.map((metaphor, index) => (
-                <div key={index} className="flex items-center justify-between bg-white/10 rounded-lg px-4 py-3 border border-white/20 hover:bg-white/15 transition-colors group/item">
+                <div key={index} className="flex items-center justify-between bg-white/10 rounded-lg px-4 py-3 border border-white/20 hover:bg-white/15 transition-colors group">
                   <span className="text-white font-medium flex-1">{metaphor}</span>
                   <button
                     onClick={() => removeMetaphor(index)}
-                    className="text-red-400 hover:text-red-300 transition-colors ml-3 opacity-0 group-hover/item:opacity-100"
+                    className="text-red-400 hover:text-red-300 transition-colors ml-3 opacity-0 group-hover:opacity-100"
                   >
-                    <Trash2 size={16} />
+                    <span className="text-lg">×</span>
                   </button>
                 </div>
               ))}
@@ -590,6 +568,6 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
           )}
         </div>
       </ModalShell>
-    </>
+    </div>
   );
 }
