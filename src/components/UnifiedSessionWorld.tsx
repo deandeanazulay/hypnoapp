@@ -392,35 +392,15 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         />
       )}
 
-      {/* Session Context Display */}
-      <div className="absolute top-20 left-4 z-30 bg-black/80 backdrop-blur-xl rounded-xl p-3 border border-white/20">
-        <div className="text-xs text-white/70">
-          <div className="flex items-center space-x-2 mb-1">
-            <span className="text-lg">{egoState.icon}</span>
-            <span className="text-white font-medium">{egoState.name}</span>
-          </div>
-          {selectedAction && (
-            <div className="text-teal-400 font-medium">
-              → {selectedAction.name}
-            </div>
-          )}
-          {selectedGoal && (
-            <div className="text-orange-400 font-medium">
-              Goal: {selectedGoal.name}
-            </div>
-          )}
-          <div className="text-white/50 mt-1">
-            Depth: L{Math.floor(sessionState.depth)} • {Math.floor(sessionState.timeElapsed / 60)}m
-          </div>
-        </div>
-      </div>
 
       {/* Breathing Guide with Timings */}
       {sessionState.isActive && (
-        <BreathingIndicator 
-          currentPhase={sessionState.breathing}
-          isActive={sessionState.isActive && !sessionState.isPaused}
-        />
+        <div className="absolute top-20 left-4 z-30">
+          <BreathingIndicator 
+            currentPhase={sessionState.breathing}
+            isActive={sessionState.isActive && !sessionState.isPaused}
+          />
+        </div>
       )}
     </div>
   );
@@ -472,8 +452,7 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
   if (!isActive) return null;
 
   return (
-    <div className="absolute top-1/2 left-4 right-4 z-20 flex justify-center" style={{ transform: 'translateY(120px)' }}>
-      <div className="bg-black/90 backdrop-blur-xl rounded-xl px-6 py-3 border border-white/20 shadow-2xl">
+    <div className="bg-black/90 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 shadow-2xl">
         <div className="flex items-center justify-center space-x-4">
           {/* Breathing Phase Indicator */}
           <div className="flex items-center space-x-3">
@@ -512,7 +491,6 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
             />
           </div>
         )}
-      </div>
     </div>
   );
 }
