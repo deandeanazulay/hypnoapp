@@ -115,7 +115,6 @@ export default function EgoStatesModal() {
   const userBadges = getUserBadges();
   const polarityInsight = getPolarityInsight();
   return (
-    <>
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ maxHeight: '100svh' }}>
       {/* Enhanced Backdrop with Dynamic Orb Glow */}
       <div 
@@ -321,7 +320,6 @@ export default function EgoStatesModal() {
         </div>
       </div>
     </div>
-    </>
   );
 }
 
