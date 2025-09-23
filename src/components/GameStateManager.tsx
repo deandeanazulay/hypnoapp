@@ -190,7 +190,9 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         warrior: 0,
         visionary: 0
       },
-      active_ego_state: 'guardian'
+      active_ego_state: 'guardian',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     const { error } = await supabase
