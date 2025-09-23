@@ -16,6 +16,7 @@ interface UserState {
   plan: 'free' | 'pro_monthly' | 'pro_annual';
   dailySessionsUsed: number;
   lastSessionDate: string | null;
+  egoStateUsage: { [key: string]: number }; // Session counts per ego state
 }
 
 interface GameState {
@@ -53,7 +54,24 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     tokens: 50,
     plan: 'free',
     dailySessionsUsed: 0,
-    lastSessionDate: null
+    lastSessionDate: null,
+    egoStateUsage: {
+      guardian: 15,
+      rebel: 8,
+      healer: 22,
+      explorer: 12,
+      mystic: 18,
+      sage: 10,
+      child: 14,
+      performer: 9,
+      shadow: 6,
+      builder: 11,
+      seeker: 7,
+      lover: 13,
+      trickster: 4,
+      warrior: 9,
+      visionary: 5
+    }
   });
 
   // Load saved state
@@ -83,6 +101,10 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const completeSession = (sessionType: string, duration: number) => {
+    // Get current ego state from appStore
+    const currentEgoState = localStorage.getItem('app-store') ? 
+      JSON.parse(localStorage.getItem('app-store') || '{}').state?.activeEgoState || 'guardian' : 'guardian';
+    
     // XP calculation: floor(durationSec / 60) * baseMultiplier * depthMultiplier
     const baseMultiplier = 10;
     const depthMultiplier = 1 + (user.depth * 0.15);
@@ -125,6 +147,10 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       tokens: prev.tokens + tokenReward,
       dailySessionsUsed: prev.lastSessionDate === today ? prev.dailySessionsUsed + 1 : 1,
       orbEnergy: Math.min(prev.orbEnergy + 0.1, 1.0),
+      egoStateUsage: {
+        ...prev.egoStateUsage,
+        [currentEgoState]: (prev.egoStateUsage[currentEgoState] || 0) + 1
+      },
       achievements: [
         ...prev.achievements,
         ...(newLevel > prev.level ? [`Level ${newLevel} Reached`] : [])
