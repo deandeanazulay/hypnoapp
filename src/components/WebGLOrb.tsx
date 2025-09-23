@@ -190,7 +190,7 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
       const TAU = Math.PI * 2;
 
       // Very gentle breathing (same in all directions)
-      const scale = 1.0 + 0.02 * Math.sin(t * TAU / 7.0);
+      const scale = 1.0 + 0.08 * Math.sin(t * TAU / 6.0);
 
       // Optional tiny organic surface (no axis alignment)
       const a = 0.015;
