@@ -472,7 +472,7 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
   if (!isActive) return null;
 
   return (
-    <div className="absolute bottom-32 left-4 right-4 z-30 flex justify-center">
+    <div className="absolute top-1/2 left-4 right-4 z-20 flex justify-center" style={{ transform: 'translateY(120px)' }}>
       <div className="bg-black/90 backdrop-blur-xl rounded-xl px-6 py-3 border border-white/20 shadow-2xl">
         <div className="flex items-center justify-center space-x-4">
           {/* Breathing Phase Indicator */}
@@ -503,7 +503,6 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
         
         {/* Progress bar for current breathing phase */}
         {currentPhase !== 'rest' && (
-        <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/20">
           <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden mt-2">
             <div 
               className={`h-full ${breathingColors[currentPhase]} rounded-full transition-all duration-100`}
@@ -512,7 +511,6 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
               }}
             />
           </div>
-        </div>
         )}
       </div>
     </div>
