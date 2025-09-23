@@ -217,8 +217,13 @@ export default function GlobalHUD() {
                   Custom protocol builder
                 </div>
               </div>
-            </div>
+              
               <div className="text-center mb-4">
+                <div className="text-3xl font-bold text-teal-400 mb-1">$27<span className="text-lg">/month</span></div>
+                <p className="text-white/80">Unlock your full potential</p>
+              </div>
+            </div>
+            
             <button
               onClick={handleUpgrade}
               disabled={isProcessingPayment}
@@ -229,7 +234,7 @@ export default function GlobalHUD() {
           </div>
         </div>
       )}
-                <div className="text-3xl font-bold text-teal-400 mb-1">$27<span className="text-lg">/month</span></div>
+
       {/* Token Shop Modal */}
       {showTokenShop && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -242,7 +247,7 @@ export default function GlobalHUD() {
                 ×
               </button>
             </div>
-                <p className="text-white/80">Unlock your full potential</p>
+            
             <div className="space-y-4">
               <div className="bg-gradient-to-br from-yellow-500/20 to-amber-500/20 rounded-xl p-4 border border-yellow-500/30">
                 <div className="flex items-center justify-between">
@@ -274,7 +279,7 @@ export default function GlobalHUD() {
                 </div>
               </div>
             </div>
-              </div>
+            
             <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
               <p className="text-white/70 text-sm text-center">
                 Tokens can be used to unlock special features and customizations
