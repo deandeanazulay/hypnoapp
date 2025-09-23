@@ -21,7 +21,11 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
   };
 
   return (
-    <nav className="w-full bg-black/95 backdrop-blur-xl border-t border-white/5 px-4 sm:px-6 py-3 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1rem+env(safe-area-inset-bottom))] relative z-50 shadow-lg shadow-black/20" style={{ paddingBottom: 'max(1rem, calc(1rem + env(safe-area-inset-bottom)))' }}>
+    <nav className="w-full bg-black/95 backdrop-blur-xl border-t border-white/5 px-4 sm:px-6 py-3 relative z-[100] shadow-lg shadow-black/20 safe-area-bottom" style={{ 
+      paddingBottom: 'max(1rem, calc(1rem + env(safe-area-inset-bottom)))',
+      position: 'sticky',
+      bottom: 0
+    }}>
       <div className="flex justify-between items-center space-around max-w-md mx-auto">
         {TABS.map((tab) => {
           const IconComponent = iconMap[tab.id];
