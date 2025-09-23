@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Clock, Star, Filter } from 'lucide-react';
+import { Play, Clock, Star, Filter, Plus } from 'lucide-react';
 import { DEFAULT_PROTOCOLS, Protocol } from '../../types/Navigation';
 import PageShell from '../layout/PageShell';
 import ModalShell from '../layout/ModalShell';
@@ -12,29 +12,8 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'induction' | 'deepener' | 'complete'>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  
-  // Responsive cards per view
-  const getCardsPerView = () => {
-    if (typeof window === 'undefined') return 1;
-    if (window.innerWidth >= 1024) return 3; // desktop: 3 cards
-    if (window.innerWidth >= 768) return 2;  // tablet: 2 cards
-    return 1; // mobile: 1 card
-  };
-  
-  const [cardsPerView, setCardsPerView] = useState(getCardsPerView);
-  
-  // Update cards per view on resize
-  React.useEffect(() => {
-    const handleResize = () => {
-      setCardsPerView(getCardsPerView());
-      setCurrentIndex(0); // Reset to first page when screen size changes
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const filteredProtocols = DEFAULT_PROTOCOLS.filter(protocol => {
     const typeMatch = selectedFilter === 'all' || protocol.type === selectedFilter;
@@ -42,26 +21,9 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
     return typeMatch && difficultyMatch;
   });
 
-  const totalPages = Math.ceil(filteredProtocols.length / cardsPerView);
-  const canScrollLeft = currentIndex > 0;
-  const canScrollRight = currentIndex < totalPages - 1;
-
-  const scrollLeft = () => {
-    if (canScrollLeft) {
-      setCurrentIndex(prev => prev - 1);
-    }
-  };
-
-  const scrollRight = () => {
-    if (canScrollRight) {
-      setCurrentIndex(prev => prev + 1);
-    }
-  };
-  
-  const getCurrentCards = () => {
-    const startIndex = currentIndex * cardsPerView;
-    return filteredProtocols.slice(startIndex, startIndex + cardsPerView);
-  };
+  // Show max 4 cards on main view, rest in modal
+  const displayedProtocols = filteredProtocols.slice(0, 4);
+  const remainingProtocols = filteredProtocols.slice(4);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -82,246 +44,236 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   };
 
   const renderProtocolCard = (protocol: Protocol) => (
-    <div
+    <button
       key={protocol.id}
-      className={`bg-gradient-to-br ${getTypeColor(protocol.type)} backdrop-blur-md rounded-xl p-4 border border-white/10 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full w-full`}
+      onClick={() => setSelectedProtocol(protocol)}
+      className={`card-premium bg-gradient-to-br ${getTypeColor(protocol.type)} p-4 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full w-full text-left opacity-80 hover:opacity-100`}
+      style={{ minHeight: '44px', willChange: 'transform, opacity' }}
     >
-      <div className="flex items-start justify-between space-x-3 mb-3">
+      <div className="flex items-start justify-between space-x-2 mb-2">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-white font-semibold text-base truncate">{protocol.name}</h3>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-[var(--ink-1)] font-semibold text-sm truncate text-shadow-premium">{protocol.name}</h3>
             <span className={`text-xs font-medium px-2 py-1 rounded-full bg-black/20 ${getDifficultyColor(protocol.difficulty)}`}>
               {protocol.difficulty}
             </span>
           </div>
-          <p className="text-white/70 text-sm mb-3 line-clamp-2">{protocol.description}</p>
+          <p className="text-[var(--ink-2)] text-xs mb-2 line-clamp-2">{protocol.description}</p>
           
-          <div className="flex items-center justify-start space-x-4 text-white/50 text-sm">
+          <div className="flex items-center justify-start space-x-3 text-[var(--ink-dim)] text-xs">
             <div className="flex items-center space-x-1">
-              <Clock size={12} />
+              <Clock size={10} />
               <span>{protocol.duration} min</span>
             </div>
             <div className="flex items-center space-x-1">
-              <Star size={12} />
+              <Star size={10} />
               <span>{protocol.type}</span>
             </div>
           </div>
         </div>
-
-        <div className="flex-shrink-0">
-          <button
-            onClick={() => setSelectedProtocol(protocol)}
-            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-white/20"
-          >
-            <Play size={14} className="text-white ml-0.5" />
-          </button>
-        </div>
       </div>
 
       {/* Tags */}
-      <div className="flex flex-wrap gap-1 mt-2">
+      <div className="flex flex-wrap gap-1">
         {protocol.tags.slice(0, 2).map((tag) => (
           <span
             key={tag}
-            className="px-2 py-1 bg-white/10 text-white/60 text-xs rounded-full border border-white/20"
+            className="px-2 py-1 bg-white/10 text-[var(--ink-dim)] text-xs rounded-full border border-white/10"
           >
             {tag}
           </span>
         ))}
       </div>
-    </div>
-  );
-
-  const header = (
-    <div className="bg-black/60 backdrop-blur-xl">
-      <div className="px-4 pt-4 pb-3">
-        <h1 className="text-white text-2xl font-light mb-2">Explore Protocols</h1>
-        <p className="text-white/60 text-sm">Discover hypnosis journeys and techniques</p>
-      </div>
-      
-      {/* Quick Filters */}
-      <div className="px-4 pb-3">
-        <div className="flex space-x-2 mb-2">
-          {['all', 'induction', 'deepener', 'complete'].slice(0, 3).map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setSelectedFilter(filter as any)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 ${
-                selectedFilter === filter
-                  ? 'bg-teal-500/20 text-teal-400 border border-teal-500/40'
-                  : 'bg-white/10 text-white/60 border border-white/20 hover:bg-white/20'
-              }`}
-            >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </button>
-          ))}
-          <button
-            onClick={() => setShowFilters(true)}
-            className="px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/60 border border-white/20 hover:bg-white/20 transition-all duration-200"
-          >
-            More Filters
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const body = (
-    <div className="bg-black relative h-full overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/20 via-black to-purple-950/20" />
-      <div className="relative z-10 h-full px-4 py-4">
-        {filteredProtocols.length > 0 ? (
-          <div className="h-full flex flex-col relative">
-            {/* Navigation Arrows - Only show if more than 1 card */}
-            {totalPages > 1 && (
-              <>
-                <button
-                  onClick={scrollLeft}
-                  disabled={!canScrollLeft}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
-                    <polyline points="15,18 9,12 15,6"></polyline>
-                  </svg>
-                </button>
-                <button
-                  onClick={scrollRight}
-                  disabled={!canScrollRight}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
-                    <polyline points="9,18 15,12 9,6"></polyline>
-                  </svg>
-                </button>
-              </>
-            )}
-            
-            <div className="flex-1 overflow-hidden px-4 sm:px-8 lg:px-4">
-              <div 
-                className="grid h-full pb-4 transition-transform duration-300 ease-out gap-4"
-                style={{ 
-                  gridTemplateColumns: `repeat(${cardsPerView}, 1fr)`,
-                }}
-              >
-                {getCurrentCards().map((protocol) => (
-                  renderProtocolCard(protocol)
-                ))}
-              </div>
-            </div>
-            
-            {/* Page indicators */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-4 mb-2">
-                <div className="flex space-x-2">
-                  {Array.from({ length: totalPages }).map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-125 ${
-                        currentIndex === index 
-                          ? 'bg-teal-400 scale-125' 
-                          : 'bg-white/30 hover:bg-white/50 hover:scale-105'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <Filter size={48} className="text-white/20 mx-auto mb-4" />
-              <h3 className="text-white/60 text-xl font-medium mb-2">No protocols found</h3>
-              <p className="text-white/40">Try adjusting your filters</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+    </button>
   );
 
   return (
-    <>
-      <PageShell
-        header={header}
-        body={body}
-      />
+    <div className="flex flex-col h-screen overflow-hidden">
+      <main className="flex-1 overflow-hidden">
+        <div className="h-full w-full flex items-center justify-center overflow-hidden">
+          <div className="max-w-[1200px] max-h-[88vh] h-full w-full scale-to-fit">
+            
+            {/* Background */}
+            <div className="h-full bg-gradient-to-br from-black via-blue-950/20 to-purple-950/20 relative overflow-hidden">
+              <div className="absolute inset-0">
+                <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/5 rounded-full blur-3xl" />
+              </div>
 
-      {/* Filters Modal */}
-      <ModalShell
-        isOpen={showFilters}
-        onClose={() => setShowFilters(false)}
-        title="Filter Protocols"
-      >
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-white font-medium mb-3">Type</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {['all', 'induction', 'deepener', 'complete'].map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setSelectedFilter(filter as any)}
-                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    selectedFilter === filter
-                      ? 'bg-teal-500/20 text-teal-400 border border-teal-500/40'
-                      : 'bg-white/10 text-white/60 border border-white/20 hover:bg-white/20'
-                  }`}
-                >
-                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="text-white font-medium mb-3">Difficulty</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {['all', 'beginner', 'intermediate', 'advanced'].map((difficulty) => (
-                <button
-                  key={difficulty}
-                  onClick={() => setSelectedDifficulty(difficulty as any)}
-                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    selectedDifficulty === difficulty
-                      ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
-                      : 'bg-white/10 text-white/60 border border-white/20 hover:bg-white/20'
-                  }`}
-                >
-                  {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
-                </button>
-              ))}
+              {/* Header */}
+              <div className="relative z-10 px-4 pt-4 pb-2">
+                <h1 className="text-[var(--ink-1)] text-xl font-bold mb-1 text-shadow-premium">Explore Protocols</h1>
+                <p className="text-[var(--ink-dim)] text-sm">Discover hypnosis journeys and techniques</p>
+              </div>
+
+              {/* Content Grid */}
+              <div className="relative z-10 h-full grid grid-rows-[auto,1fr] gap-3 px-4 pb-4">
+                
+                {/* Filters Row */}
+                <div className="flex space-x-2">
+                  {['all', 'induction', 'deepener', 'complete'].slice(0, 3).map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setSelectedFilter(filter as any)}
+                      className={`px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 opacity-80 hover:opacity-100 ${
+                        selectedFilter === filter
+                          ? 'bg-teal-500/20 text-teal-400 border border-teal-500/40'
+                          : 'bg-white/10 text-[var(--ink-dim)] border border-white/20 hover:bg-white/20'
+                      }`}
+                      style={{ minHeight: '32px' }}
+                    >
+                      {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setShowFilters(true)}
+                    className="px-3 py-2 rounded-full text-xs font-medium bg-white/10 text-[var(--ink-dim)] border border-white/20 hover:bg-white/20 transition-all duration-200 opacity-80 hover:opacity-100"
+                    style={{ minHeight: '32px' }}
+                  >
+                    More Filters
+                  </button>
+                </div>
+                
+                {/* Protocol Grid - 2x2 on desktop, 1x2 on mobile */}
+                <div className="grid h-full gap-4 grid-cols-1 sm:grid-cols-2 overflow-hidden">
+                  {filteredProtocols.length > 0 ? (
+                    <>
+                      <div className="grid grid-rows-2 gap-4">
+                        {displayedProtocols.slice(0, 2).map((protocol) => (
+                          renderProtocolCard(protocol)
+                        ))}
+                      </div>
+                      <div className="grid grid-rows-2 gap-4">
+                        {displayedProtocols[2] && renderProtocolCard(displayedProtocols[2])}
+                        {displayedProtocols[3] ? (
+                          renderProtocolCard(displayedProtocols[3])
+                        ) : remainingProtocols.length > 0 ? (
+                          <button
+                            onClick={() => setShowMore(true)}
+                            className="card-premium p-4 text-center transition-all duration-300 hover:scale-105 hover:shadow-xl opacity-80 hover:opacity-100 bg-gradient-to-br from-white/10 to-gray-500/10"
+                            style={{ minHeight: '44px', willChange: 'transform, opacity' }}
+                          >
+                            <div className="flex flex-col items-center justify-center h-full">
+                              <Plus size={24} className="text-[var(--ink-2)] mb-2" />
+                              <span className="text-[var(--ink-1)] font-medium text-sm text-shadow-premium">More Protocols</span>
+                              <span className="text-[var(--ink-dim)] text-xs">+{remainingProtocols.length} available</span>
+                            </div>
+                          </button>
+                        ) : null}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="col-span-full flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <Filter size={48} className="text-white/20 mx-auto mb-4" />
+                        <h3 className="text-[var(--ink-2)] text-xl font-medium mb-2">No protocols found</h3>
+                        <p className="text-[var(--ink-dim)]">Try adjusting your filters</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </ModalShell>
+      </main>
+
+      {/* Filters Modal */}
+      {showFilters && (
+        <ModalShell
+          isOpen={true}
+          onClose={() => setShowFilters(false)}
+          title="Filter Protocols"
+          className="max-h-[86vh] overflow-auto"
+        >
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-[var(--ink-1)] font-medium mb-3">Type</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {['all', 'induction', 'deepener', 'complete'].map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setSelectedFilter(filter as any)}
+                    className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      selectedFilter === filter
+                        ? 'bg-teal-500/20 text-teal-400 border border-teal-500/40'
+                        : 'card-premium text-[var(--ink-2)] hover:bg-white/20'
+                    }`}
+                    style={{ minHeight: '44px' }}
+                  >
+                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          
+            <div>
+              <h3 className="text-[var(--ink-1)] font-medium mb-3">Difficulty</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {['all', 'beginner', 'intermediate', 'advanced'].map((difficulty) => (
+                  <button
+                    key={difficulty}
+                    onClick={() => setSelectedDifficulty(difficulty as any)}
+                    className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      selectedDifficulty === difficulty
+                        ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
+                        : 'card-premium text-[var(--ink-2)] hover:bg-white/20'
+                    }`}
+                    style={{ minHeight: '44px' }}
+                  >
+                    {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </ModalShell>
+      )}
+
+      {/* More Protocols Modal */}
+      {showMore && (
+        <ModalShell
+          isOpen={true}
+          onClose={() => setShowMore(false)}
+          title={`All ${selectedFilter.charAt(0).toUpperCase() + selectedFilter.slice(1)} Protocols`}
+          className="max-h-[86vh] overflow-auto"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+            {remainingProtocols.map((protocol) => (
+              <div key={protocol.id} className="h-auto">
+                {renderProtocolCard(protocol)}
+              </div>
+            ))}
+          </div>
+        </ModalShell>
+      )}
 
       {/* Protocol Details Modal */}
-      <ModalShell
-        isOpen={!!selectedProtocol}
-        onClose={() => setSelectedProtocol(null)}
-        title={selectedProtocol?.name || ''}
-        footer={
-          <button
-            onClick={() => {
-              if (selectedProtocol) {
+      {selectedProtocol && (
+        <ModalShell
+          isOpen={true}
+          onClose={() => setSelectedProtocol(null)}
+          title={selectedProtocol.name}
+          className="max-h-[86vh] overflow-auto"
+          footer={
+            <button
+              onClick={() => {
                 onProtocolSelect(selectedProtocol);
                 setSelectedProtocol(null);
-              }
-            }}
-            className="w-full px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
-          >
-            Start Session
-          </button>
-        }
-      >
-        {selectedProtocol && (
+              }}
+              className="w-full px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
+              style={{ minHeight: '44px' }}
+            >
+              Start Session
+            </button>
+          }
+        >
           <div className="space-y-4">
-            <div className={`bg-gradient-to-br ${getTypeColor(selectedProtocol.type)} rounded-xl p-4 border border-white/20`}>
+            <div className={`card-premium bg-gradient-to-br ${getTypeColor(selectedProtocol.type)} p-4`}>
               <div className="flex items-center justify-between mb-3">
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(selectedProtocol.difficulty)} bg-black/20`}>
                   {selectedProtocol.difficulty}
                 </span>
-                <div className="flex items-center space-x-4 text-white/60">
+                <div className="flex items-center space-x-4 text-[var(--ink-dim)]">
                   <div className="flex items-center space-x-1">
                     <Clock size={16} />
                     <span>{selectedProtocol.duration} min</span>
@@ -332,16 +284,16 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                   </div>
                 </div>
               </div>
-              <p className="text-white/80">{selectedProtocol.description}</p>
+              <p className="text-[var(--ink-2)] text-shadow-premium">{selectedProtocol.description}</p>
             </div>
             
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-              <h4 className="text-white font-medium mb-3">Tags</h4>
+            <div className="card-premium p-4" style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
+              <h4 className="text-[var(--ink-1)] font-medium mb-3 text-shadow-premium">Tags</h4>
               <div className="flex flex-wrap gap-2">
                 {selectedProtocol.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-3 py-1 bg-white/10 text-white/60 text-sm rounded-full border border-white/20"
+                    className="px-3 py-1 bg-white/10 text-[var(--ink-2)] text-sm rounded-full border border-white/20"
                   >
                     {tag}
                   </span>
@@ -349,8 +301,8 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
               </div>
             </div>
           </div>
-        )}
-      </ModalShell>
-    </>
+        </ModalShell>
+      )}
+    </div>
   );
 }

@@ -84,44 +84,47 @@ export default function HomeScreen({
           />
         </div>
 
-        {/* Center Section - Orb (perfectly centered) */}
-        <div className="flex-1 flex items-center justify-center">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-7xl mx-auto px-2 sm:px-4">
-            {/* Left Column - Desktop only */}
-            <div className="hidden lg:block">
-              {/* Future: Side content */}
-            </div>
-            
-            {/* Center Column - Orb */}
-            <div className="flex items-center justify-center">
-              <div className="flex flex-col items-center">
+        {/* Center Section - Orb Supreme (god of the app - never cut off) */}
+        <div className="flex-1 flex items-center justify-center min-h-0 relative z-20">
+          <div className="w-full h-full flex items-center justify-center px-4 py-8">
+            <div className="flex flex-col items-center justify-center max-w-none">
+              {/* Orb Container - Sacred Space */}
+              <div 
+                className="relative z-30 p-6" 
+                style={{ 
+                  minHeight: Math.max(320, window.innerHeight * 0.4),
+                  minWidth: Math.max(320, window.innerWidth * 0.6),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
                 <WebGLOrb
-                onTap={onOrbTap}
-                afterglow={user.lastSessionDate !== null}
-                egoState={selectedEgoState}
-              size={window.innerWidth < 768 ? Math.min(window.innerWidth * 0.55, 240) : 280}
-              />
-                
-                {/* Session configuration display - moved closer to orb */}
-                <div className="mt-1 text-center">
-                  <p className="text-teal-400 text-xs">
-                    {selectedEgoState.charAt(0).toUpperCase() + selectedEgoState.slice(1)} Mode
-                  </p>
-                  {selectedAction && (
-                    <p className="text-orange-400 text-xs">
-                      {selectedAction.name} ready
-                    </p>
+                  onTap={onOrbTap}
+                  afterglow={user.lastSessionDate !== null}
+                  egoState={selectedEgoState}
+                  size={Math.min(
+                    Math.max(240, window.innerWidth * 0.45), 
+                    Math.max(280, window.innerHeight * 0.35),
+                    320
                   )}
-                  <p className="text-white/40 text-xs mt-0.5">
-                    {selectedAction ? 'Tap orb to begin' : 'Select action & tap orb'}
-                  </p>
-                </div>
+                />
               </div>
-            </div>
-            
-            {/* Right Column - Desktop only */}
-            <div className="hidden lg:block">
-              {/* Future: Side content */}
+                
+              {/* Session configuration display - always visible */}
+              <div className="mt-2 text-center relative z-20 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
+                <p className="text-teal-400 text-sm font-medium">
+                  {selectedEgoState.charAt(0).toUpperCase() + selectedEgoState.slice(1)} Mode
+                </p>
+                {selectedAction && (
+                  <p className="text-orange-400 text-sm font-medium">
+                    {selectedAction.name} ready
+                  </p>
+                )}
+                <p className="text-white/60 text-xs mt-1">
+                  {selectedAction ? 'Tap orb to begin' : 'Select action & tap orb'}
+                </p>
+              </div>
             </div>
           </div>
         </div>

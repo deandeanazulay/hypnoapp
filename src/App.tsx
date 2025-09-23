@@ -132,19 +132,22 @@ function App() {
   // Navigation mode - tabbed interface
   return (
     <GameStateProvider>
-      <div className="h-screen w-screen bg-black flex flex-col overflow-hidden">
-        {/* Main Content - Takes remaining space above navigation */}
-        <div className="flex-1 min-h-0 flex flex-col">
+      <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
+        {/* Sacred Orb Background Protection */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900/50 to-black pointer-events-none z-0" />
+        
+        {/* Main Content */}
+        <div className="flex-1 min-h-0 flex flex-col relative z-10">
           {renderCurrentTab()}
         </div>
         
-        {/* Bottom Navigation Tabs - Fixed at bottom */}
-        <div className="flex-shrink-0">
+        {/* Bottom Navigation - Fixed */}
+        <div className="flex-shrink-0 relative z-50">
           <NavigationTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
-        </div>
+        </nav>
         
         {/* Global Modals */}
         <EgoStatesModal />

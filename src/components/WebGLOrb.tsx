@@ -448,22 +448,28 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
   };
 
   return (
-    <div className={`flex justify-center ${className}`}>
-      <div className="relative">
+    <div className={`flex justify-center items-center ${className} relative z-50`}>
+      <div className="relative flex items-center justify-center">
         <div
-          className={`relative cursor-pointer transition-transform duration-200 ${
+          className={`relative cursor-pointer transition-transform duration-200 select-none ${
             isPressed ? 'scale-95' : 'scale-100'
-          }`}
+          } shadow-2xl shadow-black/40`}
           style={{
             width: size || (window.innerWidth < 768 ? Math.min(window.innerWidth * 0.5, 200) : 280),
             height: size || (window.innerWidth < 768 ? Math.min(window.innerWidth * 0.5, 200) : 280),
             borderRadius: '50%',
             overflow: 'hidden',
-            background: 'rgba(0,0,0,0.2)',
+            background: 'rgba(0,0,0,0.1)',
+            border: '2px solid rgba(255,255,255,0.1)',
             filter: afterglow ? 'brightness(1.2) saturate(1.1)' : `hue-rotate(${egoState === 'nurturer' ? '30deg' : egoState === 'sage' ? '60deg' : egoState === 'performer' ? '-30deg' : '0deg'})`,
             transform: `scale(${getBreathScale()})`,
             transition: 'transform 4s ease-in-out',
-            aspectRatio: '1 / 1'
+            aspectRatio: '1 / 1',
+            minWidth: '240px',
+            minHeight: '240px',
+            maxWidth: '100vw',
+            maxHeight: '100vh',
+            boxSizing: 'border-box'
           }}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
