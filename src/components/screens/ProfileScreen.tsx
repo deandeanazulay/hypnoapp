@@ -511,8 +511,6 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                     <p className="text-orange-300/80 text-xs">
                       Unlock: Advanced meditation techniques & new archetype slots
                     </p>
-                      View Full Journal
-                    </button>
                   </div>
                 </div>
               </div>
