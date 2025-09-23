@@ -25,7 +25,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
   className = '', 
   breathPhase = 'rest',
   size,
-  egoState = 'protector',
+  egoState = 'guardian',
   selectedGoal,
   mousePosition = { x: 0.5, y: 0.5 },
   isDragging = false,
