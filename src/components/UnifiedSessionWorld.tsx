@@ -267,7 +267,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       {/* Central Orb Area */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-4">
         {/* Session Info */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-6 hidden sm:block">
           <h2 className="text-white text-xl font-light mb-2">
             {getPhaseDescription()}
           </h2>
