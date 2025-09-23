@@ -15,6 +15,7 @@ import ToastManager from './components/layout/ToastManager';
 import AuthModal from './components/auth/AuthModal';
 import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancelled from './components/PaymentCancelled';
+import { useViewportLayout } from './hooks/useViewportLayout';
 import { useAppStore } from './state/appStore';
 import { useAuth } from './hooks/useAuth';
 import './styles/glass.css';
