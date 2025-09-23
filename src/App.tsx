@@ -8,7 +8,9 @@ import NavigationTabs from './components/NavigationTabs';
 import UnifiedSessionWorld from './components/UnifiedSessionWorld';
 import { GameStateProvider } from './components/GameStateManager';
 import EgoStatesModal from './components/modals/EgoStatesModal';
+import ToastManager from './components/layout/ToastManager';
 import { useAppStore } from './state/appStore';
+import './styles/glass.css';
 import { TabId } from './types/Navigation';
 
 type AppMode = 'navigation' | 'session';
@@ -146,6 +148,9 @@ function App() {
         
         {/* Global Modals */}
         <EgoStatesModal />
+        
+        {/* Toast Notifications */}
+        <ToastManager />
       </div>
     </GameStateProvider>
   );
