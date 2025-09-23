@@ -424,10 +424,93 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                   <div className="space-y-3">
                     <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
                       <div className="text-emerald-300 text-sm font-medium mb-1">Yesterday • Guardian Session</div>
-                      <p className="text-white/80 text-sm italic">"I realized I've been protecting others more than myself..."</p>
+                      <p className="text-white/80 text-sm italic leading-relaxed">"I realized I've been protecting others more than myself. This session helped me understand that self-care isn't selfish—it's necessary for true strength."</p>
                     </div>
                     
-                    <button className="w-full px-4 py-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 rounded-lg text-sm font-medium hover:bg-emerald-500/30 transition-all duration-300 hover:scale-105">
+                    <div className="space-y-2">
+                      <div className="p-3 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
+                        <div className="text-emerald-300 text-sm font-medium mb-1">3 days ago • Healer Session</div>
+                        <p className="text-white/70 text-sm italic leading-relaxed">"The healing light visualization was incredibly powerful. I felt years of tension melting away from my shoulders."</p>
+                      </div>
+                      
+                      <div className="p-3 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
+                        <div className="text-emerald-300 text-sm font-medium mb-1">1 week ago • Explorer Session</div>
+                        <p className="text-white/70 text-sm italic leading-relaxed">"I discovered a new creative pathway. The session opened doors I didn't know existed in my mind."</p>
+                      </div>
+                    </div>
+                    
+                    <button className="w-full px-4 py-3 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 rounded-lg text-sm font-medium hover:bg-emerald-500/30 transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2">
+                      <BookOpen size={16} />
+                      <span>View Full Journal</span>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Mind Vault Progress */}
+                <div className="card-premium p-4 animate-stagger-in bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border-blue-500/20" style={{ animationDelay: '700ms' }}>
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/30 flex items-center justify-center">
+                      <TrendingUp size={16} className="text-blue-400" />
+                    </div>
+                    <h3 className="text-white font-semibold">Transformation Progress</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {/* Mastery Progress */}
+                    <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-blue-300 text-sm font-medium">Archetypal Mastery</span>
+                        <span className="text-blue-400 font-bold text-sm">{personaEvolution.length}/15</span>
+                      </div>
+                      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-blue-400 to-teal-400 rounded-full transition-all duration-700 relative overflow-hidden"
+                          style={{ width: `${(personaEvolution.length / 15) * 100}%` }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 animate-pulse" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Recent Achievement */}
+                    {user.achievements.length > 0 && (
+                      <div className="bg-blue-500/5 rounded-lg p-3 border border-blue-500/10">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <Award size={14} className="text-blue-400" />
+                          <span className="text-blue-300 text-sm font-medium">Latest Achievement</span>
+                        </div>
+                        <p className="text-white/80 text-sm font-semibold">{user.achievements[user.achievements.length - 1]}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Next Level Preview */}
+                <div className="card-premium p-4 animate-stagger-in bg-gradient-to-br from-orange-500/10 to-amber-500/10 border-orange-500/20" style={{ animationDelay: '800ms' }}>
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-orange-500/30 flex items-center justify-center">
+                      <Star size={16} className="text-orange-400" />
+                    </div>
+                    <h3 className="text-white font-semibold">Next Milestone</h3>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-orange-300 text-sm font-medium">Level {user.level + 1}</span>
+                      <span className="text-orange-400 font-bold text-sm">{(user.level + 1) * (user.level + 1) * 100 - user.experience} XP needed</span>
+                    </div>
+                    <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-all duration-700 relative overflow-hidden"
+                        style={{ width: `${(user.experience % 100)}%` }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-pulse" />
+                      </div>
+                    </div>
+                    <p className="text-orange-300/80 text-xs">
+                      Unlock: Advanced meditation techniques & new archetype slots
+                    </p>
                       View Full Journal
                     </button>
                   </div>
