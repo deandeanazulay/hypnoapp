@@ -347,12 +347,47 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 protocol.induction === option.id
                   ? 'bg-teal-500/20 border-teal-500/40 text-teal-400 shadow-lg shadow-teal-500/20'
                   : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10'
-              }
-              }
-      )
-      )
-      }
-  )
+              }`}
+              onClick={() => {
+                setProtocol(prev => ({ ...prev, induction: option.id }));
+                setShowInductionSelector(false);
+              }}
+            >
+              <div className="font-medium">{option.name}</div>
+              <div className="text-sm opacity-70">{option.description}</div>
+            </button>
+          ))}
+        </div>
+      </ModalShell>
+
+      {/* Deepener Selector Modal */}
+      <ModalShell
+        isOpen={showDeepenerSelector}
+        onClose={() => setShowDeepenerSelector(false)}
+        title="Select Deepening Method"
+      >
+        <div className="space-y-3">
+          {deepenerOptions.map((option) => (
+            <button
+              key={option.id}
+              className={`w-full p-4 rounded-lg border transition-all duration-200 text-left hover:scale-105 ${
+                protocol.deepener === option.id
+                  ? 'bg-purple-500/20 border-purple-500/40 text-purple-400 shadow-lg shadow-purple-500/20'
+                  : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10'
+              }`}
+              onClick={() => {
+                setProtocol(prev => ({ ...prev, deepener: option.id }));
+                setShowDeepenerSelector(false);
+              }}
+            >
+              <div className="font-medium">{option.name}</div>
+              <div className="text-sm opacity-70">{option.description}</div>
+            </button>
+          ))}
+        </div>
+      </ModalShell>
+    </>
+  );
 }
       )
       )
