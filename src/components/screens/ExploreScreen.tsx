@@ -58,7 +58,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   const renderProtocolCard = (protocol: Protocol) => (
     <div
       key={protocol.id}
-      className={`bg-gradient-to-br ${getTypeColor(protocol.type)} backdrop-blur-md rounded-xl p-4 border border-white/10 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full flex-shrink-0 w-72 sm:w-80`}
+      className={`bg-gradient-to-br ${getTypeColor(protocol.type)} backdrop-blur-md rounded-xl p-4 border border-white/10 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full flex-shrink-0 w-64`}
     >
       <div className="flex items-start justify-between space-x-3 mb-3">
         <div className="flex-1 min-w-0">
@@ -152,30 +152,30 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                 <button
                   onClick={scrollLeft}
                   disabled={!canScrollLeft}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-black/80 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
                     <polyline points="15,18 9,12 15,6"></polyline>
                   </svg>
                 </button>
                 <button
                   onClick={scrollRight}
                   disabled={!canScrollRight}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-black/80 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
                     <polyline points="9,18 15,12 9,6"></polyline>
                   </svg>
                 </button>
               </>
             )}
             
-            <div className="flex-1 overflow-hidden px-8">
+            <div className="flex-1 overflow-hidden px-20">
               <div 
                 className="flex space-x-4 h-full pb-4 transition-transform duration-300 ease-out" 
                 style={{ 
-                  transform: `translateX(-${currentIndex * 336}px)`,
-                  width: `${filteredProtocols.length * 336}px`
+                  transform: `translateX(-${currentIndex * 288}px)`,
+                  width: `${filteredProtocols.length * 288}px`
                 }}
               >
                 {filteredProtocols.map((protocol) => (

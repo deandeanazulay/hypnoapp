@@ -273,7 +273,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
 
             <div className="pt-3 border-t border-white/10">
               <div className="flex items-center justify-between text-xs">
-          {/* Quick Actions */}
+          {/* Quick Actions Card */}
           <div className="glass-card-premium bg-gradient-to-br from-orange-500/10 to-amber-500/10 p-6 hover:border-orange-500/40 transition-all duration-300">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
@@ -320,9 +320,9 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               </button>
             </div>
           </div>
-                <span className="text-white/60">This Week</span>
-          {/* Personalized Insights */}
-          <div className="glass-card-premium bg-gradient-to-br from-indigo-500/10 to-blue-500/10 p-6 hover:border-indigo-500/40 transition-all duration-300">
+        </div>
+        {/* Second Row - Personalized Insights (spans full width) */}
+        <div className="glass-card-premium bg-gradient-to-br from-indigo-500/10 to-blue-500/10 p-6 hover:border-indigo-500/40 transition-all duration-300 mt-6">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center">
                 <span className="text-2xl">💡</span>
@@ -332,8 +332,8 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 <p className="text-indigo-400 text-sm">AI-powered recommendations</p>
               </div>
                 <span className="text-white/60">Level {user.level}</span>
-                <span className="text-teal-400 font-medium">{user.sessionStreak} day streak</span>
-            <div className="space-y-4">
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-gradient-to-br from-indigo-500/5 to-blue-500/5 rounded-lg border border-indigo-500/20">
                 <div className="flex items-start space-x-3 mb-2">
                   <span className="text-lg">🎯</span>
@@ -344,6 +344,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 </div>
                 <p className="text-indigo-400 text-sm font-medium ml-8">Best time: 7:00 PM - 9:00 PM</p>
               </div>
+              
               </div>
               <div className="p-4 bg-gradient-to-br from-green-500/5 to-teal-500/5 rounded-lg border border-green-500/20">
                 <div className="flex items-start space-x-3 mb-2">
@@ -355,7 +356,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 </div>
                 <p className="text-green-400 text-sm font-medium ml-8">45 XP to next level</p>
               </div>
-            </div>
+              
               <div className="p-4 bg-gradient-to-br from-purple-500/5 to-pink-500/5 rounded-lg border border-purple-500/20">
                 <div className="flex items-start space-x-3 mb-2">
                   <span className="text-lg">✨</span>
@@ -372,7 +373,6 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 </button>
               </div>
             </div>
-          </div>
           </div>
         </div>
       </div>
@@ -392,4 +392,3 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
       />
     </>
   );
-}
