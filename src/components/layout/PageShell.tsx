@@ -7,13 +7,17 @@ interface PageShellProps {
   className?: string;
 }
 
-const NAV_HEIGHT = 72; // Mobile nav height
+const NAV_HEIGHT = 72; // Bottom nav height
 
 export default function PageShell({ header, body, footer, className = '' }: PageShellProps) {
   return (
     <div 
       className={`flex flex-col ${className}`}
-      style={{ height: `calc(100vh - ${NAV_HEIGHT}px)`, overflow: 'hidden' }}
+      style={{ 
+        height: `calc(100vh - ${NAV_HEIGHT}px)`, 
+        overflow: 'hidden',
+        maxHeight: `calc(100vh - ${NAV_HEIGHT}px)`
+      }}
     >
       {header && (
         <div className="flex-shrink-0">

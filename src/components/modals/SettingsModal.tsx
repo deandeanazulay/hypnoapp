@@ -6,9 +6,11 @@ import EgoStatesModal from './EgoStatesModal';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedEgoState?: string;
+  onEgoStateChange?: (egoStateId: string) => void;
 }
 
-export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+export default function SettingsModal({ isOpen, onClose, selectedEgoState, onEgoStateChange }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState('account');
   const [showEgoStates, setShowEgoStates] = useState(false);
 
@@ -177,10 +179,14 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
       </ModalShell>
 
-      <EgoStatesModal
-        isOpen={showEgoStates}
-        onClose={() => setShowEgoStates(false)}
-      />
+      {selectedEgoState && onEgoStateChange && (
+        <EgoStatesModal
+          isOpen={showEgoStates}
+          onClose={() => setShowEgoStates(false)}
+          selectedEgoState={selectedEgoState}
+          onEgoStateChange={onEgoStateChange}
+        />
+      )}
     </>
   );
 }

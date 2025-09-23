@@ -304,14 +304,14 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   );
 
   const body = (
-    <div className="bg-black relative px-4 py-4">
+    <div className="bg-black relative px-4 py-4 h-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-pink-950/20 via-black to-purple-950/20" />
       <div className="relative z-10 h-full">
         {mockFavorites.length > 0 ? (
           <PagedGrid
             items={mockFavorites}
-            cols={3}
-            rows={3}
+            cols={window.innerWidth < 768 ? 2 : 3}
+            rows={window.innerWidth < 768 ? 2 : 3}
             renderItem={renderSessionCard}
           />
         ) : (

@@ -115,10 +115,10 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
   );
 
   const body = (
-    <div className="bg-black relative px-4 py-4 h-full">
+    <div className="bg-black relative px-4 py-4 h-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-black to-teal-950/20" />
       <div className="relative z-10 h-full">
-        <div className="grid grid-cols-2 gap-4 h-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
           {/* Left Column */}
           <div className="space-y-3 overflow-y-auto">
             {/* Protocol Name */}
@@ -182,7 +182,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 </button>
               </div>
 
-              <div className="space-y-1 max-h-20 overflow-y-auto">
+              <div className="space-y-1 max-h-16 overflow-y-auto">
                 {protocol.goals?.slice(0, 3).map((goal, index) => (
                   <div key={index} className="flex items-center justify-between bg-white/5 rounded-lg px-2 py-1 border border-white/10">
                     <span className="text-white/80 text-sm truncate">{goal}</span>
@@ -249,6 +249,8 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                   </button>
                 ))}
               </div>
+            </div>
+            
             {/* Metaphors */}
             <div className="bg-gradient-to-br from-pink-500/10 to-rose-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-pink-500/30 transition-all duration-300">
               <label className="block text-white/80 text-sm font-medium mb-2">Metaphors & Imagery</label>
@@ -269,8 +271,8 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                   <Plus size={14} />
                 </button>
               </div>
-            </div>
-              <div className="space-y-1 max-h-20 overflow-y-auto">
+              
+              <div className="space-y-1 max-h-16 overflow-y-auto">
                 {protocol.metaphors?.slice(0, 3).map((metaphor, index) => (
                   <div key={index} className="flex items-center justify-between bg-white/5 rounded-lg px-2 py-1 border border-white/10">
                     <span className="text-white/80 text-sm truncate">{metaphor}</span>

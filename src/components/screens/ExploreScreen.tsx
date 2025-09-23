@@ -125,14 +125,14 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   );
 
   const body = (
-    <div className="bg-black relative px-4 py-4">
+    <div className="bg-black relative px-4 py-4 h-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-950/20 via-black to-purple-950/20" />
       <div className="relative z-10 h-full">
         {filteredProtocols.length > 0 ? (
           <PagedGrid
             items={filteredProtocols}
-            cols={3}
-            rows={2}
+            cols={window.innerWidth < 768 ? 2 : window.innerWidth < 1024 ? 2 : 3}
+            rows={window.innerWidth < 768 ? 1 : 2}
             renderItem={renderProtocolCard}
           />
         ) : (

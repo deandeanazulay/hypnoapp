@@ -6,9 +6,11 @@ import { EGO_STATES } from '../../types/EgoState';
 interface EgoStatesModalProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedEgoState: string;
+  onEgoStateChange: (egoStateId: string) => void;
 }
 
-export default function EgoStatesModal({ isOpen, onClose }: EgoStatesModalProps) {
+export default function EgoStatesModal({ isOpen, onClose, selectedEgoState, onEgoStateChange }: EgoStatesModalProps) {
   const [selectedState, setSelectedState] = useState<string | null>(null);
 
   // Mock mastery data
@@ -28,6 +30,11 @@ export default function EgoStatesModal({ isOpen, onClose }: EgoStatesModalProps)
     trickster: { level: 0, sessions: 0, unlocked: false },
     warrior: { level: 1, sessions: 5, unlocked: true },
     visionary: { level: 0, sessions: 0, unlocked: false }
+  };
+
+  const handleStateSelect = (stateId: string) => {
+    onEgoStateChange(stateId);
+    onClose();
   };
 
   const getMasteryRing = (level: number, unlocked: boolean) => {
@@ -55,13 +62,16 @@ export default function EgoStatesModal({ isOpen, onClose }: EgoStatesModalProps)
             {EGO_STATES.map((state) => {
               const mastery = masteryData[state.id as keyof typeof masteryData];
               const isSelected = selectedState === state.id;
+              const isCurrent = selectedEgoState === state.id;
               
               return (
                 <button
                   key={state.id}
                   onClick={() => setSelectedState(state.id)}
                   className={`bg-gradient-to-br ${state.color} rounded-xl p-4 border transition-all duration-300 hover:scale-105 flex flex-col items-center space-y-3 ${
-                    isSelected ? 'border-white/40 shadow-xl' : 'border-white/20 hover:border-white/30'
+                    isSelected ? 'border-white/40 shadow-xl' : 
+                    isCurrent ? 'border-teal-400/60 shadow-lg shadow-teal-400/30' :
+                    'border-white/20 hover:border-white/30'
                   } ${getMasteryRing(mastery.level, mastery.unlocked)}`}
                 >
                   {/* Icon */}
@@ -70,6 +80,11 @@ export default function EgoStatesModal({ isOpen, onClose }: EgoStatesModalProps)
                     {!mastery.unlocked && (
                       <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center">
                         <Lock size={16} className="text-white/60" />
+                      </div>
+                    )}
+                    {isCurrent && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-teal-400 rounded-full border-2 border-black flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 bg-black rounded-full" />
                       </div>
                     )}
                   </div>
@@ -156,7 +171,8 @@ export default function EgoStatesModal({ isOpen, onClose }: EgoStatesModalProps)
               {/* Actions */}
               <div className="space-y-3">
                 <button className="w-full px-4 py-3 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 font-medium hover:bg-teal-500/30 transition-all duration-300 flex items-center justify-between">
-                  Set as Current
+                  onClick={() => handleStateSelect(selectedStateData.id)}
+                  {selectedEgoState === selectedStateData.id ? 'Current State' : 'Set as Current'}
                   <ChevronRight size={16} />
                 </button>
                 

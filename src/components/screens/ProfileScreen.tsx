@@ -1,10 +1,10 @@
 import React from 'react';
-import { Settings, Award, TrendingUp, Calendar, Target } from 'lucide-react';
+import { Settings, Award, TrendingUp, Calendar, Target, ChevronRight } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { EGO_STATES } from '../../types/EgoState';
-import EgoStatesRow from '../EgoStatesRow';
 import PageShell from '../layout/PageShell';
 import SettingsModal from '../modals/SettingsModal';
+import EgoStatesModal from '../modals/EgoStatesModal';
 
 interface ProfileScreenProps {
   selectedEgoState: string;
@@ -14,6 +14,7 @@ interface ProfileScreenProps {
 export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: ProfileScreenProps) {
   const { user } = useGameState();
   const [showSettings, setShowSettings] = React.useState(false);
+  const [showEgoStates, setShowEgoStates] = React.useState(false);
 
   // Mock data for ego state usage
   const egoStateUsage = {
@@ -41,6 +42,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   };
 
   const mostUsedState = getMostUsedEgoState();
+  const currentState = EGO_STATES.find(state => state.id === selectedEgoState);
 
   const header = (
     <div className="bg-black/60 backdrop-blur-xl">
