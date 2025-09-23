@@ -85,8 +85,8 @@ export default function HomeScreen({
         </div>
 
         {/* Center Section - Orb Supreme (god of the app - never cut off) */}
-        <div className="flex-1 flex items-center justify-center min-h-0 relative z-20">
-          <div className="w-full h-full flex items-center justify-center px-4 py-8">
+        <div className="flex-1 flex items-center justify-center min-h-0 relative z-20 px-4">
+          <div className="w-full h-full flex items-center justify-center">
             <div className="flex flex-col items-center justify-center max-w-none">
               {/* Orb Container - Sacred Space */}
               <div 
@@ -112,7 +112,7 @@ export default function HomeScreen({
               </div>
                 
               {/* Session configuration display - always visible */}
-              <div className="mt-2 text-center relative z-20 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
+              <div className="mt-4 text-center relative z-20 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
                 <p className="text-teal-400 text-sm font-medium">
                   {selectedEgoState.charAt(0).toUpperCase() + selectedEgoState.slice(1)} Mode
                 </p>
@@ -131,7 +131,7 @@ export default function HomeScreen({
 
         {/* Bottom Section - Actions Bar */}
         <div className="flex-shrink-0 pb-2">
-          <div className="text-center mb-1">
+          <div className="text-center mb-2">
             <p className="text-white/40 text-xs">Choose session type</p>
           </div>
           <ActionsBar 
@@ -140,7 +140,6 @@ export default function HomeScreen({
             onActionSelect={handleActionSelect}
             onNavigateToCreate={() => onTabChange('create')}
           />
-        </div>
       </div>
 
       {/* Achievement notifications */}

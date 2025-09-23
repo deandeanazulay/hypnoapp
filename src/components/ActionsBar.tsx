@@ -182,26 +182,6 @@ export default function ActionsBar({
             </div>
           </button>
         </div>
-        
-        {/* Level Progress - Compact */}
-        <div className="pt-1 border-t border-white/10">
-          <div className="flex items-center justify-center space-x-1.5">
-            <div className="text-teal-400 text-xs font-medium">
-              L{user.level}
-            </div>
-            <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
-                style={{ width: `${(user.experience % 100)}%` }}
-              />
-            </div>
-            {user.sessionStreak > 0 && (
-              <div className="text-white/60 text-xs">
-                {user.sessionStreak}d
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
