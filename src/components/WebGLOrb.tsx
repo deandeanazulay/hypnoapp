@@ -193,7 +193,7 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
       const scale = 1.0 + 0.08 * Math.sin(t * TAU / 6.0);
 
       // Optional tiny organic surface (no axis alignment)
-      const a = 0.015;
+      const a = 0.025;
       const b = 0.8;
       const pos = geometry.attributes.position;
       
@@ -205,10 +205,18 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         const len = Math.max(Math.hypot(x, y, z), 1e-6);
         const nx = x / len, ny = y / len, nz = z / len;
 
-        // Smooth spherical "pulses" (no rays)
+        // Multi-layered organic pulses (alien-like)
         const theta = Math.atan2(ny, nx);
         const phi = Math.acos(nz);
-        const bump = a * Math.sin(2.0 * theta + t * b) * Math.sin(2.0 * phi + t * 0.6);
+        
+        // Multiple frequency layers for organic randomness
+        const bump1 = a * Math.sin(2.0 * theta + t * b) * Math.sin(2.0 * phi + t * 0.6);
+        const bump2 = a * 0.7 * Math.sin(3.5 * theta + t * 1.2) * Math.sin(1.5 * phi + t * 0.9);
+        const bump3 = a * 0.5 * Math.sin(5.0 * theta + t * 0.4) * Math.sin(3.0 * phi + t * 1.4);
+        const bump4 = a * 0.3 * Math.sin(7.0 * theta + t * 1.8) * Math.sin(4.0 * phi + t * 0.3);
+        
+        // Combine all layers for complex organic movement
+        const bump = bump1 + bump2 + bump3 + bump4;
 
         const r = len * (scale * (1.0 + bump));
 
