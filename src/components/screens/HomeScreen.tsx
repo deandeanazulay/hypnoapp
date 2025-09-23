@@ -83,143 +83,119 @@ export default function HomeScreen({
     >
       {/* Cosmic Space Background */}
       <div className="absolute inset-0">
-        {/* Deep Space Base */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-blue-950/60 to-black" />
+        {/* Black Hole Event Horizon */}
+        <div className="absolute inset-0 bg-black" />
         
-        {/* Static Nebula Clouds */}
-        <div className="absolute inset-0">
-          <div 
-            className="absolute w-96 h-96 opacity-20 rounded-full blur-3xl"
-            style={{
-              background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(67, 56, 202, 0.08) 50%, transparent 80%)',
-              top: '15%',
-              left: '25%'
-            }}
-          />
-          <div 
-            className="absolute w-80 h-80 opacity-15 rounded-full blur-3xl"
-            style={{
-              background: 'radial-gradient(circle, rgba(20, 184, 166, 0.12) 0%, rgba(6, 182, 212, 0.06) 60%, transparent 80%)',
-              bottom: '20%',
-              right: '20%'
-            }}
-          />
-          <div 
-            className="absolute w-64 h-64 opacity-10 rounded-full blur-2xl"
-            style={{
-              background: 'radial-gradient(circle, rgba(147, 51, 234, 0.08) 0%, rgba(126, 34, 206, 0.04) 70%, transparent 90%)',
-              top: '65%',
-              left: '15%'
-            }}
-          />
-          <div 
-            className="absolute w-48 h-48 opacity-12 rounded-full blur-xl"
-            style={{
-              background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 60%, transparent 80%)',
-              top: '40%',
-              right: '30%'
-            }}
-          />
-          <div 
-            className="absolute w-32 h-32 opacity-8 rounded-full blur-lg"
-            style={{
-              background: 'radial-gradient(circle, rgba(168, 85, 247, 0.06) 0%, rgba(147, 51, 234, 0.03) 70%, transparent 90%)',
-              bottom: '40%',
-              left: '40%'
-            }}
-          />
-        </div>
-
-        {/* Static Star Field */}
+        {/* Gravitational Distortion Field */}
         <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 150 }).map((_, i) => (
+          {/* Central Singularity */}
+          <div 
+            className="absolute top-1/2 left-1/2 w-32 h-32 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              background: 'radial-gradient(circle, #000000 0%, #000000 30%, rgba(20, 184, 166, 0.1) 70%, transparent 100%)',
+              animation: 'blackHolePull 8s linear infinite'
+            }}
+          />
+          
+          {/* Accretion Disk Rings */}
+          {Array.from({ length: 12 }).map((_, i) => (
             <div
-              key={i}
-              className="absolute bg-white rounded-full"
+              key={`accretion-${i}`}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border"
               style={{
-                width: `${0.5 + Math.random() * 1}px`,
-                height: `${0.5 + Math.random() * 1}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: 0.3 + Math.random() * 0.4,
-                boxShadow: Math.random() > 0.7 ? `0 0 ${2 + Math.random() * 4}px rgba(255, 255, 255, 0.6)` : 'none'
+                width: `${150 + i * 80}px`,
+                height: `${150 + i * 80}px`,
+                borderColor: `rgba(${20 + i * 10}, ${184 - i * 8}, ${166 + i * 5}, ${0.1 + i * 0.02})`,
+                borderWidth: '1px',
+                animation: `blackHoleOrbit ${3 + i * 0.5}s linear infinite`,
+                animationDirection: i % 2 === 0 ? 'normal' : 'reverse',
+                opacity: 0.3 + (12 - i) * 0.05
               }}
             />
           ))}
-        </div>
-
-        {/* Bright Stars */}
-        <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 30 }).map((_, i) => (
+          
+          {/* Matter Spiral Arms */}
+          {Array.from({ length: 6 }).map((_, i) => (
             <div
-              key={`bright-${i}`}
-              className="absolute bg-white rounded-full"
+              key={`spiral-${i}`}
+              className="absolute top-1/2 left-1/2 origin-center"
               style={{
-                width: `${2 + Math.random() * 3}px`,
-                height: `${2 + Math.random() * 3}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: 0.6 + Math.random() * 0.4,
-                boxShadow: `0 0 ${4 + Math.random() * 8}px rgba(255, 255, 255, ${0.3 + Math.random() * 0.4})`
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Distant Galaxy Clusters */}
-        <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={`galaxy-${i}`}
-              className="absolute rounded-full"
-              style={{
-                width: `${20 + Math.random() * 40}px`,
-                height: `${8 + Math.random() * 16}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                background: `linear-gradient(45deg, rgba(139, 92, 246, ${0.05 + Math.random() * 0.1}) 0%, rgba(99, 102, 241, ${0.03 + Math.random() * 0.05}) 50%, transparent 100%)`,
-                transform: `rotate(${Math.random() * 360}deg)`,
-                opacity: 0.4 + Math.random() * 0.3,
+                width: '800px',
+                height: '4px',
+                background: `linear-gradient(90deg, transparent 0%, rgba(20, 184, 166, ${0.3 + i * 0.1}) 30%, rgba(99, 102, 241, ${0.2 + i * 0.05}) 70%, transparent 100%)`,
+                transform: `translate(-50%, -50%) rotate(${i * 60}deg)`,
+                transformOrigin: '50% 50%',
+                animation: `blackHoleSpiral ${4 + i * 0.3}s linear infinite`,
                 filter: 'blur(1px)'
               }}
             />
           ))}
-        </div>
-
-        {/* Static Cosmic Dust */}
-        <div className="absolute inset-0 overflow-hidden">
+          
+          {/* Photon Sphere */}
+          <div 
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
+            style={{
+              width: '420px',
+              height: '420px',
+              borderColor: 'rgba(255, 255, 255, 0.05)',
+              animation: 'blackHolePhotonSphere 6s ease-in-out infinite alternate'
+            }}
+          />
+          
+          {/* Event Horizon Distortion */}
+          <div 
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              width: '300px',
+              height: '300px',
+              background: 'conic-gradient(from 0deg, transparent, rgba(0, 0, 0, 0.8), transparent, rgba(0, 0, 0, 0.9), transparent)',
+              animation: 'blackHoleDistortion 3s linear infinite',
+              filter: 'blur(2px)'
+            }}
+          />
+          
+          {/* Hawking Radiation Particles */}
           {Array.from({ length: 200 }).map((_, i) => (
             <div
-              key={`dust-${i}`}
+              key={`radiation-${i}`}
               className="absolute bg-white rounded-full"
               style={{
-                width: `${0.2 + Math.random() * 0.8}px`,
-                height: `${0.2 + Math.random() * 0.8}px`,
+                width: `${0.5 + Math.random() * 1.5}px`,
+                height: `${0.5 + Math.random() * 1.5}px`,
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                opacity: 0.15 + Math.random() * 0.25
+                opacity: 0.2 + Math.random() * 0.4,
+                animation: `hawkingRadiation ${2 + Math.random() * 4}s linear infinite`,
+                animationDelay: `${Math.random() * 2}s`
               }}
             />
           ))}
-        </div>
-        
-        {/* Distant Starlight */}
-        <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 12 }).map((_, i) => (
+          
+          {/* Spacetime Curvature Lines */}
+          {Array.from({ length: 16 }).map((_, i) => (
             <div
-              key={`starlight-${i}`}
-              className="absolute bg-white rounded-full"
+              key={`curvature-${i}`}
+              className="absolute top-1/2 left-1/2"
               style={{
-                width: `${6 + Math.random() * 8}px`,
-                height: `${6 + Math.random() * 8}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: 0.8 + Math.random() * 0.2,
-                boxShadow: `0 0 ${15 + Math.random() * 20}px rgba(255, 255, 255, ${0.4 + Math.random() * 0.3})`,
+                width: '1000px',
+                height: '2px',
+                background: `linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, ${0.05 + Math.sin(i) * 0.03}) 50%, transparent 100%)`,
+                transform: `translate(-50%, -50%) rotate(${i * 22.5}deg)`,
+                transformOrigin: '50% 50%',
+                animation: `spacetimeCurvature ${8 + i * 0.2}s linear infinite`,
                 filter: 'blur(0.5px)'
               }}
             />
           ))}
+          
+          {/* Tidal Forces */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse 40% 60% at 50% 50%, transparent 0%, rgba(0, 0, 0, 0.3) 70%, rgba(0, 0, 0, 0.8) 100%)',
+              animation: 'tidalStretch 4s ease-in-out infinite alternate'
+            }}
+          />
         </div>
       </div>
 
@@ -325,6 +301,134 @@ export default function HomeScreen({
           }
           66% { 
             transform: translateY(-8px) rotate(240deg) scale(0.9);
+          }
+        }
+        
+        @keyframes blackHolePull {
+          0% { 
+            transform: scale(1) rotate(0deg);
+            filter: brightness(0.8) contrast(1.2);
+          }
+          100% { 
+            transform: scale(0.1) rotate(720deg);
+            filter: brightness(0.3) contrast(2);
+          }
+        }
+        
+        @keyframes blackHoleOrbit {
+          0% { 
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+            opacity: 0.8;
+          }
+          50% {
+            transform: translate(-50%, -50%) rotate(180deg) scale(0.95);
+            opacity: 0.4;
+          }
+          100% { 
+            transform: translate(-50%, -50%) rotate(360deg) scale(0.9);
+            opacity: 0.8;
+          }
+        }
+        
+        @keyframes blackHoleSpiral {
+          0% { 
+            transform: translate(-50%, -50%) rotate(0deg) scaleX(1);
+            opacity: 0.6;
+          }
+          25% {
+            transform: translate(-50%, -50%) rotate(90deg) scaleX(0.8);
+            opacity: 0.8;
+          }
+          50% {
+            transform: translate(-50%, -50%) rotate(180deg) scaleX(0.6);
+            opacity: 0.4;
+          }
+          75% {
+            transform: translate(-50%, -50%) rotate(270deg) scaleX(0.8);
+            opacity: 0.8;
+          }
+          100% { 
+            transform: translate(-50%, -50%) rotate(360deg) scaleX(1);
+            opacity: 0.6;
+          }
+        }
+        
+        @keyframes blackHolePhotonSphere {
+          0% { 
+            transform: translate(-50%, -50%) scale(1);
+            border-color: rgba(255, 255, 255, 0.05);
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.1);
+            border-color: rgba(20, 184, 166, 0.2);
+          }
+          100% { 
+            transform: translate(-50%, -50%) scale(1);
+            border-color: rgba(255, 255, 255, 0.05);
+          }
+        }
+        
+        @keyframes blackHoleDistortion {
+          0% { 
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+            opacity: 0.8;
+          }
+          100% { 
+            transform: translate(-50%, -50%) rotate(360deg) scale(0.95);
+            opacity: 0.4;
+          }
+        }
+        
+        @keyframes hawkingRadiation {
+          0% { 
+            transform: scale(0) rotate(0deg);
+            opacity: 0;
+          }
+          20% {
+            transform: scale(1) rotate(90deg);
+            opacity: 1;
+          }
+          80% {
+            transform: scale(1.5) rotate(270deg);
+            opacity: 0.8;
+          }
+          100% { 
+            transform: scale(0) rotate(360deg);
+            opacity: 0;
+          }
+        }
+        
+        @keyframes spacetimeCurvature {
+          0% { 
+            transform: translate(-50%, -50%) rotate(0deg) scaleY(1);
+            opacity: 0.05;
+          }
+          25% {
+            transform: translate(-50%, -50%) rotate(90deg) scaleY(0.3);
+            opacity: 0.15;
+          }
+          50% {
+            transform: translate(-50%, -50%) rotate(180deg) scaleY(0.1);
+            opacity: 0.05;
+          }
+          75% {
+            transform: translate(-50%, -50%) rotate(270deg) scaleY(0.3);
+            opacity: 0.15;
+          }
+          100% { 
+            transform: translate(-50%, -50%) rotate(360deg) scaleY(1);
+            opacity: 0.05;
+          }
+        }
+        
+        @keyframes tidalStretch {
+          0% { 
+            transform: scaleY(1) scaleX(1);
+            opacity: 0.3;
+          }
+          100% { 
+            transform: scaleY(1.2) scaleX(0.8);
+            opacity: 0.8;
           }
         }
       `}</style>
