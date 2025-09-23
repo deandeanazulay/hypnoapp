@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Plus, Save, Clock, Zap, Target, Sparkles, Edit3, FileText } from 'lucide-react';
+import { Plus, Save, Clock, Zap, Target, Sparkles, Edit3, FileText, X } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
 import { useUIStore } from '../../state/uiStore';
+import { useGameState } from '../GameStateManager';
+import { useAuth } from '../../hooks/useAuth';
 
 interface CustomProtocol {
   id: string;
@@ -18,6 +20,10 @@ interface CreateScreenProps {
 }
 
 export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
+  const { user, canAccess } = useGameState();
+  const { isAuthenticated } = useAuth();
+  const { showToast } = useUIStore();
+  
   const [protocol, setProtocol] = useState<Partial<CustomProtocol>>({
     name: 'Untitled Journey',
     induction: 'progressive-relaxation',
@@ -54,6 +60,9 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
     { id: 'fractionation', name: 'Fractionation', description: 'In and out technique', emoji: '🌀' },
     { id: 'counting', name: 'Counting Down', description: 'Simple number countdown', emoji: '🔢' }
   ];
+
+  // Check if user can access custom protocol creation
+  const canCreateCustom = canAccess('custom_outlines');
 
   const openNameModal = () => {
     setTempName(protocol.name || '');
@@ -109,7 +118,47 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
     }));
   };
 
+  const handleCardClick = (action: () => void) => {
+    if (!isAuthenticated) {
+      showToast({
+        type: 'warning',
+        message: 'Sign in to create custom protocols',
+        duration: 3000
+      });
+      return;
+    }
+    
+    if (!canCreateCustom) {
+      showToast({
+        type: 'info',
+        message: 'Upgrade to Pro to create custom protocols',
+        duration: 4000
+      });
+      return;
+    }
+    
+    action();
+  };
+
   const handleSave = () => {
+    if (!isAuthenticated) {
+      showToast({
+        type: 'warning',
+        message: 'Sign in to save protocols',
+        duration: 3000
+      });
+      return;
+    }
+    
+    if (!canCreateCustom) {
+      showToast({
+        type: 'info',
+        message: 'Upgrade to Pro to save custom protocols',
+        duration: 4000
+      });
+      return;
+    }
+
     if (protocol.name && protocol.induction && protocol.deepener) {
       const newProtocol: CustomProtocol = {
         id: 'custom-' + Date.now(),
@@ -122,7 +171,6 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
       };
       onProtocolCreate(newProtocol);
       
-      const { showToast } = useUIStore.getState();
       showToast({
         type: 'success',
         message: `Protocol "${protocol.name}" created successfully!`,
@@ -149,163 +197,168 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
       <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/20 to-black" />
 
       {/* Header */}
-      <div className="flex-shrink-0 px-4 pt-4 pb-6 border-b border-white/10">
+      <div className="flex-shrink-0 px-4 pt-4 pb-6 border-b border-white/10 relative z-10">
         <h1 className="text-white text-xl font-light mb-1">Create Journey</h1>
         <p className="text-white/60 text-sm">Design your personalized hypnosis experience</p>
       </div>
 
-      {/* Content - Scrollable Cards */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4">
-        <div className="space-y-4 pb-24">
+      {/* Content - Stacked Cards */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 relative z-10">
+        <div className="space-y-3 pb-6">
           
           {/* Protocol Name Card */}
           <button
-            onClick={openNameModal}
-            className="w-full bg-gradient-to-r from-violet-900/80 to-purple-900/80 border border-violet-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-violet-500/40 group"
+            onClick={() => handleCardClick(openNameModal)}
+            className="w-full bg-gradient-to-r from-violet-900/80 to-purple-900/80 border border-violet-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-violet-500/40 group flex items-center justify-between"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-500/40 flex items-center justify-center">
-                  <FileText size={20} className="text-violet-400" />
-                </div>
-                <div className="text-left">
-                  <div className="text-white/80 text-sm font-medium">Protocol Name</div>
-                  <div className="text-violet-400 text-base font-semibold">{protocol.name}</div>
-                </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/30 border border-violet-500/40 flex items-center justify-center">
+                <FileText size={20} className="text-violet-400" />
               </div>
-              <Edit3 size={18} className="text-violet-400/60 group-hover:text-violet-400 transition-colors" />
+              <div className="text-left">
+                <div className="text-white/80 text-sm font-medium">Protocol Name</div>
+                <div className="text-violet-400 text-base font-semibold">{protocol.name}</div>
+              </div>
             </div>
+            <Edit3 size={18} className="text-violet-400/60 group-hover:text-violet-400 transition-colors" />
           </button>
 
           {/* Duration Card */}
           <button
-            onClick={openDurationModal}
-            className="w-full bg-gradient-to-r from-orange-900/80 to-amber-900/80 border border-orange-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-orange-500/40 group"
+            onClick={() => handleCardClick(openDurationModal)}
+            className="w-full bg-gradient-to-r from-orange-900/80 to-amber-900/80 border border-orange-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-orange-500/40 group flex items-center justify-between"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center">
-                  <Clock size={20} className="text-orange-400" />
-                </div>
-                <div className="text-left">
-                  <div className="text-white/80 text-sm font-medium">Duration</div>
-                  <div className="text-orange-400 text-base font-semibold">{protocol.duration}m</div>
-                </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-500/30 border border-orange-500/40 flex items-center justify-center">
+                <Clock size={20} className="text-orange-400" />
               </div>
-              <Edit3 size={18} className="text-orange-400/60 group-hover:text-orange-400 transition-colors" />
+              <div className="text-left">
+                <div className="text-white/80 text-sm font-medium">Duration</div>
+                <div className="text-orange-400 text-base font-semibold">{protocol.duration}m</div>
+              </div>
             </div>
+            <Edit3 size={18} className="text-orange-400/60 group-hover:text-orange-400 transition-colors" />
           </button>
 
           {/* Induction Card */}
           <button
-            onClick={() => setShowInductionModal(true)}
-            className="w-full bg-gradient-to-r from-cyan-900/80 to-blue-900/80 border border-cyan-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-cyan-500/40 group"
+            onClick={() => handleCardClick(() => setShowInductionModal(true))}
+            className="w-full bg-gradient-to-r from-cyan-900/80 to-blue-900/80 border border-cyan-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-cyan-500/40 group flex items-center justify-between"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center">
-                  <Zap size={20} className="text-cyan-400" />
-                </div>
-                <div className="text-left">
-                  <div className="text-white/80 text-sm font-medium">Induction</div>
-                  <div className="text-cyan-400 text-base font-semibold">
-                    {inductionOptions.find(opt => opt.id === protocol.induction)?.name || 'Progressive Relaxation'}
-                  </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/30 border border-cyan-500/40 flex items-center justify-center">
+                <Zap size={20} className="text-cyan-400" />
+              </div>
+              <div className="text-left">
+                <div className="text-white/80 text-sm font-medium">Induction</div>
+                <div className="text-cyan-400 text-base font-semibold">
+                  {inductionOptions.find(opt => opt.id === protocol.induction)?.name || 'Progressive Relaxation'}
                 </div>
               </div>
-              <Edit3 size={18} className="text-cyan-400/60 group-hover:text-cyan-400 transition-colors" />
             </div>
+            <Edit3 size={18} className="text-cyan-400/60 group-hover:text-cyan-400 transition-colors" />
           </button>
 
           {/* Deepener Card */}
           <button
-            onClick={() => setShowDeepenerModal(true)}
-            className="w-full bg-gradient-to-r from-teal-900/80 to-emerald-900/80 border border-teal-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-teal-500/40 group"
+            onClick={() => handleCardClick(() => setShowDeepenerModal(true))}
+            className="w-full bg-gradient-to-r from-teal-900/80 to-emerald-900/80 border border-teal-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-teal-500/40 group flex items-center justify-between"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center">
-                  <span className="text-xl">🌀</span>
-                </div>
-                <div className="text-left">
-                  <div className="text-white/80 text-sm font-medium">Deepener</div>
-                  <div className="text-teal-400 text-base font-semibold">
-                    {deepenerOptions.find(opt => opt.id === protocol.deepener)?.name || 'Staircase'}
-                  </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-teal-500/30 border border-teal-500/40 flex items-center justify-center">
+                <span className="text-xl">🌀</span>
+              </div>
+              <div className="text-left">
+                <div className="text-white/80 text-sm font-medium">Deepener</div>
+                <div className="text-teal-400 text-base font-semibold">
+                  {deepenerOptions.find(opt => opt.id === protocol.deepener)?.name || 'Staircase'}
                 </div>
               </div>
-              <Edit3 size={18} className="text-teal-400/60 group-hover:text-teal-400 transition-colors" />
             </div>
+            <Edit3 size={18} className="text-teal-400/60 group-hover:text-teal-400 transition-colors" />
           </button>
 
           {/* Goals Card */}
           <button
-            onClick={() => setShowGoalsModal(true)}
-            className="w-full bg-gradient-to-r from-rose-900/80 to-pink-900/80 border border-rose-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-rose-500/40 group"
+            onClick={() => handleCardClick(() => setShowGoalsModal(true))}
+            className="w-full bg-gradient-to-r from-rose-900/80 to-pink-900/80 border border-rose-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-rose-500/40 group flex items-center justify-between"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center">
-                  <Target size={20} className="text-rose-400" />
-                </div>
-                <div className="text-left">
-                  <div className="text-white/80 text-sm font-medium">Goals</div>
-                  <div className="text-rose-400 text-base font-semibold">
-                    {protocol.goals && protocol.goals.length > 0 ? 
-                      `${protocol.goals.length} goal${protocol.goals.length > 1 ? 's' : ''} set` : 
-                      'Add goals'}
-                  </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/30 border border-rose-500/40 flex items-center justify-center">
+                <Target size={20} className="text-rose-400" />
+              </div>
+              <div className="text-left">
+                <div className="text-white/80 text-sm font-medium">Goals</div>
+                <div className="text-rose-400 text-base font-semibold">
+                  {protocol.goals && protocol.goals.length > 0 ? 
+                    `${protocol.goals.length} goal${protocol.goals.length > 1 ? 's' : ''} set` : 
+                    'Add goals'}
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center">
-                  <span className="text-rose-400 text-xs font-bold">{protocol.goals?.length || 0}</span>
-                </div>
-                <Edit3 size={18} className="text-rose-400/60 group-hover:text-rose-400 transition-colors" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 rounded-full bg-rose-500/30 border border-rose-500/40 flex items-center justify-center">
+                <span className="text-rose-400 text-xs font-bold">{protocol.goals?.length || 0}</span>
               </div>
+              <Edit3 size={18} className="text-rose-400/60 group-hover:text-rose-400 transition-colors" />
             </div>
           </button>
 
           {/* Metaphors Card */}
           <button
-            onClick={() => setShowMetaphorsModal(true)}
-            className="w-full bg-gradient-to-r from-yellow-900/80 to-lime-900/80 border border-yellow-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-yellow-500/40 group"
+            onClick={() => handleCardClick(() => setShowMetaphorsModal(true))}
+            className="w-full bg-gradient-to-r from-yellow-900/80 to-lime-900/80 border border-yellow-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-yellow-500/40 group flex items-center justify-between"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center">
-                  <Sparkles size={20} className="text-yellow-400" />
-                </div>
-                <div className="text-left">
-                  <div className="text-white/80 text-sm font-medium">Metaphors</div>
-                  <div className="text-yellow-400 text-base font-semibold">
-                    {protocol.metaphors && protocol.metaphors.length > 0 ? 
-                      `${protocol.metaphors.length} metaphor${protocol.metaphors.length > 1 ? 's' : ''} added` : 
-                      'Add imagery'}
-                  </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-yellow-500/30 border border-yellow-500/40 flex items-center justify-center">
+                <Sparkles size={20} className="text-yellow-400" />
+              </div>
+              <div className="text-left">
+                <div className="text-white/80 text-sm font-medium">Metaphors</div>
+                <div className="text-yellow-400 text-base font-semibold">
+                  {protocol.metaphors && protocol.metaphors.length > 0 ? 
+                    `${protocol.metaphors.length} metaphor${protocol.metaphors.length > 1 ? 's' : ''} added` : 
+                    'Add imagery'}
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-full bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center">
-                  <span className="text-yellow-400 text-xs font-bold">{protocol.metaphors?.length || 0}</span>
-                </div>
-                <Edit3 size={18} className="text-yellow-400/60 group-hover:text-yellow-400 transition-colors" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 rounded-full bg-yellow-500/30 border border-yellow-500/40 flex items-center justify-center">
+                <span className="text-yellow-400 text-xs font-bold">{protocol.metaphors?.length || 0}</span>
               </div>
+              <Edit3 size={18} className="text-yellow-400/60 group-hover:text-yellow-400 transition-colors" />
             </div>
           </button>
         </div>
       </div>
 
       {/* Save Button - Fixed at Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/95 to-transparent backdrop-blur-sm">
-        <button
-          onClick={handleSave}
-          disabled={!isValid}
-          className="w-full px-6 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl text-black font-bold text-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl shadow-teal-500/20 flex items-center justify-center space-x-3"
-        >
-          <Save size={20} />
-          <span>Save Protocol</span>
-        </button>
+      <div className="flex-shrink-0 p-4 bg-gradient-to-t from-black/95 to-transparent backdrop-blur-sm relative z-10">
+        {canCreateCustom && isAuthenticated ? (
+          <button
+            onClick={handleSave}
+            disabled={!isValid}
+            className="w-full px-6 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl text-black font-bold text-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl shadow-teal-500/20 flex items-center justify-center space-x-3"
+          >
+            <Save size={20} />
+            <span>Save Protocol</span>
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-xl p-4 border border-amber-500/30 text-center">
+              <div className="text-amber-400 font-semibold mb-2">🔒 Premium Feature</div>
+              <p className="text-white/80 text-sm mb-3">Custom protocol creation requires a Pro subscription</p>
+              <div className="flex flex-col space-y-2">
+                <button className="px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-lg text-black font-semibold hover:scale-105 transition-transform duration-200">
+                  Upgrade to Pro
+                </button>
+                <button className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white/80 hover:bg-white/20 transition-all duration-300">
+                  Browse Templates Instead
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Protocol Name Modal */}
@@ -505,7 +558,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                     onClick={() => removeGoal(index)}
                     className="text-red-400 hover:text-red-300 transition-colors ml-3 opacity-0 group-hover:opacity-100"
                   >
-                    <span className="text-lg">×</span>
+                    <X size={16} />
                   </button>
                 </div>
               ))}
@@ -560,7 +613,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                     onClick={() => removeMetaphor(index)}
                     className="text-red-400 hover:text-red-300 transition-colors ml-3 opacity-0 group-hover:opacity-100"
                   >
-                    <span className="text-lg">×</span>
+                    <X size={16} />
                   </button>
                 </div>
               ))}
