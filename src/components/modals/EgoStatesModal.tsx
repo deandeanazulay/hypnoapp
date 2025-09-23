@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Star, TrendingUp, Check, Lock, Zap, Sparkles } from 'lucide-react';
+import { X, Star, TrendingUp, Check, Lock, Zap, Sparkles, Crown } from 'lucide-react';
 import { egoStates, useAppStore, EgoStateId } from '../../state/appStore';
 import { useGameState } from '../GameStateManager';
 
