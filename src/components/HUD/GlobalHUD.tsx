@@ -84,9 +84,12 @@ export default function GlobalHUD() {
                   </div>
                   <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-gradient-to-r from-orange-400 to-teal-400 rounded-full transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-orange-400 to-teal-400 rounded-full transition-all duration-500 relative overflow-hidden"
                       style={{ width: `${currentXP}%` }}
-                    />
+                    >
+                      {/* XP bar shimmer effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 animate-pulse" />
+                    </div>
                   </div>
                 </div>
               </div>

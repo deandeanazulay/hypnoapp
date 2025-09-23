@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, UserProfile } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { paymentService } from '../lib/stripe';
+import { useUIStore } from '../state/uiStore';
 
 interface UserState {
   level: number;
@@ -252,6 +253,7 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const completeSession = (sessionType: string, duration: number) => {
+    const { showToast } = useUIStore.getState();
     // Get current ego state from appStore
     const currentEgoState = localStorage.getItem('app-store') ? 
       JSON.parse(localStorage.getItem('app-store') || '{}').state?.activeEgoState || 'guardian' : 'guardian';
@@ -288,7 +290,15 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     
     // Token rewards
     let tokenReward = 0;
-    if (newLevel > user.level) tokenReward += 10; // Level up bonus
+    if (newLevel > user.level) {
+      tokenReward += 10; // Level up bonus
+      // Level up notification
+      showToast({
+        type: 'success',
+        message: `🎉 Level Up! You've reached Level ${newLevel}`,
+        duration: 4000
+      });
+    }
     if (newStreak > 0 && newStreak % 7 === 0) tokenReward += 25; // Weekly streak bonus
     
     setUser(prev => ({
@@ -312,6 +322,13 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         ...(newLevel > prev.level ? [`Level ${newLevel} Reached`] : [])
       ]
     }));
+    
+    // Success notification for session completion
+    showToast({
+      type: 'success', 
+      message: `Session complete! +${Math.floor(xpGained)} XP earned`,
+      duration: 3000
+    });
   };
 
   const saveSessionToDatabase = async (egoState: string, sessionType: string, duration: number, xpGained: number) => {
