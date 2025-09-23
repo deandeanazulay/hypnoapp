@@ -140,6 +140,9 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                   <p className="text-white/70 text-xs">{getUsagePercentage(egoStateUsage[mostUsedState.id as keyof typeof egoStateUsage])}% of sessions</p>
                 </div>
               </div>
+            </div>
+          )}
+          
           {/* Usage Breakdown */}
           <div className="grid grid-cols-5 gap-2 flex-1 min-h-0">
             {EGO_STATES.map((state) => {
@@ -170,8 +173,6 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
           </div>
         </div>
       </div>
-    )
-    }
     </div>
   );
             </div>
