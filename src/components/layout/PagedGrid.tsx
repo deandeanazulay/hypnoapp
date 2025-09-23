@@ -38,23 +38,23 @@ export default function PagedGrid({ items, cols, rows, renderItem, className = '
         </div>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination - Positioned between content and bottom nav */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center space-x-6 mt-6 flex-shrink-0">
+        <div className="flex items-center justify-center space-x-4 mt-4 mb-2 flex-shrink-0">
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 0}
-            className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            <ChevronLeft size={18} className="text-white" />
+            <ChevronLeft size={14} className="text-white" />
           </button>
           
-          <div className="flex space-x-3">
+          <div className="flex space-x-2">
             {Array.from({ length: totalPages }).map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToPage(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 hover:scale-125 ${
+                className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-125 ${
                   index === currentPage ? 'bg-teal-400 scale-125' : 'bg-white/40 hover:bg-white/60'
                 }`}
               />
@@ -64,9 +64,9 @@ export default function PagedGrid({ items, cols, rows, renderItem, className = '
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages - 1}
-            className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            <ChevronRight size={18} className="text-white" />
+            <ChevronRight size={14} className="text-white" />
           </button>
         </div>
       )}
