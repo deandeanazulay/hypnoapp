@@ -25,6 +25,7 @@ type AppMode = 'navigation' | 'session';
 function App() {
   const { activeEgoState, setActiveEgoState } = useAppStore();
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
+  useViewportLayout(); // Initialize iOS Safari fixes
   const [showLanding, setShowLanding] = useState(!isAuthenticated);
   const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
   const [activeTab, setActiveTab] = useState<TabId>('home');

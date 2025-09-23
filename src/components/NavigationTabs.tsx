@@ -23,6 +23,7 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
 
   const navigationContent = (
     <nav 
+      data-tabs
       className="fixed left-0 right-0 bottom-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-4 sm:px-6 shadow-lg shadow-black/20"
       style={{
         height: 'var(--total-nav-height)',

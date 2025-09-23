@@ -56,7 +56,7 @@ export default function GlobalHUD({ onShowAuth }: GlobalHUDProps) {
 
   return (
     <>
-      <div className="w-full bg-black/95 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/20">
+      <div data-hud className="w-full bg-black/95 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/20">
       <div className="px-4 py-2">
         <div className="flex items-center justify-between">
           

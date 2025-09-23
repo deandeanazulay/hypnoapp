@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Target, Settings, Mic, Plus, X, Edit2 } from 'lucide-react';
 import { useGameState } from './GameStateManager';
 
@@ -102,8 +103,11 @@ export default function ActionsBar({
     setEditText(action.name);
   };
 
-  return (
-    <div className="px-2 sm:px-4 pb-2">
+  const portal = document.getElementById('ui-portal');
+  if (!portal) return null;
+
+  return createPortal(
+    <div className="actions-bar">
       <div className="bg-black/80 backdrop-blur-xl border border-white/20 rounded-xl px-3 py-3 shadow-2xl">
         {/* Actions - Horizontal Scrollable */}
         <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-1">
@@ -183,6 +187,7 @@ export default function ActionsBar({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    portal
   );
 }

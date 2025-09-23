@@ -167,7 +167,7 @@ export default function HomeScreen({
         </div>
 
         {/* Bottom Section - Actions Bar */}
-        <div className="flex-shrink-0 pb-6 px-4" style={{ paddingBottom: 'calc(24px + var(--safe-bottom, 0px))' }}>
+        <div className="flex-shrink-0 pb-2 px-4">
           <div className="text-center mb-2">
             <p className="text-white/50 text-xs font-medium">Choose session type</p>
           </div>
