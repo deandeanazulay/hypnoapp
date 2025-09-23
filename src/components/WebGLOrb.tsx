@@ -107,84 +107,75 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(size, size, false);
 
-    // Subtle lighting
-    const keyLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    keyLight.position.set(2, 2, 3);
-    const fillLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(keyLight, fillLight);
-
-    // Core sphere geometry (high quality, smooth)
+    // Core sphere geometry (high quality, very smooth)
     const geometry = new THREE.SphereGeometry(1, 128, 128);
 
     // Get ego state colors
     const colors = getEgoStateColors(egoState);
 
-    // Core sphere material with radial gradient
+    // Drop-in shader material from article - no spokes, no wires
     const coreMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        uColorA: { value: colors.primary },
-        uColorB: { value: colors.secondary }
+        time: { value: 0.0 },
+        colorA: { value: colors.primary },
+        colorB: { value: colors.secondary },
+        haloPow: { value: 2.0 },    // fresnel power (1.5–3.0)
+        breatheA: { value: 0.02 },  // 2% breathing amplitude
+        breatheT: { value: 7.0 }    // seconds per full breath
       },
-      vertexShader: `
-        varying vec3 vPos;
+      
+      // Vertex: isotropic breathing (no ribs/bands)
+      vertexShader: /* glsl */`
+        uniform float time;
+        uniform float breatheA;
+        uniform float breatheT;
+
+        varying vec3 vPos;      // model-space position
+        varying vec3 vNormal;   // view-space normal for rim
+
         void main(){
-          vPos = position;
+          // radial "breathing" — same in every direction (no axis bands)
+          float s = 1.0 + breatheA * sin( (time / breatheT) * 6.28318530718 );
+          vec3 pos = position * s;
+
+          vPos = pos;
+
+          // send a view-space normal for fresnel-like rim
+          vec3 n = normalize(normalMatrix * normal);
+          vNormal = n;
+
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
-      fragmentShader: `
+      
+      // Fragment: inner gradient + soft fresnel rim
+      fragmentShader: /* glsl */`
+        uniform vec3  colorA;
+        uniform vec3  colorB;
+        uniform float haloPow;
+
         varying vec3 vPos;
-        uniform vec3 uColorA;
-        uniform vec3 uColorB;
+        varying vec3 vNormal;
+
         void main(){
-          // Radial distance from center
+          // inner radial gradient (r ~ distance from center in model units)
           float r = clamp(length(vPos), 0.0, 1.0);
-          // Smooth gradient from center to edge
-          vec3 col = mix(uColorA, uColorB, smoothstep(0.0, 1.0, r));
-          // Gentle vignette toward rim
-          float vignette = smoothstep(1.0, 0.6, r);
-          gl_FragColor = vec4(col * (0.7 + 0.3 * vignette), 1.0);
+          vec3 base = mix(colorA, colorB, smoothstep(0.0, 1.0, r));
+
+          // fresnel-ish rim using the view-facing normal (z≈toward camera)
+          float fres = pow(1.0 - abs(vNormal.z), haloPow);
+          vec3 col = base * (0.85 + 0.15 * fres) + vec3(fres) * 0.12;
+
+          gl_FragColor = vec4(col, 1.0);
         }
       `,
-      transparent: false
+      
+      transparent: false,
+      wireframe: false  // <- important: no wires
     });
 
     const core = new THREE.Mesh(geometry, coreMaterial);
     scene.add(core);
-
-    // Halo shell (subtle glow)
-    const haloMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        uOpacity: { value: afterglow ? 0.15 : 0.08 },
-        uSpread: { value: 0.25 }
-      },
-      vertexShader: `
-        varying float vRim;
-        void main(){
-          vec3 n = normalize(normal);
-          vec3 vNormal = normalize(normalMatrix * n);
-          float rim = pow(1.0 - abs(vNormal.z), 2.0);
-          vRim = rim;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        varying float vRim;
-        uniform float uOpacity;
-        uniform float uSpread;
-        void main(){
-          float glow = smoothstep(0.0, uSpread, vRim);
-          gl_FragColor = vec4(vec3(0.8), glow * uOpacity);
-        }
-      `,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      transparent: true
-    });
-
-    const halo = new THREE.Mesh(geometry, haloMaterial);
-    halo.scale.setScalar(1.02);
-    scene.add(halo);
 
     const clock = new THREE.Clock();
 
@@ -194,16 +185,9 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
       camera,
       renderer,
       core,
-      halo,
+      halo: core, // Use core as halo reference for compatibility
       clock,
       animationId: null
-    };
-
-    // Animation parameters
-    const params = {
-      size: 0.95,
-      breatheAmp: 0.02,
-      breatheSec: 7.0
     };
 
     // Animation loop
@@ -212,33 +196,12 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
 
       const t = clock.getElapsedTime();
       
-      // Gentle breathing animation
-      const breatheScale = params.size + Math.sin((t / params.breatheSec) * Math.PI * 2.0) * params.breatheAmp;
-      
-      // Apply breathing based on breathPhase prop
-      let targetScale = breatheScale;
-      switch (breathPhase) {
-        case 'inhale':
-          targetScale = params.size + params.breatheAmp * 2;
-          break;
-        case 'hold':
-          targetScale = params.size + params.breatheAmp * 2;
-          break;
-        case 'exhale':
-          targetScale = params.size - params.breatheAmp;
-          break;
-        case 'rest':
-          targetScale = breatheScale;
-          break;
-      }
-
-      core.scale.setScalar(targetScale);
-      halo.scale.setScalar(1.02 * targetScale);
+      // Update time uniform for shader breathing animation
+      coreMaterial.uniforms.time.value = t;
 
       // Smooth rotation follow (gentle parallax)
       core.rotation.x += (targetRotation.current.x - core.rotation.x) * 0.06;
       core.rotation.y += (targetRotation.current.y - core.rotation.y) * 0.06;
-      halo.rotation.copy(core.rotation);
 
       renderer.render(scene, camera);
       sceneRef.current.animationId = requestAnimationFrame(animate);
@@ -264,17 +227,10 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
 
     const colors = getEgoStateColors(egoState);
     const coreMat = sceneRef.current.core.material as THREE.ShaderMaterial;
-    coreMat.uniforms.uColorA.value = colors.primary;
-    coreMat.uniforms.uColorB.value = colors.secondary;
+    coreMat.uniforms.colorA.value = colors.primary;
+    coreMat.uniforms.colorB.value = colors.secondary;
   }, [egoState]);
 
-  // Update halo based on afterglow
-  useEffect(() => {
-    if (!sceneRef.current) return;
-
-    const haloMat = sceneRef.current.halo.material as THREE.ShaderMaterial;
-    haloMat.uniforms.uOpacity.value = afterglow ? 0.25 : 0.14;
-  }, [afterglow]);
 
   // Mouse interaction
   const handlePointerMove = (e: React.PointerEvent) => {
