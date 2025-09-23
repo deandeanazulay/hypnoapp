@@ -332,7 +332,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
         {mockFavorites.length > 0 ? (
           <div className="h-full flex flex-col relative">
             {/* Navigation Arrows - Only show if more items than can fit */}
-            {mockFavorites.length > itemsPerView && (
+            {mockFavorites.length > itemsPerPage && (
               <>
                 <button
                   onClick={scrollLeft}
@@ -367,15 +367,15 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
             </div>
 
             {/* Page indicators */}
-            {mockFavorites.length > itemsPerView && (
+            {mockFavorites.length > itemsPerPage && (
               <div className="flex justify-center mt-4 mb-2">
                 <div className="flex space-x-2">
-                  {Array.from({ length: getTotalDots() }).map((_, index) => (
+                  {Array.from({ length: totalPages }).map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentStartIndex(Math.min(index * moveIncrement, maxStartIndex))}
+                      onClick={() => setCurrentIndex(index)}
                       className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-125 ${
-                        getCurrentDotIndex() === index 
+                        currentIndex === index 
                           ? 'bg-teal-400 scale-125' 
                           : 'bg-white/30 hover:bg-white/50 hover:scale-105'
                       }`}
