@@ -3,6 +3,7 @@ import { Heart, Play, Clock, Trash2, Star } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import PageShell from '../layout/PageShell';
 import ModalShell from '../layout/ModalShell';
+import PagedGrid from '../layout/PagedGrid';
 
 interface FavoriteSession {
   id: string;
@@ -166,29 +167,32 @@ interface FavoritesScreenProps {
 export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProps) {
   const { user } = useGameState();
   const [selectedSession, setSelectedSession] = React.useState<FavoriteSession | null>(null);
-  const [currentIndex, setCurrentIndex] = React.useState(0);
+  const [gridCols, setGridCols] = React.useState(3);
+  const [gridRows, setGridRows] = React.useState(2);
 
-  const itemsPerPage = 6; // 3x2 grid
-  const totalPages = Math.ceil(mockFavorites.length / itemsPerPage);
-  const canScrollLeft = currentIndex > 0;
-  const canScrollRight = currentIndex < totalPages - 1;
+  // Responsive grid sizing
+  React.useEffect(() => {
+    const updateGridSize = () => {
+      const width = window.innerWidth;
+      if (width < 640) {
+        // Mobile: 1 column, 3 rows for better mobile experience
+        setGridCols(1);
+        setGridRows(3);
+      } else if (width < 768) {
+        // Tablet: 2 columns, 2 rows
+        setGridCols(2);
+        setGridRows(2);
+      } else {
+        // Desktop: 3 columns, 2 rows
+        setGridCols(3);
+        setGridRows(2);
+      }
+    };
 
-  const scrollLeft = () => {
-    if (canScrollLeft) {
-      setCurrentIndex(prev => Math.max(0, prev - 1));
-    }
-  };
-
-  const scrollRight = () => {
-    if (canScrollRight) {
-      setCurrentIndex(prev => Math.min(totalPages - 1, prev + 1));
-    }
-  };
-
-  const getCurrentItems = () => {
-    const startIndex = currentIndex * itemsPerPage;
-    return mockFavorites.slice(startIndex, startIndex + itemsPerPage);
-  };
+    updateGridSize();
+    window.addEventListener('resize', updateGridSize);
+    return () => window.removeEventListener('resize', updateGridSize);
+  }, []);
 
   const formatLastCompleted = (date: Date) => {
     const now = new Date();
@@ -330,61 +334,13 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
       <div className="absolute inset-0 bg-gradient-to-br from-pink-950/20 via-black to-purple-950/20" />
       <div className="relative z-10 h-full flex flex-col">
         {mockFavorites.length > 0 ? (
-          <div className="h-full flex flex-col relative">
-            {/* Navigation Arrows - Only show if more items than can fit */}
-            {mockFavorites.length > itemsPerPage && (
-              <>
-                <button
-                  onClick={scrollLeft}
-                  disabled={!canScrollLeft}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
-                    <polyline points="15,18 9,12 15,6"></polyline>
-                  </svg>
-                </button>
-                <button
-                  onClick={scrollRight}
-                  disabled={!canScrollRight}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
-                    <polyline points="9,18 15,12 9,6"></polyline>
-                  </svg>
-                </button>
-              </>
-            )}
-
-            {/* Content Area */}
-            <div className="flex-1 overflow-hidden px-4 sm:px-16">
-              <div className="grid grid-cols-3 grid-rows-2 gap-4 h-full transition-all duration-300 ease-out">
-                {getCurrentItems().map((session) => (
-                  <div key={session.id}>
-                    {renderSessionCard(session)}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Page indicators */}
-            {mockFavorites.length > itemsPerPage && (
-              <div className="flex justify-center mt-4 mb-2">
-                <div className="flex space-x-2">
-                  {Array.from({ length: totalPages }).map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-125 ${
-                        currentIndex === index 
-                          ? 'bg-teal-400 scale-125' 
-                          : 'bg-white/30 hover:bg-white/50 hover:scale-105'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <PagedGrid
+            items={mockFavorites}
+            cols={gridCols}
+            rows={gridRows}
+            renderItem={(session) => renderSessionCard(session)}
+            className="flex-1"
+          />
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
