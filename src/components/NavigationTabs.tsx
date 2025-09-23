@@ -70,5 +70,4 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
   );
 
   return createPortal(navigationContent, document.body);
-  );
 }
