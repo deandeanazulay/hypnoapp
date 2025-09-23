@@ -216,7 +216,7 @@ function App() {
         </div>
         
         {/* Bottom Navigation - Fixed at bottom */}
-        <div className="flex-shrink-0 relative z-50">
+        <div className="flex-shrink-0 relative z-50 safe-area-bottom">
           <NavigationTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
