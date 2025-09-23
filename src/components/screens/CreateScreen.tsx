@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Plus, Save, Clock, Zap, Target, Sparkles, Edit3, FileText, X } from 'lucide-react';
-import ModalShell from '../layout/ModalShell';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, ArrowRight, Save, Clock, Zap, Target, Sparkles, Edit3, Crown, Infinity, Music, Star, Lock, Play, Eye, Waves, Book, Wind } from 'lucide-react';
+import WebGLOrb from '../WebGLOrb';
 import AuthModal from '../auth/AuthModal';
 import { useUIStore } from '../../state/uiStore';
 import { useGameState } from '../GameStateManager';
+import { paymentService } from '../../lib/stripe';
+import { useAuth } from '../../hooks/useAuth';
 
 interface CustomProtocol {
   id: string;
@@ -20,331 +22,688 @@ interface CreateScreenProps {
   onShowAuth: () => void;
 }
 
+type WizardStep = 'name' | 'duration' | 'induction' | 'deepener' | 'finalize';
+
 export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScreenProps) {
   const { user, canAccess } = useGameState();
   const { showToast } = useUIStore();
-  
-  // Local state for auth modal
+  const { isAuthenticated } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   
+  const [currentStep, setCurrentStep] = useState<WizardStep>('name');
   const [protocol, setProtocol] = useState<Partial<CustomProtocol>>({
-    name: 'Untitled Journey',
-    induction: 'progressive-relaxation',
-    deepener: 'staircase',
+    name: '',
+    induction: '',
+    deepener: '',
     goals: [],
     metaphors: [],
     duration: 15
   });
 
-  // Modal states
-  const [showNameModal, setShowNameModal] = useState(false);
-  const [showDurationModal, setShowDurationModal] = useState(false);
-  const [showInductionModal, setShowInductionModal] = useState(false);
-  const [showDeepenerModal, setShowDeepenerModal] = useState(false);
-  const [showGoalsModal, setShowGoalsModal] = useState(false);
-  const [showMetaphorsModal, setShowMetaphorsModal] = useState(false);
+  // Orb state that reacts to user choices
+  const [orbState, setOrbState] = useState({
+    energy: 0.3,
+    color: 'guardian',
+    animation: 'pulse',
+    intensity: 1.0
+  });
 
-  // Temp editing states
-  const [tempName, setTempName] = useState('');
-  const [tempDuration, setTempDuration] = useState(15);
-  const [newGoal, setNewGoal] = useState('');
-  const [newMetaphor, setNewMetaphor] = useState('');
+  const stepOrder: WizardStep[] = ['name', 'duration', 'induction', 'deepener', 'finalize'];
+  const currentStepIndex = stepOrder.indexOf(currentStep);
+  const progress = ((currentStepIndex + 1) / stepOrder.length) * 100;
+
+  // Suggested names based on archetypes
+  const nameSuggestions = [
+    'Confidence Surge', 'Dream Voyage', 'Power Reclaim', 'Inner Sanctuary',
+    'Focus Lock', 'Stress Melt', 'Creative Flow', 'Energy Boost',
+    'Mind Palace', 'Soul Reset', 'Courage Rise', 'Peace Deep'
+  ];
 
   const inductionOptions = [
-    { id: 'progressive-relaxation', name: 'Progressive Relaxation', description: 'Gentle body-based induction', emoji: '🌊' },
-    { id: 'rapid-induction', name: 'Rapid Induction', description: 'Quick Elman technique', emoji: '⚡' },
-    { id: 'eye-fixation', name: 'Eye Fixation', description: 'Visual focus technique', emoji: '👁️' },
-    { id: 'breath-work', name: 'Breath Work', description: 'Breathing-based induction', emoji: '🫁' }
+    { 
+      id: 'progressive-relaxation', 
+      name: 'Progressive Relaxation', 
+      description: 'Gentle wave of calm flowing through your body',
+      icon: <Waves size={24} className="text-teal-400" />,
+      color: 'from-teal-500/20 to-cyan-500/20',
+      preview: 'Starting from the top of your head, feel tension melting away...',
+      orbEffect: { color: 'teal', animation: 'wave' }
+    },
+    { 
+      id: 'rapid-induction', 
+      name: 'Rapid Induction', 
+      description: 'Lightning-fast entry into deep trance',
+      icon: <Zap size={24} className="text-yellow-400" />,
+      color: 'from-yellow-500/20 to-orange-500/20',
+      preview: 'Sleep now... and as your eyes close, you drop deep...',
+      orbEffect: { color: 'yellow', animation: 'flare' }
+    },
+    { 
+      id: 'eye-fixation', 
+      name: 'Eye Fixation', 
+      description: 'Hypnotic gaze into the orb\'s depths',
+      icon: <Eye size={24} className="text-purple-400" />,
+      color: 'from-purple-500/20 to-indigo-500/20',
+      preview: 'Focus on the orb... deeper and deeper... letting go...',
+      orbEffect: { color: 'purple', animation: 'spiral' }
+    },
+    { 
+      id: 'breath-work', 
+      name: 'Breath Work', 
+      description: 'Rhythmic breathing into transcendence',
+      icon: <Wind size={24} className="text-green-400" />,
+      color: 'from-green-500/20 to-emerald-500/20',
+      preview: 'With each breath, you sink deeper into yourself...',
+      orbEffect: { color: 'green', animation: 'pulse' }
+    }
   ];
 
   const deepenerOptions = [
-    { id: 'staircase', name: 'Staircase', description: 'Classic descending stairs', emoji: '🪜' },
-    { id: 'elevator', name: 'Elevator', description: 'Smooth descent visualization', emoji: '🛗' },
-    { id: 'fractionation', name: 'Fractionation', description: 'In and out technique', emoji: '🌀' },
-    { id: 'counting', name: 'Counting Down', description: 'Simple number countdown', emoji: '🔢' }
+    { 
+      id: 'staircase', 
+      name: 'Spiral Staircase', 
+      description: 'Classic descent into deeper consciousness',
+      icon: '🌀',
+      color: 'from-blue-500/20 to-purple-500/20',
+      free: true
+    },
+    { 
+      id: 'elevator', 
+      name: 'Cosmic Elevator', 
+      description: 'Smooth descent through dimensions',
+      icon: '🛗',
+      color: 'from-indigo-500/20 to-blue-500/20',
+      free: true
+    },
+    { 
+      id: 'archetype-guardian', 
+      name: 'Guardian\'s Shield', 
+      description: 'Protected descent with your inner guardian',
+      icon: '🛡️',
+      color: 'from-blue-600/20 to-cyan-600/20',
+      free: false,
+      premium: true
+    },
+    { 
+      id: 'archetype-mystic', 
+      name: 'Mystic\'s Portal', 
+      description: 'Transcendent passage through sacred geometry',
+      icon: '✨',
+      color: 'from-purple-600/20 to-pink-600/20',
+      free: false,
+      premium: true
+    },
+    { 
+      id: 'archetype-healer', 
+      name: 'Healer\'s Garden', 
+      description: 'Gentle descent through healing light',
+      icon: '🌿',
+      color: 'from-green-600/20 to-teal-600/20',
+      free: false,
+      premium: true
+    }
   ];
 
-  // Check if user can access custom protocol creation
-  const canCreateCustom = canAccess('custom_outlines');
-
-  const openNameModal = () => {
-    setTempName(protocol.name || '');
-    setShowNameModal(true);
-  };
-
-  const saveNameModal = () => {
-    setProtocol(prev => ({ ...prev, name: tempName }));
-    setShowNameModal(false);
-  };
-
-  const openDurationModal = () => {
-    setTempDuration(protocol.duration || 15);
-    setShowDurationModal(true);
-  };
-
-  const saveDurationModal = () => {
-    setProtocol(prev => ({ ...prev, duration: tempDuration }));
-    setShowDurationModal(false);
-  };
-
-  const addGoal = () => {
-    if (newGoal.trim()) {
-      setProtocol(prev => ({
-        ...prev,
-        goals: [...(prev.goals || []), newGoal.trim()]
-      }));
-      setNewGoal('');
-    }
-  };
-
-  const removeGoal = (index: number) => {
-    setProtocol(prev => ({
-      ...prev,
-      goals: prev.goals?.filter((_, i) => i !== index) || []
-    }));
-  };
-
-  const addMetaphor = () => {
-    if (newMetaphor.trim()) {
-      setProtocol(prev => ({
-        ...prev,
-        metaphors: [...(prev.metaphors || []), newMetaphor.trim()]
-      }));
-      setNewMetaphor('');
-    }
-  };
-
-  const removeMetaphor = (index: number) => {
-    setProtocol(prev => ({
-      ...prev,
-      metaphors: prev.metaphors?.filter((_, i) => i !== index) || []
-    }));
-  };
-
-  const handleCardClick = (action: () => void) => {
-    // Allow all users to interact with the form
-    action();
-  };
-
-  const handleSave = () => {
-    if (!user) {
-      showToast({
-        type: 'warning',
-        message: 'Sign in to save protocols',
-        duration: 3000
-      });
-      return;
+  // Update orb based on current choices
+  useEffect(() => {
+    let newOrbState = { ...orbState };
+    
+    // Duration affects energy/intensity
+    newOrbState.energy = Math.min(0.3 + (protocol.duration || 15) * 0.02, 1.0);
+    newOrbState.intensity = 0.8 + (protocol.duration || 15) * 0.01;
+    
+    // Induction affects color and animation
+    const selectedInduction = inductionOptions.find(opt => opt.id === protocol.induction);
+    if (selectedInduction) {
+      newOrbState.color = selectedInduction.orbEffect.color;
+      newOrbState.animation = selectedInduction.orbEffect.animation;
     }
     
+    setOrbState(newOrbState);
+  }, [protocol.duration, protocol.induction, protocol.deepener]);
+
+  const canCreateCustom = canAccess('custom_outlines');
+
+  const handleUpgrade = async () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    try {
+      setIsProcessingPayment(true);
+      const { url } = await paymentService.createCheckoutSession('mystic-subscription');
+      window.location.href = url;
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      showToast({
+        type: 'error',
+        message: error.message || 'Failed to start checkout. Please try again.',
+        duration: 5000
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentStepIndex < stepOrder.length - 1) {
+      setCurrentStep(stepOrder[currentStepIndex + 1]);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStep(stepOrder[currentStepIndex - 1]);
+    }
+  };
+
+  const handleFinalize = () => {
     if (!canCreateCustom) {
       showToast({
-        type: 'info',
-        message: 'Upgrade to Pro to save custom protocols',
+        type: 'warning',
+        message: 'Upgrade to Pro to save custom journeys',
         duration: 4000
       });
       return;
     }
 
-    if (protocol.name && protocol.induction && protocol.deepener) {
+    if (protocol.name && protocol.induction) {
       const newProtocol: CustomProtocol = {
         id: 'custom-' + Date.now(),
         name: protocol.name,
         induction: protocol.induction,
-        deepener: protocol.deepener,
-        goals: protocol.goals || [],
-        metaphors: protocol.metaphors || [],
+        deepener: protocol.deepener || 'staircase',
+        goals: [],
+        metaphors: [],
         duration: protocol.duration || 15
       };
+      
       onProtocolCreate(newProtocol);
       
       showToast({
         type: 'success',
-        message: `Protocol "${protocol.name}" created successfully!`,
+        message: `"${protocol.name}" created successfully!`,
         duration: 3000
       });
       
-      // Reset form
+      // Reset wizard
       setProtocol({
-        name: 'Untitled Journey',
-        induction: 'progressive-relaxation',
-        deepener: 'staircase',
+        name: '',
+        induction: '',
+        deepener: '',
         goals: [],
         metaphors: [],
         duration: 15
       });
+      setCurrentStep('name');
     }
   };
 
-  const isValid = protocol.name && protocol.induction && protocol.deepener;
-
-  return (
-    <div className="h-full bg-black relative overflow-hidden flex flex-col">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/20 to-black" />
-
-      {/* Header */}
-      <div className="flex-shrink-0 px-4 pt-4 pb-6 border-b border-white/10 relative z-10">
-        <h1 className="text-white text-xl font-light mb-1">Create Journey</h1>
-        <p className="text-white/60 text-sm">Design your personalized hypnosis experience</p>
-      </div>
-
-      {/* Content - Stacked Cards */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 relative z-10">
-        <div className="space-y-3 pb-6">
-          
-          {/* Protocol Name Card */}
-          <button
-            onClick={() => handleCardClick(openNameModal)}
-            className="w-full bg-gradient-to-r from-violet-900/80 to-purple-900/80 border border-violet-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-violet-500/40 group flex items-center justify-between"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-500/30 border border-violet-500/40 flex items-center justify-center">
-                <FileText size={20} className="text-violet-400" />
-              </div>
-              <div className="text-left">
-                <div className="text-white/80 text-sm font-medium">Protocol Name</div>
-                <div className="text-violet-400 text-base font-semibold">{protocol.name}</div>
-              </div>
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 'name':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-white text-2xl font-light mb-3">Name Your Journey</h2>
+              <p className="text-white/70 text-sm">Every transformation begins with intention</p>
             </div>
-            <Edit3 size={18} className="text-violet-400/60 group-hover:text-violet-400 transition-colors" />
-          </button>
-
-          {/* Duration Card */}
-          <button
-            onClick={() => handleCardClick(openDurationModal)}
-            className="w-full bg-gradient-to-r from-orange-900/80 to-amber-900/80 border border-orange-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-orange-500/40 group flex items-center justify-between"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/30 border border-orange-500/40 flex items-center justify-center">
-                <Clock size={20} className="text-orange-400" />
+            
+            <div className="space-y-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={protocol.name}
+                  onChange={(e) => setProtocol(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="My Transformation Journey"
+                  className="w-full bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/20 focus:border-teal-400/60 rounded-2xl px-6 py-4 text-white text-lg font-medium placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-teal-400/20 transition-all duration-300"
+                  autoFocus
+                />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-teal-400/10 to-purple-400/10 opacity-0 focus-within:opacity-100 transition-opacity pointer-events-none" />
               </div>
-              <div className="text-left">
-                <div className="text-white/80 text-sm font-medium">Duration</div>
-                <div className="text-orange-400 text-base font-semibold">{protocol.duration}m</div>
-              </div>
-            </div>
-            <Edit3 size={18} className="text-orange-400/60 group-hover:text-orange-400 transition-colors" />
-          </button>
-
-          {/* Induction Card */}
-          <button
-            onClick={() => handleCardClick(() => setShowInductionModal(true))}
-            className="w-full bg-gradient-to-r from-cyan-900/80 to-blue-900/80 border border-cyan-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-cyan-500/40 group flex items-center justify-between"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/30 border border-cyan-500/40 flex items-center justify-center">
-                <Zap size={20} className="text-cyan-400" />
-              </div>
-              <div className="text-left">
-                <div className="text-white/80 text-sm font-medium">Induction</div>
-                <div className="text-cyan-400 text-base font-semibold">
-                  {inductionOptions.find(opt => opt.id === protocol.induction)?.name || 'Progressive Relaxation'}
+              
+              <div className="space-y-2">
+                <p className="text-white/60 text-sm text-center">Need inspiration?</p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {nameSuggestions.slice(0, 6).map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onClick={() => setProtocol(prev => ({ ...prev, name: suggestion }))}
+                      className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-white/80 text-sm transition-all duration-300 hover:scale-105"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
                 </div>
-              </div>
-            </div>
-            <Edit3 size={18} className="text-cyan-400/60 group-hover:text-cyan-400 transition-colors" />
-          </button>
-
-          {/* Deepener Card */}
-          <button
-            onClick={() => handleCardClick(() => setShowDeepenerModal(true))}
-            className="w-full bg-gradient-to-r from-teal-900/80 to-emerald-900/80 border border-teal-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-teal-500/40 group flex items-center justify-between"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-teal-500/30 border border-teal-500/40 flex items-center justify-center">
-                <span className="text-xl">🌀</span>
-              </div>
-              <div className="text-left">
-                <div className="text-white/80 text-sm font-medium">Deepener</div>
-                <div className="text-teal-400 text-base font-semibold">
-                  {deepenerOptions.find(opt => opt.id === protocol.deepener)?.name || 'Staircase'}
-                </div>
-              </div>
-            </div>
-            <Edit3 size={18} className="text-teal-400/60 group-hover:text-teal-400 transition-colors" />
-          </button>
-
-          {/* Goals Card */}
-          <button
-            onClick={() => handleCardClick(() => setShowGoalsModal(true))}
-            className="w-full bg-gradient-to-r from-rose-900/80 to-pink-900/80 border border-rose-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-rose-500/40 group flex items-center justify-between"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/30 border border-rose-500/40 flex items-center justify-center">
-                <Target size={20} className="text-rose-400" />
-              </div>
-              <div className="text-left">
-                <div className="text-white/80 text-sm font-medium">Goals</div>
-                <div className="text-rose-400 text-base font-semibold">
-                  {protocol.goals && protocol.goals.length > 0 ? 
-                    `${protocol.goals.length} goal${protocol.goals.length > 1 ? 's' : ''} set` : 
-                    'Add goals'}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 rounded-full bg-rose-500/30 border border-rose-500/40 flex items-center justify-center">
-                <span className="text-rose-400 text-xs font-bold">{protocol.goals?.length || 0}</span>
-              </div>
-              <Edit3 size={18} className="text-rose-400/60 group-hover:text-rose-400 transition-colors" />
-            </div>
-          </button>
-
-          {/* Metaphors Card */}
-          <button
-            onClick={() => handleCardClick(() => setShowMetaphorsModal(true))}
-            className="w-full bg-gradient-to-r from-yellow-900/80 to-lime-900/80 border border-yellow-500/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:border-yellow-500/40 group flex items-center justify-between"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-yellow-500/30 border border-yellow-500/40 flex items-center justify-center">
-                <Sparkles size={20} className="text-yellow-400" />
-              </div>
-              <div className="text-left">
-                <div className="text-white/80 text-sm font-medium">Metaphors</div>
-                <div className="text-yellow-400 text-base font-semibold">
-                  {protocol.metaphors && protocol.metaphors.length > 0 ? 
-                    `${protocol.metaphors.length} metaphor${protocol.metaphors.length > 1 ? 's' : ''} added` : 
-                    'Add imagery'}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 rounded-full bg-yellow-500/30 border border-yellow-500/40 flex items-center justify-center">
-                <span className="text-yellow-400 text-xs font-bold">{protocol.metaphors?.length || 0}</span>
-              </div>
-              <Edit3 size={18} className="text-yellow-400/60 group-hover:text-yellow-400 transition-colors" />
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Save Button - Fixed at Bottom */}
-      <div className="flex-shrink-0 p-4 bg-gradient-to-t from-black/95 to-transparent backdrop-blur-sm relative z-10">
-        {canCreateCustom && user ? (
-          <button
-            onClick={handleSave}
-            disabled={!isValid}
-            className="w-full px-6 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl text-black font-bold text-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl shadow-teal-500/20 flex items-center justify-center space-x-3"
-          >
-            <Save size={20} />
-            <span>Save Protocol</span>
-          </button>
-        ) : (
-          <div className="space-y-3">
-            <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-xl p-4 border border-amber-500/30 text-center">
-              <div className="text-amber-400 font-semibold mb-2">🔒 Premium Feature</div>
-              <p className="text-white/80 text-sm mb-3">Custom protocol creation requires a Pro subscription</p>
-              <div className="flex flex-col space-y-2">
-                <button className="px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-lg text-black font-semibold hover:scale-105 transition-transform duration-200">
-                  Upgrade to Pro
-                </button>
-                <button className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white/80 hover:bg-white/20 transition-all duration-300">
-                  Browse Templates Instead
-                </button>
               </div>
             </div>
           </div>
-        )}
+        );
+
+      case 'duration':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-white text-2xl font-light mb-3">How Deep Today?</h2>
+              <p className="text-white/70 text-sm">Choose your journey length</p>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Duration Display */}
+              <div className="text-center">
+                <div className="text-6xl font-light text-teal-400 mb-2">{protocol.duration}m</div>
+                <p className="text-white/60 text-sm">
+                  {protocol.duration <= 5 ? 'Quick Reset' :
+                   protocol.duration <= 15 ? 'Balanced Journey' :
+                   protocol.duration <= 25 ? 'Deep Dive' : 'Master Level'}
+                </p>
+              </div>
+              
+              {/* Duration Slider */}
+              <div className="px-4">
+                <input
+                  type="range"
+                  min="5"
+                  max="45"
+                  value={protocol.duration}
+                  onChange={(e) => setProtocol(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                  className="w-full h-3 bg-white/20 rounded-lg appearance-none cursor-pointer slider-teal"
+                />
+                <div className="flex justify-between text-white/40 text-xs mt-2">
+                  <span>5m</span>
+                  <span>Quick</span>
+                  <span>Balanced</span>
+                  <span>Deep</span>
+                  <span>45m</span>
+                </div>
+              </div>
+              
+              {/* Quick Picks */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { duration: 5, label: 'Quick Boost', desc: 'Energy reset' },
+                  { duration: 15, label: 'Balanced', desc: 'Perfect flow' },
+                  { duration: 30, label: 'Deep Dive', desc: 'Full immersion' }
+                ].map((option) => (
+                  <button
+                    key={option.duration}
+                    onClick={() => setProtocol(prev => ({ ...prev, duration: option.duration }))}
+                    className={`p-3 rounded-xl border transition-all duration-300 hover:scale-105 ${
+                      protocol.duration === option.duration
+                        ? 'bg-teal-500/20 border-teal-500/40 text-teal-400'
+                        : 'bg-white/5 border-white/20 text-white/70 hover:border-white/30'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="font-semibold text-sm">{option.label}</div>
+                      <div className="text-xs opacity-70">{option.desc}</div>
+                      <div className="text-xs font-bold mt-1">{option.duration}m</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'induction':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-white text-2xl font-light mb-3">Choose Your Gateway</h2>
+              <p className="text-white/70 text-sm">Each method unlocks a different doorway into your subconscious</p>
+            </div>
+            
+            <div className="space-y-4">
+              {inductionOptions.map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => setProtocol(prev => ({ ...prev, induction: option.id }))}
+                  className={`w-full p-4 rounded-2xl bg-gradient-to-br ${option.color} border transition-all duration-300 hover:scale-[1.02] text-left ${
+                    protocol.induction === option.id
+                      ? 'border-white/40 ring-2 ring-teal-400/30 shadow-2xl shadow-teal-400/20'
+                      : 'border-white/20 hover:border-white/30'
+                  }`}
+                >
+                  <div className="flex items-start space-x-4">
+                    <div className="w-14 h-14 rounded-xl bg-black/30 backdrop-blur-sm border border-white/30 flex items-center justify-center flex-shrink-0">
+                      {option.icon}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-white font-semibold text-lg mb-2">{option.name}</h3>
+                      <p className="text-white/80 text-sm mb-3 leading-relaxed">{option.description}</p>
+                      <div className="bg-black/20 rounded-lg p-3 border border-white/20">
+                        <p className="text-white/70 text-sm italic">"{option.preview}"</p>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'deepener':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-white text-2xl font-light mb-3">Go Deeper</h2>
+              <p className="text-white/70 text-sm">Add a booster that amplifies transformation</p>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Free Deepeners */}
+              <div className="space-y-3">
+                <h3 className="text-white/80 text-sm font-medium">Free Deepeners</h3>
+                {deepenerOptions.filter(opt => opt.free).map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => setProtocol(prev => ({ ...prev, deepener: option.id }))}
+                    className={`w-full p-4 rounded-xl bg-gradient-to-br ${option.color} border transition-all duration-300 hover:scale-[1.02] ${
+                      protocol.deepener === option.id
+                        ? 'border-white/40 ring-2 ring-blue-400/30'
+                        : 'border-white/20 hover:border-white/30'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl">{option.icon}</span>
+                      <div className="text-left">
+                        <div className="text-white font-semibold">{option.name}</div>
+                        <div className="text-white/70 text-sm">{option.description}</div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Premium Wall - Tempting Golden Portal */}
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/20 via-yellow-500/15 to-orange-500/20 border-2 border-amber-500/40 p-6">
+                {/* Animated Background */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 animate-slide-slow" />
+                
+                <div className="relative z-10">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-400 flex items-center justify-center animate-pulse">
+                      <Crown size={24} className="text-black" />
+                    </div>
+                    <div>
+                      <h3 className="text-amber-400 font-bold text-lg">Pro Deepeners</h3>
+                      <p className="text-white/80 text-sm">Unlock master-level transformation</p>
+                    </div>
+                  </div>
+
+                  {/* Premium Features Showcase */}
+                  <div className="space-y-3 mb-6">
+                    {deepenerOptions.filter(opt => opt.premium).map((option) => (
+                      <div key={option.id} className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-amber-500/30">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-xl opacity-60">{option.icon}</span>
+                          <div>
+                            <div className="text-white font-medium text-sm">{option.name}</div>
+                            <div className="text-white/60 text-xs">{option.description}</div>
+                          </div>
+                        </div>
+                        <Lock size={16} className="text-amber-400" />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pro Benefits */}
+                  <div className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 rounded-xl p-4 border border-amber-500/30 mb-6">
+                    <h4 className="text-amber-300 font-semibold mb-3">Pro users don't just journey—they architect realities</h4>
+                    <div className="space-y-2 text-sm text-white/80">
+                      <div className="flex items-center space-x-2">
+                        <Music size={14} className="text-amber-400" />
+                        <span>Add custom music layers</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Sparkles size={14} className="text-amber-400" />
+                        <span>Unlock archetype journeys</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Infinity size={14} className="text-amber-400" />
+                        <span>Unlimited saves</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Urgency & Social Proof */}
+                  <div className="text-center mb-4">
+                    <p className="text-amber-300/80 text-sm mb-2">⚡ 3,214 Pro journeys created today</p>
+                    <p className="text-white/60 text-xs">Don't be left out of the transformation</p>
+                  </div>
+
+                  {/* Upgrade Button */}
+                  <button
+                    onClick={handleUpgrade}
+                    disabled={isProcessingPayment}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-xl text-black font-bold text-lg hover:scale-105 transition-all duration-300 shadow-2xl shadow-amber-400/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isProcessingPayment ? 'Processing...' : 'Command Your Mind → Upgrade to Pro'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'finalize':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-white text-2xl font-light mb-3">Your Journey Awaits</h2>
+              <p className="text-white/70 text-sm">Step inside, or unlock Pro to design unlimited experiences</p>
+            </div>
+            
+            {/* Journey Preview */}
+            <div className="bg-gradient-to-br from-teal-500/10 to-purple-500/10 rounded-2xl p-6 border border-teal-500/30">
+              <h3 className="text-white font-semibold text-lg mb-4">"{protocol.name}"</h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/70">Duration</span>
+                  <span className="text-teal-400 font-medium">{protocol.duration} minutes</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/70">Induction</span>
+                  <span className="text-teal-400 font-medium">
+                    {inductionOptions.find(opt => opt.id === protocol.induction)?.name || 'Selected'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/70">Deepener</span>
+                  <span className="text-teal-400 font-medium">
+                    {deepenerOptions.find(opt => opt.id === protocol.deepener)?.name || 'Classic Staircase'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              {canCreateCustom && user ? (
+                <button
+                  onClick={handleFinalize}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl text-black font-bold text-lg transition-all duration-300 hover:scale-[1.02] shadow-2xl shadow-teal-500/20 flex items-center justify-center space-x-3"
+                >
+                  <Save size={20} />
+                  <span>Create Journey</span>
+                </button>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-xl p-4 border border-amber-500/30 text-center">
+                    <Crown size={32} className="text-amber-400 mx-auto mb-3" />
+                    <div className="text-amber-400 font-semibold mb-2">Unlock Full Control</div>
+                    <p className="text-white/80 text-sm mb-4">Save unlimited custom journeys and access master deepeners</p>
+                    <button
+                      onClick={handleUpgrade}
+                      disabled={isProcessingPayment}
+                      className="w-full px-6 py-3 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-lg text-black font-bold hover:scale-105 transition-transform duration-200 disabled:opacity-50"
+                    >
+                      {isProcessingPayment ? 'Processing...' : 'Upgrade to Pro'}
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      showToast({
+                        type: 'info',
+                        message: 'Try one of our pre-made journeys instead',
+                        duration: 3000
+                      });
+                    }}
+                    className="w-full px-6 py-3 bg-white/10 border border-white/20 rounded-xl text-white/80 hover:bg-white/20 transition-all duration-300"
+                  >
+                    Browse Templates Instead
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const getStepTitle = () => {
+    switch (currentStep) {
+      case 'name': return 'Name';
+      case 'duration': return 'Duration';
+      case 'induction': return 'Gateway';
+      case 'deepener': return 'Deepener';
+      case 'finalize': return 'Finalize';
+      default: return '';
+    }
+  };
+
+  const canAdvance = () => {
+    switch (currentStep) {
+      case 'name': return protocol.name && protocol.name.trim().length > 0;
+      case 'duration': return protocol.duration && protocol.duration >= 5;
+      case 'induction': return protocol.induction;
+      case 'deepener': return true; // Optional step
+      case 'finalize': return true;
+      default: return false;
+    }
+  };
+
+  return (
+    <div className="h-full bg-black relative overflow-hidden flex flex-col">
+      {/* Cosmic Background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/20 to-teal-950/20" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+
+      {/* Header with Progress */}
+      <div className="flex-shrink-0 px-4 pt-4 pb-6 relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-white text-xl font-light mb-1">Create Journey</h1>
+            <p className="text-white/60 text-sm">Design your personalized transformation</p>
+          </div>
+          
+          {/* Step Indicator */}
+          <div className="flex items-center space-x-2">
+            <span className="text-white/60 text-sm">Step {currentStepIndex + 1}/5</span>
+            <div className="text-teal-400 text-sm font-medium">{getStepTitle()}</div>
+          </div>
+        </div>
+        
+        {/* Progress Bar */}
+        <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-teal-400 to-purple-400 rounded-full transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Main Content with Orb */}
+      <div className="flex-1 min-h-0 relative z-10 flex flex-col lg:flex-row">
+        
+        {/* Left Side - Form Content */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-24">
+          {renderStepContent()}
+        </div>
+
+        {/* Right Side - Reactive Orb (Desktop) */}
+        <div className="hidden lg:flex lg:w-80 lg:flex-col lg:items-center lg:justify-center lg:px-6">
+          <div className="text-center mb-6">
+            <h3 className="text-white font-medium text-lg mb-2">Live Preview</h3>
+            <p className="text-white/60 text-sm">Your orb evolves as you create</p>
+          </div>
+          
+          <WebGLOrb
+            onTap={() => {}}
+            size={240}
+            egoState={orbState.color}
+            afterglow={!!protocol.induction}
+          />
+          
+          <div className="mt-4 text-center">
+            <p className="text-white/70 text-sm">
+              {protocol.name || 'Unnamed Journey'}
+            </p>
+            <p className="text-white/50 text-xs">
+              {protocol.duration}m • {protocol.induction ? inductionOptions.find(opt => opt.id === protocol.induction)?.name : 'No gateway selected'}
+            </p>
+          </div>
+        </div>
+
+        {/* Mobile Orb - Smaller, Floating */}
+        <div className="lg:hidden fixed top-24 right-4 z-20">
+          <WebGLOrb
+            onTap={() => {}}
+            size={80}
+            egoState={orbState.color}
+            afterglow={!!protocol.induction}
+          />
+        </div>
+      </div>
+
+      {/* Navigation Footer */}
+      <div className="flex-shrink-0 p-4 bg-gradient-to-t from-black/95 to-transparent backdrop-blur-sm relative z-10">
+        <div className="flex space-x-3">
+          {currentStepIndex > 0 && (
+            <button
+              onClick={handlePrev}
+              className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300 flex items-center justify-center space-x-2"
+            >
+              <ArrowLeft size={16} />
+              <span>Back</span>
+            </button>
+          )}
+          
+          {currentStep !== 'finalize' ? (
+            <button
+              onClick={handleNext}
+              disabled={!canAdvance()}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-xl text-black font-bold transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              <span>Next</span>
+              <ArrowRight size={16} />
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                showToast({
+                  type: 'info',
+                  message: 'Journey preview complete! Try a template or upgrade to save custom journeys.',
+                  duration: 4000
+                });
+              }}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-bold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center space-x-2"
+            >
+              <Play size={16} />
+              <span>Preview Journey</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Auth Modal */}
@@ -353,266 +712,34 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
         onClose={() => setShowAuthModal(false)}
       />
 
-      {/* Protocol Name Modal */}
-      <ModalShell
-        isOpen={showNameModal}
-        onClose={() => setShowNameModal(false)}
-        title="Protocol Name"
-        footer={
-          <div className="flex space-x-3">
-            <button
-              onClick={() => setShowNameModal(false)}
-              className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={saveNameModal}
-              disabled={!tempName.trim()}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-violet-400 to-purple-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 disabled:opacity-50"
-            >
-              Save Name
-            </button>
-          </div>
+      {/* Custom Styles */}
+      <style jsx>{`
+        .slider-teal::-webkit-slider-thumb {
+          appearance: none;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #14b8a6, #06b6d4);
+          cursor: pointer;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4);
         }
-      >
-        <div className="space-y-4">
-          <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl p-4 border border-violet-500/20">
-            <h3 className="text-white font-medium mb-3">What's your journey called?</h3>
-            <input
-              type="text"
-              value={tempName}
-              onChange={(e) => setTempName(e.target.value)}
-              placeholder="My Confidence Builder"
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-violet-400/50 focus:bg-white/15"
-              autoFocus
-            />
-          </div>
-        </div>
-      </ModalShell>
-
-      {/* Duration Modal */}
-      <ModalShell
-        isOpen={showDurationModal}
-        onClose={() => setShowDurationModal(false)}
-        title="Session Duration"
-        footer={
-          <div className="flex space-x-3">
-            <button
-              onClick={() => setShowDurationModal(false)}
-              className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={saveDurationModal}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-400 to-amber-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
-            >
-              Set Duration
-            </button>
-          </div>
+        
+        .slider-teal::-webkit-slider-track {
+          background: linear-gradient(to right, #14b8a6 0%, #14b8a6 var(--value), rgba(255,255,255,0.2) var(--value), rgba(255,255,255,0.2) 100%);
+          height: 12px;
+          border-radius: 6px;
         }
-      >
-        <div className="space-y-4">
-          <div className="bg-gradient-to-br from-orange-500/10 to-amber-500/10 rounded-xl p-6 border border-orange-500/20">
-            <div className="text-center mb-6">
-              <div className="text-6xl font-bold text-orange-400 mb-2">{tempDuration}m</div>
-              <p className="text-orange-400/80">Perfect for deep transformation</p>
-            </div>
-            
-            <input
-              type="range"
-              min="5"
-              max="30"
-              value={tempDuration}
-              onChange={(e) => setTempDuration(parseInt(e.target.value))}
-              className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer mb-4"
-            />
-            
-            <div className="flex justify-between text-orange-400/60 text-sm">
-              <span>5 min</span>
-              <span>Quick</span>
-              <span>Standard</span>
-              <span>Deep</span>
-              <span>30 min</span>
-            </div>
-          </div>
-        </div>
-      </ModalShell>
-
-      {/* Induction Modal */}
-      <ModalShell
-        isOpen={showInductionModal}
-        onClose={() => setShowInductionModal(false)}
-        title="Select Induction Method"
-      >
-        <div className="space-y-3">
-          {inductionOptions.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => {
-                setProtocol(prev => ({ ...prev, induction: option.id }));
-                setShowInductionModal(false);
-              }}
-              className={`w-full p-4 rounded-xl text-left transition-all duration-300 hover:scale-[1.02] ${
-                protocol.induction === option.id
-                  ? 'bg-cyan-500/20 border-2 border-cyan-500/40 shadow-lg shadow-cyan-500/20'
-                  : 'bg-white/5 border border-white/20 hover:bg-white/10'
-              }`}
-            >
-              <div className="flex items-center space-x-4">
-                <span className="text-3xl">{option.emoji}</span>
-                <div>
-                  <div className="text-white font-medium text-lg">{option.name}</div>
-                  <div className="text-white/60 text-sm">{option.description}</div>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </ModalShell>
-
-      {/* Deepener Modal */}
-      <ModalShell
-        isOpen={showDeepenerModal}
-        onClose={() => setShowDeepenerModal(false)}
-        title="Select Deepening Method"
-      >
-        <div className="space-y-3">
-          {deepenerOptions.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => {
-                setProtocol(prev => ({ ...prev, deepener: option.id }));
-                setShowDeepenerModal(false);
-              }}
-              className={`w-full p-4 rounded-xl text-left transition-all duration-300 hover:scale-[1.02] ${
-                protocol.deepener === option.id
-                  ? 'bg-teal-500/20 border-2 border-teal-500/40 shadow-lg shadow-teal-500/20'
-                  : 'bg-white/5 border border-white/20 hover:bg-white/10'
-              }`}
-            >
-              <div className="flex items-center space-x-4">
-                <span className="text-3xl">{option.emoji}</span>
-                <div>
-                  <div className="text-white font-medium text-lg">{option.name}</div>
-                  <div className="text-white/60 text-sm">{option.description}</div>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </ModalShell>
-
-      {/* Goals Modal */}
-      <ModalShell
-        isOpen={showGoalsModal}
-        onClose={() => setShowGoalsModal(false)}
-        title="Session Goals"
-        footer={
-          <button
-            onClick={() => setShowGoalsModal(false)}
-            className="w-full px-4 py-3 bg-gradient-to-r from-rose-400 to-pink-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
-          >
-            Done
-          </button>
+        
+        @keyframes slide-slow {
+          0% { transform: translateX(-100%) skewX(-12deg); }
+          100% { transform: translateX(200%) skewX(-12deg); }
         }
-      >
-        <div className="space-y-4">
-          <div className="bg-gradient-to-br from-rose-500/10 to-pink-500/10 rounded-xl p-4 border border-rose-500/20">
-            <h3 className="text-white font-medium mb-3">Add a new goal</h3>
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={newGoal}
-                onChange={(e) => setNewGoal(e.target.value)}
-                placeholder="Build confidence..."
-                className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-rose-400/50 focus:bg-white/15"
-                onKeyPress={(e) => e.key === 'Enter' && addGoal()}
-              />
-              <button
-                onClick={addGoal}
-                disabled={!newGoal.trim()}
-                className="px-4 py-3 bg-rose-500/20 border border-rose-500/40 rounded-lg text-rose-400 hover:bg-rose-500/30 transition-all duration-300 disabled:opacity-50"
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
-
-          {protocol.goals && protocol.goals.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-white font-medium">Your Goals ({protocol.goals.length})</h4>
-              {protocol.goals.map((goal, index) => (
-                <div key={index} className="flex items-center justify-between bg-white/10 rounded-lg px-4 py-3 border border-white/20 hover:bg-white/15 transition-colors group">
-                  <span className="text-white font-medium flex-1">{goal}</span>
-                  <button
-                    onClick={() => removeGoal(index)}
-                    className="text-red-400 hover:text-red-300 transition-colors ml-3 opacity-0 group-hover:opacity-100"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </ModalShell>
-
-      {/* Metaphors Modal */}
-      <ModalShell
-        isOpen={showMetaphorsModal}
-        onClose={() => setShowMetaphorsModal(false)}
-        title="Metaphors & Imagery"
-        footer={
-          <button
-            onClick={() => setShowMetaphorsModal(false)}
-            className="w-full px-4 py-3 bg-gradient-to-r from-yellow-400 to-lime-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
-          >
-            Done
-          </button>
+        
+        .animate-slide-slow {
+          animation: slide-slow 3s ease-in-out infinite;
         }
-      >
-        <div className="space-y-4">
-          <div className="bg-gradient-to-br from-yellow-500/10 to-lime-500/10 rounded-xl p-4 border border-yellow-500/20">
-            <h3 className="text-white font-medium mb-3">Add a metaphor</h3>
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={newMetaphor}
-                onChange={(e) => setNewMetaphor(e.target.value)}
-                placeholder="Strong oak tree..."
-                className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-yellow-400/50 focus:bg-white/15"
-                onKeyPress={(e) => e.key === 'Enter' && addMetaphor()}
-              />
-              <button
-                onClick={addMetaphor}
-                disabled={!newMetaphor.trim()}
-                className="px-4 py-3 bg-yellow-500/20 border border-yellow-500/40 rounded-lg text-yellow-400 hover:bg-yellow-500/30 transition-all duration-300 disabled:opacity-50"
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
-
-          {protocol.metaphors && protocol.metaphors.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-white font-medium">Your Metaphors ({protocol.metaphors.length})</h4>
-              {protocol.metaphors.map((metaphor, index) => (
-                <div key={index} className="flex items-center justify-between bg-white/10 rounded-lg px-4 py-3 border border-white/20 hover:bg-white/15 transition-colors group">
-                  <span className="text-white font-medium flex-1">{metaphor}</span>
-                  <button
-                    onClick={() => removeMetaphor(index)}
-                    className="text-red-400 hover:text-red-300 transition-colors ml-3 opacity-0 group-hover:opacity-100"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </ModalShell>
+      `}</style>
     </div>
   );
 }
