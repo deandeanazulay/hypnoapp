@@ -46,7 +46,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
     <button
       key={protocol.id}
       onClick={() => setSelectedProtocol(protocol)}
-      className={`card-premium bg-gradient-to-br ${getTypeColor(protocol.type)} p-4 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full w-full text-left opacity-80 hover:opacity-100 relative z-10 hover:z-20`}
+     className={`card-premium bg-gradient-to-br ${getTypeColor(protocol.type)} p-4 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full w-full text-left opacity-80 hover:opacity-100 relative z-10 hover:z-25`}
       style={{ minHeight: '160px', willChange: 'transform, opacity' }}
     >
       <div className="flex items-start justify-between space-x-2 mb-2">
@@ -99,7 +99,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
               </div>
 
               {/* Header */}
-              <div className="relative z-10 px-4 pt-4 pb-4 sticky top-0 bg-gradient-to-b from-black/95 to-transparent backdrop-blur-sm">
+              <div className="relative z-30 px-4 pt-4 pb-4 sticky top-0 bg-black/95 backdrop-blur-xl border-b border-white/10">
                 <h1 className="text-[var(--ink-1)] text-xl font-bold mb-1 text-shadow-premium">Explore Protocols</h1>
                 <p className="text-[var(--ink-dim)] text-sm">Discover hypnosis journeys and techniques</p>
                 
@@ -130,7 +130,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
               </div>
 
               {/* Content Grid */}
-              <div className="relative z-10 px-4 pb-20">
+              <div className="relative z-10 px-4 pt-4 pb-20">
                 
                 {/* Protocol Grid - Scrollable */}
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
