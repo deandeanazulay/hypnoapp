@@ -7,21 +7,23 @@ import ProfileScreen from './components/screens/ProfileScreen';
 import NavigationTabs from './components/NavigationTabs';
 import UnifiedSessionWorld from './components/UnifiedSessionWorld';
 import { GameStateProvider } from './components/GameStateManager';
+import EgoStatesModal from './components/modals/EgoStatesModal';
+import { useAppStore } from './state/appStore';
 import { TabId } from './types/Navigation';
 
 type AppMode = 'navigation' | 'session';
 
 function App() {
+  const { activeEgoState, setActiveEgoState } = useAppStore();
   const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
   const [activeTab, setActiveTab] = useState<TabId>('home');
-  const [selectedEgoState, setSelectedEgoState] = useState('guardian');
   const [selectedAction, setSelectedAction] = useState<any>(null);
   const [sessionConfig, setSessionConfig] = useState<any>(null);
 
   const handleOrbTap = () => {
     // Start session with current ego state
     setSessionConfig({
-      egoState: selectedEgoState,
+      egoState: activeEgoState,
       action: selectedAction, // Pass the selected action from HomeScreen
       type: 'unified'
     });
@@ -35,7 +37,7 @@ function App() {
   const handleProtocolSelect = (protocol: any) => {
     // Start session with current ego state and any selected action
     setSessionConfig({
-      egoState: selectedEgoState,
+      egoState: activeEgoState,
       protocol: protocol,
       type: 'protocol'
     });
@@ -61,7 +63,7 @@ function App() {
   const handleFavoriteSessionSelect = (session: any) => {
     // Start favorited session
     setSessionConfig({
-      egoState: session.egoState,
+      egoState: activeEgoState,
       action: session.action,
       type: 'favorite',
       session: session
@@ -88,8 +90,8 @@ function App() {
       case 'home':
         return (
           <HomeScreen
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
+            selectedEgoState={activeEgoState}
+            onEgoStateChange={setActiveEgoState}
             onOrbTap={handleOrbTap}
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -106,15 +108,15 @@ function App() {
       case 'profile':
         return (
           <ProfileScreen 
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
+            selectedEgoState={activeEgoState}
+            onEgoStateChange={setActiveEgoState}
           />
         );
       default:
         return (
           <HomeScreen
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={setSelectedEgoState}
+            selectedEgoState={activeEgoState}
+            onEgoStateChange={setActiveEgoState}
             onOrbTap={handleOrbTap}
             selectedAction={selectedAction}
             onActionSelect={handleActionSelect}
@@ -128,7 +130,7 @@ function App() {
   // Navigation mode - tabbed interface
   return (
     <GameStateProvider>
-      <div className="h-screen w-screen bg-black flex flex-col" style={{ height: '100vh', overflow: 'hidden' }}>
+      <div className="h-screen w-screen bg-black flex flex-col overflow-hidden">
         {/* Main Content - Takes remaining space above navigation */}
         <div className="flex-1 min-h-0 flex flex-col">
           {renderCurrentTab()}
@@ -141,6 +143,9 @@ function App() {
             onTabChange={setActiveTab}
           />
         </div>
+        
+        {/* Global Modals */}
+        <EgoStatesModal />
       </div>
     </GameStateProvider>
   );

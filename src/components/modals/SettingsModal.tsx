@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, Volume2, Palette, Shield, Database, Info, ChevronRight } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
-import EgoStatesModal from './EgoStatesModal';
+import { useAppStore } from '../../state/appStore';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -11,8 +11,8 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ isOpen, onClose, selectedEgoState, onEgoStateChange }: SettingsModalProps) {
+  const { openEgoModal } = useAppStore();
   const [activeTab, setActiveTab] = useState('account');
-  const [showEgoStates, setShowEgoStates] = useState(false);
 
   const tabs = [
     { id: 'account', name: 'Account', icon: User, color: 'text-blue-400' },
@@ -91,7 +91,7 @@ export default function SettingsModal({ isOpen, onClose, selectedEgoState, onEgo
               <h3 className="text-white font-medium mb-3">Ego States Collection</h3>
               <p className="text-white/70 text-sm mb-4">Manage your inner guides and unlock new states</p>
               <button 
-                onClick={() => setShowEgoStates(true)}
+                onClick={openEgoModal}
                 className="w-full px-4 py-3 bg-orange-500/20 border border-orange-500/40 rounded-lg text-orange-400 font-medium hover:bg-orange-500/30 transition-all duration-300 flex items-center justify-between"
               >
                 Open Collection
@@ -179,14 +179,6 @@ export default function SettingsModal({ isOpen, onClose, selectedEgoState, onEgo
         </div>
       </ModalShell>
 
-      {selectedEgoState && onEgoStateChange && (
-        <EgoStatesModal
-          isOpen={showEgoStates}
-          onClose={() => setShowEgoStates(false)}
-          selectedEgoState={selectedEgoState}
-          onEgoStateChange={onEgoStateChange}
-        />
-      )}
     </>
   );
 }

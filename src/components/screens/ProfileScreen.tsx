@@ -1,10 +1,9 @@
 import React from 'react';
 import { Settings, Award, TrendingUp, Calendar, Target, ChevronRight } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
-import { EGO_STATES } from '../../types/EgoState';
+import { useAppStore, getEgoState } from '../../state/appStore';
 import PageShell from '../layout/PageShell';
 import SettingsModal from '../modals/SettingsModal';
-import EgoStatesModal from '../modals/EgoStatesModal';
 
 interface ProfileScreenProps {
   selectedEgoState: string;
@@ -13,8 +12,8 @@ interface ProfileScreenProps {
 
 export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: ProfileScreenProps) {
   const { user } = useGameState();
+  const { activeEgoState, openEgoModal } = useAppStore();
   const [showSettings, setShowSettings] = React.useState(false);
-  const [showEgoStates, setShowEgoStates] = React.useState(false);
 
   // Mock data for ego state usage
   const egoStateUsage = {
@@ -38,11 +37,11 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   const getMostUsedEgoState = () => {
     const maxUsage = Math.max(...Object.values(egoStateUsage));
     const mostUsedId = Object.entries(egoStateUsage).find(([_, count]) => count === maxUsage)?.[0];
-    return EGO_STATES.find(state => state.id === mostUsedId);
+    return mostUsedId ? getEgoState(mostUsedId as any) : null;
   };
 
   const mostUsedState = getMostUsedEgoState();
-  const currentState = EGO_STATES.find(state => state.id === selectedEgoState);
+  const currentState = getEgoState(activeEgoState);
 
   const header = (
     <div className="bg-black/60 backdrop-blur-xl">
@@ -111,7 +110,23 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
         </div>
       </div>
       
-      {/* Ego State Selection */}
+      {/* Current Ego State */}
+      <div className="px-4 pb-3">
+        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-white/20 transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${currentState.color} flex items-center justify-center`}>
+              <span className="text-sm">{currentState.icon}</span>
+            </div>
+            <div>
+              <div className="text-white text-sm font-medium">Current Ego State</div>
+              <div className="text-white/70 text-xs">{currentState.name}</div>
+            </div>
+          </div>
+          <button onClick={openEgoModal} className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-all duration-300">
+            Change
+          </button>
+        </div>
+      </div>
     </div>
   );
 
@@ -137,8 +152,8 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
           
           {/* Usage Breakdown */}
           <div className="grid grid-cols-5 gap-2 flex-1 min-h-0">
-            {EGO_STATES.map((state) => {
-              const usage = egoStateUsage[state.id as keyof typeof egoStateUsage] || 0;
+            {Object.entries(egoStateUsage).map(([stateId, usage]) => {
+              const state = getEgoState(stateId as any);
               const percentage = getUsagePercentage(usage);
               
               return (
@@ -176,6 +191,8 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
       <SettingsModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
+        selectedEgoState={activeEgoState}
+        onEgoStateChange={onEgoStateChange}
       />
     </>
   );
