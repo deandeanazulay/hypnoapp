@@ -101,7 +101,7 @@ export default function HomeScreen({
                 height: `${0.5 + Math.random() * 2}px`,
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                opacity: 0.1 + Math.random() * 0.3
+                opacity: 0.05 + Math.random() * 0.15
               }}
             />
           ))}
