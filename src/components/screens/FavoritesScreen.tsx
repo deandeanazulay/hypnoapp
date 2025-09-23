@@ -331,8 +331,8 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
       <div className="relative z-10 h-full flex flex-col">
         {mockFavorites.length > 0 ? (
           <div className="h-full flex flex-col relative">
-            {/* Navigation Arrows - Only show if more than 1 page */}
-            {totalPages > 1 && (
+            {/* Navigation Arrows - Only show if more items than can fit */}
+            {mockFavorites.length > itemsPerView && (
               <>
                 <button
                   onClick={scrollLeft}
@@ -357,42 +357,25 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
 
             {/* Content Area */}
             <div className="flex-1 overflow-hidden px-4 sm:px-16">
-              <div 
-                className="flex h-full transition-transform duration-300 ease-out" 
-                style={{ 
-                  transform: `translateX(-${currentIndex * 100}%)`,
-                  width: `${totalPages * 100}%`
-                }}
-              >
-                {Array.from({ length: totalPages }).map((_, pageIndex) => (
-                  <div 
-                    key={pageIndex}
-                    className="flex-shrink-0 w-full px-2"
-                  >
-                    <div className="grid grid-cols-3 grid-rows-2 gap-4 h-full">
-                      {mockFavorites
-                        .slice(pageIndex * itemsPerPage, (pageIndex + 1) * itemsPerPage)
-                        .map((session, index) => (
-                          <div key={session.id}>
-                            {renderSessionCard(session)}
-                          </div>
-                        ))}
-                    </div>
+              <div className="grid grid-cols-3 grid-rows-2 gap-4 h-full transition-all duration-300 ease-out">
+                {getCurrentItems().map((session) => (
+                  <div key={session.id}>
+                    {renderSessionCard(session)}
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Page indicators */}
-            {totalPages > 1 && (
+            {mockFavorites.length > itemsPerView && (
               <div className="flex justify-center mt-4 mb-2">
                 <div className="flex space-x-2">
-                  {Array.from({ length: totalPages }).map((_, index) => (
+                  {Array.from({ length: getTotalDots() }).map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentIndex(index)}
+                      onClick={() => setCurrentStartIndex(Math.min(index * moveIncrement, maxStartIndex))}
                       className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-125 ${
-                        currentIndex === index 
+                        getCurrentDotIndex() === index 
                           ? 'bg-teal-400 scale-125' 
                           : 'bg-white/30 hover:bg-white/50 hover:scale-105'
                       }`}
