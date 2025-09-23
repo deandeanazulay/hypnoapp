@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Lock, ChevronRight } from 'lucide-react';
+import { Star, Lock, ChevronRight, Shield } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
 import { EGO_STATES } from '../../types/EgoState';
 
