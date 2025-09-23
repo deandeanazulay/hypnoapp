@@ -77,7 +77,7 @@ export default function HomeScreen({
       <div className="relative z-10 h-full flex flex-col">
         
         {/* Ego States Row */}
-        <div className="flex-shrink-0 pt-1 pb-1">
+        <div className="flex-shrink-0 pt-1 pb-2">
           <EgoStatesRow 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={onEgoStateChange}
@@ -85,12 +85,12 @@ export default function HomeScreen({
         </div>
 
         {/* Center Section - Orb Supreme (god of the app - never cut off) */}
-        <div className="flex-1 flex items-center justify-center min-h-0 relative z-20 px-4">
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="flex flex-col items-center justify-center max-w-none">
+        <div className="flex-1 flex items-center justify-center min-h-0 relative z-20 px-4 -mt-4">
+          <div className="w-full h-full flex items-center justify-center -mt-8">
+            <div className="flex flex-col items-center justify-center max-w-none -mt-4">
               {/* Orb Container - Sacred Space */}
               <div 
-                className="relative z-30 p-6" 
+                className="relative z-30 p-2" 
                 style={{ 
                   minHeight: Math.max(320, window.innerHeight * 0.4),
                   minWidth: Math.max(320, window.innerWidth * 0.6),
@@ -112,7 +112,7 @@ export default function HomeScreen({
               </div>
                 
               {/* Session configuration display - always visible */}
-              <div className="mt-4 text-center relative z-20 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
+              <div className="mt-2 text-center relative z-20 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
                 <p className="text-teal-400 text-sm font-medium">
                   {selectedEgoState.charAt(0).toUpperCase() + selectedEgoState.slice(1)} Mode
                 </p>
@@ -130,8 +130,8 @@ export default function HomeScreen({
         </div>
 
         {/* Bottom Section - Actions Bar */}
-        <div className="flex-shrink-0 pb-2">
-          <div className="text-center mb-2">
+        <div className="flex-shrink-0 pb-2 -mt-6">
+          <div className="text-center mb-1">
             <p className="text-white/40 text-xs">Choose session type</p>
           </div>
           <ActionsBar 
