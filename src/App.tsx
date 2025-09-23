@@ -205,7 +205,7 @@ function App() {
         </div>
         
         {/* Main Body Content - Flex grow */}
-        <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
           {/* Background Protection */}
           <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900/50 to-black pointer-events-none" />
           
@@ -215,13 +215,11 @@ function App() {
           </div>
         </div>
         
-        {/* Bottom Navigation - Fixed at bottom */}
-        <div className="flex-shrink-0 relative z-50 safe-area-bottom">
-          <NavigationTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        </div>
+        {/* Bottom Navigation - Portaled to document.body */}
+        <NavigationTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
       </div>
       
       {/* Global Modals - Outside main structure */}
