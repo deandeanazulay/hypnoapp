@@ -152,10 +152,10 @@ export default function EgoStatesModal() {
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 space-y-6">
           {/* Hero Card - Current Selected State */}
           {currentState && (
-            <div className="mb-6">
+            <div>
               <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${currentState.color} p-8 border-2 border-white/30 shadow-2xl group`}
                    style={{
                      boxShadow: `0 0 60px rgba(${currentState.color.includes('blue') ? '59, 130, 246' : 
@@ -216,7 +216,7 @@ export default function EgoStatesModal() {
           )}
 
           {/* Explore Other States - Compact Horizontal Cards */}
-          <div className="mb-6">
+          <div>
             <h3 className="text-white text-lg font-semibold mb-3">Explore Other States</h3>
             <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto">
               {otherStates.map((state) => (
@@ -247,7 +247,7 @@ export default function EgoStatesModal() {
           </div>
 
           {/* Patterns in Your Transformation */}
-          <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-xl p-4 border border-purple-500/20 mb-4">
+          <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-xl p-4 border border-purple-500/20">
             <h3 className="text-white font-semibold mb-3 flex items-center">
               <Sparkles size={18} className="mr-2 text-purple-400" />
               Patterns in Your Transformation
@@ -289,11 +289,10 @@ export default function EgoStatesModal() {
               </div>
             )}
           </div>
-            </div>
-          </div>
 
+          
           {/* Action Buttons */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pt-6 border-t border-white/10">
             <button
               onClick={handleCancel}
               className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white/80 font-medium transition-all duration-300 hover:text-white"
@@ -315,6 +314,7 @@ export default function EgoStatesModal() {
               <p className="text-white/50 text-xs mt-2 italic">
                 This choice shapes your Orb and sessions today
               </p>
+            </div>
             </div>
           </div>
         </div>
