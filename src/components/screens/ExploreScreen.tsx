@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Clock, Star, Filter, Plus, Zap, Waves, Eye, Wind, Book } from 'lucide-react';
+import { Play, Clock, Star, Filter, Plus, Zap, Waves, Eye, Wind, Book, ChevronRight } from 'lucide-react';
 import { DEFAULT_PROTOCOLS, Protocol } from '../../types/Navigation';
 import PageShell from '../layout/PageShell';
 import ModalShell from '../layout/ModalShell';
@@ -57,47 +57,47 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
     <button
       key={protocol.id}
       onClick={() => setSelectedProtocol(protocol)}
-     className={`card-premium bg-gradient-to-br ${getTypeColor(protocol.type)} p-4 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full w-full text-left opacity-80 hover:opacity-100 relative z-10 hover:z-25 group`}
+     className={`card-premium bg-gradient-to-br ${getTypeColor(protocol.type)} p-4 lg:p-6 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full w-full text-left opacity-80 hover:opacity-100 relative z-10 hover:z-25 group`}
       style={{ minHeight: '160px', willChange: 'transform, opacity' }}
     >
       <div className="flex items-start justify-between space-x-2 mb-2">
         {/* Protocol Icon */}
-        <div className="w-10 h-10 rounded-xl bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
           {getProtocolIcon(protocol.id)}
         </div>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-[var(--ink-1)] font-semibold text-sm truncate text-shadow-premium group-hover:text-white transition-colors">{protocol.name}</h3>
+            <h3 className="text-[var(--ink-1)] font-semibold text-sm lg:text-base truncate text-shadow-premium group-hover:text-white transition-colors">{protocol.name}</h3>
           </div>
           
           {/* Difficulty Badge */}
           <div className="flex items-center justify-between mb-2">
-            <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getDifficultyColor(protocol.difficulty)} backdrop-blur-sm`}>
+            <span className={`text-xs lg:text-sm font-bold px-2 lg:px-3 py-1 rounded-full border ${getDifficultyColor(protocol.difficulty)} backdrop-blur-sm`}>
               {protocol.difficulty}
             </span>
-            <div className="flex items-center space-x-3 text-[var(--ink-dim)] text-xs">
+            <div className="flex items-center space-x-2 lg:space-x-3 text-[var(--ink-dim)] text-xs">
               <div className="flex items-center space-x-1">
-                <Clock size={10} />
+                <Clock size={10} className="lg:w-3 lg:h-3" />
                 <span>{protocol.duration}m</span>
               </div>
               <div className="flex items-center space-x-1">
-                <Star size={10} />
+                <Star size={10} className="lg:w-3 lg:h-3" />
                 <span className="capitalize">{protocol.type}</span>
               </div>
             </div>
           </div>
           
-          <p className="text-[var(--ink-2)] text-xs mb-2 line-clamp-2">{protocol.description}</p>
+          <p className="text-[var(--ink-2)] text-xs lg:text-sm mb-2 lg:mb-3 line-clamp-2 leading-relaxed">{protocol.description}</p>
         </div>
       </div>
 
       {/* Tags */}
       <div className="flex flex-wrap gap-1">
-        {protocol.tags.slice(0, 2).map((tag) => (
+        {protocol.tags.slice(0, window.innerWidth >= 1024 ? 3 : 2).map((tag) => (
           <span
             key={tag}
-            className="px-2 py-1 bg-white/10 text-[var(--ink-dim)] text-xs rounded-full border border-white/10 group-hover:bg-white/20 group-hover:text-white/90 transition-colors"
+            className="px-2 lg:px-3 py-1 bg-white/10 text-[var(--ink-dim)] text-xs lg:text-sm rounded-full border border-white/10 group-hover:bg-white/20 group-hover:text-white/90 transition-colors"
           >
             {tag}
           </span>
@@ -150,28 +150,96 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
               </div>
 
               {/* Content Grid */}
-              <div className="relative z-10 px-4 pt-4 pb-20">
+              <div className="relative z-10 px-4 pt-4 pb-20 max-w-7xl mx-auto">
                 
-                {/* Protocol Grid - Scrollable */}
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {/* Protocol Grid - Responsive */}
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                   {filteredProtocols.length > 0 ? (
                     displayedProtocols.map((protocol) => renderProtocolCard(protocol))
                   ) : (
-                    <div className="col-span-full flex items-center justify-center py-20">
+                    <div className="col-span-full flex items-center justify-center py-12 lg:py-20">
                       <div className="text-center">
-                        <div className="bg-gradient-to-br from-white/5 to-gray-500/10 rounded-xl p-4 border border-white/20">
+                        <div className="bg-gradient-to-br from-white/5 to-gray-500/10 rounded-xl p-6 lg:p-8 border border-white/20 max-w-md mx-auto">
                           <div className="flex items-center space-x-3 mb-4">
                             <Filter size={20} className="text-white/20" />
                             <h3 className="text-[var(--ink-2)] text-xl font-medium">No protocols found</h3>
                           </div>
                           <p className="text-[var(--ink-dim)]">Try adjusting your filters</p>
-                          <button className="mt-4 px-4 py-2 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all text-sm">
+                          <button 
+                            onClick={() => {
+                              setSelectedFilter('all');
+                              setSelectedDifficulty('all');
+                            }}
+                            className="mt-4 px-4 py-2 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all text-sm hover:scale-105"
+                          >
                             Clear Filters
                           </button>
                         </div>
                       </div>
                     </div>
                   )}
+                </div>
+                
+                {/* Desktop-only Featured Section */}
+                <div className="hidden xl:block mt-12 pt-8 border-t border-white/10">
+                  <div className="text-center mb-8">
+                    <h3 className="text-white text-2xl font-light mb-2 bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
+                      Master the Art of Hypnosis
+                    </h3>
+                    <p className="text-white/70 max-w-2xl mx-auto">
+                      Each protocol represents years of refined hypnotic technique, designed to work with specific archetypal energies for maximum transformation.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Quick Access */}
+                    <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-2xl p-6 border border-teal-500/20 hover:border-teal-500/30 transition-all duration-300 hover:scale-105">
+                      <div className="w-12 h-12 rounded-xl bg-teal-500/20 flex items-center justify-center mb-4">
+                        <Zap size={24} className="text-teal-400" />
+                      </div>
+                      <h4 className="text-white font-semibold text-lg mb-2">Quick Inductions</h4>
+                      <p className="text-white/70 text-sm mb-4 leading-relaxed">Perfect for busy schedules. Rapid entry into trance states for immediate transformation.</p>
+                      <button 
+                        onClick={() => setSelectedFilter('induction')}
+                        className="text-teal-400 hover:text-teal-300 text-sm font-medium transition-colors flex items-center space-x-1"
+                      >
+                        <span>Explore Inductions</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                    
+                    {/* Deep Work */}
+                    <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-2xl p-6 border border-purple-500/20 hover:border-purple-500/30 transition-all duration-300 hover:scale-105">
+                      <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
+                        <Waves size={24} className="text-purple-400" />
+                      </div>
+                      <h4 className="text-white font-semibold text-lg mb-2">Complete Journeys</h4>
+                      <p className="text-white/70 text-sm mb-4 leading-relaxed">Full transformation experiences. Deep dive into your subconscious landscape.</p>
+                      <button 
+                        onClick={() => setSelectedFilter('complete')}
+                        className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors flex items-center space-x-1"
+                      >
+                        <span>Explore Complete Sessions</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                    
+                    {/* Advanced Techniques */}
+                    <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl p-6 border border-amber-500/20 hover:border-amber-500/30 transition-all duration-300 hover:scale-105">
+                      <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center mb-4">
+                        <Star size={24} className="text-amber-400" />
+                      </div>
+                      <h4 className="text-white font-semibold text-lg mb-2">Advanced Techniques</h4>
+                      <p className="text-white/70 text-sm mb-4 leading-relaxed">Master-level protocols for experienced practitioners seeking deeper transformation.</p>
+                      <button 
+                        onClick={() => setSelectedDifficulty('advanced')}
+                        className="text-amber-400 hover:text-amber-300 text-sm font-medium transition-colors flex items-center space-x-1"
+                      >
+                        <span>Explore Advanced</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -244,14 +312,14 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                 onProtocolSelect(selectedProtocol);
                 setSelectedProtocol(null);
               }}
-              className="w-full px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
+              className="w-full px-6 py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-bold text-lg hover:scale-105 transition-transform duration-200 shadow-2xl shadow-teal-400/25"
               style={{ minHeight: '44px' }}
             >
-              Start Session
+              Begin Journey
             </button>
           }
         >
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className={`card-premium bg-gradient-to-br ${getTypeColor(selectedProtocol.type)} p-4`}>
               <div className="flex items-center justify-between mb-3">
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(selectedProtocol.difficulty)} bg-black/20`}>
