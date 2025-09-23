@@ -13,6 +13,11 @@ interface ActionsBarProps {
 
 // Helper function to render Lucide icons from serializable data
 const renderIcon = (iconData: SerializableIcon) => {
+  // Safety check for undefined or malformed iconData
+  if (!iconData || !iconData.type) {
+    return <Target size={16} className="text-white/60" />;
+  }
+  
   const iconComponents: { [key: string]: React.ComponentType<any> } = {
     Target,
     Settings,
