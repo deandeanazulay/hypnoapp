@@ -95,13 +95,12 @@ export default function HomeScreen({
           {Array.from({ length: 50 }).map((_, i) => (
             <div
               key={`star-${i}`}
-              className="absolute bg-white rounded-full"
+              className="absolute bg-white rounded-full opacity-20"
               style={{
                 width: `${0.5 + Math.random() * 2}px`,
                 height: `${0.5 + Math.random() * 2}px`,
                 left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: 0.05 + Math.random() * 0.15
+                top: `${Math.random() * 100}%`
               }}
             />
           ))}
