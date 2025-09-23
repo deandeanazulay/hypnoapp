@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Home, Search, Plus, Heart, User } from 'lucide-react';
 import { TABS, TabId } from '../types/Navigation';
 
@@ -20,12 +21,16 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
     onTabChange(tabId);
   };
 
-  return (
-    <nav className="w-full bg-black/95 backdrop-blur-xl border-t border-white/5 px-4 sm:px-6 py-3 relative z-[100] shadow-lg shadow-black/20 safe-area-bottom" style={{ 
-      paddingBottom: 'max(1rem, calc(1rem + env(safe-area-inset-bottom)))',
-      position: 'sticky',
-      bottom: 0
-    }}>
+  const navigationContent = (
+    <nav 
+      className="fixed left-0 right-0 bottom-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-4 sm:px-6 shadow-lg shadow-black/20" 
+      style={{ 
+        height: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+        paddingTop: '12px',
+        paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+        zIndex: 1000
+      }}
+    >
       <div className="flex justify-between items-center space-around max-w-md mx-auto">
         {TABS.map((tab) => {
           const IconComponent = iconMap[tab.id];
@@ -62,5 +67,8 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
         })}
       </div>
     </nav>
+  );
+
+  return createPortal(navigationContent, document.body);
   );
 }
