@@ -14,6 +14,7 @@ export interface UserProfile {
   id: string
   email: string
   created_at: string
+  updated_at: string
   level: number
   experience: number
   current_state: 'calm' | 'focused' | 'stressed' | 'deep' | 'transcendent'
