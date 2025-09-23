@@ -141,6 +141,32 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     setSessionState(prev => ({ ...prev, micEnabled: !prev.micEnabled }));
   };
 
+  // Breathing cycle management
+  useEffect(() => {
+    if (!sessionState.isActive || sessionState.isPaused) return;
+
+    const breathingDurations = {
+      inhale: 4000,   // 4 seconds
+      hold: 4000,     // 4 seconds
+      exhale: 6000,   // 6 seconds
+      rest: 2000      // 2 seconds
+    };
+
+    const duration = breathingDurations[sessionState.breathing];
+    
+    const timer = setTimeout(() => {
+      setSessionState(prev => {
+        const breathingCycle = ['inhale', 'hold', 'exhale', 'rest'] as const;
+        const currentIndex = breathingCycle.indexOf(prev.breathing);
+        const nextBreathing = breathingCycle[(currentIndex + 1) % breathingCycle.length];
+        
+        return { ...prev, breathing: nextBreathing };
+      });
+    }, duration);
+
+    return () => clearTimeout(timer);
+  }, [sessionState.breathing, sessionState.isActive, sessionState.isPaused]);
+
   const getPhaseDescription = () => {
     const descriptions = {
       preparation: 'Getting comfortable and centered',
@@ -389,21 +415,105 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
       </div>
 
-      {/* Breathing Guide */}
-      <div className="absolute bottom-32 left-4 right-4 z-30 flex justify-center">
-        <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/20">
+      {/* Breathing Guide with Timings */}
+      {sessionState.isActive && (
+        <BreathingIndicator 
+          currentPhase={sessionState.breathing}
+          isActive={sessionState.isActive && !sessionState.isPaused}
+        />
+      )}
+    </div>
+  );
+}
+
+// Breathing Indicator Component with Timings
+interface BreathingIndicatorProps {
+  currentPhase: 'inhale' | 'hold' | 'exhale' | 'rest';
+  isActive: boolean;
+}
+
+function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps) {
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  
+  const breathingDurations = {
+    inhale: 4000,   // 4 seconds
+    hold: 4000,     // 4 seconds
+    exhale: 6000,   // 6 seconds
+    rest: 2000      // 2 seconds
+  };
+
+  const breathingLabels = {
+    inhale: 'Breathe In',
+    hold: 'Hold',
+    exhale: 'Breathe Out', 
+    rest: 'Natural Breathing'
+  };
+
+  const breathingColors = {
+    inhale: 'bg-teal-400',
+    hold: 'bg-yellow-400',
+    exhale: 'bg-orange-400',
+    rest: 'bg-gray-400'
+  };
+
+  useEffect(() => {
+    if (!isActive) return;
+    
+    const duration = breathingDurations[currentPhase];
+    setTimeRemaining(Math.ceil(duration / 1000));
+    
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => Math.max(0, prev - 1));
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [currentPhase, isActive]);
+
+  if (!isActive) return null;
+
+  return (
+    <div className="absolute bottom-32 left-4 right-4 z-30 flex justify-center">
+      <div className="bg-black/90 backdrop-blur-xl rounded-xl px-6 py-3 border border-white/20 shadow-2xl">
+        <div className="flex items-center justify-center space-x-4">
+          {/* Breathing Phase Indicator */}
           <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              sessionState.breathing === 'inhale' ? 'bg-teal-400 scale-125' :
-              sessionState.breathing === 'hold' ? 'bg-yellow-400 scale-125' :
-              sessionState.breathing === 'exhale' ? 'bg-orange-400 scale-125' :
-              'bg-gray-400'
+            <div className={`w-3 h-3 rounded-full transition-all duration-300 ${breathingColors[currentPhase]} ${
+              currentPhase !== 'rest' ? 'animate-pulse' : ''
             }`} />
-            <span className="text-white/80 text-sm font-medium capitalize">
-              {sessionState.breathing === 'rest' ? 'Natural breathing' : sessionState.breathing}
+            <span className="text-white font-medium text-sm">
+              {breathingLabels[currentPhase]}
             </span>
           </div>
+          
+          {/* Timer - only show for timed phases */}
+          {currentPhase !== 'rest' && (
+            <>
+              <div className="w-px h-4 bg-white/30" />
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">{timeRemaining}</span>
+                </div>
+                <div className="text-white/60 text-xs">
+                  {timeRemaining > 1 ? 'seconds' : 'second'}
+                </div>
+              </div>
+            </>
+          )}
         </div>
+        
+        {/* Progress bar for current breathing phase */}
+        {currentPhase !== 'rest' && (
+        <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/20">
+          <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden mt-2">
+            <div 
+              className={`h-full ${breathingColors[currentPhase]} rounded-full transition-all duration-100`}
+              style={{ 
+                width: `${((breathingDurations[currentPhase] / 1000 - timeRemaining) / (breathingDurations[currentPhase] / 1000)) * 100}%` 
+              }}
+            />
+          </div>
+        </div>
+        )}
       </div>
     </div>
   );
