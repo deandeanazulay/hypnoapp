@@ -358,3 +358,5 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return true;
     }
     return false;
+  }
+}
