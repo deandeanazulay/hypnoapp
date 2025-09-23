@@ -712,7 +712,6 @@ const WebGLOrbRender: React.ForwardRefRenderFunction<WebGLOrbRef, WebGLOrbProps>
         }
       `}</style>
     </div>
-    </div>
   );
 };
 
