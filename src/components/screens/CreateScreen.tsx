@@ -159,24 +159,24 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
       <div className="relative z-10 h-full overflow-hidden">
         
         {/* Dynamic Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 h-full auto-rows-fr">
+        <div className="flex flex-col gap-4 h-full">
           
           {/* Protocol Name Card */}
           <div 
             onClick={openNameModal}
-            className="glass-card-premium p-4 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 hover:from-violet-500/20 hover:via-purple-500/20 hover:to-fuchsia-500/20 border-violet-500/20 hover:border-violet-500/40 cursor-pointer group glass-hover-lift glass-scale col-span-2 overflow-hidden"
+            className="glass-card-premium p-4 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 hover:from-violet-500/20 hover:via-purple-500/20 hover:to-fuchsia-500/20 border-violet-500/20 hover:border-violet-500/40 cursor-pointer group glass-hover-lift glass-scale overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
                   <span className="text-2xl">📝</span>
                 </div>
-                <h3 className="text-white font-semibold text-base">Protocol Name</h3>
+                <h3 className="text-white font-semibold text-lg">Protocol Name</h3>
               </div>
-              <Edit3 size={16} className="text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Edit3 size={18} className="text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div className="text-center py-2">
-              <div className="text-xl font-bold text-white mb-1">
+            <div className="text-left pl-11">
+              <div className="text-xl font-bold text-white mb-1 truncate">
                 {protocol.name || 'Untitled Journey'}
               </div>
               <p className="text-violet-400/80 text-sm">
@@ -190,17 +190,17 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             onClick={openDurationModal}
             className="glass-card-premium p-4 bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-red-500/10 hover:from-amber-500/20 hover:via-orange-500/20 hover:to-red-500/20 border-amber-500/20 hover:border-amber-500/40 cursor-pointer group glass-hover-lift glass-scale overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/30 to-red-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
-                  <Clock size={18} className="text-amber-300" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-red-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
+                  <Clock size={16} className="text-amber-300" />
                 </div>
-                <h3 className="text-white font-semibold text-base">Duration</h3>
+                <h3 className="text-white font-semibold text-lg">Duration</h3>
               </div>
-              <Edit3 size={16} className="text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Edit3 size={18} className="text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div className="text-center py-2">
-              <div className="text-3xl font-bold text-amber-400 mb-1">
+            <div className="text-left pl-11">
+              <div className="text-2xl font-bold text-amber-400 mb-1">
                 {protocol.duration}m
               </div>
               <p className="text-amber-400/80 text-sm">Perfect timing</p>
@@ -212,22 +212,22 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             onClick={() => setShowInductionModal(true)}
             className="glass-card-premium p-4 bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-indigo-500/10 hover:from-cyan-500/20 hover:via-blue-500/20 hover:to-indigo-500/20 border-cyan-500/20 hover:border-cyan-500/40 cursor-pointer group glass-hover-lift glass-scale overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500/30 to-indigo-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
-                  <Zap size={18} className="text-cyan-300" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/30 to-indigo-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
+                  <Zap size={16} className="text-cyan-300" />
                 </div>
-                <h3 className="text-white font-semibold text-base">Induction</h3>
+                <h3 className="text-white font-semibold text-lg">Induction</h3>
               </div>
-              <Edit3 size={16} className="text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Edit3 size={18} className="text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div className="text-center py-2">
-              <div className="text-base font-bold text-white mb-1">
+            <div className="text-left pl-11">
+              <div className="text-lg font-bold text-white mb-1 truncate">
                 {inductionOptions.find(opt => opt.id === protocol.induction)?.name || 'Select Method'}
               </div>
-              <div className="text-2xl mb-1">
-                {inductionOptions.find(opt => opt.id === protocol.induction)?.emoji || '🌊'}
-              </div>
+              <p className="text-cyan-400/80 text-sm">
+                {inductionOptions.find(opt => opt.id === protocol.induction)?.description || 'Choose your method'}
+              </p>
             </div>
           </div>
 
@@ -236,22 +236,22 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             onClick={() => setShowDeepenerModal(true)}
             className="glass-card-premium p-4 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:via-teal-500/20 hover:to-cyan-500/20 border-emerald-500/20 hover:border-emerald-500/40 cursor-pointer group glass-hover-lift glass-scale overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
                   <span className="text-lg">🌀</span>
                 </div>
-                <h3 className="text-white font-semibold text-base">Deepener</h3>
+                <h3 className="text-white font-semibold text-lg">Deepener</h3>
               </div>
-              <Edit3 size={16} className="text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Edit3 size={18} className="text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div className="text-center py-2">
-              <div className="text-base font-bold text-white mb-1">
+            <div className="text-left pl-11">
+              <div className="text-lg font-bold text-white mb-1 truncate">
                 {deepenerOptions.find(opt => opt.id === protocol.deepener)?.name || 'Select Method'}
               </div>
-              <div className="text-2xl mb-1">
-                {deepenerOptions.find(opt => opt.id === protocol.deepener)?.emoji || '🪜'}
-              </div>
+              <p className="text-emerald-400/80 text-sm">
+                {deepenerOptions.find(opt => opt.id === protocol.deepener)?.description || 'Choose your method'}
+              </p>
             </div>
           </div>
 
@@ -260,22 +260,26 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             onClick={() => setShowGoalsModal(true)}
             className="glass-card-premium p-4 bg-gradient-to-br from-rose-500/10 via-pink-500/10 to-fuchsia-500/10 hover:from-rose-500/20 hover:via-pink-500/20 hover:to-fuchsia-500/20 border-rose-500/20 hover:border-rose-500/40 cursor-pointer group glass-hover-lift glass-scale overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500/30 to-fuchsia-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
-                  <Target size={18} className="text-rose-300" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-500/30 to-fuchsia-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
+                  <Target size={16} className="text-rose-300" />
                 </div>
-                <h3 className="text-white font-semibold text-base">Goals</h3>
+                <h3 className="text-white font-semibold text-lg">Goals</h3>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-rose-400 text-sm bg-rose-500/20 px-2 py-1 rounded-full font-medium">
                   {protocol.goals?.length || 0}
                 </span>
-                <Edit3 size={16} className="text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Edit3 size={18} className="text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
-            <div className="text-center py-2">
-              <div className="text-2xl mb-1">🎯</div>
+            <div className="text-left pl-11">
+              <p className="text-rose-400/80 text-sm">
+                {protocol.goals && protocol.goals.length > 0 ? 
+                  `${protocol.goals.length} goal${protocol.goals.length > 1 ? 's' : ''} configured` : 
+                  'Add transformation goals'}
+              </p>
             </div>
           </div>
 
@@ -284,22 +288,26 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             onClick={() => setShowMetaphorsModal(true)}
             className="glass-card-premium p-4 bg-gradient-to-br from-yellow-500/10 via-lime-500/10 to-emerald-500/10 hover:from-yellow-500/20 hover:via-lime-500/20 hover:to-emerald-500/20 border-yellow-500/20 hover:border-yellow-500/40 cursor-pointer group glass-hover-lift glass-scale overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-500/30 to-emerald-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
-                  <Sparkles size={18} className="text-yellow-300" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-500/30 to-emerald-500/30 flex items-center justify-center group-hover:scale-110 transition-transform glass-glow">
+                  <Sparkles size={16} className="text-yellow-300" />
                 </div>
-                <h3 className="text-white font-semibold text-base">Metaphors</h3>
+                <h3 className="text-white font-semibold text-lg">Metaphors</h3>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-yellow-400 text-sm bg-yellow-500/20 px-2 py-1 rounded-full font-medium">
                   {protocol.metaphors?.length || 0}
                 </span>
-                <Edit3 size={16} className="text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Edit3 size={18} className="text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
-            <div className="text-center py-2">
-              <div className="text-2xl mb-1">✨</div>
+            <div className="text-left pl-11">
+              <p className="text-yellow-400/80 text-sm">
+                {protocol.metaphors && protocol.metaphors.length > 0 ? 
+                  `${protocol.metaphors.length} metaphor${protocol.metaphors.length > 1 ? 's' : ''} added` : 
+                  'Add powerful imagery'}
+              </p>
             </div>
           </div>
 
