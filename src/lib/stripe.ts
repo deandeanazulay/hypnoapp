@@ -75,36 +75,46 @@ export class PaymentService {
   }
 
   async getUserSubscription() {
-    const { data, error } = await supabase
-      .from('stripe_user_subscriptions')
-      .select('*')
-      .maybeSingle();
-    
-    if (error) {
-      console.error('Error fetching subscription:', error);
+    try {
+      const { data, error } = await supabase
+        .from('stripe_user_subscriptions')
+        .select('*')
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching subscription:', error);
+        return null;
+      }
+      
+      return data;
+    } catch (fetchError) {
+      console.error('Network error fetching subscription:', fetchError);
       return null;
     }
-    
-    return data;
   }
 
   async getSubscriptionStatus(): Promise<'free' | 'active' | 'cancelled' | 'past_due'> {
-    const subscription = await this.getUserSubscription();
-    
-    if (!subscription) return 'free';
-    
-    switch (subscription.subscription_status) {
-      case 'active':
-      case 'trialing':
-        return 'active';
-      case 'past_due':
-        return 'past_due';
-      case 'canceled':
-      case 'incomplete_expired':
-      case 'unpaid':
-        return 'cancelled';
-      default:
-        return 'free';
+    try {
+      const subscription = await this.getUserSubscription();
+      
+      if (!subscription) return 'free';
+      
+      switch (subscription.subscription_status) {
+        case 'active':
+        case 'trialing':
+          return 'active';
+        case 'past_due':
+          return 'past_due';
+        case 'canceled':
+        case 'incomplete_expired':
+        case 'unpaid':
+          return 'cancelled';
+        default:
+          return 'free';
+      }
+    } catch (error) {
+      console.error('Error getting subscription status:', error);
+      return 'free';
     }
   }
 
