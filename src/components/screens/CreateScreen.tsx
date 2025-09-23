@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Save, Clock, Zap, Target, Sparkles, Edit3, FileText, X } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
+import AuthModal from '../auth/AuthModal';
 import { useUIStore } from '../../state/uiStore';
 import { useGameState } from '../GameStateManager';
 
