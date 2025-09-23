@@ -3,7 +3,6 @@ import { Plus, Save, Clock, Zap, Target, Sparkles, Edit3, FileText, X } from 'lu
 import ModalShell from '../layout/ModalShell';
 import { useUIStore } from '../../state/uiStore';
 import { useGameState } from '../GameStateManager';
-import { useAuth } from '../../hooks/useAuth';
 
 interface CustomProtocol {
   id: string;
@@ -21,7 +20,6 @@ interface CreateScreenProps {
 
 export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
   const { user, canAccess } = useGameState();
-  const { isAuthenticated } = useAuth();
   const { showToast } = useUIStore();
   
   const [protocol, setProtocol] = useState<Partial<CustomProtocol>>({
@@ -124,7 +122,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
   };
 
   const handleSave = () => {
-    if (!isAuthenticated) {
+    if (!user) {
       showToast({
         type: 'warning',
         message: 'Sign in to save protocols',
@@ -317,7 +315,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
 
       {/* Save Button - Fixed at Bottom */}
       <div className="flex-shrink-0 p-4 bg-gradient-to-t from-black/95 to-transparent backdrop-blur-sm relative z-10">
-        {canCreateCustom && isAuthenticated ? (
+        {canCreateCustom && user ? (
           <button
             onClick={handleSave}
             disabled={!isValid}

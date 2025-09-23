@@ -1,8 +1,11 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { EGO_STATES } from '../types/EgoState';
+import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef } from 'react';
+import * as THREE from 'three';
+import { egoStates, EgoStateId } from '../state/appStore';
 
 export interface WebGLOrbRef {
   updateState: (state: any) => void;
+  setSpeaking: (speaking: boolean) => void;
+  setListening: (listening: boolean) => void;
 }
 
 export interface WebGLOrbProps {
@@ -13,711 +16,366 @@ export interface WebGLOrbProps {
   size?: number;
   egoState?: string;
   selectedGoal?: any;
-  mousePosition?: { x: number; y: number };
-  isDragging?: boolean;
-  onDragStart?: () => void;
-  onDragEnd?: () => void;
 }
 
-const WebGLOrbRender: React.ForwardRefRenderFunction<WebGLOrbRef, WebGLOrbProps> = (props, ref) => {
-  const {
-    onTap, 
-    afterglow = false, 
-    className = '', 
-    breathPhase = 'rest',
-    size,
-    egoState = 'guardian',
-    selectedGoal,
-    mousePosition = { x: 0.5, y: 0.5 },
-    isDragging = false,
-    onDragStart,
-    onDragEnd
-  } = props;
-  
-  React.useImperativeHandle(ref, () => ({
-    updateState: (state: any) => {
-      // Handle state updates
-    }
-  }));
+const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
+  onTap,
+  afterglow = false,
+  className = '',
+  breathPhase = 'rest',
+  size = 280,
+  egoState = 'guardian',
+  selectedGoal
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const sceneRef = useRef<{
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    renderer: THREE.WebGLRenderer;
+    core: THREE.Mesh;
+    halo: THREE.Mesh;
+    clock: THREE.Clock;
+    animationId: number | null;
+  } | null>(null);
+  
   const [isPressed, setIsPressed] = useState(false);
-  const [rotation, setRotation] = useState({ x: 0, y: 0 });
-  const [momentum, setMomentum] = useState({ x: 0, y: 0 });
-  const lastMousePos = useRef({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const targetRotation = useRef({ x: 0, y: 0 });
 
-  // Get ego state colors
-  const getEgoStateColor = () => {
-    const colorMap = {
-      guardian: { primary: [0.2, 0.4, 0.8], secondary: [0.1, 0.3, 0.6] }, // Blue
-      rebel: { primary: [0.8, 0.2, 0.2], secondary: [0.6, 0.1, 0.1] }, // Red
-      healer: { primary: [0.2, 0.8, 0.4], secondary: [0.1, 0.6, 0.3] }, // Green
-      explorer: { primary: [0.9, 0.8, 0.2], secondary: [0.7, 0.6, 0.1] }, // Yellow
-      mystic: { primary: [0.6, 0.2, 0.8], secondary: [0.4, 0.1, 0.6] }, // Purple
-      sage: { primary: [0.8, 0.8, 0.8], secondary: [0.6, 0.6, 0.6] }, // Gray/White
-      child: { primary: [1.0, 0.6, 0.2], secondary: [0.8, 0.4, 0.1] }, // Orange
-      performer: { primary: [0.9, 0.2, 0.6], secondary: [0.7, 0.1, 0.4] }, // Pink
-      shadow: { primary: [0.3, 0.2, 0.5], secondary: [0.1, 0.1, 0.3] }, // Dark Purple
-      builder: { primary: [0.5, 0.5, 0.5], secondary: [1.0, 0.6, 0.2] }, // Steel Grey/Orange
-      seeker: { primary: [0.3, 0.2, 0.8], secondary: [0.2, 0.8, 0.8] }, // Indigo/Teal
-      lover: { primary: [0.9, 0.4, 0.6], secondary: [1.0, 0.7, 0.8] }, // Deep Rose/Pink
-      trickster: { primary: [0.2, 1.0, 0.2], secondary: [0.6, 0.2, 1.0] }, // Neon Green/Purple
-      warrior: { primary: [0.8, 0.1, 0.1], secondary: [0.1, 0.1, 0.1] }, // Blood Red/Black
-      visionary: { primary: [0.6, 0.2, 1.0], secondary: [0.4, 0.7, 1.0] } // Cosmic Violet/Starlight Blue
-    };
-    return colorMap[egoState as keyof typeof colorMap] || colorMap.guardian;
-  };
-
-  // Get goal sigil/glyph
-  const getGoalSigil = () => {
-    if (!selectedGoal) return null;
-    
-    const sigils = {
-      stress: '◈', // Shield
-      focus: '◉', // Target
-      confidence: '★', // Star
-      sleep: '◐', // Moon
-      cravings: '◆', // Diamond
-      pain: '❅', // Snowflake
-      creative: '◈' // Lightbulb-like
-    };
-    
-    return sigils[selectedGoal.id as keyof typeof sigils] || '◉';
-  };
-
-  // Interactive rotation based on mouse position
-  useEffect(() => {
-    if (isDragging && mousePosition) {
-      const deltaX = mousePosition.x - lastMousePos.current.x;
-      const deltaY = mousePosition.y - lastMousePos.current.y;
-      
-      setRotation(prev => ({
-        x: prev.x + deltaY * 200, // Vertical mouse movement rotates around X axis
-        y: prev.y + deltaX * 200  // Horizontal mouse movement rotates around Y axis
-      }));
-      
-      setMomentum({ x: deltaY * 50, y: deltaX * 50 });
-      lastMousePos.current = mousePosition;
-    } else if (!isDragging && (momentum.x !== 0 || momentum.y !== 0)) {
-      // Apply momentum when not dragging
-      const decay = 0.95;
-      setMomentum(prev => ({
-        x: prev.x * decay,
-        y: prev.y * decay
-      }));
-      
-      setRotation(prev => ({
-        x: prev.x + momentum.x,
-        y: prev.y + momentum.y
-      }));
-      
-      // Stop momentum when very small
-      if (Math.abs(momentum.x) < 0.1 && Math.abs(momentum.y) < 0.1) {
-        setMomentum({ x: 0, y: 0 });
+  useImperativeHandle(ref, () => ({
+    updateState: (state: any) => {
+      // Handle state updates if needed
+    },
+    setSpeaking: (speaking: boolean) => {
+      // Visual feedback for speaking state
+      if (sceneRef.current && speaking) {
+        // Slightly increase halo intensity when speaking
+        const haloMat = sceneRef.current.halo.material as THREE.ShaderMaterial;
+        haloMat.uniforms.uOpacity.value = speaking ? 0.25 : 0.14;
+      }
+    },
+    setListening: (listening: boolean) => {
+      // Visual feedback for listening state  
+      if (sceneRef.current && listening) {
+        // Subtle pulsing when listening
+        const coreMat = sceneRef.current.core.material as THREE.ShaderMaterial;
+        // Add listening pulse effect if needed
       }
     }
-  }, [mousePosition, isDragging, momentum]);
+  }));
 
-  // Auto-rotation when not interacting
-  useEffect(() => {
-    if (!isDragging && !isHovering && momentum.x === 0 && momentum.y === 0) {
-      const autoRotate = setInterval(() => {
-        setRotation(prev => ({
-          x: prev.x + 0.3,
-          y: prev.y + 0.5
-        }));
-      }, 50);
-      
-      return () => clearInterval(autoRotate);
-    }
-  }, [isDragging, isHovering, momentum]);
-
-  // Breathing animation based on phase
-  const getBreathScale = () => {
-    switch (breathPhase) {
-      case 'inhale': return 1.2;
-      case 'hold': return 1.2;
-      case 'exhale': return 0.8;
-      case 'rest': return 1.0;
-      default: return 1.0;
-    }
+  // Get ego state colors
+  const getEgoStateColors = (stateId: string) => {
+    const state = egoStates.find(s => s.id === stateId) || egoStates[0];
+    
+    const colorMap: { [key: string]: { primary: THREE.Color; secondary: THREE.Color } } = {
+      guardian: { primary: new THREE.Color('#3B82F6'), secondary: new THREE.Color('#1E40AF') },
+      rebel: { primary: new THREE.Color('#EF4444'), secondary: new THREE.Color('#B91C1C') },
+      healer: { primary: new THREE.Color('#22C55E'), secondary: new THREE.Color('#15803D') },
+      explorer: { primary: new THREE.Color('#EAB308'), secondary: new THREE.Color('#A16207') },
+      mystic: { primary: new THREE.Color('#A855F7'), secondary: new THREE.Color('#7C3AED') },
+      sage: { primary: new THREE.Color('#D1D5DB'), secondary: new THREE.Color('#9CA3AF') },
+      child: { primary: new THREE.Color('#F97316'), secondary: new THREE.Color('#EA580C') },
+      performer: { primary: new THREE.Color('#EC4899'), secondary: new THREE.Color('#DB2777') },
+      shadow: { primary: new THREE.Color('#4F46E5'), secondary: new THREE.Color('#1E1B4B') },
+      builder: { primary: new THREE.Color('#6B7280'), secondary: new THREE.Color('#F97316') },
+      seeker: { primary: new THREE.Color('#4F46E5'), secondary: new THREE.Color('#14B8A6') },
+      lover: { primary: new THREE.Color('#E11D48'), secondary: new THREE.Color('#F472B6') },
+      trickster: { primary: new THREE.Color('#22C55E'), secondary: new THREE.Color('#A855F7') },
+      warrior: { primary: new THREE.Color('#B91C1C'), secondary: new THREE.Color('#000000') },
+      visionary: { primary: new THREE.Color('#8B5CF6'), secondary: new THREE.Color('#60A5FA') }
+    };
+    
+    return colorMap[stateId] || colorMap.guardian;
   };
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext('webgl');
-    if (!gl) {
-      console.warn('WebGL not supported, falling back to CSS orb');
-      return;
-    }
+    // Setup Three.js scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(0, 0, 3.6);
 
-    // Vertex shader
-    const vertexShaderSource = `
-      attribute float vertexId;
-      uniform float vertexCount;
-      uniform float time;
-      uniform vec2 resolution;
-      uniform sampler2D sound;
-      uniform float hypnoticMode;
-      uniform float tranceDepth;
-      uniform vec3 primaryColor;
-      uniform vec3 secondaryColor;
-      uniform vec2 mousePos;
-      uniform vec2 userRotation;
-      uniform float interactionIntensity;
-      uniform float pulseIntensity;
-      varying vec4 v_color;
+    const renderer = new THREE.WebGLRenderer({ 
+      canvas, 
+      antialias: true, 
+      alpha: true,
+      powerPreference: "high-performance"
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(size, size, false);
 
-      #define PI 3.14159265359
+    // Subtle lighting
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    keyLight.position.set(2, 2, 3);
+    const fillLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(keyLight, fillLight);
 
-      vec3 hsv2rgb(vec3 c) {
-        c = vec3(c.x, clamp(c.yz, 0.0, 1.0));
-        vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-        vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-        return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-      }
+    // Core sphere geometry (high quality, smooth)
+    const geometry = new THREE.SphereGeometry(1, 128, 128);
 
-      mat4 rotX(float angleInRadians) {
-        float s = sin(angleInRadians);
-        float c = cos(angleInRadians);
-        return mat4( 
-          1, 0, 0, 0,
-          0, c, s, 0,
-          0, -s, c, 0,
-          0, 0, 0, 1);  
-      }
+    // Get ego state colors
+    const colors = getEgoStateColors(egoState);
 
-      mat4 rotY(float angleInRadians) {
-        float s = sin(angleInRadians);
-        float c = cos(angleInRadians);
-        return mat4( 
-          c, 0,-s, 0,
-          0, 1, 0, 0,
-          s, 0, c, 0,
-          0, 0, 0, 1);  
-      }
-
-      mat4 rotZ(float angleInRadians) {
-        float s = sin(angleInRadians);
-        float c = cos(angleInRadians);
-        return mat4( 
-          c,-s, 0, 0, 
-          s, c, 0, 0,
-          0, 0, 1, 0,
-          0, 0, 0, 1); 
-      }
-
-      mat4 trans(vec3 trans) {
-        return mat4(
-          1, 0, 0, 0,
-          0, 1, 0, 0,
-          0, 0, 1, 0,
-          trans, 1);
-      }
-
-      mat4 uniformScale(float s) {
-        return mat4(
-          s, 0, 0, 0,
-          0, s, 0, 0,
-          0, 0, s, 0,
-          0, 0, 0, 1);
-      }
-
-      mat4 persp(float fov, float aspect, float zNear, float zFar) {
-        float f = tan(PI * 0.5 - 0.5 * fov);
-        float rangeInv = 1.0 / (zNear - zFar);
-        return mat4(
-          f / aspect, 0, 0, 0,
-          0, f, 0, 0,
-          0, 0, (zNear + zFar) * rangeInv, -1,
-          0, 0, zNear * zFar * rangeInv * 2., 0);
-      }
-
-      mat4 inverse(mat4 m) {
-        float a00 = m[0][0], a01 = m[0][1], a02 = m[0][2], a03 = m[0][3],
-              a10 = m[1][0], a11 = m[1][1], a12 = m[1][2], a13 = m[1][3],
-              a20 = m[2][0], a21 = m[2][1], a22 = m[2][2], a23 = m[2][3],
-              a30 = m[3][0], a31 = m[3][1], a32 = m[3][2], a33 = m[3][3],
-              b00 = a00 * a11 - a01 * a10,
-              b01 = a00 * a12 - a02 * a10,
-              b02 = a00 * a13 - a03 * a10,
-              b03 = a01 * a12 - a02 * a11,
-              b04 = a01 * a13 - a03 * a11,
-              b05 = a02 * a13 - a03 * a12,
-              b06 = a20 * a31 - a21 * a30,
-              b07 = a20 * a32 - a22 * a30,
-              b08 = a20 * a33 - a23 * a30,
-              b09 = a21 * a32 - a22 * a31,
-              b10 = a21 * a33 - a23 * a31,
-              b11 = a22 * a33 - a23 * a32,
-              det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-        return mat4(
-            a11 * b11 - a12 * b10 + a13 * b09,
-            a02 * b10 - a01 * b11 - a03 * b09,
-            a31 * b05 - a32 * b04 + a33 * b03,
-            a22 * b04 - a21 * b05 - a23 * b03,
-            a12 * b08 - a10 * b11 - a13 * b07,
-            a00 * b11 - a02 * b08 + a03 * b07,
-            a32 * b02 - a30 * b05 - a33 * b01,
-            a20 * b05 - a22 * b02 + a23 * b01,
-            a10 * b10 - a11 * b08 + a13 * b06,
-            a01 * b08 - a00 * b10 - a03 * b06,
-            a30 * b04 - a31 * b02 + a33 * b00,
-            a21 * b02 - a20 * b04 - a23 * b00,
-            a11 * b07 - a10 * b09 - a12 * b06,
-            a00 * b09 - a01 * b07 + a02 * b06,
-            a31 * b01 - a30 * b03 - a32 * b00,
-            a20 * b03 - a21 * b01 + a22 * b00) / det;
-      }
-
-      mat4 lookAt(vec3 eye, vec3 target, vec3 up) {
-        vec3 zAxis = normalize(eye - target);
-        vec3 xAxis = normalize(cross(up, zAxis));
-        vec3 yAxis = cross(zAxis, xAxis);
-        return mat4(
-          xAxis, 0,
-          yAxis, 0,
-          zAxis, 0,
-          eye, 1);
-      }
-
-      mat4 cameraLookAt(vec3 eye, vec3 target, vec3 up) {
-        return inverse(lookAt(eye, target, up));
-      }
-
-      float t2m1(float v) {
-        return v * 2. - 1.;
-      }
-
-      const float edgePointsPerCircle = 64.0;
-      const float pointsPerCircle = edgePointsPerCircle * 2.0;
-
-      void main() {
-        float pointId = mod(vertexId, pointsPerCircle);  
-        float pId = floor(pointId / 2.) + mod(pointId, 2.);
-        float numCircles = floor(vertexCount / pointsPerCircle);
-        float circleId = floor(vertexId / pointsPerCircle);
-        float numPairs = floor(numCircles / 2.);
-        float pairId = floor(circleId / 2.);
-        float pairV = pairId / numPairs;
-        float pairA = t2m1(pairV);
-        float odd = mod(pairId, 2.);
-        
-        float pV = pId / edgePointsPerCircle;
-        float cV = circleId / numCircles;
-        float cA = t2m1(cV);
-        
-        float a = pV * PI * 2.;
-        float x = cos(a);
-        float z = sin(a);
-        
-        vec3 pos = vec3(x, 0, z);
-        
-        float tm = time * 0.1;
-        float tm2 = time * 0.13;
-        
-        // Enhanced interactive rotation
-        float rotAngleX = userRotation.x * 0.01 + sin(time * 0.2) * 0.1;
-        float rotAngleY = userRotation.y * 0.01 + cos(time * 0.15) * 0.1;
-        float rotAngleZ = time * 0.05 + (mousePos.x - 0.5) * 0.5;
-        
-        // Hypnotic spiral mathematics
-        float spiralTime = time * (0.5 + hypnoticMode * 0.3) + interactionIntensity * 2.0;
-        float goldenRatio = 1.618033988749;
-        float spiralRadius = length(pos.xz);
-        float spiralAngle = atan(pos.z, pos.x) + spiralRadius * goldenRatio + spiralTime;
-        
-        // Alien energy tendrils extending outward
-        float energyPulse = sin(time * 3.0 + spiralRadius * 5.0) * 0.5 + 0.5;
-        float tentacleLength = 1.0 + energyPulse * pulseIntensity * (2.0 + interactionIntensity);
-        
-        // Create energy tentacles that extend beyond the core orb
-        float tentacleId = mod(pointId, 8.0);
-        float tentacleAngle = tentacleId * PI * 0.25;
-        if (mod(pointId, 16.0) > 8.0) {
-          // These are the extending energy lines
-          vec3 tentacleDir = vec3(cos(tentacleAngle), sin(tentacleAngle * 0.5), sin(tentacleAngle));
-          pos += tentacleDir * tentacleLength * (0.8 + energyPulse * 0.4);
-          
-          // Add alien wiggle to the tentacles
-          float wiggle = sin(time * 4.0 + tentacleId * 2.0) * 0.3;
-          pos.xyz += tentacleDir * wiggle * pulseIntensity;
+    // Core sphere material with radial gradient
+    const coreMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uColorA: { value: colors.primary },
+        uColorB: { value: colors.secondary }
+      },
+      vertexShader: `
+        varying vec3 vPos;
+        void main(){
+          vPos = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
-        
-        // Fibonacci spiral influence
-        float fibSpiral = sin(spiralAngle * goldenRatio) * cos(spiralRadius * PI);
-        pos.xyz *= 1.0 + fibSpiral * hypnoticMode * (0.2 + interactionIntensity * 0.3);
-        
-        // Fractal depth pulsing
-        float fractalPulse = sin(time * 2.0 + spiralRadius * 8.0) * tranceDepth * (0.3 + interactionIntensity * 0.4);
-        pos.xyz *= 1.0 + fractalPulse;
-        
-        // Interactive 3D transformation
-        mat4 interactiveRotation = rotX(rotAngleX) * rotY(rotAngleY) * rotZ(rotAngleZ);
-        vec4 rotatedPos = interactiveRotation * vec4(pos, 1.0);
-        pos = rotatedPos.xyz;
-
-        mat4 wmat = rotZ(odd * PI * .5 + sin(tm) + rotAngleY);
-        wmat *= trans(vec3(0, cos(pairA * PI), 0));
-        wmat *= uniformScale(sin(pairA * PI) * (1.0 + interactionIntensity * 0.2));
-        vec4 wp = wmat * vec4(pos, 1.);
-        
-        float su = abs(atan(wp.x, wp.z)) / PI;
-        float sv = abs(wp.y) * 1.;
-        float s = 0.5 + 0.3 * sin(time + su * 10.0 + sv * 5.0 + interactionIntensity * 5.0);
-        wp.xyz *= mix(0.8, 1.2 + interactionIntensity * 0.3, pow(s, 1.));
-        
-        float r = 2.5;
-        mat4 mat = persp(radians(60.0), resolution.x / resolution.y, 0.1, 10.0);
-        vec3 eye = vec3(
-          cos(tm + rotAngleY * 0.1) * r, 
-          sin(tm * 0.93 + rotAngleX * 0.1) * r, 
-          sin(tm + rotAngleZ * 0.1) * r
-        );
-        vec3 target = vec3(0);
-        vec3 up = vec3(sin(rotAngleY * 0.05), sin(tm2 + rotAngleX * 0.1), cos(tm2 + rotAngleY * 0.1));
-        
-        mat *= cameraLookAt(eye, target, up);
-        
-        gl_Position = mat * wp;
-
-        // Alien energy color patterns
-        float colorMix = sin(spiralAngle * 0.1 + time * 0.2) * 0.5 + 0.5;
-        vec3 baseColor = mix(primaryColor, secondaryColor, colorMix);
-           
-        // Energy tendril glow effect
-        float energyGlow = energyPulse * pulseIntensity;
-        if (mod(pointId, 16.0) > 8.0) {
-          // Energy lines are brighter and more alien
-          baseColor = mix(baseColor, vec3(1.0, 1.0, 1.0), energyGlow * 0.6);
-          baseColor += vec3(0.0, energyGlow * 0.4, energyGlow * 0.8); // Cyan alien glow
+      `,
+      fragmentShader: `
+        varying vec3 vPos;
+        uniform vec3 uColorA;
+        uniform vec3 uColorB;
+        void main(){
+          // Radial distance from center
+          float r = clamp(length(vPos), 0.0, 1.0);
+          // Smooth gradient from center to edge
+          vec3 col = mix(uColorA, uColorB, smoothstep(0.0, 1.0, r));
+          // Gentle vignette toward rim
+          float vignette = smoothstep(1.0, 0.6, r);
+          gl_FragColor = vec4(col * (0.7 + 0.3 * vignette), 1.0);
         }
-        
-        float spiralBands = sin(spiralRadius * 10.0 - spiralTime * 3.0) * hypnoticMode * (1.0 + interactionIntensity);
-        baseColor = mix(baseColor, vec3(1.0, 1.0, 1.0), spiralBands * (0.3 + interactionIntensity * 0.2));
-        
-        vec3 color = baseColor;
-        
-        // Enhanced alpha for energy tendrils
-        float alpha = mix(0.3 + interactionIntensity * 0.2, 1.0, pow(1.0 - sv, 2.0));
-        if (mod(pointId, 16.0) > 8.0) {
-          // Energy lines have pulsating alpha
-          alpha *= energyPulse * (0.6 + pulseIntensity * 0.4);
+      `,
+      transparent: false
+    });
+
+    const core = new THREE.Mesh(geometry, coreMaterial);
+    scene.add(core);
+
+    // Halo shell (subtle glow)
+    const haloMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uOpacity: { value: afterglow ? 0.25 : 0.14 },
+        uSpread: { value: 0.35 }
+      },
+      vertexShader: `
+        varying float vRim;
+        void main(){
+          vec3 n = normalize(normal);
+          vec3 vNormal = normalize(normalMatrix * n);
+          float rim = pow(1.0 - abs(vNormal.z), 2.0);
+          vRim = rim;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
-        
-        v_color = vec4(color, alpha);
-        v_color.rgb *= v_color.a;
-      }
-    `;
+      `,
+      fragmentShader: `
+        varying float vRim;
+        uniform float uOpacity;
+        uniform float uSpread;
+        void main(){
+          float glow = smoothstep(0.0, uSpread, vRim);
+          gl_FragColor = vec4(vec3(1.0), glow * uOpacity);
+        }
+      `,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      transparent: true
+    });
 
-    // Fragment shader
-    const fragmentShaderSource = `
-      precision mediump float;
-      varying vec4 v_color;
-      
-      void main() {
-        gl_FragColor = v_color;
-      }
-    `;
+    const halo = new THREE.Mesh(geometry, haloMaterial);
+    halo.scale.setScalar(1.04);
+    scene.add(halo);
 
-    // Create shader function
-    function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-      const shader = gl.createShader(type);
-      if (!shader) return null;
-      
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-        gl.deleteShader(shader);
-        return null;
-      }
-      
-      return shader;
-    }
+    const clock = new THREE.Clock();
 
-    // Create program
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    
-    if (!vertexShader || !fragmentShader) return;
+    // Store scene references
+    sceneRef.current = {
+      scene,
+      camera,
+      renderer,
+      core,
+      halo,
+      clock,
+      animationId: null
+    };
 
-    const program = gl.createProgram();
-    if (!program) return;
-
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Program link error:', gl.getProgramInfoLog(program));
-      return;
-    }
-
-    // Get uniform locations
-    const vertexIdLocation = gl.getAttribLocation(program, 'vertexId');
-    const vertexCountLocation = gl.getUniformLocation(program, 'vertexCount');
-    const timeLocation = gl.getUniformLocation(program, 'time');
-    const resolutionLocation = gl.getUniformLocation(program, 'resolution');
-    const hypnoticModeLocation = gl.getUniformLocation(program, 'hypnoticMode');
-    const tranceDepthLocation = gl.getUniformLocation(program, 'tranceDepth');
-    const primaryColorLocation = gl.getUniformLocation(program, 'primaryColor');
-    const secondaryColorLocation = gl.getUniformLocation(program, 'secondaryColor');
-    const mousePosLocation = gl.getUniformLocation(program, 'mousePos');
-    const userRotationLocation = gl.getUniformLocation(program, 'userRotation');
-    const interactionIntensityLocation = gl.getUniformLocation(program, 'interactionIntensity');
-    const pulseIntensityLocation = gl.getUniformLocation(program, 'pulseIntensity');
-
-    // Create vertex buffer
-    const numVertices = 4096; // More vertices for energy tendrils
-    const vertices = new Float32Array(numVertices);
-    for (let i = 0; i < numVertices; i++) {
-      vertices[i] = i;
-    }
-
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    // Animation parameters
+    const params = {
+      size: 0.95,
+      breatheAmp: 0.02,
+      breatheSec: 7.0
+    };
 
     // Animation loop
-    let startTime = Date.now();
-    
-    function render() {
-      if (!canvas || !gl || !program) return;
-      
-      const currentTime = (Date.now() - startTime) / 1000;
-      
-      // Set canvas size
-      canvas.width = canvas.clientWidth;
-      canvas.height = canvas.clientHeight;
-      gl.viewport(0, 0, canvas.width, canvas.height);
+    function animate() {
+      if (!sceneRef.current) return;
 
-      // Clear
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
+      const t = clock.getElapsedTime();
       
-      // Enable blending
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      // Gentle breathing animation
+      const breatheScale = params.size + Math.sin((t / params.breatheSec) * Math.PI * 2.0) * params.breatheAmp;
+      
+      // Apply breathing based on breathPhase prop
+      let targetScale = breatheScale;
+      switch (breathPhase) {
+        case 'inhale':
+          targetScale = params.size + params.breatheAmp * 2;
+          break;
+        case 'hold':
+          targetScale = params.size + params.breatheAmp * 2;
+          break;
+        case 'exhale':
+          targetScale = params.size - params.breatheAmp;
+          break;
+        case 'rest':
+          targetScale = breatheScale;
+          break;
+      }
 
-      // Use program
-      gl.useProgram(program);
+      core.scale.setScalar(targetScale);
+      halo.scale.setScalar(1.04 * targetScale);
 
-      // Set uniforms
-      gl.uniform1f(vertexCountLocation, numVertices);
-      gl.uniform1f(timeLocation, currentTime);
-      gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      
-      // Hypnotic parameters based on props
-      const hypnoticIntensity = afterglow ? 1.0 : (isHovering ? 0.7 : 0.3);
-      const tranceLevel = breathPhase === 'inhale' ? 0.8 : 
-                         breathPhase === 'hold' ? 1.0 :
-                         breathPhase === 'exhale' ? 0.6 : 0.4;
-      
-      gl.uniform1f(hypnoticModeLocation, hypnoticIntensity);
-      gl.uniform1f(tranceDepthLocation, tranceLevel);
-      
-      // Alien pulse intensity based on interaction and breathing
-      const alienPulse = (isHovering ? 1.0 : 0.6) * (isDragging ? 1.5 : 1.0) * tranceLevel;
-      gl.uniform1f(pulseIntensityLocation, alienPulse);
-      
-      // Interactive uniforms
-      gl.uniform2f(mousePosLocation, mousePosition.x, mousePosition.y);
-      gl.uniform2f(userRotationLocation, rotation.x, rotation.y);
-      gl.uniform1f(interactionIntensityLocation, isHovering ? 0.5 : (isDragging ? 1.0 : 0.0));
-      
-      // Set ego state colors
-      const egoColors = getEgoStateColor();
-      gl.uniform3f(primaryColorLocation, egoColors.primary[0], egoColors.primary[1], egoColors.primary[2]);
-      gl.uniform3f(secondaryColorLocation, egoColors.secondary[0], egoColors.secondary[1], egoColors.secondary[2]);
+      // Smooth rotation follow (gentle parallax)
+      core.rotation.x += (targetRotation.current.x - core.rotation.x) * 0.06;
+      core.rotation.y += (targetRotation.current.y - core.rotation.y) * 0.06;
+      halo.rotation.copy(core.rotation);
 
-      // Set attributes
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.enableVertexAttribArray(vertexIdLocation);
-      gl.vertexAttribPointer(vertexIdLocation, 1, gl.FLOAT, false, 0, 0);
-
-      // Draw
-      gl.drawArrays(gl.LINES, 0, numVertices);
-
-      animationRef.current = requestAnimationFrame(render);
+      renderer.render(scene, camera);
+      sceneRef.current.animationId = requestAnimationFrame(animate);
     }
 
-    render();
+    animate();
 
+    // Cleanup
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+      if (sceneRef.current?.animationId) {
+        cancelAnimationFrame(sceneRef.current.animationId);
+      }
+      if (sceneRef.current) {
+        sceneRef.current.scene.clear();
+        sceneRef.current.renderer.dispose();
       }
     };
-  }, [rotation, mousePosition, isDragging, isHovering, afterglow, breathPhase]);
+  }, [egoState, afterglow, breathPhase, size]);
 
-  const egoColors = getEgoStateColor();
-  const goalSigil = getGoalSigil();
+  // Update colors when ego state changes
+  useEffect(() => {
+    if (!sceneRef.current) return;
+
+    const colors = getEgoStateColors(egoState);
+    const coreMat = sceneRef.current.core.material as THREE.ShaderMaterial;
+    coreMat.uniforms.uColorA.value = colors.primary;
+    coreMat.uniforms.uColorB.value = colors.secondary;
+  }, [egoState]);
+
+  // Update halo based on afterglow
+  useEffect(() => {
+    if (!sceneRef.current) return;
+
+    const haloMat = sceneRef.current.halo.material as THREE.ShaderMaterial;
+    haloMat.uniforms.uOpacity.value = afterglow ? 0.25 : 0.14;
+  }, [afterglow]);
+
+  // Mouse interaction
+  const handlePointerMove = (e: React.PointerEvent) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+    
+    // Gentle parallax (capped at ±0.15 radians)
+    targetRotation.current.y = x * 0.15;
+    targetRotation.current.x = -y * 0.12;
+  };
 
   const handlePointerDown = () => {
     setIsPressed(true);
-    if (onDragStart) onDragStart();
-    lastMousePos.current = mousePosition;
   };
 
   const handlePointerUp = () => {
     setIsPressed(false);
-    if (onDragEnd) onDragEnd();
-    setTimeout(onTap, 100);
-  };
-
-  const handlePointerLeave = () => {
-    setIsPressed(false);
-    setIsHovering(false);
-    if (onDragEnd) onDragEnd();
+    onTap();
   };
 
   const handlePointerEnter = () => {
     setIsHovering(true);
   };
 
+  const handlePointerLeave = () => {
+    setIsHovering(false);
+    setIsPressed(false);
+    // Reset rotation gradually
+    targetRotation.current = { x: 0, y: 0 };
+  };
+
   return (
-    <div className={`flex justify-center items-center ${className} relative z-50`}>
-      <div className="relative flex items-center justify-center">
-        <div
-          className={`relative cursor-pointer transition-transform duration-200 select-none ${
-            isPressed ? 'scale-95' : isHovering ? 'scale-105' : 'scale-100'
-          } shadow-2xl shadow-black/40 hover:shadow-cyan-500/20`}
-          style={{
-            width: size || (window.innerWidth < 768 ? Math.min(window.innerWidth * 0.5, 200) : 280),
-            height: size || (window.innerWidth < 768 ? Math.min(window.innerWidth * 0.5, 200) : 280),
-            borderRadius: '50%',
-            overflow: 'hidden',
-            background: isDragging ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.1)',
-            border: `2px solid ${isHovering ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)'}`,
-            filter: afterglow ? 'brightness(1.2) saturate(1.1) drop-shadow(0 0 20px rgba(20, 184, 166, 0.5))' : 
-                   isHovering ? 'brightness(1.1) saturate(1.05) drop-shadow(0 0 15px rgba(255, 255, 255, 0.3))' :
-                   `hue-rotate(${egoState === 'nurturer' ? '30deg' : egoState === 'sage' ? '60deg' : egoState === 'performer' ? '-30deg' : '0deg'})`,
-            transform: `scale(${getBreathScale()})`,
-            transition: isDragging ? 'none' : 'transform 0.3s ease-out, filter 0.3s ease, border-color 0.3s ease',
-            aspectRatio: '1 / 1',
-            minWidth: '240px',
-            minHeight: '240px',
-            maxWidth: '100vw',
-            maxHeight: '100vh',
-            boxSizing: 'border-box',
-            transformStyle: 'preserve-3d',
-            perspective: '1000px'
+    <div className={`flex justify-center items-center ${className} relative`}>
+      <div
+        className={`relative cursor-pointer transition-transform duration-200 select-none ${
+          isPressed ? 'scale-95' : isHovering ? 'scale-105' : 'scale-100'
+        }`}
+        style={{
+          width: size,
+          height: size,
+          filter: afterglow 
+            ? 'brightness(1.2) saturate(1.1) drop-shadow(0 0 20px rgba(20, 184, 166, 0.5))' 
+            : isHovering 
+            ? 'brightness(1.1) saturate(1.05) drop-shadow(0 0 15px rgba(255, 255, 255, 0.3))'
+            : 'none',
+          transition: 'transform 0.2s ease, filter 0.3s ease'
+        }}
+        onPointerMove={handlePointerMove}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerEnter={handlePointerEnter}
+        onPointerLeave={handlePointerLeave}
+      >
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full rounded-full"
+          style={{ 
+            display: 'block',
+            background: 'transparent'
           }}
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerLeave}
-          onPointerLeave={handlePointerLeave}
-          onPointerEnter={handlePointerEnter}
-        >
-          <canvas
-            ref={canvasRef}
-            className="w-full h-full"
-            style={{ 
-              display: 'block',
-              filter: isHovering ? 'brightness(1.1) contrast(1.1)' : 'none',
-              transition: 'filter 0.3s ease'
-            }}
-          />
-          
-          {/* Goal Sigil Overlay */}
-          {goalSigil && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div 
-                className="text-white/30 text-4xl font-light transition-all duration-300"
-                style={{
-                  textShadow: `0 0 20px rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, 0.5)`,
-                  filter: isHovering ? 'blur(0px)' : 'blur(0.5px)',
-                  transform: `rotateX(${rotation.x * 0.05}deg) rotateY(${rotation.y * 0.05}deg)`
-                }}
-              >
-                {goalSigil}
-              </div>
-            </div>
-          )}
-          
-          {/* Interactive Glow Ring */}
-          {(isHovering || isDragging) && (
+        />
+        
+        {/* Goal Sigil Overlay */}
+        {selectedGoal && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div 
-              className="absolute inset-0 rounded-full pointer-events-none"
+              className="text-white/30 text-4xl font-light transition-all duration-300"
               style={{
-                background: `conic-gradient(from ${rotation.y}deg, transparent, rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, 0.3), transparent)`,
-                animation: isDragging ? 'spin 2s linear infinite' : 'spin 8s linear infinite'
-              }}
-            />
-          )}
-          
-          {/* Fallback CSS orb if WebGL fails */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            {/* Core CSS Orb */}
-            <div 
-              className="w-48 h-48 rounded-full transition-all duration-300 relative"
-              style={{
-                background: `radial-gradient(circle, rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, ${isHovering ? 0.8 : 0.6}) 0%, rgba(${egoColors.secondary[0] * 255}, ${egoColors.secondary[1] * 255}, ${egoColors.secondary[2] * 255}, ${isHovering ? 0.6 : 0.4}) 100%)`,
-                transform: `rotateX(${rotation.x * 0.1}deg) rotateY(${rotation.y * 0.1}deg)`,
-                filter: isHovering ? 'brightness(1.2)' : 'brightness(1)',
-                animation: 'pulse 2s ease-in-out infinite'
+                textShadow: `0 0 20px rgba(20, 184, 166, 0.5)`,
+                filter: isHovering ? 'blur(0px)' : 'blur(0.5px)'
               }}
             >
-              {/* Alien Energy Tendrils - CSS Fallback */}
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute w-1 opacity-60"
-                  style={{
-                    height: '120px',
-                    background: `linear-gradient(to top, rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, 0.8), transparent)`,
-                    left: '50%',
-                    top: '50%',
-                    transformOrigin: 'bottom center',
-                    transform: `translateX(-50%) translateY(-50%) rotate(${i * 45}deg)`,
-                    animation: `alienPulse 2s ease-in-out infinite ${i * 0.25}s`,
-                    filter: 'blur(0.5px)',
-                    boxShadow: `0 0 10px rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, 0.6)`
-                  }}
-                />
-              ))}
+              {getGoalSigil(selectedGoal)}
             </div>
           </div>
-        </div>
-        
-        {/* Text below orb - always rendered */}
-        {/* Removed duplicate text - handled by parent component */}
+        )}
       </div>
-      
-      {/* CSS Animation Keyframes */}
-      <style jsx>{`
-        @keyframes alienPulse {
-          0%, 100% { 
-            transform: translateX(-50%) translateY(-50%) rotate(var(--rotation, 0deg)) scaleY(0.6);
-            opacity: 0.3;
-          }
-          50% { 
-            transform: translateX(-50%) translateY(-50%) rotate(var(--rotation, 0deg)) scaleY(1.2);
-            opacity: 0.8;
-          }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { 
-            transform: rotateX(var(--rotX, 0deg)) rotateY(var(--rotY, 0deg)) scale(0.95);
-          }
-          50% { 
-            transform: rotateX(var(--rotX, 0deg)) rotateY(var(--rotY, 0deg)) scale(1.05);
-          }
-        }
-      `}</style>
     </div>
   );
-};
+});
 
-const WebGLOrb = React.forwardRef(WebGLOrbRender);
+// Helper function for goal sigils
+function getGoalSigil(goal: any): string {
+  if (!goal) return '';
+  
+  const sigils: { [key: string]: string } = {
+    stress: '◈', // Shield
+    focus: '◉', // Target
+    confidence: '★', // Star
+    sleep: '◐', // Moon
+    cravings: '◆', // Diamond
+    pain: '❅', // Snowflake
+    creative: '◈' // Lightbulb-like
+  };
+  
+  return sigils[goal.id] || '◉';
+}
 
 WebGLOrb.displayName = 'WebGLOrb';
 
 export default WebGLOrb;
-  
