@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import LandingPage from './components/LandingPage';
 import HomeScreen from './components/screens/HomeScreen';
 import ExploreScreen from './components/screens/ExploreScreen';
 import CreateScreen from './components/screens/CreateScreen';
@@ -20,22 +21,21 @@ type AppMode = 'navigation' | 'session';
 function App() {
   const { activeEgoState, setActiveEgoState } = useAppStore();
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
+  const [showLanding, setShowLanding] = useState(true);
   const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [selectedAction, setSelectedAction] = useState<any>(null);
   const [sessionConfig, setSessionConfig] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Show auth modal for unauthenticated users after a delay
-  React.useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      const timer = setTimeout(() => {
-        setShowAuthModal(true);
-      }, 3000); // Show after 3 seconds
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isAuthenticated, authLoading]);
+  const handleEnterApp = () => {
+    setShowLanding(false);
+  };
+
+  const handleShowAuth = () => {
+    setShowLanding(false);
+    setShowAuthModal(true);
+  };
 
   const handleOrbTap = () => {
     // If not authenticated, show auth modal
@@ -115,6 +115,16 @@ function App() {
           <p className="text-white/60 text-sm">Loading Libero...</p>
         </div>
       </div>
+    );
+  }
+
+  // Show landing page first
+  if (showLanding && !isAuthenticated) {
+    return (
+      <LandingPage
+        onEnterApp={handleEnterApp}
+        onShowAuth={handleShowAuth}
+      />
     );
   }
 
