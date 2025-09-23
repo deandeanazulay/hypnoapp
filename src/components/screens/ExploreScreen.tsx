@@ -198,10 +198,11 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
             
             <div className="flex-1 overflow-hidden px-4 sm:px-8 lg:px-4">
               <div 
-                className="grid h-full pb-4 transition-transform duration-300 ease-out gap-4" 
+                className="grid h-full pb-4 transition-transform duration-300 ease-out gap-4"
                 style={{ 
                   gridTemplateColumns: `repeat(${cardsPerView}, 1fr)`,
                 }}
+              >
                 {getCurrentCards().map((protocol) => (
                   renderProtocolCard(protocol)
                 ))}
