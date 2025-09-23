@@ -91,7 +91,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
     },
     {
       name: "Mystic",
-      price: "$19",
+      price: "$27",
       period: "/month",
       description: "Unlock your full potential",
       features: [
