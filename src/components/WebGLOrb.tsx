@@ -155,8 +155,8 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     // Halo shell (subtle glow)
     const haloMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        uOpacity: { value: afterglow ? 0.25 : 0.14 },
-        uSpread: { value: 0.35 }
+        uOpacity: { value: afterglow ? 0.15 : 0.08 },
+        uSpread: { value: 0.25 }
       },
       vertexShader: `
         varying float vRim;
@@ -174,7 +174,7 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         uniform float uSpread;
         void main(){
           float glow = smoothstep(0.0, uSpread, vRim);
-          gl_FragColor = vec4(vec3(1.0), glow * uOpacity);
+          gl_FragColor = vec4(vec3(0.8), glow * uOpacity);
         }
       `,
       blending: THREE.AdditiveBlending,
@@ -183,7 +183,7 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     });
 
     const halo = new THREE.Mesh(geometry, haloMaterial);
-    halo.scale.setScalar(1.04);
+    halo.scale.setScalar(1.02);
     scene.add(halo);
 
     const clock = new THREE.Clock();
@@ -233,7 +233,7 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
       }
 
       core.scale.setScalar(targetScale);
-      halo.scale.setScalar(1.04 * targetScale);
+      halo.scale.setScalar(1.02 * targetScale);
 
       // Smooth rotation follow (gentle parallax)
       core.rotation.x += (targetRotation.current.x - core.rotation.x) * 0.06;
