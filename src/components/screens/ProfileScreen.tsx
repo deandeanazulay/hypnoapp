@@ -136,19 +136,19 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 return (
                   <div
                     key={stat.label}
-                    className={`card-premium hover:scale-105 transition-all duration-500 p-3 text-center cursor-pointer group animate-stagger-in opacity-80 hover:opacity-100`}
+                    className={`card-premium hover:scale-105 transition-all duration-500 p-3 sm:p-4 text-center cursor-pointer group animate-stagger-in opacity-80 hover:opacity-100`}
                     style={{ 
                       animationDelay: `${stat.delay}ms`,
                       willChange: 'transform, opacity'
                     }}
                   >
-                    <div className="mb-1 p-1 rounded-lg bg-white/10 w-fit mx-auto group-hover:bg-white/20 transition-colors duration-300">
-                      <IconComponent size={12} className={`text-${stat.color}-400 group-hover:scale-110 transition-transform duration-300`} />
+                    <div className="mb-2 p-1.5 sm:p-2 rounded-lg bg-white/10 w-fit mx-auto group-hover:bg-white/20 transition-colors duration-300">
+                      <IconComponent size={16} className={`text-${stat.color}-400 group-hover:scale-110 transition-transform duration-300`} />
                     </div>
-                    <div className="text-[var(--ink-1)] font-semibold font-mono mb-0.5 text-shadow-premium" style={{ fontSize: 'clamp(16px, 2.2vw, 20px)' }}>
+                    <div className="text-[var(--ink-1)] font-bold font-mono mb-1 text-shadow-premium" style={{ fontSize: 'clamp(18px, 3vw, 24px)' }}>
                       {stat.value}
                     </div>
-                    <div className="text-[var(--ink-dim)] uppercase tracking-wider" style={{ fontSize: '11px' }}>
+                    <div className="text-[var(--ink-dim)] uppercase tracking-wider font-medium" style={{ fontSize: 'clamp(10px, 2vw, 12px)' }}>
                       {stat.label}
                     </div>
                   </div>
@@ -157,20 +157,20 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
             </div>
             
             {/* Row 2: XP Progress - Slim */}
-            <div className="card-premium px-4 py-3 animate-stagger-in" style={{ animationDelay: '200ms' }}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-[var(--ink-2)] font-medium text-xs">Level Progress</h3>
+            <div className="card-premium px-4 sm:px-6 py-4 animate-stagger-in" style={{ animationDelay: '200ms' }}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-[var(--ink-2)] font-medium text-sm">Level Progress</h3>
                 <div className="flex items-center space-x-2">
-                  <Sparkles size={12} className="text-[var(--xp)] animate-pulse" />
-                  <span className="text-[var(--xp)] font-bold text-xs font-mono">
+                  <Sparkles size={14} className="text-[var(--xp)] animate-pulse" />
+                  <span className="text-[var(--xp)] font-bold text-sm font-mono">
                     {animatedXP}/100 XP
                   </span>
                 </div>
               </div>
               
-              <div className="relative w-full h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255, 255, 255, 0.07)' }}>
+              <div className="relative w-full h-3 rounded-full overflow-hidden mb-2" style={{ background: 'rgba(255, 255, 255, 0.07)' }}>
                 <div 
-                  className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
+                  className="h-full rounded-full transition-all duration-1000 relative overflow-hidden"
                   style={{ 
                     width: `${animatedXP}%`,
                     background: 'var(--xp)',
@@ -182,7 +182,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 </div>
               </div>
               
-              <p className="text-[var(--ink-dim)] text-xs mt-1">
+              <p className="text-[var(--ink-dim)] text-sm">
                 Next level in {100 - currentXP} XP • Keep going!
               </p>
             </div>
@@ -190,7 +190,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
             {/* Row 3: Ego State Card - Centerpiece */}
             <div 
               onClick={openEgoModal}
-              className="relative cursor-pointer group animate-stagger-in"
+              className="relative cursor-pointer group animate-stagger-in hover:scale-[1.01] transition-transform duration-300"
               style={{ 
                 animationDelay: '250ms',
                 willChange: 'transform'
@@ -199,7 +199,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               {/* Aurora background */}
               <div className="absolute inset-0 card-ego-aurora opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
               
-              <div className="relative card-premium p-4 border-2 border-white/12 hover:border-white/25 transition-all duration-500 hover:scale-[1.02]" 
+              <div className="relative card-premium p-4 sm:p-6 border-2 border-white/12 hover:border-white/25 transition-all duration-500" 
                    style={{ boxShadow: 'var(--shadow-card)' }}
                    onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 35px rgba(0, 230, 195, 0.25)'}
                    onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-card)'}
@@ -207,24 +207,23 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     {/* Animated Orb */}
-                    <div className={`relative w-12 h-12 rounded-full bg-gradient-to-br ${currentState.color} flex items-center justify-center border-2 border-white/30 group-hover:border-white/50 transition-all duration-300 group-hover:scale-110 flex-shrink-0 shadow-xl`}
+                    <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br ${currentState.color} flex items-center justify-center border-2 border-white/30 group-hover:border-white/50 transition-all duration-300 group-hover:scale-110 flex-shrink-0 shadow-xl`}
                          style={{ willChange: 'transform' }}>
                       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent group-hover:animate-spin-slow" />
-                      <span className="text-lg group-hover:scale-110 transition-transform duration-300 relative z-10">{currentState.icon}</span>
+                      <span className="text-xl sm:text-2xl group-hover:scale-110 transition-transform duration-300 relative z-10">{currentState.icon}</span>
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-[var(--ink-1)] font-bold text-sm mb-1 text-shadow-premium">Current Ego State</h3>
-                      <p className="text-violet-300 text-base font-bold">{currentState.name}</p>
-                      <p className="text-[var(--ink-dim)] text-xs mb-2 truncate">{currentState.role}</p>
+                      <h3 className="text-[var(--ink-1)] font-bold text-sm sm:text-base mb-1 text-shadow-premium">Current Ego State</h3>
+                      <p className="text-violet-300 text-lg sm:text-xl font-bold">{currentState.name}</p>
+                      <p className="text-[var(--ink-dim)] text-sm mb-3 truncate">{currentState.role}</p>
                       
                       {/* Active traits pills */}
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         {currentState.usedFor.slice(0, 2).map((trait, index) => (
                           <span 
                             key={index} 
-                            className="px-2 py-1 bg-white/10 border border-white/10 text-white/80 rounded-full font-medium"
-                            style={{ fontSize: '11px' }}
+                            className="px-3 py-1 bg-white/10 border border-white/10 text-white/80 rounded-full font-medium text-xs"
                           >
                             {trait}
                           </span>
@@ -235,8 +234,8 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                   
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     <button 
-                      className="px-3 py-2 rounded-lg bg-gradient-to-r from-violet-500/30 to-fuchsia-500/30 border border-violet-400/50 text-violet-200 font-bold text-xs hover:from-violet-400/40 hover:to-fuchsia-400/40 hover:border-violet-300/60 transition-all duration-300 hover:scale-105"
-                      style={{ minHeight: '32px' }}
+                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500/30 to-fuchsia-500/30 border border-violet-400/50 text-violet-200 font-bold text-sm hover:from-violet-400/40 hover:to-fuchsia-400/40 hover:border-violet-300/60 transition-all duration-300 hover:scale-105"
+                      style={{ minHeight: '36px' }}
                     >
                       Change
                     </button>
@@ -247,37 +246,37 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
             </div>
 
             {/* Row 4: Premium & Activity - Support Cards */}
-            <div className="grid grid-cols-2 gap-3 min-h-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-h-0">
               
               {/* Premium Card */}
-              <div className="group cursor-pointer relative overflow-hidden flex flex-col justify-between animate-stagger-in bg-black/40 border border-yellow-400/30 rounded-2xl p-3 hover:scale-[1.02] transition-all duration-500" style={{ animationDelay: '300ms', boxShadow: 'var(--shadow-card)' }}>
+              <div className="group cursor-pointer relative overflow-hidden flex flex-col justify-between animate-stagger-in bg-black/40 border border-yellow-400/30 rounded-2xl p-4 sm:p-3 hover:scale-[1.02] transition-all duration-500" style={{ animationDelay: '300ms', boxShadow: 'var(--shadow-card)' }}>
                 
                 {/* Shimmer line */}
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-400/80 to-transparent animate-pulse" />
                 
                 <div className="relative z-10">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/40 to-yellow-500/30 border border-amber-400/50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                      <Crown size={14} className="text-amber-400 group-hover:rotate-12 transition-transform duration-300" />
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-9 h-9 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-amber-500/40 to-yellow-500/30 border border-amber-400/50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                      <Crown size={18} className="text-amber-400 group-hover:rotate-12 transition-transform duration-300" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-1 mb-0.5">
-                        <h3 className="text-[var(--ink-1)] font-bold text-sm text-shadow-premium">Go Premium</h3>
-                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[8px] rounded-full border border-amber-500/40 font-bold uppercase">
+                        <h3 className="text-[var(--ink-1)] font-bold text-base sm:text-sm text-shadow-premium">Go Premium</h3>
+                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs sm:text-[8px] rounded-full border border-amber-500/40 font-bold uppercase">
                           Exclusive
                         </span>
                       </div>
-                      <p className="text-amber-400/80 text-[10px] font-medium">Unlock Everything</p>
+                      <p className="text-amber-400/80 text-sm sm:text-[10px] font-medium">Unlock Everything</p>
                     </div>
                   </div>
                   
-                  <div className="space-y-1 mb-2">
-                    <div className="flex items-center text-[var(--ink-2)] text-[10px]">
-                      <Zap size={10} className="text-amber-400 mr-2 opacity-80" />
+                  <div className="space-y-2 sm:space-y-1 mb-4 sm:mb-2">
+                    <div className="flex items-center text-[var(--ink-2)] text-sm sm:text-[10px]">
+                      <Zap size={14} className="text-amber-400 mr-2 opacity-80" />
                       <span>Unlimited Sessions</span>
                     </div>
-                    <div className="flex items-center text-[var(--ink-2)] text-[10px]">
-                      <Star size={10} className="text-amber-400 mr-2 opacity-80" />
+                    <div className="flex items-center text-[var(--ink-2)] text-sm sm:text-[10px]">
+                      <Star size={14} className="text-amber-400 mr-2 opacity-80" />
                       <span>Premium Voices</span>
                     </div>
                   </div>
@@ -286,8 +285,8 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 <div className="relative z-10">
                   <button
                     onClick={() => handleUpgrade('pro')}
-                    className="btn-shimmer w-full px-3 py-2 bg-gradient-to-r from-amber-400 to-yellow-300 rounded-lg text-black font-semibold text-[10px] hover:scale-105 transition-all duration-300"
-                    style={{ minHeight: '32px' }}
+                    className="btn-shimmer w-full px-3 py-3 sm:py-2 bg-gradient-to-r from-amber-400 to-yellow-300 rounded-lg text-black font-semibold text-sm sm:text-[10px] hover:scale-105 transition-all duration-300"
+                    style={{ minHeight: '36px' }}
                   >
                     <span className="relative z-10">UNLOCK EVERYTHING</span>
                   </button>
@@ -295,46 +294,46 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               </div>
 
               {/* Recent Activity - Timeline */}
-              <div className="card-premium p-3 flex flex-col animate-stagger-in" style={{ animationDelay: '350ms', background: 'rgba(255, 255, 255, 0.04)' }}>
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500/30 to-teal-500/20 border border-emerald-400/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                    <TrendingUp size={12} className="text-emerald-400 opacity-80" />
+              <div className="card-premium p-4 sm:p-3 flex flex-col animate-stagger-in" style={{ animationDelay: '350ms', background: 'rgba(255, 255, 255, 0.04)' }}>
+                <div className="flex items-center space-x-3 sm:space-x-2 mb-3 sm:mb-2">
+                  <div className="w-9 h-9 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-emerald-500/30 to-teal-500/20 border border-emerald-400/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <TrendingUp size={16} className="text-emerald-400 opacity-80" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-[var(--ink-1)] font-bold text-sm mb-0.5 text-shadow-premium">Recent Activity</h3>
-                    <p className="text-emerald-400/80 text-[10px] font-medium">Your Progress</p>
+                    <h3 className="text-[var(--ink-1)] font-bold text-base sm:text-sm mb-0.5 text-shadow-premium">Recent Activity</h3>
+                    <p className="text-emerald-400/80 text-sm sm:text-[10px] font-medium">Your Progress</p>
                   </div>
                 </div>
                 
-                <div className="space-y-2 flex-1 overflow-hidden relative">
+                <div className="space-y-3 sm:space-y-2 flex-1 overflow-hidden relative">
                   {getRecentActivity().length > 0 ? (
                     getRecentActivity().map((activity, index) => (
-                      <div key={index} className={`flex items-center space-x-2 p-2 rounded-lg border transition-all duration-300 hover:scale-105 ${activity.isCallToAction ? 'bg-emerald-500/10 border-emerald-500/30 cursor-pointer hover:bg-emerald-500/20' : 'bg-white/5 border-white/10'}`}
-                           style={{ minHeight: '32px' }}>
-                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs">{activity.icon}</span>
+                      <div key={index} className={`flex items-center space-x-3 sm:space-x-2 p-3 sm:p-2 rounded-lg border transition-all duration-300 hover:scale-105 ${activity.isCallToAction ? 'bg-emerald-500/10 border-emerald-500/30 cursor-pointer hover:bg-emerald-500/20' : 'bg-white/5 border-white/10'}`}
+                           style={{ minHeight: '40px' }}>
+                        <div className="w-6 h-6 sm:w-5 sm:h-5 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm sm:text-xs">{activity.icon}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <div className="text-[var(--ink-1)] text-[10px] font-medium truncate">{activity.action}</div>
+                            <div className="text-[var(--ink-1)] text-sm sm:text-[10px] font-medium truncate">{activity.action}</div>
                             {activity.xp && (
-                              <div className="text-emerald-400 text-[9px] font-bold flex-shrink-0">+{activity.xp}</div>
+                              <div className="text-emerald-400 text-xs sm:text-[9px] font-bold flex-shrink-0">+{activity.xp}</div>
                             )}
                           </div>
-                          <div className="text-emerald-400 text-[9px] font-medium truncate">{activity.name}</div>
+                          <div className="text-emerald-400 text-xs sm:text-[9px] font-medium truncate">{activity.name}</div>
                           {activity.timeAgo && (
-                            <div className="text-[var(--ink-dim)] text-[8px]">{activity.timeAgo}</div>
+                            <div className="text-[var(--ink-dim)] text-xs sm:text-[8px]">{activity.timeAgo}</div>
                           )}
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-2 cursor-pointer hover:bg-emerald-500/10 rounded-lg transition-colors duration-300" style={{ minHeight: '44px' }}>
-                      <div className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center mx-auto mb-1">
-                        <Play size={12} className="text-emerald-400" />
+                    <div className="text-center py-4 sm:py-2 cursor-pointer hover:bg-emerald-500/10 rounded-lg transition-colors duration-300" style={{ minHeight: '44px' }}>
+                      <div className="w-8 h-8 sm:w-6 sm:h-6 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center mx-auto mb-2 sm:mb-1">
+                        <Play size={16} className="text-emerald-400" />
                       </div>
-                      <p className="text-emerald-400 text-[10px] font-bold mb-0.5">Start your journey</p>
-                      <p className="text-[var(--ink-dim)] text-[9px]">Try a Focus Session</p>
+                      <p className="text-emerald-400 text-sm sm:text-[10px] font-bold mb-1 sm:mb-0.5">Start your journey</p>
+                      <p className="text-[var(--ink-dim)] text-sm sm:text-[9px]">Try a Focus Session</p>
                     </div>
                   )}
                 </div>
@@ -354,7 +353,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
       />
       
       <SettingsModal
-        open={showSettings}
+        isOpen={showSettings}
         onClose={() => setShowSettings(false)}
       />
     </>
