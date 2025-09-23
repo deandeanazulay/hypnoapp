@@ -43,7 +43,7 @@ export default function EgoStatesModal() {
     return { current: totalSessions, required };
   };
 
-  const handleStepIntoState = () => {
+  const handleChannelState = () => {
     setActiveEgoState(tempSelectedEgoState);
     closeEgoModal();
   };
@@ -65,11 +65,44 @@ export default function EgoStatesModal() {
   const unlockedCount = egoStates.filter(state => isStateUnlocked(state.id)).length;
   const exploredCount = Object.keys(egoStateUsage).filter(id => egoStateUsage[id] > 0).length;
 
-  // Get other available states (exclude current, show first 4 unlocked)
+  // Get other available states (exclude current, show up to 8 unlocked)
   const otherStates = egoStates
     .filter(state => state.id !== tempSelectedEgoState && isStateUnlocked(state.id))
-    .slice(0, 4);
+    .slice(0, 8);
 
+  // Get user badges based on session counts
+  const getUserBadges = () => {
+    const badges = [];
+    const currentUsage = getUsageCount(tempSelectedEgoState);
+    
+    if (currentUsage >= 20) {
+      badges.push(`${currentState?.name} Mastery`);
+    }
+    if (exploredCount >= 8) {
+      badges.push('Archetypal Explorer');
+    }
+    if (unlockedCount >= 12) {
+      badges.push('Consciousness Pioneer');
+    }
+    
+    return badges;
+  };
+
+  // Get polarity insights
+  const getPolarityInsight = () => {
+    const usage = Object.entries(egoStateUsage)
+      .filter(([_, count]) => count > 0)
+      .sort(([_, a], [__, b]) => b - a);
+    
+    if (usage.length >= 2) {
+      const [first, second] = usage;
+      const firstName = egoStates.find(s => s.id === first[0])?.name;
+      const secondName = egoStates.find(s => s.id === second[0])?.name;
+      return `${firstName} ↔ ${secondName}`;
+    }
+    
+    return null;
+  };
   // Update temp selection when modal opens
   React.useEffect(() => {
     if (isEgoModalOpen) {
@@ -79,6 +112,8 @@ export default function EgoStatesModal() {
 
   if (!isEgoModalOpen) return null;
 
+  const userBadges = getUserBadges();
+  const polarityInsight = getPolarityInsight();
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ maxHeight: '100svh' }}>
       {/* Enhanced Backdrop with Dynamic Orb Glow */}
@@ -105,8 +140,8 @@ export default function EgoStatesModal() {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <div>
-            <h2 className="text-white text-2xl font-bold mb-1">Step Into Your Power</h2>
-            <p className="text-white/70 text-sm">Libero will tune your sessions to the archetype you embody</p>
+            <h2 className="text-white text-2xl font-bold mb-1">Who Will You Become Today?</h2>
+            <p className="text-white/70 text-sm">Libero adapts your sessions to match the archetype you channel</p>
           </div>
           <button 
             className="p-2 rounded-xl hover:bg-white/10 transition-colors"
@@ -118,9 +153,9 @@ export default function EgoStatesModal() {
         </div>
 
         <div className="p-6">
-          {/* Hero Ego State - Center Stage */}
+          {/* Hero Card - Current Selected State */}
           {currentState && (
-            <div className="mb-8">
+            <div className="mb-6">
               <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${currentState.color} p-8 border-2 border-white/30 shadow-2xl group`}
                    style={{
                      boxShadow: `0 0 60px rgba(${currentState.color.includes('blue') ? '59, 130, 246' : 
@@ -137,39 +172,39 @@ export default function EgoStatesModal() {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-gradient-x" />
                 
                 <div className="relative z-10 text-center">
-                  {/* Hero Orb with Particles */}
-                  <div className="relative w-24 h-24 mx-auto mb-6">
-                    <div className="absolute inset-0 rounded-full bg-black/30 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center animate-pulse">
+                  {/* Living Orb - Libero's Avatar */}
+                  <div className="relative w-20 h-20 mx-auto mb-4">
+                    <div className="absolute inset-0 rounded-full bg-black/30 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center">
                       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 to-transparent animate-spin-slow" />
-                      <span className="text-5xl relative z-10 group-hover:scale-110 transition-transform duration-500">{currentState.icon}</span>
+                      <span className="text-4xl relative z-10 group-hover:scale-110 transition-transform duration-500">{currentState.icon}</span>
                     </div>
                     
-                    {/* Particle Effects */}
+                    {/* Breathing Aura Effect */}
                     <div className="absolute -inset-4">
-                      {[...Array(6)].map((_, i) => (
+                      {[...Array(4)].map((_, i) => (
                         <div
                           key={i}
                           className="absolute w-1 h-1 bg-white/60 rounded-full animate-ping"
                           style={{
                             top: `${20 + (i * 10)}%`,
                             left: `${15 + (i * 15)}%`,
-                            animationDelay: `${i * 0.3}s`,
-                            animationDuration: '2s'
+                            animationDelay: `${i * 0.5}s`,
+                            animationDuration: '3s'
                           }}
                         />
                       ))}
                     </div>
                   </div>
                   
-                  <h3 className="text-white text-3xl font-bold mb-2">{currentState.name}</h3>
-                  <p className="text-white/90 text-xl font-medium mb-4">{currentState.role}</p>
+                  <h3 className="text-white text-2xl font-bold mb-1">{currentState.name}</h3>
+                  <p className="text-white/90 text-lg font-medium mb-3">{currentState.role}</p>
                   
-                  {/* Power Keywords */}
+                  {/* Trait Pills */}
                   <div className="flex items-center justify-center space-x-3">
                     {currentState.usedFor.slice(0, 3).map((keyword, index) => (
                       <span
                         key={index}
-                        className="px-4 py-2 bg-black/30 backdrop-blur-sm border border-white/30 text-white/90 rounded-full text-sm font-medium hover:bg-black/40 transition-colors"
+                        className="px-3 py-1 bg-black/30 backdrop-blur-sm border border-white/30 text-white/90 rounded-full text-xs font-medium hover:bg-black/40 transition-colors"
                       >
                         {keyword}
                       </span>
@@ -180,22 +215,22 @@ export default function EgoStatesModal() {
             </div>
           )}
 
-          {/* Other States - 2x2 Grid */}
-          <div className="mb-8">
-            <h3 className="text-white text-lg font-semibold mb-4 text-center">Explore Other States</h3>
-            <div className="grid grid-cols-2 gap-4">
+          {/* Explore Other States - Compact Horizontal Cards */}
+          <div className="mb-6">
+            <h3 className="text-white text-lg font-semibold mb-3">Explore Other States</h3>
+            <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto">
               {otherStates.map((state) => (
                 <button
                   key={state.id}
                   onClick={() => setTempSelectedEgoState(state.id)}
-                  className={`relative p-4 rounded-xl border transition-all duration-300 text-left group hover:scale-105 bg-gradient-to-br ${state.color} border-white/20 hover:border-white/40 opacity-70 hover:opacity-100`}
+                  className={`relative p-3 rounded-lg border transition-all duration-300 text-left group hover:scale-105 bg-gradient-to-br ${state.color} border-white/20 hover:border-white/40 opacity-70 hover:opacity-100`}
                   style={{
                     boxShadow: 'inset 0 0 20px rgba(255, 255, 255, 0.1)'
                   }}
                 >
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <span className="text-lg">{state.icon}</span>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <div className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span className="text-sm">{state.icon}</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-white font-semibold text-sm">{state.name}</h4>
@@ -211,36 +246,49 @@ export default function EgoStatesModal() {
             </div>
           </div>
 
-          {/* Patterns in Your Transformation - Compact */}
-          <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-xl p-4 border border-purple-500/20 mb-6">
+          {/* Patterns in Your Transformation */}
+          <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-xl p-4 border border-purple-500/20 mb-4">
             <h3 className="text-white font-semibold mb-3 flex items-center">
               <Sparkles size={18} className="mr-2 text-purple-400" />
               Patterns in Your Transformation
             </h3>
             
-            <div className="grid grid-cols-2 gap-4">
-              {/* Most Used State */}
+            <div className="space-y-3 text-sm">
               {mostUsedState && (
                 <div>
-                  <p className="text-purple-300 text-sm mb-1">Your subconscious returns most often to:</p>
-                  <p className="text-white font-bold">{mostUsedState.name} ({getUsagePercentage(mostUsedState.id as EgoStateId)}%)</p>
+                  <span className="text-purple-300">Your subconscious returns most often to: </span>
+                  <span className="text-white font-semibold">{mostUsedState.name} ({getUsagePercentage(mostUsedState.id as EgoStateId)}%)</span>
                 </div>
               )}
               
-              {/* Progress */}
               <div>
-                <p className="text-purple-300 text-sm mb-1">Exploration Progress:</p>
-                <div className="flex items-center space-x-2">
-                  <p className="text-white font-bold">{Math.round((exploredCount / unlockedCount) * 100)}%</p>
-                  <div className="flex-1 h-2 bg-white/10 rounded-full">
-                    <div 
-                      className="h-full bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full transition-all duration-500"
-                      style={{ width: `${unlockedCount > 0 ? (exploredCount / unlockedCount) * 100 : 0}%` }}
-                    />
-                  </div>
-                </div>
-                <p className="text-purple-300 text-xs mt-1">{exploredCount}/{unlockedCount} archetypes unlocked</p>
+                <span className="text-purple-300">You've unlocked </span>
+                <span className="text-white font-semibold">{unlockedCount} of {egoStates.length} archetypes</span>
               </div>
+              
+              {polarityInsight && (
+                <div>
+                  <span className="text-purple-300">Your strongest polarity is between: </span>
+                  <span className="text-white font-semibold">{polarityInsight}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Badges */}
+            {userBadges.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {userBadges.map((badge, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 text-yellow-400 rounded-full text-xs font-medium flex items-center"
+                  >
+                    <Crown size={12} className="mr-1" />
+                    {badge}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
             </div>
           </div>
 
@@ -255,17 +303,17 @@ export default function EgoStatesModal() {
             
             <div className="text-center">
               <button
-                onClick={handleStepIntoState}
-                className="px-8 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-bold text-lg hover:scale-105 transition-all duration-300 shadow-2xl"
+                onClick={handleChannelState}
+                className="px-8 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-bold hover:scale-105 transition-all duration-300 shadow-2xl"
                 style={{
                   boxShadow: '0 0 30px rgba(20, 184, 166, 0.5)',
                   filter: 'drop-shadow(0 0 15px rgba(20, 184, 166, 0.4))'
                 }}
               >
-                ✨ Step Into This State
+                ✨ Channel This State
               </button>
               <p className="text-white/50 text-xs mt-2 italic">
-                This choice shapes your Orb and session flow today
+                This choice shapes your Orb and sessions today
               </p>
             </div>
           </div>
