@@ -78,6 +78,7 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       warrior: 9,
       visionary: 5
     },
+    active_ego_state: 'guardian',
     subscriptionStatus: 'free'
   });
 
