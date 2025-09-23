@@ -13,10 +13,10 @@ export default function PageShell({ header, body, footer, className = '' }: Page
   return (
     <div 
       className={`flex flex-col ${className}`}
-      style={{ 
-        height: `calc(100vh - ${NAV_HEIGHT}px)`, 
-        overflow: 'hidden',
-        maxHeight: `calc(100vh - ${NAV_HEIGHT}px)`
+      style={{
+        height: `calc(100vh - ${NAV_HEIGHT}px)`,
+        overflowY: 'auto', // Allow vertical scrolling for the entire page content area
+        maxHeight: `calc(100vh - ${NAV_HEIGHT}px)`,
       }}
     >
       {header && (
@@ -25,7 +25,7 @@ export default function PageShell({ header, body, footer, className = '' }: Page
         </div>
       )}
       
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0"> {/* Removed overflow-hidden here, let parent handle */}
         {body}
       </div>
       

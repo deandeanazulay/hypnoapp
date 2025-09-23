@@ -486,7 +486,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   const body = (
     <div className="bg-black relative h-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-rose-950/20 via-black to-purple-950/20" />
-      <div className="relative z-10 h-full flex flex-col overflow-hidden">
+      <div className="relative z-10 h-full flex flex-col"> {/* Removed overflow-hidden */}
         
         {mockFavorites.length > 0 ? (
           <>
