@@ -346,7 +346,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               className={`w-full p-4 rounded-lg border transition-all duration-200 text-left hover:scale-105 ${
                 protocol.induction === option.id
                   ? 'bg-teal-500/20 border-teal-500/40 text-teal-400 shadow-lg shadow-teal-500/20'
-                  : 'bg
+                  : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10'
               }
       )
       )
