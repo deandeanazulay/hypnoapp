@@ -147,7 +147,6 @@ function App() {
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
-        </nav>
         
         {/* Global Modals */}
         <EgoStatesModal />
