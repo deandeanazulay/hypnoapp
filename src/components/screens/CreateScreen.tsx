@@ -705,10 +705,10 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
           ) : (
             <button
               onClick={() => {
-                // Create temporary protocol for preview
+                // Create the protocol and navigate to home
                 const previewProtocol: CustomProtocol = {
-                  id: 'preview-' + Date.now(),
-                  name: protocol.name || 'Preview Journey',
+                  id: 'custom-' + Date.now(),
+                  name: protocol.name || 'Custom Journey',
                   induction: protocol.induction || 'progressive-relaxation',
                   deepener: protocol.deepener || 'staircase',
                   goals: [],
@@ -716,13 +716,24 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                   duration: protocol.duration || 15
                 };
                 
-                // Start the preview session
+                // Create and navigate to home
                 onProtocolCreate(previewProtocol);
+                
+                // Reset the form
+                setProtocol({
+                  name: '',
+                  induction: '',
+                  deepener: '',
+                  goals: [],
+                  metaphors: [],
+                  duration: 15
+                });
+                setCurrentStep('name');
               }}
               className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-bold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center space-x-2"
             >
               <Play size={16} />
-              <span>Preview Journey</span>
+              <span>Create Journey</span>
             </button>
           )}
         </div>

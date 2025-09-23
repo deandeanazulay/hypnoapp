@@ -18,6 +18,8 @@ import PaymentCancelled from './components/PaymentCancelled';
 import { useViewportLayout } from './hooks/useViewportLayout';
 import { useAppStore } from './state/appStore';
 import { useAuth } from './hooks/useAuth';
+import { useProtocolStore } from './state/protocolStore';
+import { Target } from 'lucide-react';
 import './styles/glass.css';
 import { TabId } from './types/Navigation';
 
@@ -26,6 +28,7 @@ type AppMode = 'navigation' | 'session';
 function App() {
   const { activeEgoState, setActiveEgoState } = useAppStore();
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
+  const { addCustomAction } = useProtocolStore();
   useViewportLayout(); // Initialize iOS Safari fixes
   const [showLanding, setShowLanding] = useState(!isAuthenticated);
   const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
@@ -86,9 +89,24 @@ function App() {
   };
 
   const handleCustomProtocolCreate = (protocol: any) => {
-    // Save and optionally start custom protocol
-    console.log('Custom protocol created:', protocol);
-    // In real app, save to localStorage or API
+    // Add to actions bar
+    const actionId = addCustomAction({
+      name: protocol.name,
+      icon: <Target size={16} className="text-cyan-400" />,
+      color: 'from-cyan-500/20 to-blue-500/20',
+      description: `Custom: ${protocol.name}`,
+      induction: protocol.induction,
+      deepener: protocol.deepener || 'staircase',
+      duration: protocol.duration || 15
+    });
+    
+    // Navigate to home and select the new action
+    setActiveTab('home');
+    setSelectedAction({
+      id: actionId,
+      name: protocol.name,
+      description: `Custom: ${protocol.name}`
+    });
   };
 
   const handleSessionComplete = () => {
