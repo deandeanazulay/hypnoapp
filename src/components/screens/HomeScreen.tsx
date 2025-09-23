@@ -99,7 +99,7 @@ export default function HomeScreen({
                 onTap={onOrbTap}
                 afterglow={user.lastSessionDate !== null}
                 egoState={selectedEgoState}
-                size={window.innerWidth < 768 ? Math.min(window.innerWidth * 0.4, 180) : 220}
+              size={window.innerWidth < 768 ? Math.min(window.innerWidth * 0.55, 240) : 280}
               />
                 
                 {/* Session configuration display - moved closer to orb */}
