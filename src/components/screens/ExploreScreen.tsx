@@ -13,6 +13,22 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   const [selectedDifficulty, setSelectedDifficulty] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const maxVisibleCards = Math.floor((typeof window !== 'undefined' ? window.innerWidth : 1200) / 320);
+  const canScrollLeft = currentIndex > 0;
+  const canScrollRight = currentIndex < filteredProtocols.length - maxVisibleCards;
+
+  const scrollLeft = () => {
+    if (canScrollLeft) {
+      setCurrentIndex(prev => Math.max(0, prev - 1));
+    }
+  };
+
+  const scrollRight = () => {
+    if (canScrollRight) {
+      setCurrentIndex(prev => Math.min(filteredProtocols.length - maxVisibleCards, prev + 1));
+    }
+  };
 
   const filteredProtocols = DEFAULT_PROTOCOLS.filter(protocol => {
     const typeMatch = selectedFilter === 'all' || protocol.type === selectedFilter;
@@ -128,21 +144,92 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
       <div className="absolute inset-0 bg-gradient-to-br from-blue-950/20 via-black to-purple-950/20" />
       <div className="relative z-10 h-full px-4 py-4">
         {filteredProtocols.length > 0 ? (
-          <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-hidden">
-              <div className="flex space-x-4 overflow-x-auto scrollbar-hide h-full pb-4" style={{ scrollSnapType: 'x mandatory' }}>
+          <div className="h-full flex flex-col relative">
+            {/* Navigation Arrows */}
+            {filteredProtocols.length > maxVisibleCards && (
+              <>
+                <button
+                  onClick={scrollLeft}
+                  disabled={!canScrollLeft}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-black/80 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
+                    <polyline points="15,18 9,12 15,6"></polyline>
+                  </svg>
+                </button>
+                <button
+                  onClick={scrollRight}
+                  disabled={!canScrollRight}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-black/80 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
+                    <polyline points="9,18 15,12 9,6"></polyline>
+                  </svg>
+                </button>
+              </>
+            )}
+            
+            <div className="flex-1 overflow-hidden px-8">
+              <div 
+                className="flex space-x-4 h-full pb-4 transition-transform duration-300 ease-out" 
+                style={{ 
+                  transform: `translateX(-${currentIndex * 336}px)`,
+                  width: `${filteredProtocols.length * 336}px`
+                }}
+              >
                 {filteredProtocols.map((protocol) => (
-                  <div key={protocol.id} style={{ scrollSnapAlign: 'start' }}>
+                  <div key={protocol.id} className="flex-shrink-0">
                     {renderProtocolCard(protocol)}
                   </div>
                 ))}
               </div>
             </div>
             
-            {/* Scroll indicator */}
-            <div className="flex justify-center mt-2">
-              <div className="flex space-x-1">
-                {Array.from({ length: Math.min(filteredProtocols.length, 5) }).map((_, index) => (
+            {/* Page indicators */}
+            {filteredProtocols.length > maxVisibleCards && (
+              <div className="flex justify-center mt-4">
+                <div className="flex space-x-2">
+                  {Array.from({ length: Math.ceil(filteredProtocols.length / maxVisibleCards) }).map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentIndex(index * maxVisibleCards)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        Math.floor(currentIndex / maxVisibleCards) === index 
+                          ? 'bg-teal-400 scale-125' 
+                          : 'bg-white/40 hover:bg-white/60 hover:scale-110'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Simple indicators for smaller screens */}
+            {filteredProtocols.length <= maxVisibleCards && (
+              <div className="flex justify-center mt-2">
+                <div className="flex space-x-1">
+                  {Array.from({ length: Math.min(filteredProtocols.length, 5) }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="w-1.5 h-1.5 rounded-full bg-white/20"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <Filter size={48} className="text-white/20 mx-auto mb-4" />
+              <h3 className="text-white/60 text-xl font-medium mb-2">No protocols found</h3>
+              <p className="text-white/40">Try adjusting your filters</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
                   <div
                     key={index}
                     className="w-1.5 h-1.5 rounded-full bg-white/20"

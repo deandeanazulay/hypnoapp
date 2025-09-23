@@ -131,54 +131,20 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   );
 
   const body = (
-    <div className="bg-black relative px-4 py-4 h-full">
+    <div className="bg-black relative px-4 py-4 h-full flex items-center justify-center">
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/20 via-black to-purple-950/20" />
-      <div className="relative z-10 h-full">
-        <div className="bg-gradient-to-br from-gray-500/5 to-slate-500/5 backdrop-blur-md rounded-xl p-4 border border-white/20 h-full flex flex-col">
-          <h3 className="text-white font-medium mb-3 flex-shrink-0">Usage Analytics</h3>
-          
-          {/* Most Used State Highlight */}
-          {mostUsedState && (
-            <div className={`bg-gradient-to-br ${mostUsedState.color} rounded-xl p-3 mb-3 border border-white/30 flex-shrink-0 hover:scale-105 transition-all duration-300`}>
-              <div className="flex items-center space-x-3">
-                <span className="text-lg">{mostUsedState.icon}</span>
-                <div>
-                  <h4 className="text-white font-medium text-sm">Most Used: {mostUsedState.name}</h4>
-                  <p className="text-white/70 text-xs">{getUsagePercentage(egoStateUsage[mostUsedState.id as keyof typeof egoStateUsage])}% of sessions</p>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Usage Breakdown */}
-          <div className="grid grid-cols-5 gap-2 flex-1 min-h-0">
-            {Object.entries(egoStateUsage).map(([stateId, usage]) => {
-              const state = getEgoState(stateId as any);
-              const percentage = getUsagePercentage(usage);
-              
-              return (
-                <div key={state.id} className={`bg-gradient-to-br ${state.color} rounded-lg p-2 border border-white/20 flex flex-col justify-between h-full hover:scale-105 transition-all duration-300 hover:border-white/40`}>
-                  <div className="flex flex-col items-center mb-1">
-                    <span className="text-sm mb-1">{state.icon}</span>
-                    <span className="text-white text-xs font-medium text-center leading-tight">{state.name}</span>
-                  </div>
-                  
-                  <div className="flex flex-col items-center mb-1">
-                    <span className="text-white/70 text-xs font-medium">{usage}</span>
-                    <span className="text-white/60 text-xs">{percentage}%</span>
-                  </div>
-                  
-                  <div className="w-full h-0.5 bg-white/20 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-white/80 rounded-full transition-all duration-500"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      <div className="relative z-10 text-center">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border border-white/20 flex items-center justify-center mx-auto mb-4">
+          <span className="text-2xl">📊</span>
         </div>
+        <h3 className="text-white/60 text-xl font-medium mb-2">Analytics moved to Ego States</h3>
+        <p className="text-white/40 text-sm mb-4">View detailed usage analytics in the Ego States modal</p>
+        <button 
+          onClick={openEgoModal}
+          className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
+        >
+          View Analytics
+        </button>
       </div>
     </div>
   );
