@@ -237,10 +237,19 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
           {/* Error Message */}
           {formError && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-              <p className="text-red-400 text-sm">{formError}</p>
+            <div className="bg-red-500/20 border-2 border-red-500/50 rounded-lg p-4 shadow-lg">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">!</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-red-300 font-medium text-sm leading-relaxed">{formError}</p>
+                </div>
+              </div>
               {formError.includes('Invalid email or password') && (
-                <div className="mt-2 text-xs text-red-300/80">
+                <div className="mt-3 pl-8 text-xs text-red-200/90 space-y-1">
                   <p>• Double-check your email and password for typos</p>
                   <p>• If you haven't created an account yet, try signing up</p>
                   <p>• Use "Forgot your password?" if you need to reset</p>
