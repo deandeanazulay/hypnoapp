@@ -347,3 +347,9 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 protocol.induction === option.id
                   ? 'bg-teal-500/20 border-teal-500/40 text-teal-400 shadow-lg shadow-teal-500/20'
                   : 'bg
+              }
+      )
+      )
+      }
+  )
+}
