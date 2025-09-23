@@ -3,7 +3,6 @@ import { Heart, Play, Clock, Trash2, Star } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import PageShell from '../layout/PageShell';
 import ModalShell from '../layout/ModalShell';
-import PagedGrid from '../layout/PagedGrid';
 
 interface FavoriteSession {
   id: string;
@@ -167,32 +166,32 @@ interface FavoritesScreenProps {
 export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProps) {
   const { user } = useGameState();
   const [selectedSession, setSelectedSession] = React.useState<FavoriteSession | null>(null);
-  const [gridCols, setGridCols] = React.useState(3);
-  const [gridRows, setGridRows] = React.useState(2);
+  const [currentIndex, setCurrentIndex] = React.useState(0);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-  // Responsive grid sizing
-  React.useEffect(() => {
-    const updateGridSize = () => {
-      const width = window.innerWidth;
-      if (width < 640) {
-        // Mobile: 1 column, 3 rows for better mobile experience
-        setGridCols(1);
-        setGridRows(3);
-      } else if (width < 768) {
-        // Tablet: 2 columns, 2 rows
-        setGridCols(2);
-        setGridRows(2);
-      } else {
-        // Desktop: 3 columns, 2 rows
-        setGridCols(3);
-        setGridRows(2);
-      }
-    };
+  // Mobile: show 1 card, Desktop: show 3 cards
+  const cardsPerView = window.innerWidth < 768 ? 1 : 3;
+  const totalPages = Math.ceil(mockFavorites.length / cardsPerView);
 
-    updateGridSize();
-    window.addEventListener('resize', updateGridSize);
-    return () => window.removeEventListener('resize', updateGridSize);
-  }, []);
+  const scrollToIndex = (index: number) => {
+    setCurrentIndex(index);
+    if (scrollContainerRef.current) {
+      const cardWidth = scrollContainerRef.current.scrollWidth / totalPages;
+      scrollContainerRef.current.scrollTo({
+        left: cardWidth * index,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const scrollLeft = scrollContainerRef.current.scrollLeft;
+      const cardWidth = scrollContainerRef.current.scrollWidth / totalPages;
+      const newIndex = Math.round(scrollLeft / cardWidth);
+      setCurrentIndex(newIndex);
+    }
+  };
 
   const formatLastCompleted = (date: Date) => {
     const now = new Date();
@@ -239,39 +238,37 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   };
 
   const renderSessionCard = (session: FavoriteSession) => (
-    <div
-      key={session.id}
-      className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-xl p-3 border border-white/20 transition-all duration-300 hover:border-white/40 hover:scale-105 hover:shadow-xl flex flex-col justify-between h-full`}
+    <div className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-xl p-4 border border-white/20 transition-all duration-300 hover:border-white/40 hover:scale-105 hover:shadow-xl flex flex-col justify-between h-full min-h-[200px]`}
     >
       {/* Header with ego state and buttons */}
       <div className="flex items-center justify-between mb-2 flex-shrink-0">
-        <div className="w-6 h-6 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-          <span className="text-sm">{getEgoStateIcon(session.egoState)}</span>
+        <div className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+          <span className="text-base">{getEgoStateIcon(session.egoState)}</span>
         </div>
         <div className="flex items-center space-x-1">
           <button
             onClick={() => setSelectedSession(session)}
-            className="w-6 h-6 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-110"
+            className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-110"
           >
-            <Play size={10} className="text-white ml-0.5" />
+            <Play size={14} className="text-white ml-0.5" />
           </button>
-          <button className="w-6 h-6 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-110">
-            <Trash2 size={10} className="text-red-400" />
+          <button className="w-8 h-8 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-110">
+            <Trash2 size={14} className="text-red-400" />
           </button>
         </div>
       </div>
 
       {/* Title */}
-      <h3 className="text-white font-semibold text-sm mb-2 line-clamp-1 flex-1 min-h-0">{session.name}</h3>
+      <h3 className="text-white font-semibold text-base mb-3 line-clamp-2 flex-1 min-h-0">{session.name}</h3>
       
       {/* Stats */}
       <div className="flex items-center justify-between text-white/50 text-xs mb-2 flex-shrink-0">
         <div className="flex items-center space-x-1">
-          <Clock size={10} />
+          <Clock size={12} />
           <span>{session.duration}m</span>
         </div>
         <div className="flex items-center space-x-1">
-          <Heart size={10} />
+          <Heart size={12} />
           <span>{session.completedCount}</span>
         </div>
       </div>
@@ -282,18 +279,18 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
           {[1, 2, 3, 4, 5].map((star) => (
             <Star
               key={star}
-              size={8}
+              size={12}
               className={star <= session.rating ? 'text-yellow-400 fill-current' : 'text-white/20'}
             />
           ))}
         </div>
-        <span className="text-white/40 text-xs truncate ml-1">
+        <span className="text-white/40 text-xs truncate ml-2">
           {formatLastCompleted(session.lastCompleted)}
         </span>
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden flex-shrink-0">
+      <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden flex-shrink-0">
         <div 
           className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
           style={{ width: `${Math.min((session.completedCount / 20) * 100, 100)}%` }}
@@ -332,15 +329,48 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   const body = (
     <div className="bg-black relative px-4 py-4 h-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-pink-950/20 via-black to-purple-950/20" />
-      <div className="relative z-10 h-full flex flex-col">
+      <div className="relative z-10 h-full flex flex-col overflow-hidden">
         {mockFavorites.length > 0 ? (
-          <PagedGrid
-            items={mockFavorites}
-            cols={gridCols}
-            rows={gridRows}
-            renderItem={(session) => renderSessionCard(session)}
-            className="flex-1"
-          />
+          <>
+            {/* Horizontal Scrolling Container */}
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <div 
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                className="flex gap-4 h-full overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4"
+                style={{ 
+                  scrollSnapType: 'x mandatory',
+                  overscrollBehavior: 'contain'
+                }}
+              >
+                {mockFavorites.map((session, index) => (
+                  <div
+                    key={session.id}
+                    className="flex-shrink-0 snap-center"
+                    style={{ 
+                      width: window.innerWidth < 768 ? 'calc(100vw - 2rem)' : 'calc(33.333% - 1rem)',
+                      maxWidth: window.innerWidth < 768 ? '320px' : '300px'
+                    }}
+                  >
+                    {renderSessionCard(session)}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Horizontal Scroll Indicators */}
+            <div className="flex items-center justify-center space-x-2 mt-4 mb-2 flex-shrink-0">
+              {Array.from({ length: totalPages }).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => scrollToIndex(index)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-125 ${
+                    index === currentIndex ? 'bg-teal-400 scale-125' : 'bg-white/40 hover:bg-white/60'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
