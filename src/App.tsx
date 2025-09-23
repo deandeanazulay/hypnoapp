@@ -21,19 +21,25 @@ type AppMode = 'navigation' | 'session';
 function App() {
   const { activeEgoState, setActiveEgoState } = useAppStore();
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
-  const [showLanding, setShowLanding] = useState(true);
+  const [showLanding, setShowLanding] = useState(!isAuthenticated);
   const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [selectedAction, setSelectedAction] = useState<any>(null);
   const [sessionConfig, setSessionConfig] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  // Update landing page visibility when auth state changes
+  React.useEffect(() => {
+    if (!authLoading) {
+      setShowLanding(!isAuthenticated);
+    }
+  }, [isAuthenticated, authLoading]);
+
   const handleEnterApp = () => {
     setShowLanding(false);
   };
 
   const handleShowAuth = () => {
-    setShowLanding(false);
     setShowAuthModal(true);
   };
 
@@ -119,7 +125,7 @@ function App() {
   }
 
   // Show landing page first
-  if (showLanding && !isAuthenticated) {
+  if (showLanding) {
     return (
       <LandingPage
         onEnterApp={handleEnterApp}
