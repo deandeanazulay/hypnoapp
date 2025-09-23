@@ -156,7 +156,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
   const body = (
     <div className="bg-black relative px-4 py-4 h-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-black to-teal-950/20" />
-      <div className="relative z-10 h-full">
+      <div className="relative z-10 h-full overflow-hidden">
         
         {/* Dynamic Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 h-full auto-rows-fr">
@@ -164,7 +164,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
           {/* Protocol Name Card */}
           <div 
             onClick={openNameModal}
-            className="glass-card-premium p-4 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 hover:from-violet-500/20 hover:via-purple-500/20 hover:to-fuchsia-500/20 border-violet-500/20 hover:border-violet-500/40 cursor-pointer group glass-hover-lift glass-scale col-span-2"
+            className="glass-card-premium p-4 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 hover:from-violet-500/20 hover:via-purple-500/20 hover:to-fuchsia-500/20 border-violet-500/20 hover:border-violet-500/40 cursor-pointer group glass-hover-lift glass-scale col-span-2 overflow-hidden"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
@@ -188,7 +188,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
           {/* Duration Card */}
           <div 
             onClick={openDurationModal}
-            className="glass-card-premium p-4 bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-red-500/10 hover:from-amber-500/20 hover:via-orange-500/20 hover:to-red-500/20 border-amber-500/20 hover:border-amber-500/40 cursor-pointer group glass-hover-lift glass-scale"
+            className="glass-card-premium p-4 bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-red-500/10 hover:from-amber-500/20 hover:via-orange-500/20 hover:to-red-500/20 border-amber-500/20 hover:border-amber-500/40 cursor-pointer group glass-hover-lift glass-scale overflow-hidden"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
@@ -210,7 +210,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
           {/* Induction Card */}
           <div 
             onClick={() => setShowInductionModal(true)}
-            className="glass-card-premium p-4 bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-indigo-500/10 hover:from-cyan-500/20 hover:via-blue-500/20 hover:to-indigo-500/20 border-cyan-500/20 hover:border-cyan-500/40 cursor-pointer group glass-hover-lift glass-scale"
+            className="glass-card-premium p-4 bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-indigo-500/10 hover:from-cyan-500/20 hover:via-blue-500/20 hover:to-indigo-500/20 border-cyan-500/20 hover:border-cyan-500/40 cursor-pointer group glass-hover-lift glass-scale overflow-hidden"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
@@ -228,14 +228,13 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               <div className="text-2xl mb-1">
                 {inductionOptions.find(opt => opt.id === protocol.induction)?.emoji || '🌊'}
               </div>
-              <p className="text-cyan-400/80 text-sm">Entry technique</p>
             </div>
           </div>
 
           {/* Deepener Card */}
           <div 
             onClick={() => setShowDeepenerModal(true)}
-            className="glass-card-premium p-4 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:via-teal-500/20 hover:to-cyan-500/20 border-emerald-500/20 hover:border-emerald-500/40 cursor-pointer group glass-hover-lift glass-scale"
+            className="glass-card-premium p-4 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:via-teal-500/20 hover:to-cyan-500/20 border-emerald-500/20 hover:border-emerald-500/40 cursor-pointer group glass-hover-lift glass-scale overflow-hidden"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
@@ -253,14 +252,13 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               <div className="text-2xl mb-1">
                 {deepenerOptions.find(opt => opt.id === protocol.deepener)?.emoji || '🪜'}
               </div>
-              <p className="text-emerald-400/80 text-sm">Deepening method</p>
             </div>
           </div>
 
           {/* Goals Card */}
           <div 
             onClick={() => setShowGoalsModal(true)}
-            className="glass-card-premium p-4 bg-gradient-to-br from-rose-500/10 via-pink-500/10 to-fuchsia-500/10 hover:from-rose-500/20 hover:via-pink-500/20 hover:to-fuchsia-500/20 border-rose-500/20 hover:border-rose-500/40 cursor-pointer group glass-hover-lift glass-scale"
+            className="glass-card-premium p-4 bg-gradient-to-br from-rose-500/10 via-pink-500/10 to-fuchsia-500/10 hover:from-rose-500/20 hover:via-pink-500/20 hover:to-fuchsia-500/20 border-rose-500/20 hover:border-rose-500/40 cursor-pointer group glass-hover-lift glass-scale overflow-hidden"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
@@ -278,16 +276,13 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             </div>
             <div className="text-center py-2">
               <div className="text-2xl mb-1">🎯</div>
-              <p className="text-rose-400/80 text-sm">
-                {protocol.goals?.length ? `${protocol.goals.length} objectives set` : 'Add your goals'}
-              </p>
             </div>
           </div>
 
           {/* Metaphors Card */}
           <div 
             onClick={() => setShowMetaphorsModal(true)}
-            className="glass-card-premium p-4 bg-gradient-to-br from-yellow-500/10 via-lime-500/10 to-emerald-500/10 hover:from-yellow-500/20 hover:via-lime-500/20 hover:to-emerald-500/20 border-yellow-500/20 hover:border-yellow-500/40 cursor-pointer group glass-hover-lift glass-scale"
+            className="glass-card-premium p-4 bg-gradient-to-br from-yellow-500/10 via-lime-500/10 to-emerald-500/10 hover:from-yellow-500/20 hover:via-lime-500/20 hover:to-emerald-500/20 border-yellow-500/20 hover:border-yellow-500/40 cursor-pointer group glass-hover-lift glass-scale overflow-hidden"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
@@ -305,9 +300,6 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             </div>
             <div className="text-center py-2">
               <div className="text-2xl mb-1">✨</div>
-              <p className="text-yellow-400/80 text-sm">
-                {protocol.metaphors?.length ? `${protocol.metaphors.length} metaphors added` : 'Add imagery'}
-              </p>
             </div>
           </div>
 
