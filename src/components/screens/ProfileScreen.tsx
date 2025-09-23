@@ -76,30 +76,51 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
     return sessions;
   };
 
+  const getIntentionMessage = () => {
+    const messages: { [key: string]: string } = {
+      guardian: "Stand in your power",
+      rebel: "Break what limits you",
+      healer: "Tend to your inner garden",
+      explorer: "Expand your horizons",
+      mystic: "Connect to source",
+      sage: "Share your truth",
+      child: "Embrace wonder",
+      performer: "Shine your light",
+      shadow: "Integrate your darkness",
+      builder: "Ground visions into reality",
+      seeker: "Expand awareness",
+      lover: "Open your heart",
+      trickster: "Break rigid patterns",
+      warrior: "Show courage",
+      visionary: "See beyond the veil"
+    };
+    return messages[activeEgoState] || "Stand in your power";
+  };
+
   const getDailyIntention = () => {
     const intentions = [
-      "Today you are Guardian — Protector, Safety, Boundaries. Stand in your power.",
-      "Today you are Rebel — Challenger, Fighter, Liberator. Break what limits you.", 
-      "Today you are Healer — Nurturer, Rest, Recovery. Tend to your inner garden.",
-      "Today you are Explorer — Adventurer, Learner, Pioneer. Expand your horizons.",
-      "Today you are Mystic — Spiritual, Transcendent, Higher Wisdom. Connect to source.",
-      "Today you are Visionary — Prophet, Dreamer, Future Architect. See beyond the veil."
+      `Today you are ${currentState.name} — ${currentState.role}. ${getIntentionMessage()}.`
     ];
     
     const stateIntentions: { [key: string]: string } = {
-      guardian: "Today you are Guardian — Protector, Safety, Boundaries. Stand in your power.",
-      rebel: "Today you are Rebel — Challenger, Fighter, Liberator. Break what limits you.",
-      healer: "Today you are Healer — Nurturer, Rest, Recovery. Tend to your inner garden.",
-      explorer: "Today you are Explorer — Adventurer, Learner, Pioneer. Expand your horizons.",
-      mystic: "Today you are Mystic — Spiritual, Transcendent, Higher Wisdom. Connect to source.",
-      sage: "Today you are Sage — Teacher, Wisdom, Guidance. Share your truth.",
-      child: "Today you are Child — Playful, Innocent, Imaginative. Embrace wonder.",
-      performer: "Today you are Performer — Expressive, Bold, Charismatic. Shine your light.",
-      shadow: "Today you are Shadow — Hidden Drives, Raw Power. Integrate your darkness.",
-      visionary: "Today you are Visionary — Prophet, Dreamer, Future Architect. See beyond the veil."
+      guardian: "Stand in your power",
+      rebel: "Break what limits you",
+      healer: "Tend to your inner garden",
+      explorer: "Expand your horizons",
+      mystic: "Connect to source",
+      sage: "Share your truth",
+      child: "Embrace wonder",
+      performer: "Shine your light",
+      shadow: "Integrate your darkness",
+      builder: "Ground visions into reality",
+      seeker: "Expand awareness",
+      lover: "Open your heart",
+      trickster: "Break rigid patterns",
+      warrior: "Show courage",
+      visionary: "See beyond the veil"
     };
     
-    return stateIntentions[activeEgoState] || intentions[0];
+    return `Today you are ${currentState.name} — ${currentState.role}. ${stateIntentions[activeEgoState] || "Stand in your power"}.`;
   };
 
   const handleUpgrade = async () => {
@@ -179,10 +200,10 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   );
 
   const body = (
-    <div className="h-full w-full flex items-center justify-center overflow-hidden">
-      <div className="max-w-[1200px] max-h-[88vh] h-full w-full scale-to-fit">
+    <div className="h-full w-full overflow-hidden">
+      <div className="h-full w-full">
         {/* Background gradient */}
-        <div className="h-full bg-gradient-to-br from-black via-indigo-950/20 to-purple-950/30 relative overflow-hidden">
+        <div className="h-full bg-gradient-to-br from-black via-indigo-950/20 to-purple-950/30 relative">
           {/* Background Effects */}
           <div className="absolute inset-0">
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
@@ -190,7 +211,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
           </div>
 
           {/* Content Grid */}
-          <div className="relative z-10 h-full flex flex-col gap-4 px-4 pb-4 overflow-y-auto">
+          <div className="relative z-10 h-full flex flex-col gap-3 p-4 overflow-y-auto">
             
             {/* Row 1: Ego State Showcase */}
             <div className="card-premium p-4 animate-stagger-in bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-purple-500/30 flex-shrink-0" style={{ animationDelay: '100ms' }}>
@@ -198,7 +219,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 {/* Living Orb */}
                 <div className="flex-shrink-0 hidden sm:block">
                   <WebGLOrb
-                    onTap={openEgoModal}
+                    onTap={() => {}}
                     size={80}
                     egoState={activeEgoState}
                     afterglow={true}
@@ -210,7 +231,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex items-center space-x-3 sm:hidden">
                     <WebGLOrb
-                      onTap={openEgoModal}
+                      onTap={() => {}}
                       size={50}
                       egoState={activeEgoState}
                       afterglow={true}
@@ -247,10 +268,10 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+            <div className="space-y-3 flex-1 min-h-0">
               
               {/* Transformation Dashboard */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 
                 {/* Energy Map */}
                 <div className="card-premium p-4 animate-stagger-in bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border-teal-500/20" style={{ animationDelay: '200ms' }}>
@@ -264,7 +285,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                   <div className="space-y-3">
                     {personaEvolution.slice(0, 3).map((item, index) => (
                       <div key={item.state.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-0">
-                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3">
                         <span className="text-lg">{item.state.icon}</span>
                         <span className="text-white/90 text-sm font-medium">{item.state.name}</span>
                       </div>
@@ -277,7 +298,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                         </div>
                         <span className="text-teal-400 text-xs font-semibold">{item.count}</span>
                       </div>
-                      </div>
+                        </div>
                     ))}
                   </div>
                 </div>
@@ -305,8 +326,8 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 </div>
               </div>
 
-              {/* Right Column */}
-              <div className="space-y-4">
+              {/* Persona Evolution Section */}
+              <div className="space-y-3">
                 
                 {/* Persona Evolution */}
                 <div className="card-premium p-4 animate-stagger-in bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20" style={{ animationDelay: '400ms' }}>
@@ -355,7 +376,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                       <h3 className="text-white font-semibold">Unlock Your Potential</h3>
                     </div>
                     
-                    <div className="space-y-3 mb-4">
+                    <div className="space-y-2 mb-4">
                       <div className="flex items-center space-x-3 text-sm">
                         <Lock size={14} className="text-amber-400 flex-shrink-0" />
                         <span className="text-white/80">6 Premium Archetypes</span>
@@ -414,19 +435,6 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               </div>
             </div>
 
-            {/* Bottom Actions */}
-            <div className="flex space-x-3 flex-shrink-0 pt-2">
-              <button className="flex-1 px-4 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 flex items-center justify-center space-x-2" style={{ minHeight: '48px' }}>
-                <Play size={16} />
-                <span>Start Session</span>
-              </button>
-              <button 
-                onClick={openEgoModal}
-                className="px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium rounded-xl transition-all duration-300 hover:scale-105" style={{ minHeight: '48px' }}
-              >
-                <Eye size={16} />
-              </button>
-            </div>
           </div>
         </div>
       </div>
