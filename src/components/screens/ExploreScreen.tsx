@@ -110,7 +110,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
     <div className="h-full flex flex-col overflow-hidden">
       <main className="flex-1 min-h-0 overflow-y-auto">
         <div className="min-h-full w-full">
-          <div className="max-w-[1200px] w-full mx-auto">
+          <div className="w-full">
             
             {/* Background */}
             <div className="min-h-full bg-gradient-to-br from-black via-blue-950/20 to-purple-950/20 relative">
@@ -150,10 +150,10 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
               </div>
 
               {/* Content Grid */}
-              <div className="relative z-10 px-4 pt-4 pb-20 max-w-7xl mx-auto">
+              <div className="relative z-10 px-4 pt-4 pb-20">
                 
                 {/* Protocol Grid - Responsive */}
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                   {filteredProtocols.length > 0 ? (
                     displayedProtocols.map((protocol) => renderProtocolCard(protocol))
                   ) : (
@@ -182,7 +182,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                 
                 {/* Desktop-only Featured Section */}
                 <div className="hidden xl:block mt-12 pt-8 border-t border-white/10">
-                  <div className="text-center mb-8">
+                  <div className="text-center mb-8 max-w-4xl mx-auto">
                     <h3 className="text-white text-2xl font-light mb-2 bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
                       Master the Art of Hypnosis
                     </h3>
@@ -191,7 +191,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                     </p>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
                     {/* Quick Access */}
                     <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-2xl p-6 border border-teal-500/20 hover:border-teal-500/30 transition-all duration-300 hover:scale-105">
                       <div className="w-12 h-12 rounded-xl bg-teal-500/20 flex items-center justify-center mb-4">
