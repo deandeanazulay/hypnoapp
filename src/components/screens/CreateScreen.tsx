@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Save, Play, Trash2, Clock, Zap } from 'lucide-react';
+import { Plus, Save, Play, Trash2, Clock, Zap, ChevronRight } from 'lucide-react';
 import PageShell from '../layout/PageShell';
 import ModalShell from '../layout/ModalShell';
 
@@ -178,17 +178,15 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 <h3 className="text-white font-semibold text-lg">Induction</h3>
               </div>
               <div className="text-blue-400 group-hover:scale-110 transition-transform">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="9,18 15,12 9,6"></polyline>
-                </svg>
+                <ChevronRight size={16} />
               </div>
             </div>
-            <div className="bg-white/10 rounded-lg p-3 border border-white/20">
-              <div className="text-white font-medium text-base mb-1">
+            <div className="text-center">
+              <div className="text-white font-medium text-lg mb-1">
                 {inductionOptions.find(opt => opt.id === protocol.induction)?.name || 'Select Method'}
               </div>
               <div className="text-white/60 text-sm">
-                {inductionOptions.find(opt => opt.id === protocol.induction)?.description || 'Choose induction technique'}
+                Tap to choose technique
               </div>
             </div>
           </div>
@@ -206,17 +204,15 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 <h3 className="text-white font-semibold text-lg">Deepener</h3>
               </div>
               <div className="text-purple-400 group-hover:scale-110 transition-transform">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="9,18 15,12 9,6"></polyline>
-                </svg>
+                <ChevronRight size={16} />
               </div>
             </div>
-            <div className="bg-white/10 rounded-lg p-3 border border-white/20">
-              <div className="text-white font-medium text-base mb-1">
+            <div className="text-center">
+              <div className="text-white font-medium text-lg mb-1">
                 {deepenerOptions.find(opt => opt.id === protocol.deepener)?.name || 'Select Method'}
               </div>
               <div className="text-white/60 text-sm">
-                {deepenerOptions.find(opt => opt.id === protocol.deepener)?.description || 'Choose deepening technique'}
+                Tap to choose technique
               </div>
             </div>
           </div>

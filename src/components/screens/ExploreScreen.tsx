@@ -14,6 +14,13 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const filteredProtocols = DEFAULT_PROTOCOLS.filter(protocol => {
+    const typeMatch = selectedFilter === 'all' || protocol.type === selectedFilter;
+    const difficultyMatch = selectedDifficulty === 'all' || protocol.difficulty === selectedDifficulty;
+    return typeMatch && difficultyMatch;
+  });
+
   const maxVisibleCards = Math.floor((typeof window !== 'undefined' ? window.innerWidth : 1200) / 320);
   const canScrollLeft = currentIndex > 0;
   const canScrollRight = currentIndex < filteredProtocols.length - maxVisibleCards;
@@ -29,12 +36,6 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
       setCurrentIndex(prev => Math.min(filteredProtocols.length - maxVisibleCards, prev + 1));
     }
   };
-
-  const filteredProtocols = DEFAULT_PROTOCOLS.filter(protocol => {
-    const typeMatch = selectedFilter === 'all' || protocol.type === selectedFilter;
-    const difficultyMatch = selectedDifficulty === 'all' || protocol.difficulty === selectedDifficulty;
-    return typeMatch && difficultyMatch;
-  });
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -217,26 +218,6 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                 </div>
               </div>
             )}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <Filter size={48} className="text-white/20 mx-auto mb-4" />
-              <h3 className="text-white/60 text-xl font-medium mb-2">No protocols found</h3>
-              <p className="text-white/40">Try adjusting your filters</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-                  <div
-                    key={index}
-                    className="w-1.5 h-1.5 rounded-full bg-white/20"
-                  />
-                ))}
-              </div>
-            </div>
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">
