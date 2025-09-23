@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Star, Zap, Shield, Crown, ChevronRight, Check, Users, Award, TrendingUp, Sparkles, Eye, Heart, Brain } from 'lucide-react';
+import { Play, Star, Zap, Shield, Crown, ChevronRight, Check, Users, Award, TrendingUp, Sparkles, Eye, Heart, Brain, Menu, X } from 'lucide-react';
 import WebGLOrb from './WebGLOrb';
 
 interface LandingPageProps {
@@ -10,6 +10,7 @@ interface LandingPageProps {
 export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps) {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -131,9 +132,82 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden">
+    <div className="min-h-screen bg-black text-white overflow-x-hidden overflow-y-auto">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-purple-400 flex items-center justify-center">
+                <Sparkles size={20} className="text-black" />
+              </div>
+              <span className="text-2xl font-light bg-gradient-to-r from-white to-teal-400 bg-clip-text text-transparent">
+                Libero
+              </span>
+            </div>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              <a href="#features" className="text-white/80 hover:text-white transition-colors">Features</a>
+              <a href="#testimonials" className="text-white/80 hover:text-white transition-colors">Reviews</a>
+              <a href="#pricing" className="text-white/80 hover:text-white transition-colors">Pricing</a>
+            </nav>
+
+            {/* Desktop CTAs */}
+            <div className="hidden md:flex items-center space-x-4">
+              <button
+                onClick={onEnterApp}
+                className="px-6 py-2 text-white hover:text-teal-400 transition-colors font-medium"
+              >
+                Try Free
+              </button>
+              <button
+                onClick={onShowAuth}
+                className="px-6 py-2 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-lg text-black font-semibold hover:scale-105 transition-transform duration-200"
+              >
+                Get Started
+              </button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-white hover:text-teal-400 transition-colors"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-black/95 backdrop-blur-xl border-t border-white/10">
+            <div className="px-6 py-4 space-y-4">
+              <a href="#features" className="block text-white/80 hover:text-white transition-colors py-2">Features</a>
+              <a href="#testimonials" className="block text-white/80 hover:text-white transition-colors py-2">Reviews</a>
+              <a href="#pricing" className="block text-white/80 hover:text-white transition-colors py-2">Pricing</a>
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                <button
+                  onClick={onEnterApp}
+                  className="w-full px-6 py-3 text-white bg-white/10 rounded-lg font-medium hover:bg-white/20 transition-colors"
+                >
+                  Try Free
+                </button>
+                <button
+                  onClick={onShowAuth}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-lg text-black font-semibold"
+                >
+                  Get Started
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </header>
+
       {/* Hero Section */}
-      <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
         {/* Cosmic Background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/30 to-teal-950/30" />
@@ -146,7 +220,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
           <div className={`mb-12 transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
             <WebGLOrb
               onTap={() => {}}
-              size={320}
+              size={280}
               afterglow={true}
               egoState="mystic"
             />
@@ -154,54 +228,54 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
 
           {/* Hero Text */}
           <div className={`transition-all duration-1000 delay-300 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-            <h1 className="text-6xl md:text-8xl font-light mb-6 bg-gradient-to-r from-white via-teal-400 to-purple-400 bg-clip-text text-transparent leading-tight">
+            <h1 className="text-5xl md:text-7xl font-light mb-6 bg-gradient-to-r from-white via-teal-400 to-purple-400 bg-clip-text text-transparent leading-tight">
               Libero
             </h1>
-            <p className="text-2xl md:text-3xl font-light text-white/80 mb-4">
+            <p className="text-xl md:text-2xl font-light text-white/80 mb-4">
               The Hypnotist That Frees Minds
             </p>
-            <p className="text-lg md:text-xl text-white/60 mb-12 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg text-white/60 mb-12 max-w-2xl mx-auto leading-relaxed">
               Transform limiting beliefs through archetypal hypnosis. Channel ancient wisdom. Unlock your authentic power.
             </p>
           </div>
 
-          {/* CTA Buttons */}
-          <div className={`flex flex-col sm:flex-row gap-4 justify-center transition-all duration-1000 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+          {/* Hero CTAs - More Prominent */}
+          <div className={`flex flex-col sm:flex-row gap-6 justify-center mb-16 transition-all duration-1000 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
             <button
               onClick={onEnterApp}
-              className="group px-8 py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-2xl text-black font-semibold text-lg hover:scale-105 transition-all duration-300 shadow-2xl shadow-teal-400/25 flex items-center justify-center space-x-2"
+              className="group px-10 py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-2xl text-black font-bold text-lg hover:scale-105 transition-all duration-300 shadow-2xl shadow-teal-400/25 flex items-center justify-center space-x-3"
             >
-              <Play size={20} />
-              <span>Experience Libero Free</span>
-              <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              <Play size={24} />
+              <span>Experience Free</span>
+              <ChevronRight size={24} className="group-hover:translate-x-1 transition-transform" />
             </button>
             <button
               onClick={onShowAuth}
-              className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-2xl text-white font-semibold text-lg hover:bg-white/20 hover:scale-105 transition-all duration-300"
+              className="px-10 py-4 bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-2xl text-white font-bold text-lg hover:bg-white/20 hover:scale-105 transition-all duration-300"
             >
               Unlock Everything
             </button>
           </div>
 
           {/* Social Proof */}
-          <div className={`mt-16 transition-all duration-1000 delay-700 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+          <div className={`transition-all duration-1000 delay-700 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               {stats.map((stat, index) => (
                 <div key={index} className="opacity-80 hover:opacity-100 transition-opacity">
-                  <div className="text-3xl font-bold text-teal-400 mb-2">{stat.number}</div>
+                  <div className="text-2xl md:text-3xl font-bold text-teal-400 mb-2">{stat.number}</div>
                   <div className="text-white/60 text-sm">{stat.label}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Features Section */}
-      <section className="py-32 px-6">
+      <section id="features" className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-5xl font-light mb-6 bg-gradient-to-r from-white to-teal-400 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-light mb-6 bg-gradient-to-r from-white to-teal-400 bg-clip-text text-transparent">
               Consciousness Technology
             </h2>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
@@ -214,12 +288,11 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
               <div
                 key={index}
                 className={`group p-8 rounded-3xl bg-gradient-to-br ${feature.gradient} backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-500 hover:scale-105`}
-                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="w-16 h-16 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   {feature.icon}
                 </div>
-                <h3 className="text-2xl font-semibold mb-4 text-white group-hover:text-white transition-colors">
+                <h3 className="text-2xl font-semibold mb-4 text-white">
                   {feature.title}
                 </h3>
                 <p className="text-white/70 leading-relaxed">
@@ -232,9 +305,9 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-32 px-6 bg-gradient-to-br from-purple-950/20 to-teal-950/20">
+      <section id="testimonials" className="py-20 px-6 bg-gradient-to-br from-purple-950/20 to-teal-950/20">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-5xl font-light mb-20 bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
+          <h2 className="text-4xl md:text-5xl font-light mb-20 bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
             Transformation Stories
           </h2>
 
@@ -281,10 +354,10 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
       </section>
 
       {/* Pricing Section */}
-      <section className="py-32 px-6">
+      <section id="pricing" className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-5xl font-light mb-6 bg-gradient-to-r from-white to-yellow-400 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-light mb-6 bg-gradient-to-r from-white to-yellow-400 bg-clip-text text-transparent">
               Choose Your Path
             </h2>
             <p className="text-xl text-white/70">
@@ -346,20 +419,20 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-32 px-6 bg-gradient-to-br from-black via-purple-950/30 to-teal-950/30">
+      <section className="py-20 px-6 bg-gradient-to-br from-black via-purple-950/30 to-teal-950/30">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-12">
             <Sparkles size={64} className="text-teal-400 mx-auto mb-8 animate-pulse" />
-            <h2 className="text-6xl font-light mb-8 bg-gradient-to-r from-white via-teal-400 to-purple-400 bg-clip-text text-transparent leading-tight">
+            <h2 className="text-5xl md:text-6xl font-light mb-8 bg-gradient-to-r from-white via-teal-400 to-purple-400 bg-clip-text text-transparent leading-tight">
               Your Mind Is Waiting
             </h2>
-            <p className="text-2xl text-white/80 mb-12 leading-relaxed">
+            <p className="text-xl md:text-2xl text-white/80 mb-12 leading-relaxed">
               Break free from limiting patterns. Unlock your authentic power. <br />
               The transformation you've been seeking is one tap away.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center mb-8">
             <button
               onClick={onEnterApp}
               className="group px-12 py-6 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-2xl text-black font-bold text-xl hover:scale-105 transition-all duration-300 shadow-2xl shadow-teal-400/30 flex items-center justify-center space-x-3"
@@ -370,7 +443,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
             </button>
           </div>
 
-          <p className="text-white/50 text-sm mt-8">
+          <p className="text-white/50 text-sm">
             Free forever • No credit card required • Transform in minutes
           </p>
         </div>
