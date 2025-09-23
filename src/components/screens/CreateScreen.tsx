@@ -202,11 +202,11 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
           </div>
 
           {/* Deepener Method Card */}
-          <div 
-            className="glass-card-premium p-5 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-500/20 cursor-pointer group glass-hover-lift"
+          {/* Responsive Card Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-4 h-full">
             onClick={() => setShowDeepenerSelector(true)}
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="glass-card-premium p-5 bg-gradient-to-br from-purple-500/10 to-teal-500/10 hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-500/20 group sm:col-span-1 lg:col-span-2">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/30 transition-colors glass-glow">
                   <span className="text-purple-400 text-sm">🌀</span>
@@ -226,7 +226,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               </div>
             </div>
           </div>
-
+            <div className="glass-card-premium p-5 bg-gradient-to-br from-green-500/10 to-teal-500/10 hover:border-green-500/40 hover:shadow-lg hover:shadow-green-500/20 group sm:col-span-1 lg:col-span-2">
           {/* Goals Card */}
           <div className="glass-card-premium p-5 bg-gradient-to-br from-green-500/10 to-teal-500/10 hover:border-green-500/40 hover:shadow-lg hover:shadow-green-500/20 group">
             <div className="flex items-center space-x-3 mb-4">
@@ -257,7 +257,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             </div>
 
             <div className="space-y-2 max-h-24 overflow-y-auto">
-              {protocol.goals?.slice(0, 4).map((goal, index) => (
+            <div className="glass-card-premium p-5 bg-gradient-to-br from-orange-500/10 to-amber-500/10 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/20 group lg:col-span-1">
                 <div key={index} className="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2 border border-white/20 hover:bg-white/15 transition-colors group/item">
                   <span className="text-white text-sm truncate flex-1 font-medium">{goal}</span>
                   <button
@@ -275,7 +275,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               )}
             </div>
           </div>
-
+            <div className="glass-card-premium p-5 bg-gradient-to-br from-pink-500/10 to-rose-500/10 hover:border-pink-500/40 hover:shadow-lg hover:shadow-pink-500/20 group lg:col-span-1">
           {/* Metaphors Card */}
           <div className="glass-card-premium p-5 bg-gradient-to-br from-pink-500/10 to-rose-500/10 hover:border-pink-500/40 hover:shadow-lg hover:shadow-pink-500/20 group">
             <div className="flex items-center space-x-3 mb-4">
@@ -295,7 +295,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 onChange={(e) => setNewMetaphor(e.target.value)}
                 placeholder="Strong oak tree"
                 className="flex-1 glass-input text-sm focus:border-pink-400/60 focus:ring-2 focus:ring-pink-400/20"
-                onKeyPress={(e) => e.key === 'Enter' && addMetaphor()}
+                className="w-full glass-slider mb-3"
               />
               <button
                 onClick={addMetaphor}
