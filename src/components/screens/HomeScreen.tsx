@@ -84,119 +84,143 @@ export default function HomeScreen({
       {/* Cosmic Space Background */}
       <div className="absolute inset-0">
         {/* Deep Space Base */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-purple-950/90 to-black" />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-blue-950/60 to-black" />
         
-        {/* Animated Nebula Clouds */}
+        {/* Static Nebula Clouds */}
         <div className="absolute inset-0">
           <div 
-            className="absolute w-96 h-96 opacity-30 rounded-full blur-3xl animate-pulse"
+            className="absolute w-96 h-96 opacity-20 rounded-full blur-3xl"
             style={{
-              background: 'radial-gradient(circle, rgba(147, 51, 234, 0.4) 0%, rgba(79, 70, 229, 0.2) 40%, transparent 70%)',
-              top: '10%',
-              left: '20%',
-              transform: `translate(${mousePosition.x * 30}px, ${mousePosition.y * 20}px)`,
-              animation: 'float 8s ease-in-out infinite'
+              background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(67, 56, 202, 0.08) 50%, transparent 80%)',
+              top: '15%',
+              left: '25%'
             }}
           />
           <div 
-            className="absolute w-80 h-80 opacity-25 rounded-full blur-3xl animate-pulse"
+            className="absolute w-80 h-80 opacity-15 rounded-full blur-3xl"
             style={{
-              background: 'radial-gradient(circle, rgba(20, 184, 166, 0.3) 0%, rgba(6, 182, 212, 0.15) 50%, transparent 70%)',
-              bottom: '15%',
-              right: '15%',
-              transform: `translate(${-mousePosition.x * 20}px, ${-mousePosition.y * 15}px)`,
-              animation: 'float 12s ease-in-out infinite reverse',
-              animationDelay: '4s'
+              background: 'radial-gradient(circle, rgba(20, 184, 166, 0.12) 0%, rgba(6, 182, 212, 0.06) 60%, transparent 80%)',
+              bottom: '20%',
+              right: '20%'
             }}
           />
           <div 
-            className="absolute w-64 h-64 opacity-20 rounded-full blur-2xl animate-pulse"
+            className="absolute w-64 h-64 opacity-10 rounded-full blur-2xl"
             style={{
-              background: 'radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, rgba(219, 39, 119, 0.1) 60%, transparent 80%)',
-              top: '60%',
-              left: '10%',
-              transform: `translate(${mousePosition.x * 15}px, ${mousePosition.y * 25}px)`,
-              animation: 'float 10s ease-in-out infinite',
-              animationDelay: '2s'
+              background: 'radial-gradient(circle, rgba(147, 51, 234, 0.08) 0%, rgba(126, 34, 206, 0.04) 70%, transparent 90%)',
+              top: '65%',
+              left: '15%'
+            }}
+          />
+          <div 
+            className="absolute w-48 h-48 opacity-12 rounded-full blur-xl"
+            style={{
+              background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 60%, transparent 80%)',
+              top: '40%',
+              right: '30%'
+            }}
+          />
+          <div 
+            className="absolute w-32 h-32 opacity-8 rounded-full blur-lg"
+            style={{
+              background: 'radial-gradient(circle, rgba(168, 85, 247, 0.06) 0%, rgba(147, 51, 234, 0.03) 70%, transparent 90%)',
+              bottom: '40%',
+              left: '40%'
             }}
           />
         </div>
 
-        {/* Animated Stars Field */}
+        {/* Static Star Field */}
         <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 100 }).map((_, i) => (
+          {Array.from({ length: 150 }).map((_, i) => (
             <div
               key={i}
-              className="absolute w-1 h-1 bg-white rounded-full animate-pulse opacity-40"
+              className="absolute bg-white rounded-full"
               style={{
+                width: `${0.5 + Math.random() * 1}px`,
+                height: `${0.5 + Math.random() * 1}px`,
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${2 + Math.random() * 4}s`,
-                transform: `translate(${mousePosition.x * (5 + Math.random() * 10)}px, ${mousePosition.y * (5 + Math.random() * 10)}px)`
+                opacity: 0.3 + Math.random() * 0.4,
+                boxShadow: Math.random() > 0.7 ? `0 0 ${2 + Math.random() * 4}px rgba(255, 255, 255, 0.6)` : 'none'
               }}
             />
           ))}
         </div>
 
-        {/* Larger Twinkling Stars */}
+        {/* Bright Stars */}
         <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 20 }).map((_, i) => (
+          {Array.from({ length: 30 }).map((_, i) => (
             <div
               key={`bright-${i}`}
-              className="absolute bg-white rounded-full animate-pulse"
+              className="absolute bg-white rounded-full"
               style={{
                 width: `${2 + Math.random() * 3}px`,
                 height: `${2 + Math.random() * 3}px`,
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${3 + Math.random() * 6}s`,
                 opacity: 0.6 + Math.random() * 0.4,
-                boxShadow: `0 0 ${4 + Math.random() * 8}px rgba(255, 255, 255, ${0.3 + Math.random() * 0.4})`,
-                transform: `translate(${mousePosition.x * (8 + Math.random() * 15)}px, ${mousePosition.y * (8 + Math.random() * 15)}px)`
+                boxShadow: `0 0 ${4 + Math.random() * 8}px rgba(255, 255, 255, ${0.3 + Math.random() * 0.4})`
               }}
             />
           ))}
         </div>
 
-        {/* Cosmic Dust/Particle Field */}
+        {/* Distant Galaxy Clusters */}
         <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 50 }).map((_, i) => (
+          {Array.from({ length: 8 }).map((_, i) => (
             <div
-              key={`dust-${i}`}
-              className="absolute bg-gradient-to-r from-cyan-400/20 to-purple-400/20 rounded-full animate-pulse"
+              key={`galaxy-${i}`}
+              className="absolute rounded-full"
               style={{
-                width: `${0.5 + Math.random() * 1.5}px`,
-                height: `${0.5 + Math.random() * 1.5}px`,
+                width: `${20 + Math.random() * 40}px`,
+                height: `${8 + Math.random() * 16}px`,
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 4}s`,
-                animationDuration: `${4 + Math.random() * 8}s`,
-                opacity: 0.2 + Math.random() * 0.3,
-                transform: `translate(${mousePosition.x * (15 + Math.random() * 20)}px, ${mousePosition.y * (15 + Math.random() * 20)}px)`
+                background: `linear-gradient(45deg, rgba(139, 92, 246, ${0.05 + Math.random() * 0.1}) 0%, rgba(99, 102, 241, ${0.03 + Math.random() * 0.05}) 50%, transparent 100%)`,
+                transform: `rotate(${Math.random() * 360}deg)`,
+                opacity: 0.4 + Math.random() * 0.3,
+                filter: 'blur(1px)'
               }}
             />
           ))}
         </div>
 
-        {/* Session-based Aurora Effect */}
-        {user.lastSessionDate && (
-          <div className="absolute inset-0">
-            <div 
-              className="absolute inset-0 opacity-20"
+        {/* Static Cosmic Dust */}
+        <div className="absolute inset-0 overflow-hidden">
+          {Array.from({ length: 200 }).map((_, i) => (
+            <div
+              key={`dust-${i}`}
+              className="absolute bg-white rounded-full"
               style={{
-                background: `
-                  radial-gradient(ellipse at top, rgba(147, 51, 234, 0.15) 0%, transparent 70%),
-                  radial-gradient(ellipse at bottom left, rgba(20, 184, 166, 0.1) 0%, transparent 50%),
-                  radial-gradient(ellipse at bottom right, rgba(236, 72, 153, 0.1) 0%, transparent 50%)
-                `,
-                transform: `translate(${mousePosition.x * 10}px, ${mousePosition.y * 10}px)`,
-                animation: 'aurora 20s ease-in-out infinite'
+                width: `${0.2 + Math.random() * 0.8}px`,
+                height: `${0.2 + Math.random() * 0.8}px`,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                opacity: 0.15 + Math.random() * 0.25
               }}
             />
-          </div>
-        )}
+          ))}
+        </div>
+        
+        {/* Distant Starlight */}
+        <div className="absolute inset-0 overflow-hidden">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={`starlight-${i}`}
+              className="absolute bg-white rounded-full"
+              style={{
+                width: `${6 + Math.random() * 8}px`,
+                height: `${6 + Math.random() * 8}px`,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                opacity: 0.8 + Math.random() * 0.2,
+                boxShadow: `0 0 ${15 + Math.random() * 20}px rgba(255, 255, 255, ${0.4 + Math.random() * 0.3})`,
+                filter: 'blur(0.5px)'
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Main Layout - Perfect vertical distribution */}
