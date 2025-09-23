@@ -318,9 +318,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         float tm2 = time * 0.13;
         
         // Enhanced interactive rotation
-        float rotX = userRotation.x * 0.01 + sin(time * 0.2) * 0.1;
-        float rotY = userRotation.y * 0.01 + cos(time * 0.15) * 0.1;
-        float rotZ = time * 0.05 + (mousePos.x - 0.5) * 0.5;
+        float angleX = userRotation.x * 0.01 + sin(time * 0.2) * 0.1;
+        float angleY = userRotation.y * 0.01 + cos(time * 0.15) * 0.1;
+        float angleZ = time * 0.05 + (mousePos.x - 0.5) * 0.5;
         
         // Hypnotic spiral mathematics
         float spiralTime = time * (0.5 + hypnoticMode * 0.3) + interactionIntensity * 2.0;
@@ -337,11 +337,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         pos.xyz *= 1.0 + fractalPulse;
         
         // Interactive 3D transformation
-        mat4 interactiveRotation = rotX(rotX) * rotY(rotY) * rotZ(rotZ);
+        mat4 interactiveRotation = rotX(angleX) * rotY(angleY) * rotZ(angleZ);
         vec4 rotatedPos = interactiveRotation * vec4(pos, 1.0);
         pos = rotatedPos.xyz;
 
-        mat4 wmat = rotZ(odd * PI * .5 + sin(tm) + rotY);
+        mat4 wmat = rotZ(odd * PI * .5 + sin(tm) + angleY);
         wmat *= trans(vec3(0, cos(pairA * PI), 0));
         wmat *= uniformScale(sin(pairA * PI) * (1.0 + interactionIntensity * 0.2));
         vec4 wp = wmat * vec4(pos, 1.);
@@ -354,12 +354,12 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         float r = 2.5;
         mat4 mat = persp(radians(60.0), resolution.x / resolution.y, 0.1, 10.0);
         vec3 eye = vec3(
-          cos(tm + rotY * 0.1) * r, 
-          sin(tm * 0.93 + rotX * 0.1) * r, 
-          sin(tm + rotZ * 0.1) * r
+          cos(tm + angleY * 0.1) * r, 
+          sin(tm * 0.93 + angleX * 0.1) * r, 
+          sin(tm + angleZ * 0.1) * r
         );
         vec3 target = vec3(0);
-        vec3 up = vec3(sin(rotY * 0.05), sin(tm2 + rotX * 0.1), cos(tm2 + rotY * 0.1));
+        vec3 up = vec3(sin(angleY * 0.05), sin(tm2 + angleX * 0.1), cos(tm2 + angleY * 0.1));
         
         mat *= cameraLookAt(eye, target, up);
         
