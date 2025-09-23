@@ -357,4 +357,4 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setUser(prev => ({ ...prev, tokens: prev.tokens - amount }));
       return true;
     }
-    return false
+    return false;
