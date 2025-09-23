@@ -127,7 +127,7 @@ function App() {
   // Navigation mode - tabbed interface
   return (
     <GameStateProvider>
-      <div className="h-screen w-screen bg-black flex flex-col overflow-hidden">
+      <div className="h-screen w-screen bg-black flex flex-col overflow-hidden" style={{ height: '100vh', overflow: 'hidden' }}>
         {/* Main Content - Takes remaining space above navigation */}
         <div className="flex-1 min-h-0 flex flex-col">
           {renderCurrentTab()}
@@ -143,6 +143,14 @@ function App() {
       </div>
     </GameStateProvider>
   );
+}
+
+// Apply global no-scroll styles
+if (typeof document !== 'undefined') {
+  document.documentElement.style.height = '100%';
+  document.documentElement.style.overflow = 'hidden';
+  document.body.style.height = '100%';
+  document.body.style.overflow = 'hidden';
 }
 
 export default App;
