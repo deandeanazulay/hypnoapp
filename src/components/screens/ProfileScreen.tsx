@@ -175,7 +175,6 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
       </div>
     </div>
   );
-            </div>
   return (
     <>
       <PageShell
