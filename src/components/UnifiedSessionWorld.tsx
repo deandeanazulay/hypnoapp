@@ -390,7 +390,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       </div>
 
       {/* Breathing Guide */}
-      <div className="absolute bottom-24 left-4 right-4 z-30 flex justify-center">
+      <div className="absolute bottom-32 left-4 right-4 z-30 flex justify-center">
         <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/20">
           <div className="flex items-center space-x-3">
             <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
