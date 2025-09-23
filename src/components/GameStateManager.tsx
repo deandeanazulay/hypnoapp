@@ -248,15 +248,15 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const currentEgoState = localStorage.getItem('app-store') ? 
       JSON.parse(localStorage.getItem('app-store') || '{}').state?.activeEgoState || 'guardian' : 'guardian';
 
-    // Save session to database if authenticated
-    if (isAuthenticated && authUser) {
-      saveSessionToDatabase(currentEgoState, sessionType, duration, xpGained);
-    }
-
     // XP calculation: floor(durationSec / 60) * baseMultiplier * depthMultiplier
     const baseMultiplier = 10;
     const depthMultiplier = 1 + (user.depth * 0.15);
     const xpGained = Math.floor(duration / 60) * baseMultiplier * depthMultiplier;
+
+    // Save session to database if authenticated
+    if (isAuthenticated && authUser) {
+      saveSessionToDatabase(currentEgoState, sessionType, duration, xpGained);
+    }
     
     const newExperience = user.experience + xpGained;
     // Level: floor(0.1 * sqrt(totalXP)) + 1 (smooth, slow growth)
@@ -358,15 +358,18 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return true;
     }
     return false;
-  }
-
-  return {
-    user,
-    updateUserState,
-    completeSession,
-    getOrbState,
-    canAccess,
-    spendTokens
   };
+
+  return (
+    <GameStateContext.Provider value={{
+      user,
+      updateUserState,
+      completeSession,
+      getOrbState,
+      canAccess,
+      spendTokens
+    }}>
+      {children}
+    </GameStateContext.Provider>
+  );
 };
-}
