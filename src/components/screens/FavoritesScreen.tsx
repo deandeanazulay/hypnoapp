@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Heart, Play, Clock, Trash2, Star, Filter, TrendingUp, Award, Flame, Crown, ChevronDown, Pin, Share2, Target, Sparkles, BarChart3 } from 'lucide-react';
+import { Heart, Play, Clock, Trash2, Star, Filter, TrendingUp, Award, Flame, Crown, ChevronDown, Pin, Share2, Target, Sparkles, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState } from '../../state/appStore';
 import PageShell from '../layout/PageShell';
@@ -141,6 +141,8 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   // Sort sessions
   const sortedFavorites = [...mockFavorites].sort((a, b) => {
@@ -165,6 +167,36 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   const cardsPerView = window.innerWidth < 768 ? 1 : window.innerWidth < 1024 ? 2 : window.innerWidth < 1280 ? 3 : 4;
   const totalPages = Math.ceil(sortedFavorites.length / cardsPerView);
 
+  const updateScrollButtons = () => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      setCanScrollLeft(container.scrollLeft > 0);
+      setCanScrollRight(container.scrollLeft < container.scrollWidth - container.clientWidth - 10);
+    }
+  };
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      const cardWidth = window.innerWidth < 768 ? 320 : 300;
+      scrollContainerRef.current.scrollBy({
+        left: -cardWidth - 16, // card width + gap
+        behavior: 'smooth'
+      });
+      setTimeout(updateScrollButtons, 300);
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      const cardWidth = window.innerWidth < 768 ? 320 : 300;
+      scrollContainerRef.current.scrollBy({
+        left: cardWidth + 16, // card width + gap
+        behavior: 'smooth'
+      });
+      setTimeout(updateScrollButtons, 300);
+    }
+  };
+
   const scrollToIndex = (index: number) => {
     setCurrentIndex(index);
     if (scrollContainerRef.current) {
@@ -174,6 +206,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
         behavior: 'smooth'
       });
     }
+    setTimeout(updateScrollButtons, 300);
   };
 
   const formatLastCompleted = (date: Date) => {
@@ -403,6 +436,18 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   const treasuresCount = mockFavorites.length;
   const masteredStates = getMasteredStates();
 
+  // Update scroll buttons on mount and resize
+  React.useEffect(() => {
+    updateScrollButtons();
+    
+    const handleResize = () => {
+      updateScrollButtons();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sortedFavorites]);
+
   const header = (
     <div className="bg-black/80 backdrop-blur-xl border-b border-white/10">
       <div className="px-4 pt-2 pb-4">
@@ -502,7 +547,35 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
             </div>
 
             {/* Mobile/Tablet Horizontal Scrolling */}
-            <div className="lg:hidden flex-1 px-4">
+            <div className="lg:hidden flex-1 px-4 relative">
+              {/* Left Arrow */}
+              <button
+                onClick={scrollLeft}
+                disabled={!canScrollLeft}
+                className={`absolute left-2 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-black/90 hover:border-white/40 shadow-lg ${
+                  canScrollLeft ? 'opacity-100 cursor-pointer' : 'opacity-30 cursor-not-allowed'
+                }`}
+                style={{ 
+                  boxShadow: canScrollLeft ? '0 4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)' : 'none'
+                }}
+              >
+                <ChevronLeft size={20} className="text-white ml-0.5" />
+              </button>
+
+              {/* Right Arrow */}
+              <button
+                onClick={scrollRight}
+                disabled={!canScrollRight}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-black/90 hover:border-white/40 shadow-lg ${
+                  canScrollRight ? 'opacity-100 cursor-pointer' : 'opacity-30 cursor-not-allowed'
+                }`}
+                style={{ 
+                  boxShadow: canScrollRight ? '0 4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)' : 'none'
+                }}
+              >
+                <ChevronRight size={20} className="text-white mr-0.5" />
+              </button>
+
               <div 
                 ref={scrollContainerRef}
                 className="flex gap-4 h-full overflow-x-auto scrollbar-hide snap-x snap-mandatory py-4"
@@ -510,6 +583,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                   scrollSnapType: 'x mandatory',
                   overscrollBehavior: 'contain'
                 }}
+                onScroll={updateScrollButtons}
               >
                 {sortedFavorites.map((session) => (
                   <div
