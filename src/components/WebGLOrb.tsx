@@ -355,11 +355,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         pos.xyz *= 1.0 + fractalPulse;
         
         // Interactive 3D transformation
-        mat4 interactiveRotation = rotationX(rotAngleX) * rotationY(rotAngleY) * rotationZ(rotAngleZ);
+        mat4 interactiveRotation = rotX(rotAngleX) * rotY(rotAngleY) * rotZ(rotAngleZ);
         vec4 rotatedPos = interactiveRotation * vec4(pos, 1.0);
         pos = rotatedPos.xyz;
 
-        mat4 wmat = rotationZ(odd * PI * .5 + sin(tm) + rotAngleY);
+        mat4 wmat = rotZ(odd * PI * .5 + sin(tm) + rotAngleY);
         wmat *= trans(vec3(0, cos(pairA * PI), 0));
         wmat *= uniformScale(sin(pairA * PI) * (1.0 + interactionIntensity * 0.2));
         vec4 wp = wmat * vec4(pos, 1.);
