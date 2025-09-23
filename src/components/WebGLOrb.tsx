@@ -19,7 +19,7 @@ export interface WebGLOrbProps {
   onDragEnd?: () => void;
 }
 
-const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
+const WebGLOrbRender: React.ForwardRefRenderFunction<WebGLOrbRef, WebGLOrbProps> = (props, ref) => {
   const {
     onTap, 
     afterglow = false, 
@@ -714,7 +714,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     </div>
     </div>
   );
-});
+};
+
+const WebGLOrb = React.forwardRef(WebGLOrbRender);
 
 WebGLOrb.displayName = 'WebGLOrb';
 
