@@ -21,7 +21,7 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
   };
 
   return (
-    <nav className="w-full bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] relative z-50">
+    <nav className="w-full bg-black/95 backdrop-blur-xl border-t border-white/5 px-4 sm:px-6 py-2 sm:py-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:pb-[calc(0.75rem+env(safe-area-inset-bottom))] relative z-50 shadow-lg shadow-black/20">
       <div className="flex justify-between items-center space-around max-w-md mx-auto">
         {TABS.map((tab) => {
           const IconComponent = iconMap[tab.id];
@@ -31,19 +31,27 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
-              className={`flex flex-col items-center justify-between space-y-1 p-2 transition-all duration-200 flex-1 ${
+              className={`flex flex-col items-center justify-center space-y-1 p-2 sm:p-2 transition-all duration-300 flex-1 relative ${
                 isActive 
-                  ? 'text-teal-400 scale-110' 
-                  : 'text-white/60 hover:text-white/80 hover:scale-105'
+                  ? 'text-teal-400 transform scale-105' 
+                  : 'text-white/50 hover:text-white/70 active:scale-95'
               }`}
-              style={{ minWidth: '44px', minHeight: '44px' }}
+              style={{ minWidth: '48px', minHeight: '48px', touchAction: 'manipulation' }}
             >
-              <div className="flex items-center justify-center self-center">
-                <IconComponent size={22} />
+              <div className="flex items-center justify-center self-center relative">
+                <IconComponent size={isActive ? 24 : 22} className={`transition-all duration-300 ${isActive ? 'drop-shadow-sm' : ''}`} />
+                {/* Active indicator background */}
+                {isActive && (
+                  <div className="absolute inset-0 bg-teal-400/10 rounded-full scale-150 animate-pulse" />
+                )}
               </div>
-              <span className="text-xs font-medium text-center self-center">{tab.name}</span>
+              <span className={`text-xs font-medium text-center self-center transition-all duration-300 ${
+                isActive ? 'opacity-100 font-semibold' : 'opacity-70'
+              }`}>
+                {tab.name}
+              </span>
               {isActive && (
-                <div className="w-1 h-1 bg-teal-400 rounded-full flex-shrink-0 self-center" />
+                <div className="absolute -bottom-1 w-6 h-0.5 bg-teal-400 rounded-full flex-shrink-0 self-center animate-pulse" />
               )}
             </button>
           );

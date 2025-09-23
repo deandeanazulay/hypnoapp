@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Play, Clock, Star, Filter } from 'lucide-react';
 import { DEFAULT_PROTOCOLS, Protocol } from '../../types/Navigation';
 import PageShell from '../layout/PageShell';
-import PagedGrid from '../layout/PagedGrid';
 import ModalShell from '../layout/ModalShell';
 
 interface ExploreScreenProps {
@@ -42,7 +41,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   const renderProtocolCard = (protocol: Protocol) => (
     <div
       key={protocol.id}
-      className={`bg-gradient-to-br ${getTypeColor(protocol.type)} backdrop-blur-md rounded-xl p-4 border border-white/10 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full`}
+      className={`bg-gradient-to-br ${getTypeColor(protocol.type)} backdrop-blur-md rounded-xl p-4 border border-white/10 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full flex-shrink-0 w-72 sm:w-80`}
     >
       <div className="flex items-start justify-between space-x-3 mb-3">
         <div className="flex-1 min-w-0">
@@ -125,16 +124,33 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   );
 
   const body = (
-    <div className="bg-black relative px-4 py-4 h-full overflow-hidden">
+    <div className="bg-black relative h-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-950/20 via-black to-purple-950/20" />
-      <div className="relative z-10 h-full">
+      <div className="relative z-10 h-full px-4 py-4">
         {filteredProtocols.length > 0 ? (
-          <PagedGrid
-            items={filteredProtocols}
-            cols={window.innerWidth < 768 ? 2 : window.innerWidth < 1024 ? 2 : 3}
-            rows={window.innerWidth < 768 ? 1 : 2}
-            renderItem={renderProtocolCard}
-          />
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-hidden">
+              <div className="flex space-x-4 overflow-x-auto scrollbar-hide h-full pb-4" style={{ scrollSnapType: 'x mandatory' }}>
+                {filteredProtocols.map((protocol) => (
+                  <div key={protocol.id} style={{ scrollSnapAlign: 'start' }}>
+                    {renderProtocolCard(protocol)}
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Scroll indicator */}
+            <div className="flex justify-center mt-2">
+              <div className="flex space-x-1">
+                {Array.from({ length: Math.min(filteredProtocols.length, 5) }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="w-1.5 h-1.5 rounded-full bg-white/20"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
