@@ -65,6 +65,13 @@ export function useAuth() {
       return { error }
     }
 
+    // Ensure profile exists after successful signup
+    try {
+      await supabase.rpc('ensure_profile')
+    } catch (profileError) {
+      console.log('Profile creation handled by backend:', profileError)
+      // Don't fail signup if profile creation has issues
+    }
     return { error: null }
   }
 
@@ -81,6 +88,13 @@ export function useAuth() {
       return { error }
     }
 
+    // Ensure profile exists after successful signin
+    try {
+      await supabase.rpc('ensure_profile')
+    } catch (profileError) {
+      console.log('Profile creation handled by backend:', profileError)
+      // Don't fail signin if profile creation has issues
+    }
     return { error: null }
   }
 
