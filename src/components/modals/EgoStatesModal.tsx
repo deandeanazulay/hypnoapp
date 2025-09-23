@@ -324,3 +324,5 @@ export default function EgoStatesModal() {
     </>
   );
 }
+
+export default EgoStatesModal
