@@ -2,8 +2,10 @@ import React from 'react';
 import { Settings, Award, TrendingUp, Calendar, Target, ChevronRight } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState } from '../../state/appStore';
+import { useUIStore } from '../../state/uiStore';
 import PageShell from '../layout/PageShell';
 import SettingsModal from '../modals/SettingsModal';
+import PremiumFeatures from '../premium/PremiumFeatures';
 
 interface ProfileScreenProps {
   selectedEgoState: string;
@@ -13,6 +15,7 @@ interface ProfileScreenProps {
 export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: ProfileScreenProps) {
   const { user } = useGameState();
   const { activeEgoState, openEgoModal } = useAppStore();
+  const { showToast } = useUIStore();
   const [showSettings, setShowSettings] = React.useState(false);
 
   // Mock data for ego state usage
@@ -42,6 +45,71 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
 
   const mostUsedState = getMostUsedEgoState();
   const currentState = getEgoState(activeEgoState);
+
+  // Handle upgrade plan action
+  const handleUpgrade = (tier: string) => {
+    showToast({
+      type: 'info',
+      message: `Upgrade to ${tier.toUpperCase()} plan coming soon! We'll notify you when available.`,
+      duration: 4000
+    });
+  };
+
+  // Handle ego state switch
+  const handleEgoStateSwitch = (egoStateId: string) => {
+    const { setActiveEgoState } = useAppStore.getState();
+    setActiveEgoState(egoStateId as any);
+    showToast({
+      type: 'success',
+      message: `Switched to ${getEgoState(egoStateId as any).name} ego state!`,
+      duration: 3000
+    });
+  };
+
+  // Get formatted recent activity
+  const getRecentActivity = () => {
+    const activities = [];
+    
+    // Add last session if exists
+    if (user.lastSessionDate) {
+      const lastSessionDate = new Date(user.lastSessionDate);
+      const hoursAgo = Math.floor((Date.now() - lastSessionDate.getTime()) / (1000 * 60 * 60));
+      activities.push({
+        type: 'session',
+        egoState: activeEgoState,
+        name: `${getEgoState(activeEgoState).name} Session`,
+        timeAgo: hoursAgo < 1 ? 'Just now' : hoursAgo < 24 ? `${hoursAgo} hours ago` : `${Math.floor(hoursAgo / 24)} days ago`,
+        xp: 25,
+        icon: getEgoState(activeEgoState).icon
+      });
+    }
+
+    // Add recent achievements
+    if (user.achievements.length > 0) {
+      const recentAchievement = user.achievements[user.achievements.length - 1];
+      activities.push({
+        type: 'achievement',
+        name: 'Achievement Unlocked',
+        description: recentAchievement,
+        timeAgo: '2 days ago',
+        badge: true,
+        icon: '🏆'
+      });
+    }
+
+    // Add streak milestone if applicable
+    if (user.sessionStreak > 0 && user.sessionStreak % 7 === 0) {
+      activities.push({
+        type: 'milestone',
+        name: 'Streak Milestone',
+        description: `${user.sessionStreak} day streak!`,
+        timeAgo: 'Today',
+        icon: '🔥'
+      });
+    }
+
+    return activities;
+  };
 
   const header = (
     <div className="bg-black/60 backdrop-blur-xl">
@@ -148,33 +216,10 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               </div>
             </div>
             
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">🔓</span>
-                  <span className="text-white/80 text-sm">Unlimited Sessions</span>
-                </div>
-                <span className="text-orange-400 text-xs font-medium px-2 py-1 bg-orange-500/20 rounded-full">PRO</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">🎯</span>
-                  <span className="text-white/80 text-sm">Custom Protocols</span>
-                </div>
-                <span className="text-purple-400 text-xs font-medium px-2 py-1 bg-purple-500/20 rounded-full">PREMIUM</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">🎵</span>
-                  <span className="text-white/80 text-sm">Premium Voices</span>
-                </div>
-                <span className="text-teal-400 text-xs font-medium px-2 py-1 bg-teal-500/20 rounded-full">ACTIVE</span>
-              </div>
-            </div>
-            
-            <button className="w-full px-4 py-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-lg text-black font-semibold hover:scale-105 transition-transform duration-200">
-              Upgrade Plan
-            </button>
+            <PremiumFeatures 
+              currentTier={user.plan}
+              onUpgrade={handleUpgrade}
+            />
           </div>
 
           {/* Recent Activity & Achievements */}
@@ -198,38 +243,32 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
             </div>
 
             <div className="space-y-3 mb-4">
-              <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg border border-white/10">
-                <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm">🌿</span>
+              {getRecentActivity().length > 0 ? (
+                getRecentActivity().map((activity, index) => (
+                  <div key={index} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg border border-white/10">
+                    <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm">{activity.icon}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-white text-sm font-medium">{activity.name}</div>
+                      <div className="text-white/60 text-xs">
+                        {activity.timeAgo}
+                        {activity.description && ` • ${activity.description}`}
+                      </div>
+                    </div>
+                    {activity.xp && (
+                      <div className="text-teal-400 text-xs font-medium">+{activity.xp} XP</div>
+                    )}
+                    {activity.badge && (
+                      <div className="text-yellow-400 text-xs font-medium">BADGE</div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-white/60 text-sm">Complete your first session to see activity</p>
                 </div>
-                <div className="flex-1">
-                  <div className="text-white text-sm font-medium">Healer Session</div>
-                  <div className="text-white/60 text-xs">2 hours ago • 15 minutes</div>
-                </div>
-                <div className="text-green-400 text-xs font-medium">+25 XP</div>
-              </div>
-              
-              <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg border border-white/10">
-                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm">🛡️</span>
-                </div>
-                <div className="flex-1">
-                  <div className="text-white text-sm font-medium">Guardian Session</div>
-                  <div className="text-white/60 text-xs">Yesterday • 10 minutes</div>
-                </div>
-                <div className="text-blue-400 text-xs font-medium">+20 XP</div>
-              </div>
-              
-              <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg border border-white/10">
-                <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm">🏆</span>
-                </div>
-                <div className="flex-1">
-                  <div className="text-white text-sm font-medium">Achievement Unlocked</div>
-                  <div className="text-white/60 text-xs">3 days ago • "First Steps"</div>
-                </div>
-                <div className="text-yellow-400 text-xs font-medium">BADGE</div>
-              </div>
+              )}
             </div>
 
             <div className="pt-3 border-t border-white/10">
@@ -255,7 +294,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                   <span className="text-lg">🔧</span>
                   <span className="text-white text-sm">Settings & Preferences</span>
                 </div>
-                <span className="text-white/40">→</span>
+                <ChevronRight size={16} className="text-white/40" />
               </button>
               
               <button 
@@ -266,15 +305,18 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                   <span className="text-lg">🎭</span>
                   <span className="text-white text-sm">Explore Ego States</span>
                 </div>
-                <span className="text-white/40">→</span>
+                <ChevronRight size={16} className="text-white/40" />
               </button>
               
-              <button className="w-full flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
+              <button 
+                onClick={() => showToast({ type: 'info', message: 'Export feature coming soon!' })}
+                className="w-full flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+              >
                 <div className="flex items-center space-x-3">
                   <span className="text-lg">📚</span>
                   <span className="text-white text-sm">Export Progress</span>
                 </div>
-                <span className="text-white/40">→</span>
+                <ChevronRight size={16} className="text-white/40" />
               </button>
             </div>
           </div>
@@ -289,8 +331,8 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 <h3 className="text-white font-semibold text-lg">Personalized Insights</h3>
                 <p className="text-indigo-400 text-sm">AI-powered recommendations</p>
               </div>
-            </div>
-                <span className="text-teal-400 font-medium">3 sessions • 45 min total</span>
+                <span className="text-white/60">Level {user.level}</span>
+                <span className="text-teal-400 font-medium">{user.sessionStreak} day streak</span>
             <div className="space-y-4">
               <div className="p-4 bg-gradient-to-br from-indigo-500/5 to-blue-500/5 rounded-lg border border-indigo-500/20">
                 <div className="flex items-start space-x-3 mb-2">
@@ -322,7 +364,10 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                     <p className="text-white/70 text-xs">Try Explorer for creativity boost</p>
                   </div>
                 </div>
-                <button className="ml-8 px-3 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full text-purple-400 text-xs font-medium hover:bg-purple-500/30 transition-colors">
+                <button 
+                  onClick={() => handleEgoStateSwitch('explorer')}
+                  className="ml-8 px-3 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full text-purple-400 text-xs font-medium hover:bg-purple-500/30 transition-colors hover:scale-105"
+                >
                   Switch Now
                 </button>
               </div>
