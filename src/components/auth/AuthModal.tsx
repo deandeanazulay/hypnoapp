@@ -88,7 +88,21 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       }
 
       if (result?.error) {
-        setFormError(result.error.message)
+        // Provide user-friendly error messages
+        const errorMessage = result.error.message
+        if (errorMessage.includes('Invalid login credentials') || errorMessage.includes('invalid_credentials')) {
+          if (mode === 'signin') {
+            setFormError('Invalid email or password. Please check your credentials and try again.')
+          } else {
+            setFormError(errorMessage)
+          }
+        } else if (errorMessage.includes('Email not confirmed')) {
+          setFormError('Please check your email and click the confirmation link before signing in.')
+        } else if (errorMessage.includes('User already registered')) {
+          setFormError('An account with this email already exists. Try signing in instead.')
+        } else {
+          setFormError(errorMessage)
+        }
       } else if (mode !== 'reset') {
         handleClose()
       }
@@ -225,6 +239,13 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           {formError && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
               <p className="text-red-400 text-sm">{formError}</p>
+              {formError.includes('Invalid email or password') && (
+                <div className="mt-2 text-xs text-red-300/80">
+                  <p>• Double-check your email and password for typos</p>
+                  <p>• If you haven't created an account yet, try signing up</p>
+                  <p>• Use "Forgot your password?" if you need to reset</p>
+                </div>
+              )}
             </div>
           )}
 
