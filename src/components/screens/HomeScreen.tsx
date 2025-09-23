@@ -140,6 +140,7 @@ export default function HomeScreen({
             onActionSelect={handleActionSelect}
             onNavigateToCreate={() => onTabChange('create')}
           />
+        </div>
       </div>
 
       {/* Achievement notifications */}
