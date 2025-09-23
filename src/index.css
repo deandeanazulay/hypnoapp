@@ -135,6 +135,24 @@ html, body, #root {
     animation: slide-in-right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
+  @keyframes gradient-x {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+  
+  .animate-gradient-x {
+    background-size: 200% 200%;
+    animation: gradient-x 6s ease infinite;
+  }
+  
+  .animate-spin-slow {
+    animation: spin 8s linear infinite;
+  }
+  
   @keyframes shrink {
     from { width: 100%; }
     to { width: 0%; }
