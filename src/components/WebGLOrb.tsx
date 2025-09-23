@@ -19,19 +19,20 @@ export interface WebGLOrbProps {
   onDragEnd?: () => void;
 }
 
-const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({ 
-  onTap, 
-  afterglow = false, 
-  className = '', 
-  breathPhase = 'rest',
-  size,
-  egoState = 'guardian',
-  selectedGoal,
-  mousePosition = { x: 0.5, y: 0.5 },
-  isDragging = false,
-  onDragStart,
-  onDragEnd
-}, ref) => {
+const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
+  const {
+    onTap, 
+    afterglow = false, 
+    className = '', 
+    breathPhase = 'rest',
+    size,
+    egoState = 'guardian',
+    selectedGoal,
+    mousePosition = { x: 0.5, y: 0.5 },
+    isDragging = false,
+    onDragStart,
+    onDragEnd
+  } = props;
   
   React.useImperativeHandle(ref, () => ({
     updateState: (state: any) => {
