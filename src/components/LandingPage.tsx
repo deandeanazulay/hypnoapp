@@ -118,9 +118,10 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
         "Monthly group sessions",
         "Personal transformation coach"
       ],
-      cta: "Go Visionary",
+      cta: "Coming Soon",
       popular: false,
-      action: onShowAuth
+      action: () => {},
+      comingSoon: true
     }
   ];
 
@@ -372,6 +373,8 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
                 className={`relative p-8 rounded-3xl backdrop-blur-sm border transition-all duration-500 hover:scale-105 ${
                   plan.popular
                     ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-400/30 shadow-2xl shadow-teal-400/20'
+                   : plan.comingSoon
+                   ? 'bg-white/5 border-white/10 opacity-60'
                     : 'bg-white/5 border-white/10 hover:border-white/20'
                 }`}
               >
@@ -404,9 +407,12 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
 
                 <button
                   onClick={plan.action}
+                 disabled={plan.comingSoon}
                   className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-300 hover:scale-105 ${
                     plan.popular
                       ? 'bg-gradient-to-r from-teal-400 to-cyan-400 text-black shadow-lg shadow-teal-400/25'
+                     : plan.comingSoon
+                     ? 'bg-white/10 text-white/50 cursor-not-allowed border border-white/10'
                       : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
                   }`}
                 >
