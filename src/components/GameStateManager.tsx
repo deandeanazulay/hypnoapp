@@ -155,6 +155,19 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const createUserProfile = async () => {
     if (!authUser) return;
 
+    // First check if profile already exists to avoid conflicts
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('id', authUser.id)
+      .single();
+
+    if (existingProfile) {
+      // Profile already exists, just load it
+      await loadUserProfile();
+      return;
+    }
+
     const defaultProfile: Partial<UserProfile> = {
       id: authUser.id,
       email: authUser.email || '',
@@ -193,12 +206,19 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       active_ego_state: 'guardian',
     };
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('user_profiles')
-      .insert([defaultProfile]);
+      .insert([defaultProfile])
+      .select()
+      .single();
 
     if (error) {
-      console.error('Error creating user profile:', error);
+      // If error is due to profile already existing, that's fine
+      if (error.code !== '23505') { // 23505 is unique constraint violation
+        console.error('Error creating user profile:', error);
+      }
+      // Try to load existing profile anyway
+      await loadUserProfile();
     } else {
       await loadUserProfile();
     }
