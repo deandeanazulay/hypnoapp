@@ -1,9 +1,39 @@
 import React from 'react';
-import { X, Star } from 'lucide-react';
+import { X, Star, TrendingUp } from 'lucide-react';
 import { egoStates, useAppStore, EgoStateId } from '../../state/appStore';
 
 export default function EgoStatesModal() {
   const { isEgoModalOpen, closeEgoModal, activeEgoState, setActiveEgoState } = useAppStore();
+
+  // Mock data for ego state usage (in real app, this would come from GameStateManager)
+  const egoStateUsage = {
+    guardian: 15,
+    rebel: 8,
+    healer: 22,
+    explorer: 12,
+    mystic: 18,
+    sage: 10,
+    child: 14,
+    performer: 9,
+    shadow: 6,
+    builder: 11,
+    seeker: 7,
+    lover: 13,
+    trickster: 4,
+    warrior: 9,
+    visionary: 5
+  };
+
+  const totalSessions = Object.values(egoStateUsage).reduce((sum, count) => sum + count, 0);
+
+  const getUsagePercentage = (stateId: EgoStateId) => {
+    const count = egoStateUsage[stateId] || 0;
+    return totalSessions > 0 ? Math.round((count / totalSessions) * 100) : 0;
+  };
+
+  const getUsageCount = (stateId: EgoStateId) => {
+    return egoStateUsage[stateId] || 0;
+  };
 
   if (!isEgoModalOpen) return null;
 
@@ -64,6 +94,27 @@ export default function EgoStatesModal() {
                 {state.description}
               </div>
 
+              {/* Usage Analytics */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-1">
+                  <TrendingUp size={10} className="text-white/50" />
+                  <span className="text-white/70 text-xs font-medium">
+                    {getUsageCount(state.id)} sessions
+                  </span>
+                </div>
+                <span className="text-white/50 text-xs">
+                  {getUsagePercentage(state.id)}%
+                </span>
+              </div>
+
+              {/* Usage Progress Bar */}
+              <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden mb-3">
+                <div 
+                  className="h-full bg-white/60 rounded-full transition-all duration-500"
+                  style={{ width: `${getUsagePercentage(state.id)}%` }}
+                />
+              </div>
+
               {/* Tags */}
               <div className="flex flex-wrap gap-1">
                 {state.usedFor.slice(0, 2).map((tag) => (
@@ -87,9 +138,14 @@ export default function EgoStatesModal() {
           ))}
         </div>
 
-        {/* Footer tip */}
-        <div className="text-xs text-white/50 text-center">
-          💡 Tip: You can switch states anytime from <span className="text-white/70 font-medium">Settings → Ego States</span>
+        {/* Footer with analytics summary */}
+        <div className="flex items-center justify-between text-xs text-white/50">
+          <span>
+            💡 Tip: You can switch states anytime from <span className="text-white/70 font-medium">Settings</span>
+          </span>
+          <span className="text-white/60">
+            Total: {totalSessions} sessions
+          </span>
         </div>
       </div>
     </div>
