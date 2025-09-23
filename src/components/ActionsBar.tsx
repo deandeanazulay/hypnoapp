@@ -6,12 +6,14 @@ interface ActionsBarProps {
   selectedEgoState: string;
   selectedAction: any;
   onActionSelect: (action: any) => void;
+  onNavigateToCreate: () => void;
 }
 
 export default function ActionsBar({ 
   selectedEgoState,
   selectedAction,
-  onActionSelect
+  onActionSelect,
+  onNavigateToCreate
 }: ActionsBarProps) {
   const { user } = useGameState();
   const [customActions, setCustomActions] = useState<any[]>([]);
@@ -165,7 +167,7 @@ export default function ActionsBar({
           
           {/* Add New Action Button */}
           <button
-            onClick={addCustomAction}
+            onClick={onNavigateToCreate}
             className="flex-shrink-0 w-[80px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-lg p-2 hover:scale-105 hover:z-50 transition-all duration-200 hover:border-white/50"
           >
             <div className="flex flex-col items-center space-y-1">
@@ -174,7 +176,7 @@ export default function ActionsBar({
               </div>
               <div className="text-center">
                 <div className="text-white/60 font-medium text-xs leading-tight">
-                  Add
+                  Create
                 </div>
               </div>
             </div>

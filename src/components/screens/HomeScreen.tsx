@@ -138,6 +138,7 @@ export default function HomeScreen({
             selectedEgoState={selectedEgoState}
             selectedAction={selectedAction}
             onActionSelect={handleActionSelect}
+            onNavigateToCreate={() => onTabChange('create')}
           />
         </div>
       </div>
