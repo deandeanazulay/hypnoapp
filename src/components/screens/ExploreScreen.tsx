@@ -150,94 +150,96 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
               </div>
 
               {/* Content Grid */}
-              <div className="relative z-10 px-4 pt-4 pb-20">
+              <div className="relative z-10 px-4 pt-4 pb-4 flex-1 min-h-0">
                 
-                {/* Protocol Grid - Responsive */}
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                  {filteredProtocols.length > 0 ? (
-                    displayedProtocols.map((protocol) => renderProtocolCard(protocol))
-                  ) : (
-                    <div className="col-span-full flex items-center justify-center py-12 lg:py-20">
-                      <div className="text-center">
-                        <div className="bg-gradient-to-br from-white/5 to-gray-500/10 rounded-xl p-6 lg:p-8 border border-white/20 max-w-md mx-auto">
-                          <div className="flex items-center space-x-3 mb-4">
-                            <Filter size={20} className="text-white/20" />
-                            <h3 className="text-[var(--ink-2)] text-xl font-medium">No protocols found</h3>
+                <div className="flex flex-col h-full">
+                  {/* Protocol Grid - Responsive */}
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 mb-8">
+                    {filteredProtocols.length > 0 ? (
+                      displayedProtocols.map((protocol) => renderProtocolCard(protocol))
+                    ) : (
+                      <div className="col-span-full flex items-center justify-center py-12 lg:py-20">
+                        <div className="text-center">
+                          <div className="bg-gradient-to-br from-white/5 to-gray-500/10 rounded-xl p-6 lg:p-8 border border-white/20 max-w-md mx-auto">
+                            <div className="flex items-center space-x-3 mb-4">
+                              <Filter size={20} className="text-white/20" />
+                              <h3 className="text-[var(--ink-2)] text-xl font-medium">No protocols found</h3>
+                            </div>
+                            <p className="text-[var(--ink-dim)]">Try adjusting your filters</p>
+                            <button 
+                              onClick={() => {
+                                setSelectedFilter('all');
+                                setSelectedDifficulty('all');
+                              }}
+                              className="mt-4 px-4 py-2 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all text-sm hover:scale-105"
+                            >
+                              Clear Filters
+                            </button>
                           </div>
-                          <p className="text-[var(--ink-dim)]">Try adjusting your filters</p>
-                          <button 
-                            onClick={() => {
-                              setSelectedFilter('all');
-                              setSelectedDifficulty('all');
-                            }}
-                            className="mt-4 px-4 py-2 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all text-sm hover:scale-105"
-                          >
-                            Clear Filters
-                          </button>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Desktop-only Featured Section */}
-                <div className="hidden xl:block mt-12 pt-8 border-t border-white/10">
-                  <div className="text-center mb-8 max-w-4xl mx-auto">
-                    <h3 className="text-white text-2xl font-light mb-2 bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
-                      Master the Art of Hypnosis
-                    </h3>
-                    <p className="text-white/70 max-w-2xl mx-auto">
-                      Each protocol represents years of refined hypnotic technique, designed to work with specific archetypal energies for maximum transformation.
-                    </p>
+                    )}
                   </div>
+                
+                  {/* Desktop-only Featured Section */}
+                  <div className="hidden xl:block flex-1 pt-4 border-t border-white/10">
+                    <div className="text-center mb-6">
+                      <h3 className="text-white text-2xl font-light mb-2 bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
+                        Master the Art of Hypnosis
+                      </h3>
+                      <p className="text-white/70 max-w-2xl mx-auto">
+                        Each protocol represents years of refined hypnotic technique, designed to work with specific archetypal energies for maximum transformation.
+                      </p>
+                    </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                    {/* Quick Access */}
-                    <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-2xl p-6 border border-teal-500/20 hover:border-teal-500/30 transition-all duration-300 hover:scale-105">
-                      <div className="w-12 h-12 rounded-xl bg-teal-500/20 flex items-center justify-center mb-4">
-                        <Zap size={24} className="text-teal-400" />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {/* Quick Access */}
+                      <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-2xl p-6 border border-teal-500/20 hover:border-teal-500/30 transition-all duration-300 hover:scale-105">
+                        <div className="w-12 h-12 rounded-xl bg-teal-500/20 flex items-center justify-center mb-4">
+                          <Zap size={24} className="text-teal-400" />
+                        </div>
+                        <h4 className="text-white font-semibold text-lg mb-2">Quick Inductions</h4>
+                        <p className="text-white/70 text-sm mb-4 leading-relaxed">Perfect for busy schedules. Rapid entry into trance states for immediate transformation.</p>
+                        <button 
+                          onClick={() => setSelectedFilter('induction')}
+                          className="text-teal-400 hover:text-teal-300 text-sm font-medium transition-colors flex items-center space-x-1"
+                        >
+                          <span>Explore Inductions</span>
+                          <ChevronRight size={14} />
+                        </button>
                       </div>
-                      <h4 className="text-white font-semibold text-lg mb-2">Quick Inductions</h4>
-                      <p className="text-white/70 text-sm mb-4 leading-relaxed">Perfect for busy schedules. Rapid entry into trance states for immediate transformation.</p>
-                      <button 
-                        onClick={() => setSelectedFilter('induction')}
-                        className="text-teal-400 hover:text-teal-300 text-sm font-medium transition-colors flex items-center space-x-1"
-                      >
-                        <span>Explore Inductions</span>
-                        <ChevronRight size={14} />
-                      </button>
-                    </div>
                     
-                    {/* Deep Work */}
-                    <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-2xl p-6 border border-purple-500/20 hover:border-purple-500/30 transition-all duration-300 hover:scale-105">
-                      <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
-                        <Waves size={24} className="text-purple-400" />
+                      {/* Deep Work */}
+                      <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-2xl p-6 border border-purple-500/20 hover:border-purple-500/30 transition-all duration-300 hover:scale-105">
+                        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
+                          <Waves size={24} className="text-purple-400" />
+                        </div>
+                        <h4 className="text-white font-semibold text-lg mb-2">Complete Journeys</h4>
+                        <p className="text-white/70 text-sm mb-4 leading-relaxed">Full transformation experiences. Deep dive into your subconscious landscape.</p>
+                        <button 
+                          onClick={() => setSelectedFilter('complete')}
+                          className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors flex items-center space-x-1"
+                        >
+                          <span>Explore Complete Sessions</span>
+                          <ChevronRight size={14} />
+                        </button>
                       </div>
-                      <h4 className="text-white font-semibold text-lg mb-2">Complete Journeys</h4>
-                      <p className="text-white/70 text-sm mb-4 leading-relaxed">Full transformation experiences. Deep dive into your subconscious landscape.</p>
-                      <button 
-                        onClick={() => setSelectedFilter('complete')}
-                        className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors flex items-center space-x-1"
-                      >
-                        <span>Explore Complete Sessions</span>
-                        <ChevronRight size={14} />
-                      </button>
-                    </div>
                     
-                    {/* Advanced Techniques */}
-                    <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl p-6 border border-amber-500/20 hover:border-amber-500/30 transition-all duration-300 hover:scale-105">
-                      <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center mb-4">
-                        <Star size={24} className="text-amber-400" />
+                      {/* Advanced Techniques */}
+                      <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl p-6 border border-amber-500/20 hover:border-amber-500/30 transition-all duration-300 hover:scale-105">
+                        <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center mb-4">
+                          <Star size={24} className="text-amber-400" />
+                        </div>
+                        <h4 className="text-white font-semibold text-lg mb-2">Advanced Techniques</h4>
+                        <p className="text-white/70 text-sm mb-4 leading-relaxed">Master-level protocols for experienced practitioners seeking deeper transformation.</p>
+                        <button 
+                          onClick={() => setSelectedDifficulty('advanced')}
+                          className="text-amber-400 hover:text-amber-300 text-sm font-medium transition-colors flex items-center space-x-1"
+                        >
+                          <span>Explore Advanced</span>
+                          <ChevronRight size={14} />
+                        </button>
                       </div>
-                      <h4 className="text-white font-semibold text-lg mb-2">Advanced Techniques</h4>
-                      <p className="text-white/70 text-sm mb-4 leading-relaxed">Master-level protocols for experienced practitioners seeking deeper transformation.</p>
-                      <button 
-                        onClick={() => setSelectedDifficulty('advanced')}
-                        className="text-amber-400 hover:text-amber-300 text-sm font-medium transition-colors flex items-center space-x-1"
-                      >
-                        <span>Explore Advanced</span>
-                        <ChevronRight size={14} />
-                      </button>
                     </div>
                   </div>
                 </div>
