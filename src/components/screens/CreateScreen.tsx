@@ -6,6 +6,8 @@ import { useUIStore } from '../../state/uiStore';
 import { useGameState } from '../GameStateManager';
 import { paymentService } from '../../lib/stripe';
 import { useAuth } from '../../hooks/useAuth';
+import { useProtocolStore } from '../../state/protocolStore';
+import { Target } from 'lucide-react';
 
 interface CustomProtocol {
   id: string;
@@ -28,6 +30,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
   const { user, canAccess } = useGameState();
   const { showToast } = useUIStore();
   const { isAuthenticated } = useAuth();
+  const { addCustomAction } = useProtocolStore();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   
@@ -222,9 +225,21 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       
       onProtocolCreate(newProtocol);
       
+      // Add to actions bar
+      const selectedInduction = inductionOptions.find(opt => opt.id === protocol.induction);
+      addCustomAction({
+        name: protocol.name,
+        icon: selectedInduction?.icon || <Target size={16} className="text-cyan-400" />,
+        color: selectedInduction?.color || 'from-cyan-500/20 to-blue-500/20',
+        description: `Custom: ${protocol.name}`,
+        induction: protocol.induction,
+        deepener: protocol.deepener || 'staircase',
+        duration: protocol.duration || 15
+      });
+      
       showToast({
         type: 'success',
-        message: `"${protocol.name}" created successfully!`,
+        message: `"${protocol.name}" created and added to your actions!`,
         duration: 3000
       });
       

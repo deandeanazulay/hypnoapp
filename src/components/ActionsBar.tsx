@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Target, Settings, Mic, Plus, X, Edit2 } from 'lucide-react';
 import { useGameState } from './GameStateManager';
+import { useProtocolStore, CustomAction } from '../state/protocolStore';
 
 interface ActionsBarProps {
   selectedEgoState: string;
@@ -17,7 +18,7 @@ export default function ActionsBar({
   onNavigateToCreate
 }: ActionsBarProps) {
   const { user } = useGameState();
-  const [customActions, setCustomActions] = useState<any[]>([]);
+  const { customActions, removeCustomAction, updateCustomAction } = useProtocolStore();
   const [editingAction, setEditingAction] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
 
@@ -65,34 +66,20 @@ export default function ActionsBar({
     onActionSelect(action.id === selectedAction?.id ? null : action);
   };
 
-  const addCustomAction = () => {
-    const newAction = {
-      id: `custom-${Date.now()}`,
-      name: 'New Action',
-      icon: <Target size={16} className="text-cyan-400" />,
-      color: 'from-cyan-500/20 to-blue-500/20',
-      description: 'Custom action',
-      isCustom: true
-    };
-    setCustomActions(prev => [...prev, newAction]);
-    setEditingAction(newAction.id);
-    setEditText(newAction.name);
-  };
 
   const saveEdit = (actionId: string) => {
     if (editText.trim()) {
-      setCustomActions(prev => prev.map(action => 
-        action.id === actionId 
-          ? { ...action, name: editText.trim(), description: `Custom: ${editText.trim()}` }
-          : action
-      ));
+      updateCustomAction(actionId, {
+        name: editText.trim(),
+        description: `Custom: ${editText.trim()}`
+      });
     }
     setEditingAction(null);
     setEditText('');
   };
 
   const deleteCustomAction = (actionId: string) => {
-    setCustomActions(prev => prev.filter(action => action.id !== actionId));
+    removeCustomAction(actionId);
     if (selectedAction?.id === actionId) {
       onActionSelect(null);
     }
