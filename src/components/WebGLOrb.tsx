@@ -167,6 +167,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
       uniform vec2 mousePos;
       uniform vec2 userRotation;
       uniform float interactionIntensity;
+      uniform float pulseIntensity;
       varying vec4 v_color;
 
       #define PI 3.14159265359
@@ -318,15 +319,32 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         float tm2 = time * 0.13;
         
         // Enhanced interactive rotation
-        float angleX = userRotation.x * 0.01 + sin(time * 0.2) * 0.1;
-        float angleY = userRotation.y * 0.01 + cos(time * 0.15) * 0.1;
-        float angleZ = time * 0.05 + (mousePos.x - 0.5) * 0.5;
+        float rotAngleX = userRotation.x * 0.01 + sin(time * 0.2) * 0.1;
+        float rotAngleY = userRotation.y * 0.01 + cos(time * 0.15) * 0.1;
+        float rotAngleZ = time * 0.05 + (mousePos.x - 0.5) * 0.5;
         
         // Hypnotic spiral mathematics
         float spiralTime = time * (0.5 + hypnoticMode * 0.3) + interactionIntensity * 2.0;
         float goldenRatio = 1.618033988749;
         float spiralRadius = length(pos.xz);
         float spiralAngle = atan(pos.z, pos.x) + spiralRadius * goldenRatio + spiralTime;
+        
+        // Alien energy tendrils extending outward
+        float energyPulse = sin(time * 3.0 + spiralRadius * 5.0) * 0.5 + 0.5;
+        float tentacleLength = 1.0 + energyPulse * pulseIntensity * (2.0 + interactionIntensity);
+        
+        // Create energy tentacles that extend beyond the core orb
+        float tentacleId = mod(pointId, 8.0);
+        float tentacleAngle = tentacleId * PI * 0.25;
+        if (mod(pointId, 16.0) > 8.0) {
+          // These are the extending energy lines
+          vec3 tentacleDir = vec3(cos(tentacleAngle), sin(tentacleAngle * 0.5), sin(tentacleAngle));
+          pos += tentacleDir * tentacleLength * (0.8 + energyPulse * 0.4);
+          
+          // Add alien wiggle to the tentacles
+          float wiggle = sin(time * 4.0 + tentacleId * 2.0) * 0.3;
+          pos.xyz += tentacleDir * wiggle * pulseIntensity;
+        }
         
         // Fibonacci spiral influence
         float fibSpiral = sin(spiralAngle * goldenRatio) * cos(spiralRadius * PI);
@@ -337,11 +355,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         pos.xyz *= 1.0 + fractalPulse;
         
         // Interactive 3D transformation
-        mat4 interactiveRotation = rotX(angleX) * rotY(angleY) * rotZ(angleZ);
+        mat4 interactiveRotation = rotationX(rotAngleX) * rotationY(rotAngleY) * rotationZ(rotAngleZ);
         vec4 rotatedPos = interactiveRotation * vec4(pos, 1.0);
         pos = rotatedPos.xyz;
 
-        mat4 wmat = rotZ(odd * PI * .5 + sin(tm) + angleY);
+        mat4 wmat = rotationZ(odd * PI * .5 + sin(tm) + rotAngleY);
         wmat *= trans(vec3(0, cos(pairA * PI), 0));
         wmat *= uniformScale(sin(pairA * PI) * (1.0 + interactionIntensity * 0.2));
         vec4 wp = wmat * vec4(pos, 1.);
@@ -354,27 +372,42 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         float r = 2.5;
         mat4 mat = persp(radians(60.0), resolution.x / resolution.y, 0.1, 10.0);
         vec3 eye = vec3(
-          cos(tm + angleY * 0.1) * r, 
-          sin(tm * 0.93 + angleX * 0.1) * r, 
-          sin(tm + angleZ * 0.1) * r
+          cos(tm + rotAngleY * 0.1) * r, 
+          sin(tm * 0.93 + rotAngleX * 0.1) * r, 
+          sin(tm + rotAngleZ * 0.1) * r
         );
         vec3 target = vec3(0);
-        vec3 up = vec3(sin(angleY * 0.05), sin(tm2 + angleX * 0.1), cos(tm2 + angleY * 0.1));
+        vec3 up = vec3(sin(rotAngleY * 0.05), sin(tm2 + rotAngleX * 0.1), cos(tm2 + rotAngleY * 0.1));
         
         mat *= cameraLookAt(eye, target, up);
         
         gl_Position = mat * wp;
 
-        // Ego state color patterns
+        // Alien energy color patterns
         float colorMix = sin(spiralAngle * 0.1 + time * 0.2) * 0.5 + 0.5;
         vec3 baseColor = mix(primaryColor, secondaryColor, colorMix);
            
-        // Add spiral color bands for fixation
+        // Energy tendril glow effect
+        float energyGlow = energyPulse * pulseIntensity;
+        if (mod(pointId, 16.0) > 8.0) {
+          // Energy lines are brighter and more alien
+          baseColor = mix(baseColor, vec3(1.0, 1.0, 1.0), energyGlow * 0.6);
+          baseColor += vec3(0.0, energyGlow * 0.4, energyGlow * 0.8); // Cyan alien glow
+        }
+        
         float spiralBands = sin(spiralRadius * 10.0 - spiralTime * 3.0) * hypnoticMode * (1.0 + interactionIntensity);
         baseColor = mix(baseColor, vec3(1.0, 1.0, 1.0), spiralBands * (0.3 + interactionIntensity * 0.2));
         
         vec3 color = baseColor;
-        v_color = vec4(color, mix(0.3 + interactionIntensity * 0.2, 1.0, pow(1.0 - sv, 2.0)));
+        
+        // Enhanced alpha for energy tendrils
+        float alpha = mix(0.3 + interactionIntensity * 0.2, 1.0, pow(1.0 - sv, 2.0));
+        if (mod(pointId, 16.0) > 8.0) {
+          // Energy lines have pulsating alpha
+          alpha *= energyPulse * (0.6 + pulseIntensity * 0.4);
+        }
+        
+        v_color = vec4(color, alpha);
         v_color.rgb *= v_color.a;
       }
     `;
@@ -436,9 +469,10 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     const mousePosLocation = gl.getUniformLocation(program, 'mousePos');
     const userRotationLocation = gl.getUniformLocation(program, 'userRotation');
     const interactionIntensityLocation = gl.getUniformLocation(program, 'interactionIntensity');
+    const pulseIntensityLocation = gl.getUniformLocation(program, 'pulseIntensity');
 
     // Create vertex buffer
-    const numVertices = 2048;
+    const numVertices = 4096; // More vertices for energy tendrils
     const vertices = new Float32Array(numVertices);
     for (let i = 0; i < numVertices; i++) {
       vertices[i] = i;
@@ -485,6 +519,10 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
       
       gl.uniform1f(hypnoticModeLocation, hypnoticIntensity);
       gl.uniform1f(tranceDepthLocation, tranceLevel);
+      
+      // Alien pulse intensity based on interaction and breathing
+      const alienPulse = (isHovering ? 1.0 : 0.6) * (isDragging ? 1.5 : 1.0) * tranceLevel;
+      gl.uniform1f(pulseIntensityLocation, alienPulse);
       
       // Interactive uniforms
       gl.uniform2f(mousePosLocation, mousePosition.x, mousePosition.y);
@@ -614,19 +652,64 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
           
           {/* Fallback CSS orb if WebGL fails */}
           <div className="absolute inset-0 flex items-center justify-center">
+            {/* Core CSS Orb */}
             <div 
-              className="w-48 h-48 rounded-full animate-pulse transition-all duration-300"
+              className="w-48 h-48 rounded-full transition-all duration-300 relative"
               style={{
                 background: `radial-gradient(circle, rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, ${isHovering ? 0.8 : 0.6}) 0%, rgba(${egoColors.secondary[0] * 255}, ${egoColors.secondary[1] * 255}, ${egoColors.secondary[2] * 255}, ${isHovering ? 0.6 : 0.4}) 100%)`,
                 transform: `rotateX(${rotation.x * 0.1}deg) rotateY(${rotation.y * 0.1}deg)`,
-                filter: isHovering ? 'brightness(1.2)' : 'brightness(1)'
+                filter: isHovering ? 'brightness(1.2)' : 'brightness(1)',
+                animation: 'pulse 2s ease-in-out infinite'
               }}
-            />
+            >
+              {/* Alien Energy Tendrils - CSS Fallback */}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-1 opacity-60"
+                  style={{
+                    height: '120px',
+                    background: `linear-gradient(to top, rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, 0.8), transparent)`,
+                    left: '50%',
+                    top: '50%',
+                    transformOrigin: 'bottom center',
+                    transform: `translateX(-50%) translateY(-50%) rotate(${i * 45}deg)`,
+                    animation: `alienPulse 2s ease-in-out infinite ${i * 0.25}s`,
+                    filter: 'blur(0.5px)',
+                    boxShadow: `0 0 10px rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, 0.6)`
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
         
         {/* Text below orb - always rendered */}
         {/* Removed duplicate text - handled by parent component */}
+      </div>
+      
+      {/* CSS Animation Keyframes */}
+      <style jsx>{`
+        @keyframes alienPulse {
+          0%, 100% { 
+            transform: translateX(-50%) translateY(-50%) rotate(var(--rotation, 0deg)) scaleY(0.6);
+            opacity: 0.3;
+          }
+          50% { 
+            transform: translateX(-50%) translateY(-50%) rotate(var(--rotation, 0deg)) scaleY(1.2);
+            opacity: 0.8;
+          }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { 
+            transform: rotateX(var(--rotX, 0deg)) rotateY(var(--rotY, 0deg)) scale(0.95);
+          }
+          50% { 
+            transform: rotateX(var(--rotX, 0deg)) rotateY(var(--rotY, 0deg)) scale(1.05);
+          }
+        }
+      `}</style>
     </div>
     </div>
   );
