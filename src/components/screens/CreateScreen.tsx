@@ -7,7 +7,6 @@ import { useGameState } from '../GameStateManager';
 import { paymentService } from '../../lib/stripe';
 import { useAuth } from '../../hooks/useAuth';
 import { useProtocolStore } from '../../state/protocolStore';
-import { Target } from 'lucide-react';
 
 interface CustomProtocol {
   id: string;
