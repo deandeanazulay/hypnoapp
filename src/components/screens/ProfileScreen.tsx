@@ -181,7 +181,6 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
         header={header}
         body={body}
       />
-          )}
       <SettingsModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
