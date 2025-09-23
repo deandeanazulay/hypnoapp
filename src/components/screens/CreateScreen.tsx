@@ -348,10 +348,6 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                   ? 'bg-teal-500/20 border-teal-500/40 text-teal-400 shadow-lg shadow-teal-500/20'
                   : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10'
               }`}
-              onClick={() => {
-                setProtocol(prev => ({ ...prev, induction: option.id }));
-                setShowInductionSelector(false);
-              }}
             >
               <div className="font-medium">{option.name}</div>
               <div className="text-sm opacity-70">{option.description}</div>
@@ -388,9 +384,4 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
       </ModalShell>
     </>
   );
-}
-      )
-      )
-      }
-  )
 }
