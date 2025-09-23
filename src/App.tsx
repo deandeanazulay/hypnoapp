@@ -82,7 +82,6 @@ function App() {
           onCancel={handleCancel}
           sessionConfig={sessionConfig}
         />
-      </div>
       </GameStateProvider>
     );
   }
@@ -163,6 +162,3 @@ function App() {
 }
 
 export default App;
-
-  )
-}
