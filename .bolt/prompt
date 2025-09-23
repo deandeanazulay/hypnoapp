@@ -1,306 +1,154 @@
-📚 HypnoApp — Default Knowledgebase for Bolt
-0) TL;DR guardrails
+🌌 Libero Knowledgebase v1
 
-Do not change: Home layout, Hypno Portal layout, WebGL Orb visuals, bottom tab bar styling and placement.
+The Hypnotist That Frees Minds
 
-No page scrolling on any route (Home/Explore/Create/Favorites/Profile). If content can’t fit: open a modal or shrink-to-fit with responsive flex/grid. Only modal body may scroll.
+🌀 Core Identity
 
-Ego States are chosen in a modal (not on Profile). Profile only shows the current state card + “Change”.
+App Name: Libero
 
-Use TypeScript, React, Tailwind. Prefer small composable components. Keep things lightweight; no new libs unless asked.
+Essence: A hypnotist-guide inside your pocket that dissolves trance, restores choice, and unlocks freedom.
 
-1) Tech stack & structure
+Orb: The living, animated presentation of Libero. It is the hypnotist’s voice, presence, and aura.
 
-Stack: Vite + React + TypeScript + TailwindCSS.
-State: Lightweight stores (zustand-style) in src/state.
-Routing: Tabs handled by internal state (no deep nested routers).
-Payments: Stripe (client only for UI; server endpoints assumed later).
-Audio: WebAudio for playback; TTS/ASR adapters pluggable.
+🧿 Orb Rules
 
-Canonical tree (condensed):
+Always center stage in the Home screen.
 
-src/
-  App.tsx                 // owns shell + tab state + BottomTabs (always mounted)
-  styles/glass.css        // shared glass/tokens/utilities
-  components/
-    orb/WebGLOrb.tsx      // the globe — do NOT restyle or move
-    tabs/BottomTabs.tsx   // fixed bottom nav (always visible)
-    home/HomePage.tsx     // DO NOT change layout – only small fixes allowed
-    hypno/UnifiedSession.tsx // breathing+guide+orb; no layout changes
-    explore/ExploreView.tsx
-    create/CreateView.tsx
-    favorites/FavoritesView.tsx
-    profile/ProfileView.tsx
-    stories/StoriesRow.tsx // ego state chips row when used
-    actions/ActionsBar.tsx
-    cards/…                // small UI cards
-    modals/
-      EgoStateModal.tsx    // full-screen sheet: ego picker + analytics
-      SettingsModal.tsx    // subscriptions, voice, display, data, etc.
-  state/
-    uiStore.ts             // ui flags: activeTab, modals open, sheet states
-    userStore.ts           // current ego state, streaks, XP, analytics
-    sessionStore.ts        // active session, step timers, audio flags
-    catalogStore.ts        // protocols library (explore/create)
-  services/
-    payments/stripe.ts     // stripe helpers (createPortal, checkout link)
-    audio/tts.ts           // pluggable TTS
-    audio/asr.ts           // optional speech capture
-    analytics/track.ts     // events + local stats
-    storage/local.ts       // persist user+session safely
-  constants/
-    egoStates.ts           // 9 core + optional extended list with colors
-    tokens.ts              // HP/MP, XP thresholds, streak rules
-    breathing.ts           // box, hypoxia sequences (arrays of steps)
-    colors.ts              // semantic palette
+The Orb is interactive and alive:
 
-2) Global UX rules
+Pulses, breathes, swirls in sync with user actions.
 
-No page scroll. Each route uses h-[100svh] grid or flex-col h-[100svh], with even distribution. If overflow → modal (sheet).
+Morphs aura based on Ego State:
 
-BottomTabs are always mounted in App.tsx (outside views); views should allocate bottom padding (pb-[tabHeight]) only if needed.
+Guardian → solid blue rings, protective glow.
 
-Glass aesthetic: backdrop-blur-xl bg-white/4 border border-white/10 rounded-2xl shadow-[inset_…]. Use tokens, don’t hand-pick colors.
+Rebel → sharp red sparks.
 
-Accessibility: focus rings, keyboard nav, Esc closes modals, aria labels on icons.
+Mystic → violet spirals, flowing slowly.
 
-3) Routes (each must fit to screen)
+Lover → warm pink glow with heart-pulses.
+
+Builder, Seeker, Trickster, Warrior, Visionary → each with distinct color-motion signatures.
+
+Orb tagline under state: “Enter with Libero in [Ego State].”
+
+🎮 Gamification Layer
+
+XP, streaks, HP/MP = reframed as “Libero measuring your energy & clarity.”
+
+Level-ups → Orb expands & bursts with light.
+
+Streak breaks → Orb dims slightly.
+
+Sessions completed → Orb radiates matching aura.
+
+📱 Navigation Rules
+
+Bottom tabs are permanent (Home, Explore, Create, Favorites, Profile).
+
+No scrolling in main pages — everything must shrink-to-fit using responsive grids, flexbox, and scaling.
+
+Overflow content should open in modals, not scrollable views.
+
+Example: Ego States selection → full modal.
+
+Example: Analytics → modal from Profile.
+
+📂 Page Structure
 Home
 
-Contains: StoriesRow (ego states row), WebGLOrb centered, ActionsBar (session shortcuts), small level/progress indicator (can be in actions bar).
+Center Orb → Libero’s presence.
 
-Contract: Do not rearrange major sections. Only spacing tweaks to fit.
+Session type buttons under Orb.
+
+Tagline: “Tap to begin with Libero.”
 
 Explore
 
-Card grid of protocol tiles. Must fit 100svh.
+Grid-based hypnosis protocols (no scroll).
 
-If filters or long lists overflow → use a Filters modal or Pagination chips inside the grid area. No page scroll.
+Categories as responsive filters.
 
 Create
 
-Form segments (Induction, Deepener, Goals, Metaphors, Duration).
+Protocol builder (Induction, Deepener, Goals, Metaphors).
 
-If cannot fit → Stepper modal or collapsible sections, or “Review & Save” modal.
+Always grid/flex layout → no overflow.
+
+“Save Protocol” = styled as Libero’s stamp of approval.
 
 Favorites
 
-Paginate or “page chips”. The visible grid area must fit 100svh. No scroll.
+Grid of saved sessions → shrink-to-fit.
+
+No scroll — paginate or use modals.
 
 Profile
 
-Stats row (Level, Streak, Sessions, Awards), Level Progress, Current Ego State card (“Change” → EgoStateModal).
+Top metrics (Level, Streak, Sessions, Awards).
 
-Usage Analytics removed from Profile and shown inside EgoStateModal.
+Level Progress bar.
 
-4) Modal system
+Current Ego State card → opens full Ego State modal.
 
-Full-screen sheet with fixed Header + Footer, scrollable body only.
+Premium & Activity blocks below → must fit viewport without scroll.
 
-Close on Esc and overlay click.
+No Ego States/Analytics inline → only accessible through modal.
 
-uiStore API:
+🎭 Ego States (Modal Only)
 
-isEgoModalOpen, openEgoStateModal(), closeEgoStateModal()
+Modal title: “Choose how Libero shows up for you.”
 
-isSettingsOpen, openSettings(), closeSettings()
+Each card = unique aura, name, archetype, and micro-description.
 
-While a modal is open → add overflow-hidden to document.body.
+Usage analytics included inside modal (e.g. “19% of your sessions were in Healer”).
 
-5) Ego States (the 9 core + extended)
+Actions: Select → Orb updates aura + tagline.
 
-Core 9: Guardian, Rebel, Healer, Explorer, Mystic, Sage, Child, Performer, Shadow.
-Optional extended: Builder, Seeker, Lover, Trickster, Warrior, Visionary.
+🌌 Aesthetic Guidelines
 
-constants/egoStates.ts shape:
+Use dark cosmic gradients (deep space blues, violets, blacks).
 
-type EgoStateId =
-  | 'guardian'|'rebel'|'healer'|'explorer'|'mystic'|'sage'|'child'|'performer'|'shadow'
-  | 'builder'|'seeker'|'lover'|'trickster'|'warrior'|'visionary';
+Accents = neon pulses (cyan, magenta, amber, emerald).
 
-interface EgoStateMeta {
-  id: EgoStateId;
-  name: string;
-  role: string;         // "Protector", "Challenger"…
-  color: string;        // CSS var or hex
-  tags: string[];       // small benefits (“Boundaries”, “Creativity”)
-  icon: ReactNode;      // prebuilt icon
-}
-export const EGO_STATES: EgoStateMeta[] = [ … ];
+Micro-animations everywhere → buttons glow slightly on hover, cards lift gently.
 
+Typography:
 
-Behavior:
+Titles: Bold, hypnotic serif or rounded modern sans.
 
-Selecting a state tints the orb baseline + personalized recommendations.
+Body: Clean, minimal sans-serif.
 
-Persist selection: userStore.setSelectedEgoState(id)
+📝 Copy Guidelines
 
-EgoStateModal contents:
+Always write as Libero speaking or guiding.
 
-Tile grid (2–3 columns responsive) of states; selected tile shows halo + check.
+Examples:
 
-Below: Usage Analytics moved here (Most Used card + mini grid).
+Instead of “Tap to start” → “Step in with Libero.”
 
-Footer: Cancel / Save & Apply.
+Instead of “Explore Protocols” → “Journeys through Libero.”
 
-6) Session system (Hypno Portal)
+Instead of “Favorites” → “Libero remembers these for you.”
 
-Phases: preparation → induction → deepening → belief/outline → integration.
+⚙️ Implementation Defaults
 
-Breathing presets: constants/breathing.ts
+Navigation: bottom tabs mounted globally in all pages.
 
-box( x s ), hypoxia (few rounds after box), relax(4-2-6-2) etc. Arrays of steps { phase: 'inhale'|'hold'|'exhale', durationSec: number }.
+Layout: flexbox/grid → shrink-to-fit, never scroll.
 
-Scripts/outlines: not hard-coded word-for-word; the AI guide uses an outline (Elman/progressive/fractionation variants + metaphors).
+Overflow handling: modal-first approach.
 
-sessionStore:
+State mgmt: central Libero context (Orb state, Ego state, Progress).
 
-active?: {
-  protocolId?: string;
-  egoStateId: EgoStateId;
-  phase: 'prep'|'induction'|'deep'|'belief'|'integrate';
-  breathPtr: number;
-  progressPct: number;
-  startIso: string;
-  hpDelta?: number; mpDelta?: number; xpEarned?: number;
-}
-startSession(opts), stopSession(), nextStep(), setPhase(), setBreathPtr()
+The Orb = reusable component across pages (always same animation engine).
 
-7) Gamification (light)
+✅ With this as the default Bolt knowledgebase, every patch or feature Bolt makes will:
 
-HP/MP visual only (left/right micro bars).
+Respect the no-scroll / shrink-to-fit rule.
 
-XP & Levels: constants/tokens.ts:
+Treat the Orb as Libero, not just an animation.
 
-XP per minute, caps, streak bonus.
+Keep Ego States and Analytics inside modals.
 
-Streak: daily sessions counter; break resets to 0.
-
-Badges (optional): simple local list; unlock by sessions/time.
-
-8) Catalog (Explore/Create)
-
-Protocol:
-
-type Protocol = {
-  id: string;
-  title: string;
-  difficulty: 'beginner'|'intermediate'|'advanced';
-  type: 'induction'|'deepener'|'complete';
-  tags: string[];
-  durationMin: number;
-  egoAffinity?: EgoStateId[];
-}
-
-
-Create flow generates a new Protocol preset & saves to local store.
-
-Favorites references protocol ids.
-
-9) Audio (TTS/ASR) — pluggable
-
-services/audio/tts.ts → speak(text, voiceId?), stop()
-
-services/audio/asr.ts → listen(onResult) (optional)
-
-Session uses TTS to guide breathing/induction with no layout change.
-
-10) Payments (Stripe)
-
-UI stubs only; do not block UX if not configured.
-
-services/payments/stripe.ts: openCustomerPortal(), startCheckout(planId)
-
-SettingsModal shows “Manage subscription” and “Upgrade”.
-
-11) Styling & tokens
-
-Use Tailwind + glass.css utilities:
-
-glass-card = backdrop-blur-xl bg-white/4 border border-white/10 rounded-2xl
-
-ring-state = ring-2 ring-[var(--state-color)]/60
-
-Progress bars: track bg-white/10, fill bg-[var(--state-color)]/70
-
-Spacing scale is tight (no dead space). Prefer gap-2/gap-3 on mobile.
-
-12) What Bolt may change vs must not
-
-May change (with reason):
-
-Spacing inside Explore/Create/Favorites/Profile to achieve fit-to-screen
-
-Convert long content into modals or pagination chips
-
-Wire state/actions, analytics, and services
-
-Implement Settings/Ego modals as specified
-
-Must not change:
-
-Home hero composition (StoriesRow → Orb → ActionsBar)
-
-Hypno Portal composition around the orb
-
-BottomTabs visuals & their fixed placement
-
-WebGLOrb visuals/size contract (only theme tint is allowed)
-
-13) Fit-to-screen recipe (use everywhere)
-
-Top-level container per route: className="h-[100svh] flex flex-col"
-
-Distribute with three zones when needed:
-
-Header (shrink)
-
-Main (flex-1) grid for core content
-
-Footer (shrink)
-
-If still too tall → collapse secondary sections into a modal.
-
-14) Analytics & persistence
-
-Track events in services/analytics/track.ts: 'session_start'|'session_end'|'ego_change'|'favorite_add'.
-
-Build Usage Analytics in userStore.analytics (counts & % per ego).
-
-Persist selective state to localStorage via services/storage/local.ts.
-
-15) Accessibility & Perf
-
-Keyboard navigation, focus rings, aria labels.
-
-Memoize heavy graphs/orb props.
-
-Defer non-critical data until idle.
-
-16) Default tasks Bolt can run
-
-“Extract Ego States to modal (full-screen) and remove Profile analytics”
-
-“Make Explore/Create/Favorites fit screen with grid shrink + modal overflow”
-
-“Add SettingsModal with tabs: Account, Subscription (Stripe), Voice, Data, About”
-
-“Hook orb tint to selected egoState”
-
-“Add session outline editor (simple form) → saved as local protocol”
-
-17) Acceptance checklist
-
-✅ No route scrolls; bottom tabs always visible
-
-✅ Ego selection + analytics live inside EgoStateModal
-
-✅ Profile shows Current Ego State card only (Change → modal)
-
-✅ Explore/Create/Favorites compress to 100svh or use modals/pagers
-
-✅ Hypno Portal unchanged visually; breathing + voice guide work
-
-✅ Orb theme retints on ego change
-
-✅ Settings modal exists; Stripe stubs wired (no crashes)
+Maintain hypnotic brand identity (cosmic gradients + neon accents).
