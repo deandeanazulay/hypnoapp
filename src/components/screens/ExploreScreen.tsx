@@ -21,8 +21,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
     return typeMatch && difficultyMatch;
   });
 
-  const maxVisibleCards = typeof window !== 'undefined' ? 
-    (window.innerWidth < 640 ? 1 : window.innerWidth < 1024 ? 2 : 3) : 3;
+  const maxVisibleCards = 1; // Show one card at a time for better mobile experience
   const canScrollLeft = currentIndex > 0;
   const canScrollRight = currentIndex < filteredProtocols.length - maxVisibleCards;
 
@@ -34,7 +33,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
 
   const scrollRight = () => {
     if (canScrollRight) {
-      setCurrentIndex(prev => Math.min(filteredProtocols.length - maxVisibleCards, prev + 1));
+      setCurrentIndex(prev => Math.min(filteredProtocols.length - 1, prev + 1));
     }
   };
 
@@ -147,43 +146,42 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
       <div className="relative z-10 h-full px-4 py-4">
         {filteredProtocols.length > 0 ? (
           <div className="h-full flex flex-col relative">
-            {/* Navigation Arrows */}
+            {/* Navigation Arrows - Only show if more than 1 card */}
             {filteredProtocols.length > maxVisibleCards && (
               <>
                 <button
                   onClick={scrollLeft}
                   disabled={!canScrollLeft}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
                     <polyline points="15,18 9,12 15,6"></polyline>
                   </svg>
                 </button>
                 <button
                   onClick={scrollRight}
                   disabled={!canScrollRight}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
                     <polyline points="9,18 15,12 9,6"></polyline>
                   </svg>
                 </button>
               </>
             )}
             
-            <div className="flex-1 overflow-hidden px-2 sm:px-14">
+            <div className="flex-1 overflow-hidden px-4 sm:px-16">
               <div 
                 className="flex h-full pb-4 transition-transform duration-300 ease-out gap-4" 
                 style={{ 
-                  transform: `translateX(-${currentIndex * (100 / filteredProtocols.length)}%)`,
+                  transform: `translateX(-${currentIndex * 100}%)`,
                   width: `${filteredProtocols.length * 100}%`
                 }}
               >
                 {filteredProtocols.map((protocol, index) => (
                   <div 
                     key={protocol.id}
-                    className="flex-shrink-0"
-                    style={{ width: `${100 / filteredProtocols.length}%` }}
+                    className="flex-shrink-0 w-full px-2"
                   >
                     {renderProtocolCard(protocol)}
                   </div>
@@ -192,32 +190,18 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
             </div>
             
             {/* Page indicators */}
-            {filteredProtocols.length > maxVisibleCards && (
-              <div className="flex justify-center mt-4">
-                <div className="flex space-x-1.5">
+            {filteredProtocols.length > 1 && (
+              <div className="flex justify-center mt-4 mb-2">
+                <div className="flex space-x-2">
                   {filteredProtocols.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentIndex(index)}
-                      className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                      className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-125 ${
                         currentIndex === index 
-                          ? 'bg-teal-400 scale-110' 
+                          ? 'bg-teal-400 scale-125' 
                           : 'bg-white/30 hover:bg-white/50 hover:scale-105'
                       }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Simple indicators for smaller screens */}
-            {filteredProtocols.length <= maxVisibleCards && (
-              <div className="flex justify-center mt-2">
-                <div className="flex space-x-1.5">
-                  {Array.from({ length: Math.min(filteredProtocols.length, 5) }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="w-1 h-1 rounded-full bg-white/20"
                     />
                   ))}
                 </div>

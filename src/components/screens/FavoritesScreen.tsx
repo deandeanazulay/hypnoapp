@@ -2,7 +2,6 @@ import React from 'react';
 import { Heart, Play, Clock, Trash2, Star } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import PageShell from '../layout/PageShell';
-import PagedGrid from '../layout/PagedGrid';
 import ModalShell from '../layout/ModalShell';
 
 interface FavoriteSession {
@@ -167,6 +166,29 @@ interface FavoritesScreenProps {
 export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProps) {
   const { user } = useGameState();
   const [selectedSession, setSelectedSession] = React.useState<FavoriteSession | null>(null);
+  const [currentIndex, setCurrentIndex] = React.useState(0);
+
+  const itemsPerPage = 6; // 3x2 grid
+  const totalPages = Math.ceil(mockFavorites.length / itemsPerPage);
+  const canScrollLeft = currentIndex > 0;
+  const canScrollRight = currentIndex < totalPages - 1;
+
+  const scrollLeft = () => {
+    if (canScrollLeft) {
+      setCurrentIndex(prev => Math.max(0, prev - 1));
+    }
+  };
+
+  const scrollRight = () => {
+    if (canScrollRight) {
+      setCurrentIndex(prev => Math.min(totalPages - 1, prev + 1));
+    }
+  };
+
+  const getCurrentItems = () => {
+    const startIndex = currentIndex * itemsPerPage;
+    return mockFavorites.slice(startIndex, startIndex + itemsPerPage);
+  };
 
   const formatLastCompleted = (date: Date) => {
     const now = new Date();
@@ -306,14 +328,80 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   const body = (
     <div className="bg-black relative px-4 py-4 h-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-pink-950/20 via-black to-purple-950/20" />
-      <div className="relative z-10 h-full">
+      <div className="relative z-10 h-full flex flex-col">
         {mockFavorites.length > 0 ? (
-          <PagedGrid
-            items={mockFavorites}
-            cols={3}
-            rows={2}
-            renderItem={renderSessionCard}
-          />
+          <div className="h-full flex flex-col relative">
+            {/* Navigation Arrows - Only show if more than 1 page */}
+            {totalPages > 1 && (
+              <>
+                <button
+                  onClick={scrollLeft}
+                  disabled={!canScrollLeft}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
+                    <polyline points="15,18 9,12 15,6"></polyline>
+                  </svg>
+                </button>
+                <button
+                  onClick={scrollRight}
+                  disabled={!canScrollRight}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-black/90 hover:scale-110 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
+                    <polyline points="9,18 15,12 9,6"></polyline>
+                  </svg>
+                </button>
+              </>
+            )}
+
+            {/* Content Area */}
+            <div className="flex-1 overflow-hidden px-4 sm:px-16">
+              <div 
+                className="flex h-full transition-transform duration-300 ease-out" 
+                style={{ 
+                  transform: `translateX(-${currentIndex * 100}%)`,
+                  width: `${totalPages * 100}%`
+                }}
+              >
+                {Array.from({ length: totalPages }).map((_, pageIndex) => (
+                  <div 
+                    key={pageIndex}
+                    className="flex-shrink-0 w-full px-2"
+                  >
+                    <div className="grid grid-cols-3 grid-rows-2 gap-4 h-full">
+                      {mockFavorites
+                        .slice(pageIndex * itemsPerPage, (pageIndex + 1) * itemsPerPage)
+                        .map((session, index) => (
+                          <div key={session.id}>
+                            {renderSessionCard(session)}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Page indicators */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-4 mb-2">
+                <div className="flex space-x-2">
+                  {Array.from({ length: totalPages }).map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-125 ${
+                        currentIndex === index 
+                          ? 'bg-teal-400 scale-125' 
+                          : 'bg-white/30 hover:bg-white/50 hover:scale-105'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
