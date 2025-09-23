@@ -4,11 +4,17 @@ import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState } from '../../state/appStore';
 import { paymentService, STRIPE_PRODUCTS } from '../../lib/stripe';
 import { useUIStore } from '../../state/uiStore';
+import { useAuth } from '../../hooks/useAuth';
 
-export default function GlobalHUD() {
+interface GlobalHUDProps {
+  onShowAuth: () => void;
+}
+
+export default function GlobalHUD({ onShowAuth }: GlobalHUDProps) {
   const { user } = useGameState();
   const { activeEgoState, openEgoModal } = useAppStore();
   const { showToast } = useUIStore();
+  const { isAuthenticated } = useAuth();
   const currentState = getEgoState(activeEgoState);
   const [subscriptionStatus, setSubscriptionStatus] = React.useState<'free' | 'active' | 'cancelled' | 'past_due'>('free');
   const [showPricingModal, setShowPricingModal] = React.useState(false);
@@ -21,6 +27,17 @@ export default function GlobalHUD() {
   }, []);
 
   const handleUpgrade = async () => {
+    // Check authentication first
+    if (!isAuthenticated) {
+      onShowAuth();
+      showToast({
+        type: 'warning',
+        message: 'Please sign in to upgrade to premium',
+        duration: 3000
+      });
+      return;
+    }
+
     try {
       setIsProcessingPayment(true);
       const { url } = await paymentService.createCheckoutSession('mystic-subscription');

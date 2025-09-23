@@ -201,7 +201,7 @@ function App() {
       <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
         {/* Global HUD - Fixed at top */}
         <div className="flex-shrink-0 relative z-50">
-          <GlobalHUD />
+          <GlobalHUD onShowAuth={() => setShowAuthModal(true)} />
         </div>
         
         {/* Main Body Content - Flex grow */}
