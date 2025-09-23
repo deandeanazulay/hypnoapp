@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { User, Volume2, Palette, Shield, Database, Info, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Volume2, Palette, Shield, Database, Info, ChevronRight, Sparkles } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
 import { useAppStore } from '../../state/appStore';
 
