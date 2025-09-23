@@ -116,15 +116,15 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     // Drop-in shader material from article - no spokes, no wires
     const coreMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        time: { value: 0.0 },
-        colorA: { value: colors.primary },
-        colorB: { value: colors.secondary },
-        haloPow: { value: 2.0 },    // fresnel power (1.5–3.0)
+        time:     { value: 0.0 },                      // animate this each frame
+        colorA:   { value: colors.primary },
+        colorB:   { value: colors.secondary },
+        haloPow:  { value: 2.0 },   // fresnel power (1.5–3.0)
         breatheA: { value: 0.02 },  // 2% breathing amplitude
-        breatheT: { value: 7.0 }    // seconds per full breath
+        breatheT: { value: 7.0 },   // seconds per full breath
       },
       
-      // Vertex: isotropic breathing (no ribs/bands)
+      // --- Vertex: isotropic breathing (no ribs/bands)
       vertexShader: /* glsl */`
         uniform float time;
         uniform float breatheA;
@@ -133,7 +133,7 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         varying vec3 vPos;      // model-space position
         varying vec3 vNormal;   // view-space normal for rim
 
-        void main(){
+        void main() {
           // radial "breathing" — same in every direction (no axis bands)
           float s = 1.0 + breatheA * sin( (time / breatheT) * 6.28318530718 );
           vec3 pos = position * s;
@@ -144,11 +144,11 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
           vec3 n = normalize(normalMatrix * normal);
           vNormal = n;
 
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
         }
       `,
       
-      // Fragment: inner gradient + soft fresnel rim
+      // --- Fragment: inner gradient + soft fresnel rim
       fragmentShader: /* glsl */`
         uniform vec3  colorA;
         uniform vec3  colorB;
@@ -157,7 +157,7 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         varying vec3 vPos;
         varying vec3 vNormal;
 
-        void main(){
+        void main() {
           // inner radial gradient (r ~ distance from center in model units)
           float r = clamp(length(vPos), 0.0, 1.0);
           vec3 base = mix(colorA, colorB, smoothstep(0.0, 1.0, r));
