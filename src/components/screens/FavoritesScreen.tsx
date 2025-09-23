@@ -184,15 +184,6 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
     }
   };
 
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      const scrollLeft = scrollContainerRef.current.scrollLeft;
-      const cardWidth = scrollContainerRef.current.scrollWidth / totalPages;
-      const newIndex = Math.round(scrollLeft / cardWidth);
-      setCurrentIndex(newIndex);
-    }
-  };
-
   const formatLastCompleted = (date: Date) => {
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
@@ -238,7 +229,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   };
 
   const renderSessionCard = (session: FavoriteSession) => (
-    <div className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-xl p-4 border transition-all duration-300 hover:border-white/40 hover:scale-105 hover:shadow-xl flex flex-col justify-between h-full min-h-[200px] group relative overflow-hidden`}
+    <div className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-xl p-4 border transition-all duration-300 hover:border-white/40 hover:scale-105 hover:shadow-xl flex flex-col justify-between h-full w-full group relative overflow-hidden cursor-pointer`}
     >
       {/* Recent Activity Indicator */}
       {formatLastCompleted(session.lastCompleted).includes('ago') && !formatLastCompleted(session.lastCompleted).includes('week') && (
@@ -253,18 +244,18 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
         <div className="flex items-center space-x-1">
           <button
             onClick={() => setSelectedSession(session)}
-            className="w-8 h-8 rounded-full bg-teal-500/20 backdrop-blur-sm border border-teal-500/40 flex items-center justify-center hover:bg-teal-500/30 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-teal-500/25"
+            className="w-8 h-8 rounded-full bg-teal-500/20 backdrop-blur-sm border border-teal-500/40 flex items-center justify-center hover:bg-teal-500/30 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-teal-500/25 z-10"
           >
             <Play size={14} className="text-teal-400 ml-0.5" />
           </button>
-          <button className="w-8 h-8 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-110">
+          <button className="w-8 h-8 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-110 z-10">
             <Trash2 size={14} className="text-red-400" />
           </button>
         </div>
       </div>
 
       {/* Title */}
-      <h3 className="text-white font-semibold text-base mb-3 line-clamp-2 flex-1 min-h-0 group-hover:text-white/90 transition-colors">{session.name}</h3>
+      <h3 className="text-white font-semibold text-sm lg:text-base mb-3 line-clamp-2 flex-1 min-h-0 group-hover:text-white/90 transition-colors">{session.name}</h3>
       
       {/* Stats */}
       <div className="flex items-center justify-between text-white/50 text-xs mb-2 flex-shrink-0">
@@ -307,6 +298,25 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
     </div>
   );
 
+  // Calculate responsive layout
+  const getResponsiveLayout = () => {
+    const screenWidth = window.innerWidth;
+    
+    if (screenWidth >= 1280) { // xl
+      return { cols: 4, rows: 2, itemsPerPage: 8 };
+    } else if (screenWidth >= 1024) { // lg 
+      return { cols: 3, rows: 2, itemsPerPage: 6 };
+    } else if (screenWidth >= 768) { // md
+      return { cols: 2, rows: 3, itemsPerPage: 6 };
+    } else { // mobile
+      return { cols: 1, rows: 1, itemsPerPage: 1 };
+    }
+  };
+
+  const layout = getResponsiveLayout();
+  const mobileCardsPerView = 1;
+  const mobileTotalPages = Math.ceil(mockFavorites.length / mobileCardsPerView);
+
   const header = (
     <div className="bg-black/60 backdrop-blur-xl">
       <div className="px-4 pt-2 pb-3">
@@ -316,7 +326,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
       
       {/* Stats Overview */}
       <div className="px-4 pb-3">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 lg:gap-4">
           <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 text-center hover:border-teal-500/30 transition-all duration-300">
             <div className="text-teal-400 text-xl font-semibold">{user.level}</div>
             <div className="text-white/60 text-xs">Level</div>
@@ -334,18 +344,49 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
     </div>
   );
 
+  // Update calculations for mobile pagination
+  React.useEffect(() => {
+    if (window.innerWidth < 1024) {
+      const newTotalPages = Math.ceil(mockFavorites.length / mobileCardsPerView);
+      if (currentIndex >= newTotalPages) {
+        setCurrentIndex(0);
+      }
+    }
+  }, [mockFavorites.length, currentIndex]);
+
+  // Update scroll handler for proper mobile pagination
+  const handleScroll = () => {
+    if (scrollContainerRef.current && window.innerWidth < 1024) {
+      const scrollLeft = scrollContainerRef.current.scrollLeft;
+      const cardWidth = scrollContainerRef.current.scrollWidth / mobileTotalPages;
+      const newIndex = Math.round(scrollLeft / cardWidth);
+      setCurrentIndex(newIndex);
+    }
+  };
+
   const body = (
-    <div className="bg-black relative px-4 py-4 h-full overflow-hidden">
+    <div className="bg-black relative h-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-pink-950/20 via-black to-purple-950/20" />
-      <div className="relative z-10 h-full flex flex-col overflow-hidden">
+      <div className="relative z-10 h-full flex flex-col overflow-hidden px-4 py-4">
         {mockFavorites.length > 0 ? (
           <>
-            {/* Horizontal Scrolling Container */}
+            {/* Desktop Grid Layout */}
+            <div className="hidden lg:block flex-1 min-h-0 overflow-y-auto">
+              <div className="grid grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
+                {mockFavorites.map((session) => (
+                  <div key={session.id} className="h-[280px]">
+                    {renderSessionCard(session)}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile/Tablet Horizontal Scrolling */}
             <div className="flex-1 min-h-0 overflow-hidden">
               <div 
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
-                className="flex gap-4 h-full overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4"
+                className="lg:hidden flex gap-4 h-full overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4"
                 style={{ 
                   scrollSnapType: 'x mandatory',
                   overscrollBehavior: 'contain'
@@ -356,8 +397,9 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                     key={session.id}
                     className="flex-shrink-0 snap-center"
                     style={{ 
-                      width: window.innerWidth < 768 ? 'calc(100vw - 2rem)' : 'calc(33.333% - 1rem)',
-                      maxWidth: window.innerWidth < 768 ? '320px' : '300px'
+                      width: window.innerWidth < 768 ? 'calc(100vw - 3rem)' : 'calc(50% - 1rem)',
+                      maxWidth: window.innerWidth < 768 ? '280px' : '300px',
+                      height: '240px'
                     }}
                   >
                     {renderSessionCard(session)}
@@ -367,7 +409,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
             </div>
 
             {/* Horizontal Scroll Indicators */}
-            <div className="flex items-center justify-center space-x-2 mt-4 mb-2 flex-shrink-0">
+            <div className="lg:hidden flex items-center justify-center space-x-2 mt-4 mb-2 flex-shrink-0">
               {Array.from({ length: totalPages }).map((_, index) => (
                 <button
                   key={index}
