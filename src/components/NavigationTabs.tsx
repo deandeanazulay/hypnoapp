@@ -23,15 +23,14 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
 
   const navigationContent = (
     <nav 
-      className="fixed left-0 right-0 bottom-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-4 sm:px-6 shadow-lg shadow-black/20" 
-      style={{ 
-        height: 'calc(72px + env(safe-area-inset-bottom, 0px))',
-        paddingTop: '12px',
-        paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+      className="fixed left-0 right-0 bottom-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-4 sm:px-6 shadow-lg shadow-black/20"
+      style={{
+        height: 'var(--total-nav-height)',
+        padding: '10px 16px calc(10px + var(--safe-bottom))',
         zIndex: 1000
       }}
     >
-      <div className="flex justify-between items-center space-around max-w-md mx-auto">
+      <div className="flex justify-between items-center max-w-md mx-auto h-full">
         {TABS.map((tab) => {
           const IconComponent = iconMap[tab.id];
           const isActive = activeTab === tab.id;
