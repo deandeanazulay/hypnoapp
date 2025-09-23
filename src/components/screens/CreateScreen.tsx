@@ -705,11 +705,19 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
           ) : (
             <button
               onClick={() => {
-                showToast({
-                  type: 'info',
-                  message: 'Journey preview complete! Try a template or upgrade to save custom journeys.',
-                  duration: 4000
-                });
+                // Create temporary protocol for preview
+                const previewProtocol: CustomProtocol = {
+                  id: 'preview-' + Date.now(),
+                  name: protocol.name || 'Preview Journey',
+                  induction: protocol.induction || 'progressive-relaxation',
+                  deepener: protocol.deepener || 'staircase',
+                  goals: [],
+                  metaphors: [],
+                  duration: protocol.duration || 15
+                };
+                
+                // Start the preview session
+                onProtocolCreate(previewProtocol);
               }}
               className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-bold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center space-x-2"
             >
