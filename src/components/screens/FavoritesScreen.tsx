@@ -310,8 +310,8 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
         {mockFavorites.length > 0 ? (
           <PagedGrid
             items={mockFavorites}
-            cols={window.innerWidth < 768 ? 2 : 3}
-            rows={window.innerWidth < 768 ? 2 : 3}
+            cols={3}
+            rows={2}
             renderItem={renderSessionCard}
           />
         ) : (
