@@ -170,6 +170,8 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
           </div>
         </div>
       </div>
+    )
+    }
     </div>
   );
             </div>
