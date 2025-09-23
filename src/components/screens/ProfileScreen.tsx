@@ -112,16 +112,6 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
       </div>
       
       {/* Ego State Selection */}
-      <div className="pb-2">
-        <div className="px-4 mb-2">
-          <h3 className="text-white font-medium text-sm">Current Ego State</h3>
-          <p className="text-white/60 text-xs">Choose your inner guide</p>
-        </div>
-        <EgoStatesRow 
-          selectedEgoState={selectedEgoState}
-          onEgoStateChange={onEgoStateChange}
-        />
-      </div>
     </div>
   );
 
