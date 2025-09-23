@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Clock, Star, Filter, Plus } from 'lucide-react';
+import { Play, Clock, Star, Filter, Plus, Zap, Waves, Eye, Wind, Book } from 'lucide-react';
 import { DEFAULT_PROTOCOLS, Protocol } from '../../types/Navigation';
 import PageShell from '../layout/PageShell';
 import ModalShell from '../layout/ModalShell';
@@ -26,49 +26,69 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return 'text-green-400';
-      case 'intermediate': return 'text-yellow-400';
-      case 'advanced': return 'text-red-400';
+      case 'beginner': return 'text-green-400 bg-green-500/20 border-green-500/40';
+      case 'intermediate': return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/40';
+      case 'advanced': return 'text-red-400 bg-red-500/20 border-red-500/40';
       default: return 'text-white/60';
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'induction': return 'from-blue-500/20 to-cyan-500/20';
-      case 'deepener': return 'from-purple-500/20 to-indigo-500/20';
-      case 'complete': return 'from-teal-500/20 to-green-500/20';
+      case 'induction': return 'from-blue-500/20 to-cyan-500/20 border-blue-500/30';
+      case 'deepener': return 'from-purple-500/20 to-indigo-500/20 border-purple-500/30';
+      case 'complete': return 'from-teal-500/20 to-green-500/20 border-teal-500/30';
       default: return 'from-white/10 to-gray-500/10';
     }
+  };
+
+  const getProtocolIcon = (protocolId: string) => {
+    const iconMap: { [key: string]: React.ReactNode } = {
+      'rapid-induction': <Zap size={20} className="text-yellow-400" />,
+      'progressive-relaxation': <Waves size={20} className="text-teal-400" />,
+      'book-balloon': <Book size={20} className="text-purple-400" />,
+      'eye-fixation': <Eye size={20} className="text-cyan-400" />,
+      'breath-work': <Wind size={20} className="text-green-400" />
+    };
+    return iconMap[protocolId] || <Star size={20} className="text-white/60" />;
   };
 
   const renderProtocolCard = (protocol: Protocol) => (
     <button
       key={protocol.id}
       onClick={() => setSelectedProtocol(protocol)}
-     className={`card-premium bg-gradient-to-br ${getTypeColor(protocol.type)} p-4 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full w-full text-left opacity-80 hover:opacity-100 relative z-10 hover:z-25`}
+     className={`card-premium bg-gradient-to-br ${getTypeColor(protocol.type)} p-4 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full w-full text-left opacity-80 hover:opacity-100 relative z-10 hover:z-25 group`}
       style={{ minHeight: '160px', willChange: 'transform, opacity' }}
     >
       <div className="flex items-start justify-between space-x-2 mb-2">
+        {/* Protocol Icon */}
+        <div className="w-10 h-10 rounded-xl bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+          {getProtocolIcon(protocol.id)}
+        </div>
+        
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-[var(--ink-1)] font-semibold text-sm truncate text-shadow-premium">{protocol.name}</h3>
-            <span className={`text-xs font-medium px-2 py-1 rounded-full bg-black/20 ${getDifficultyColor(protocol.difficulty)}`}>
+            <h3 className="text-[var(--ink-1)] font-semibold text-sm truncate text-shadow-premium group-hover:text-white transition-colors">{protocol.name}</h3>
+          </div>
+          
+          {/* Difficulty Badge */}
+          <div className="flex items-center justify-between mb-2">
+            <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getDifficultyColor(protocol.difficulty)} backdrop-blur-sm`}>
               {protocol.difficulty}
             </span>
+            <div className="flex items-center space-x-3 text-[var(--ink-dim)] text-xs">
+              <div className="flex items-center space-x-1">
+                <Clock size={10} />
+                <span>{protocol.duration}m</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Star size={10} />
+                <span className="capitalize">{protocol.type}</span>
+              </div>
+            </div>
           </div>
-          <p className="text-[var(--ink-2)] text-xs mb-2 line-clamp-2">{protocol.description}</p>
           
-          <div className="flex items-center justify-start space-x-3 text-[var(--ink-dim)] text-xs">
-            <div className="flex items-center space-x-1">
-              <Clock size={10} />
-              <span>{protocol.duration} min</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Star size={10} />
-              <span>{protocol.type}</span>
-            </div>
-          </div>
+          <p className="text-[var(--ink-2)] text-xs mb-2 line-clamp-2">{protocol.description}</p>
         </div>
       </div>
 
@@ -77,7 +97,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
         {protocol.tags.slice(0, 2).map((tag) => (
           <span
             key={tag}
-            className="px-2 py-1 bg-white/10 text-[var(--ink-dim)] text-xs rounded-full border border-white/10"
+            className="px-2 py-1 bg-white/10 text-[var(--ink-dim)] text-xs rounded-full border border-white/10 group-hover:bg-white/20 group-hover:text-white/90 transition-colors"
           >
             {tag}
           </span>
@@ -139,9 +159,16 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                   ) : (
                     <div className="col-span-full flex items-center justify-center py-20">
                       <div className="text-center">
-                        <Filter size={48} className="text-white/20 mx-auto mb-4" />
-                        <h3 className="text-[var(--ink-2)] text-xl font-medium mb-2">No protocols found</h3>
-                        <p className="text-[var(--ink-dim)]">Try adjusting your filters</p>
+                        <div className="bg-gradient-to-br from-white/5 to-gray-500/10 rounded-xl p-4 border border-white/20">
+                          <div className="flex items-center space-x-3 mb-4">
+                            <Filter size={20} className="text-white/20" />
+                            <h3 className="text-[var(--ink-2)] text-xl font-medium">No protocols found</h3>
+                          </div>
+                          <p className="text-[var(--ink-dim)]">Try adjusting your filters</p>
+                          <button className="mt-4 px-4 py-2 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all text-sm">
+                            Clear Filters
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}

@@ -209,15 +209,15 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
 
   const getEgoStateColor = (egoState: string) => {
     const colorMap: { [key: string]: string } = {
-      guardian: 'from-blue-500/20 to-blue-600/20',
-      rebel: 'from-red-500/20 to-red-600/20',
-      healer: 'from-green-500/20 to-green-600/20',
-      explorer: 'from-yellow-500/20 to-yellow-600/20',
-      mystic: 'from-purple-500/20 to-purple-600/20',
-      sage: 'from-gray-400/20 to-gray-500/20',
-      child: 'from-orange-500/20 to-orange-600/20',
-      performer: 'from-pink-500/20 to-pink-600/20',
-      shadow: 'from-indigo-500/20 to-indigo-900/20'
+      guardian: 'from-blue-500/20 to-blue-600/20 border-blue-500/30',
+      rebel: 'from-red-500/20 to-red-600/20 border-red-500/30',
+      healer: 'from-green-500/20 to-green-600/20 border-green-500/30',
+      explorer: 'from-yellow-500/20 to-yellow-600/20 border-yellow-500/30',
+      mystic: 'from-purple-500/20 to-purple-600/20 border-purple-500/30',
+      sage: 'from-gray-400/20 to-gray-500/20 border-gray-400/30',
+      child: 'from-orange-500/20 to-orange-600/20 border-orange-500/30',
+      performer: 'from-pink-500/20 to-pink-600/20 border-pink-500/30',
+      shadow: 'from-indigo-500/20 to-indigo-900/20 border-indigo-500/30'
     };
     return colorMap[egoState] || 'from-white/10 to-gray-500/10';
   };
@@ -238,19 +238,24 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   };
 
   const renderSessionCard = (session: FavoriteSession) => (
-    <div className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-xl p-4 border border-white/20 transition-all duration-300 hover:border-white/40 hover:scale-105 hover:shadow-xl flex flex-col justify-between h-full min-h-[200px]`}
+    <div className={`bg-gradient-to-br ${getEgoStateColor(session.egoState)} backdrop-blur-md rounded-xl p-4 border transition-all duration-300 hover:border-white/40 hover:scale-105 hover:shadow-xl flex flex-col justify-between h-full min-h-[200px] group relative overflow-hidden`}
     >
+      {/* Recent Activity Indicator */}
+      {formatLastCompleted(session.lastCompleted).includes('ago') && !formatLastCompleted(session.lastCompleted).includes('week') && (
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-teal-400 rounded-full border-2 border-black animate-pulse" />
+      )}
+      
       {/* Header with ego state and buttons */}
       <div className="flex items-center justify-between mb-2 flex-shrink-0">
-        <div className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
           <span className="text-base">{getEgoStateIcon(session.egoState)}</span>
         </div>
         <div className="flex items-center space-x-1">
           <button
             onClick={() => setSelectedSession(session)}
-            className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all duration-300 hover:scale-110"
+            className="w-8 h-8 rounded-full bg-teal-500/20 backdrop-blur-sm border border-teal-500/40 flex items-center justify-center hover:bg-teal-500/30 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-teal-500/25"
           >
-            <Play size={14} className="text-white ml-0.5" />
+            <Play size={14} className="text-teal-400 ml-0.5" />
           </button>
           <button className="w-8 h-8 rounded-full bg-red-500/10 backdrop-blur-sm border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-all duration-300 hover:scale-110">
             <Trash2 size={14} className="text-red-400" />
@@ -259,7 +264,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
       </div>
 
       {/* Title */}
-      <h3 className="text-white font-semibold text-base mb-3 line-clamp-2 flex-1 min-h-0">{session.name}</h3>
+      <h3 className="text-white font-semibold text-base mb-3 line-clamp-2 flex-1 min-h-0 group-hover:text-white/90 transition-colors">{session.name}</h3>
       
       {/* Stats */}
       <div className="flex items-center justify-between text-white/50 text-xs mb-2 flex-shrink-0">
@@ -292,9 +297,12 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
       {/* Progress Bar */}
       <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden flex-shrink-0">
         <div 
-          className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500"
+          className="h-full bg-gradient-to-r from-teal-400 to-orange-400 rounded-full transition-all duration-500 relative overflow-hidden"
           style={{ width: `${Math.min((session.completedCount / 20) * 100, 100)}%` }}
-        />
+        >
+          {/* Progress shimmer effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 animate-pulse" />
+        </div>
       </div>
     </div>
   );
