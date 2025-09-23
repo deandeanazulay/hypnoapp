@@ -154,8 +154,8 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
       <button
         key={protocol.id}
         onClick={() => setSelectedProtocol(protocol)}
-        className={`group relative bg-gradient-to-br ${getTypeColor(protocol.type)} backdrop-blur-sm border transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-2xl flex flex-col justify-between text-left overflow-hidden ${
-          isHero ? 'rounded-2xl p-6 h-[200px]' : 'rounded-xl p-4 h-[160px]'
+        className={`group relative bg-gradient-to-br ${getTypeColor(protocol.type)} backdrop-blur-sm border transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-2xl flex flex-col justify-between text-left overflow-hidden w-full ${
+          isHero ? 'rounded-2xl p-4 sm:p-6 min-h-[180px] sm:min-h-[200px]' : 'rounded-xl p-4 min-h-[160px]'
         }`}
         style={{ 
           willChange: 'transform, opacity',
@@ -251,207 +251,265 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
             <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/5 rounded-full blur-3xl" />
           </div>
 
-          {/* Header */}
-          <div className="relative z-30 px-4 pt-2 pb-4 bg-black/95 backdrop-blur-xl border-b border-white/10 sticky top-0">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h1 className="text-white text-xl font-light mb-1">Explore Protocols</h1>
-                <p className="text-white/60 text-sm">Discover hypnosis journeys and techniques</p>
-              </div>
-              <button
-                onClick={() => setShowGuide(true)}
-                className="text-teal-400 hover:text-teal-300 text-sm font-medium transition-colors flex items-center space-x-1"
-              >
-                <HelpCircle size={16} />
-                <span>How to choose?</span>
-              </button>
-            </div>
-            
-            {/* Search */}
-            <div className="relative mb-3">
-              <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search protocols, techniques..."
-                className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-teal-400/50 focus:bg-white/15 transition-all"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/40 hover:text-white/70"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-            
-            {/* Filter Controls */}
-            <div className="flex items-center space-x-2">
-              {/* Type Filters */}
-              {['all', 'induction', 'deepener', 'complete'].slice(0, 3).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setSelectedFilter(filter as any)}
-                  className={`px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 ${
-                    selectedFilter === filter
-                      ? 'bg-teal-500/20 text-teal-400 border border-teal-500/40'
-                      : 'bg-white/10 text-white/70 border border-white/20 hover:bg-white/20'
-                  }`}
-                >
-                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                </button>
-              ))}
-              
-              {/* Sort Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowSort(!showSort)}
-                  className="flex items-center space-x-2 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white/70 hover:bg-white/20 transition-all hover:scale-105"
-                >
-                  <span className="text-xs font-medium">
-                    {sortOptions.find(s => s.id === selectedSort)?.name || 'Sort'}
-                  </span>
-                  <ChevronDown size={12} className={`transition-transform ${showSort ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {showSort && (
-                  <div className="absolute top-full left-0 mt-2 w-48 bg-black/95 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl z-50">
-                    {sortOptions.map(option => {
-                      const IconComponent = option.icon;
-                      return (
-                        <button
-                          key={option.id}
-                          onClick={() => {
-                            setSelectedSort(option.id);
-                            setShowSort(false);
-                          }}
-                          className={`w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-white/10 transition-colors ${
-                            selectedSort === option.id ? 'text-teal-400 bg-teal-500/10' : 'text-white/80'
-                          }`}
-                        >
-                          <IconComponent size={16} />
-                          <span className="text-sm">{option.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-              
-              {/* More Filters */}
-              <button
-                onClick={() => setShowFilters(true)}
-                className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white/70 hover:bg-white/20 transition-all hover:scale-105 flex items-center space-x-1"
-              >
-                <Filter size={12} />
-                <span className="text-xs font-medium">Filters</span>
-                {(filters.duration.length + filters.goal.length + filters.technique.length + filters.level.length) > 0 && (
-                  <div className="w-2 h-2 bg-orange-400 rounded-full" />
-                )}
-              </button>
-            </div>
-
-            {/* Active Filters */}
-            {(filters.duration.length + filters.goal.length + filters.technique.length + filters.level.length) > 0 && (
-              <div className="flex items-center space-x-2 mt-3 flex-wrap gap-2">
-                <span className="text-white/60 text-xs">Active:</span>
-                {[...filters.duration, ...filters.goal, ...filters.technique, ...filters.level].map((filter, index) => (
-                  <span key={index} className="px-2 py-1 bg-orange-500/20 border border-orange-500/40 text-orange-400 text-xs rounded-full flex items-center space-x-1">
-                    <span>{filter}</span>
-                    <X size={10} className="cursor-pointer hover:text-orange-300" onClick={() => {
-                      // Remove this specific filter
-                      setFilters(prev => ({
-                        ...prev,
-                        duration: prev.duration.filter(f => f !== filter),
-                        goal: prev.goal.filter(f => f !== filter),
-                        technique: prev.technique.filter(f => f !== filter),
-                        level: prev.level.filter(f => f !== filter)
-                      }));
-                    }} />
-                  </span>
-                ))}
-                <button
-                  onClick={clearAllFilters}
-                  className="text-white/60 hover:text-white text-xs underline"
-                >
-                  Clear all
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="relative z-10 px-4 py-4">
-            {/* Hero Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {filteredProtocols.slice(0, 4).map((protocol) => renderProtocolCard(protocol, true))}
-            </div>
-
-            {/* Quick Collections */}
-            <div className="mb-6">
-              <h3 className="text-white font-medium mb-3 flex items-center space-x-2">
-                <Sparkles size={16} className="text-teal-400" />
-                <span>Quick Collections</span>
-              </h3>
-              <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide">
-                {quickCollections.map((collection) => (
-                  <button
-                    key={collection.id}
-                    onClick={() => applyQuickCollection(collection)}
-                    className={`flex-shrink-0 bg-gradient-to-br ${collection.color} backdrop-blur-sm border border-white/20 rounded-xl p-4 hover:border-white/30 hover:scale-105 transition-all duration-300 min-w-[140px]`}
-                  >
-                    <div className="text-center">
-                      <div className="text-2xl mb-2">{collection.icon}</div>
-                      <div className="text-white font-medium text-sm">{collection.name}</div>
+          <PageShell
+            header={
+              <div className="flex-shrink-0 bg-black/95 backdrop-blur-xl border-b border-white/10 sticky top-0 z-30">
+                <div className="px-4 pt-2 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h1 className="text-white text-xl font-light mb-1">Explore Protocols</h1>
+                      <p className="text-white/60 text-sm">Discover hypnosis journeys and techniques</p>
                     </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Wins Section (≤5m) */}
-            <div className="mb-6">
-              <h3 className="text-white font-medium mb-3 flex items-center space-x-2">
-                <Zap size={16} className="text-yellow-400" />
-                <span>Quick Wins (≤5 min)</span>
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {filteredProtocols.filter(p => p.duration <= 5).slice(0, 6).map((protocol) => renderProtocolCard(protocol))}
-              </div>
-            </div>
-
-            {/* All Protocols */}
-            <div>
-              <h3 className="text-white font-medium mb-3 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <BookOpen size={16} className="text-purple-400" />
-                  <span>All Protocols ({filteredProtocols.length})</span>
-                </div>
-              </h3>
-              
-              {filteredProtocols.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {filteredProtocols.map((protocol) => renderProtocolCard(protocol))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="bg-white/5 rounded-xl p-6 border border-white/20 max-w-md mx-auto">
-                    <Filter size={24} className="text-white/40 mx-auto mb-3" />
-                    <h3 className="text-white/70 text-lg font-medium mb-2">No protocols found</h3>
-                    <p className="text-white/50 mb-4">Try adjusting your search or filters</p>
-                    <button 
-                      onClick={clearAllFilters}
-                      className="px-4 py-2 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all"
+                    <button
+                      onClick={() => setShowGuide(true)}
+                      className="text-teal-400 hover:text-teal-300 text-sm font-medium transition-colors flex items-center space-x-1"
                     >
-                      Clear All Filters
+                      <HelpCircle size={16} />
+                      <span>How to choose?</span>
                     </button>
                   </div>
+                  
+                  {/* Search */}
+                  <div className="relative mb-3">
+                    <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search protocols, techniques..."
+                      className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-teal-400/50 focus:bg-white/15 transition-all"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/40 hover:text-white/70"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Filter Controls */}
+                  <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide pb-1">
+                    {/* Type Filters */}
+                    {['all', 'induction', 'deepener', 'complete'].map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setSelectedFilter(filter as any)}
+                        className={`flex-shrink-0 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 min-h-[36px] ${
+                          selectedFilter === filter
+                            ? 'bg-teal-500/20 text-teal-400 border border-teal-500/40'
+                            : 'bg-white/10 text-white/70 border border-white/20 hover:bg-white/20'
+                        }`}
+                      >
+                        {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                      </button>
+                    ))}
+                    
+                    {/* Sort Dropdown */}
+                    <div className="relative flex-shrink-0">
+                      <button
+                        onClick={() => setShowSort(!showSort)}
+                        className="flex items-center space-x-2 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white/70 hover:bg-white/20 transition-all hover:scale-105 min-h-[36px]"
+                      >
+                        <span className="text-xs font-medium whitespace-nowrap">
+                          {sortOptions.find(s => s.id === selectedSort)?.name || 'Sort'}
+                        </span>
+                        <ChevronDown size={12} className={`transition-transform ${showSort ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {showSort && (
+                        <div className="absolute top-full left-0 mt-2 w-48 bg-black/95 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl z-50">
+                          {sortOptions.map(option => {
+                            const IconComponent = option.icon;
+                            return (
+                              <button
+                                key={option.id}
+                                onClick={() => {
+                                  setSelectedSort(option.id);
+                                  setShowSort(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-white/10 transition-colors ${
+                                  selectedSort === option.id ? 'text-teal-400 bg-teal-500/10' : 'text-white/80'
+                                }`}
+                              >
+                                <IconComponent size={16} />
+                                <span className="text-sm">{option.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* More Filters */}
+                    <button
+                      onClick={() => setShowFilters(true)}
+                      className="flex-shrink-0 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white/70 hover:bg-white/20 transition-all hover:scale-105 flex items-center space-x-1 min-h-[36px]"
+                    >
+                      <Filter size={12} />
+                      <span className="text-xs font-medium">Filters</span>
+                      {(filters.duration.length + filters.goal.length + filters.technique.length + filters.level.length) > 0 && (
+                        <div className="w-2 h-2 bg-orange-400 rounded-full" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Active Filters */}
+                  {(filters.duration.length + filters.goal.length + filters.technique.length + filters.level.length) > 0 && (
+                    <div className="flex items-center space-x-2 mt-3 flex-wrap gap-2">
+                      <span className="text-white/60 text-xs">Active:</span>
+                      {[...filters.duration, ...filters.goal, ...filters.technique, ...filters.level].map((filter, index) => (
+                        <span key={index} className="px-2 py-1 bg-orange-500/20 border border-orange-500/40 text-orange-400 text-xs rounded-full flex items-center space-x-1">
+                          <span>{filter}</span>
+                          <X size={10} className="cursor-pointer hover:text-orange-300" onClick={() => {
+                            setFilters(prev => ({
+                              ...prev,
+                              duration: prev.duration.filter(f => f !== filter),
+                              goal: prev.goal.filter(f => f !== filter),
+                              technique: prev.technique.filter(f => f !== filter),
+                              level: prev.level.filter(f => f !== filter)
+                            }));
+                          }} />
+                        </span>
+                      ))}
+                      <button
+                        onClick={clearAllFilters}
+                        className="text-white/60 hover:text-white text-xs underline"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            }
+            body={
+              <div className="h-full overflow-y-auto pb-32" style={{ paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)' }}>
+                <div className="bg-gradient-to-br from-black via-blue-950/20 to-purple-950/20 relative min-h-full">
+                  {/* Background Effects */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/5 rounded-full blur-3xl" />
+                  </div>
+
+                  <div className="relative z-10 space-y-8 px-4 pt-6">
+                    
+                    {/* Hero Cards - Mobile Responsive */}
+                    <section>
+                      <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+                        {filteredProtocols.slice(0, 4).map((protocol) => renderProtocolCard(protocol, true))}
+                      </div>
+                    </section>
+
+                    {/* Quick Collections */}
+                    <section className="mt-8">
+                      <h3 className="text-white font-medium mb-4 flex items-center space-x-2">
+                        <Sparkles size={16} className="text-teal-400" />
+                        <span>Quick Collections</span>
+                      </h3>
+                      <div className="flex overflow-x-auto space-x-3 pb-3 scrollbar-hide">
+                        {quickCollections.map((collection) => (
+                          <button
+                            key={collection.id}
+                            onClick={() => applyQuickCollection(collection)}
+                            className={`flex-shrink-0 bg-gradient-to-br ${collection.color} backdrop-blur-sm border border-white/20 rounded-xl p-4 hover:border-white/30 hover:scale-105 transition-all duration-300 min-w-[140px] min-h-[44px]`}
+                          >
+                            <div className="text-center">
+                              <div className="text-2xl mb-2">{collection.icon}</div>
+                              <div className="text-white font-medium text-sm">{collection.name}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* Quick Wins Section - No Duplicates */}
+                    <section className="mt-8">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-white font-medium flex items-center space-x-2">
+                          <Zap size={16} className="text-yellow-400" />
+                          <span>Quick Wins</span>
+                          <span className="text-white/40 text-sm">(≤5 min)</span>
+                        </h3>
+                      </div>
+                      <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {filteredProtocols.filter(p => p.duration <= 5).slice(0, 4).map((protocol) => renderProtocolCard(protocol))}
+                      </div>
+                    </section>
+
+                    {/* Complete Journeys Section */}
+                    <section className="mt-8">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-white font-medium flex items-center space-x-2">
+                          <BookOpen size={16} className="text-purple-400" />
+                          <span>Complete Journeys</span>
+                          <span className="text-white/40 text-sm">({filteredProtocols.filter(p => p.type === 'complete').length})</span>
+                        </h3>
+                      </div>
+                      
+                      {filteredProtocols.filter(p => p.type === 'complete').length > 0 ? (
+                        <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                          {filteredProtocols.filter(p => p.type === 'complete').map((protocol) => renderProtocolCard(protocol))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="bg-white/5 rounded-xl p-6 border border-white/20 max-w-md mx-auto">
+                            <BookOpen size={24} className="text-white/40 mx-auto mb-3" />
+                            <p className="text-white/60 text-sm">No complete journeys match your filters</p>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+
+                    {/* All Other Protocols - Organized by Type */}
+                    <section className="mt-8">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-white font-medium flex items-center space-x-2">
+                          <Target size={16} className="text-blue-400" />
+                          <span>Inductions & Deepeners</span>
+                          <span className="text-white/40 text-sm">({filteredProtocols.filter(p => p.type !== 'complete' && p.duration > 5).length})</span>
+                        </h3>
+                      </div>
+                      
+                      {filteredProtocols.filter(p => p.type !== 'complete' && p.duration > 5).length > 0 ? (
+                        <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                          {filteredProtocols.filter(p => p.type !== 'complete' && p.duration > 5).map((protocol) => renderProtocolCard(protocol))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="bg-white/5 rounded-xl p-6 border border-white/20 max-w-md mx-auto">
+                            <Target size={24} className="text-white/40 mx-auto mb-3" />
+                            <p className="text-white/60 text-sm">No inductions or deepeners match your filters</p>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+
+                    {/* New Here? Guide Card */}
+                    <section className="mt-8 mb-8">
+                      <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-6 border border-teal-500/20">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <HelpCircle size={20} className="text-teal-400" />
+                          <h3 className="text-white font-semibold">New to Hypnosis?</h3>
+                        </div>
+                        <p className="text-white/80 text-sm mb-4 leading-relaxed">
+                          Start with <strong>Progressive Relaxation</strong> (98% success rate) or explore our Quick Collections above to find the perfect match for your current need.
+                        </p>
+                        <button
+                          onClick={() => setShowGuide(true)}
+                          className="px-4 py-3 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all hover:scale-105 flex items-center space-x-2 min-h-[44px]"
+                        >
+                          <BookOpen size={16} />
+                          <span>Read the Complete Guide</span>
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              </div>
+            }
+          />
         </div>
       </div>
 
