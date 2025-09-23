@@ -120,9 +120,9 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
       <div className="relative z-10 h-full">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
           {/* Left Column */}
-          <div className="space-y-3 overflow-y-auto">
+          <div className="space-y-3 flex flex-col h-full">
             {/* Protocol Name */}
-            <div className="bg-gradient-to-br from-purple-500/10 to-teal-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-purple-500/30 transition-all duration-300">
+            <div className="bg-gradient-to-br from-purple-500/10 to-teal-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-purple-500/30 transition-all duration-300 flex-shrink-0">
               <label className="block text-white/80 text-sm font-medium mb-2">Protocol Name</label>
               <input
                 type="text"
@@ -134,7 +134,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             </div>
 
             {/* Induction Selection */}
-            <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-blue-500/30 transition-all duration-300">
+            <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-blue-500/30 transition-all duration-300 flex-shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <label className="text-white/80 text-sm font-medium">Induction Method</label>
                 <button
@@ -162,10 +162,10 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             </div>
 
             {/* Goals */}
-            <div className="bg-gradient-to-br from-green-500/10 to-teal-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-green-500/30 transition-all duration-300">
+            <div className="bg-gradient-to-br from-green-500/10 to-teal-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-green-500/30 transition-all duration-300 flex-1 min-h-0 flex flex-col">
               <label className="block text-white/80 text-sm font-medium mb-2">Session Goals</label>
               
-              <div className="flex space-x-2 mb-2">
+              <div className="flex space-x-2 mb-2 flex-shrink-0">
                 <input
                   type="text"
                   value={newGoal}
@@ -182,7 +182,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 </button>
               </div>
 
-              <div className="space-y-1 max-h-16 overflow-y-auto">
+              <div className="space-y-1 flex-1 min-h-0 overflow-y-auto">
                 {protocol.goals?.slice(0, 3).map((goal, index) => (
                   <div key={index} className="flex items-center justify-between bg-white/5 rounded-lg px-2 py-1 border border-white/10">
                     <span className="text-white/80 text-sm truncate">{goal}</span>
@@ -204,9 +204,9 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
           </div>
 
           {/* Right Column */}
-          <div className="space-y-3 overflow-y-auto">
+          <div className="flex flex-col h-full space-y-3">
             {/* Duration */}
-            <div className="bg-gradient-to-br from-orange-500/10 to-amber-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-orange-500/30 transition-all duration-300">
+            <div className="bg-gradient-to-br from-orange-500/10 to-amber-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-orange-500/30 transition-all duration-300 flex-shrink-0">
               <label className="block text-white/80 text-sm font-medium mb-2">Duration</label>
               <input
                 type="range"
@@ -224,7 +224,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             </div>
 
             {/* Deepener Selection */}
-            <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-purple-500/30 transition-all duration-300">
+            <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-purple-500/30 transition-all duration-300 flex-shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <label className="text-white/80 text-sm font-medium">Deepening Method</label>
                 <button
@@ -252,10 +252,10 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
             </div>
             
             {/* Metaphors */}
-            <div className="bg-gradient-to-br from-pink-500/10 to-rose-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-pink-500/30 transition-all duration-300">
+            <div className="bg-gradient-to-br from-pink-500/10 to-rose-500/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:border-pink-500/30 transition-all duration-300 flex-1 min-h-0 flex flex-col">
               <label className="block text-white/80 text-sm font-medium mb-2">Metaphors & Imagery</label>
               
-              <div className="flex space-x-2 mb-2">
+              <div className="flex space-x-2 mb-2 flex-shrink-0">
                 <input
                   type="text"
                   value={newMetaphor}
@@ -272,7 +272,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
                 </button>
               </div>
               
-              <div className="space-y-1 max-h-16 overflow-y-auto">
+              <div className="space-y-1 flex-1 min-h-0 overflow-y-auto">
                 {protocol.metaphors?.slice(0, 3).map((metaphor, index) => (
                   <div key={index} className="flex items-center justify-between bg-white/5 rounded-lg px-2 py-1 border border-white/10">
                     <span className="text-white/80 text-sm truncate">{metaphor}</span>
@@ -346,42 +346,4 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               className={`w-full p-4 rounded-lg border transition-all duration-200 text-left hover:scale-105 ${
                 protocol.induction === option.id
                   ? 'bg-teal-500/20 border-teal-500/40 text-teal-400 shadow-lg shadow-teal-500/20'
-                  : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10 hover:border-white/30'
-              }`}
-            >
-              <div className="font-medium mb-1">{option.name}</div>
-              <div className="text-sm text-white/50">{option.description}</div>
-            </button>
-          ))}
-        </div>
-      </ModalShell>
-
-      {/* Deepener Selector Modal */}
-      <ModalShell
-        isOpen={showDeepenerSelector}
-        onClose={() => setShowDeepenerSelector(false)}
-        title="Select Deepening Method"
-      >
-        <div className="space-y-3">
-          {deepenerOptions.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => {
-                setProtocol(prev => ({ ...prev, deepener: option.id }));
-                setShowDeepenerSelector(false);
-              }}
-              className={`w-full p-4 rounded-lg border transition-all duration-200 text-left hover:scale-105 ${
-                protocol.deepener === option.id
-                  ? 'bg-purple-500/20 border-purple-500/40 text-purple-400 shadow-lg shadow-purple-500/20'
-                  : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10 hover:border-white/30'
-              }`}
-            >
-              <div className="font-medium mb-1">{option.name}</div>
-              <div className="text-sm text-white/50">{option.description}</div>
-            </button>
-          ))}
-        </div>
-      </ModalShell>
-    </>
-  );
-}
+                  : 'bg
