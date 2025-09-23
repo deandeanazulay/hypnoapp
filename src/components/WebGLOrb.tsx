@@ -13,6 +13,10 @@ export interface WebGLOrbProps {
   size?: number;
   egoState?: string;
   selectedGoal?: any;
+  mousePosition?: { x: number; y: number };
+  isDragging?: boolean;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }
 
 const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({ 
@@ -22,7 +26,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
   breathPhase = 'rest',
   size,
   egoState = 'protector',
-  selectedGoal
+  selectedGoal,
+  mousePosition = { x: 0.5, y: 0.5 },
+  isDragging = false,
+  onDragStart,
+  onDragEnd
 }, ref) => {
   
   React.useImperativeHandle(ref, () => ({
@@ -33,6 +41,10 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const [isPressed, setIsPressed] = useState(false);
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+  const [momentum, setMomentum] = useState({ x: 0, y: 0 });
+  const lastMousePos = useRef({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = useState(false);
 
   // Get ego state colors
   const getEgoStateColor = () => {
@@ -72,6 +84,54 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     
     return sigils[selectedGoal.id as keyof typeof sigils] || '◉';
   };
+
+  // Interactive rotation based on mouse position
+  useEffect(() => {
+    if (isDragging && mousePosition) {
+      const deltaX = mousePosition.x - lastMousePos.current.x;
+      const deltaY = mousePosition.y - lastMousePos.current.y;
+      
+      setRotation(prev => ({
+        x: prev.x + deltaY * 200, // Vertical mouse movement rotates around X axis
+        y: prev.y + deltaX * 200  // Horizontal mouse movement rotates around Y axis
+      }));
+      
+      setMomentum({ x: deltaY * 50, y: deltaX * 50 });
+      lastMousePos.current = mousePosition;
+    } else if (!isDragging && (momentum.x !== 0 || momentum.y !== 0)) {
+      // Apply momentum when not dragging
+      const decay = 0.95;
+      setMomentum(prev => ({
+        x: prev.x * decay,
+        y: prev.y * decay
+      }));
+      
+      setRotation(prev => ({
+        x: prev.x + momentum.x,
+        y: prev.y + momentum.y
+      }));
+      
+      // Stop momentum when very small
+      if (Math.abs(momentum.x) < 0.1 && Math.abs(momentum.y) < 0.1) {
+        setMomentum({ x: 0, y: 0 });
+      }
+    }
+  }, [mousePosition, isDragging, momentum]);
+
+  // Auto-rotation when not interacting
+  useEffect(() => {
+    if (!isDragging && !isHovering && momentum.x === 0 && momentum.y === 0) {
+      const autoRotate = setInterval(() => {
+        setRotation(prev => ({
+          x: prev.x + 0.3,
+          y: prev.y + 0.5
+        }));
+      }, 50);
+      
+      return () => clearInterval(autoRotate);
+    }
+  }, [isDragging, isHovering, momentum]);
+
   // Breathing animation based on phase
   const getBreathScale = () => {
     switch (breathPhase) {
@@ -104,6 +164,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
       uniform float tranceDepth;
       uniform vec3 primaryColor;
       uniform vec3 secondaryColor;
+      uniform vec2 mousePos;
+      uniform vec2 userRotation;
+      uniform float interactionIntensity;
       varying vec4 v_color;
 
       #define PI 3.14159265359
@@ -254,35 +317,49 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         float tm = time * 0.1;
         float tm2 = time * 0.13;
         
+        // Enhanced interactive rotation
+        float rotX = userRotation.x * 0.01 + sin(time * 0.2) * 0.1;
+        float rotY = userRotation.y * 0.01 + cos(time * 0.15) * 0.1;
+        float rotZ = time * 0.05 + (mousePos.x - 0.5) * 0.5;
+        
         // Hypnotic spiral mathematics
-        float spiralTime = time * (0.5 + hypnoticMode * 0.3);
+        float spiralTime = time * (0.5 + hypnoticMode * 0.3) + interactionIntensity * 2.0;
         float goldenRatio = 1.618033988749;
         float spiralRadius = length(pos.xz);
         float spiralAngle = atan(pos.z, pos.x) + spiralRadius * goldenRatio + spiralTime;
         
         // Fibonacci spiral influence
         float fibSpiral = sin(spiralAngle * goldenRatio) * cos(spiralRadius * PI);
-        pos.xyz *= 1.0 + fibSpiral * hypnoticMode * 0.2;
+        pos.xyz *= 1.0 + fibSpiral * hypnoticMode * (0.2 + interactionIntensity * 0.3);
         
         // Fractal depth pulsing
-        float fractalPulse = sin(time * 2.0 + spiralRadius * 8.0) * tranceDepth * 0.3;
+        float fractalPulse = sin(time * 2.0 + spiralRadius * 8.0) * tranceDepth * (0.3 + interactionIntensity * 0.4);
         pos.xyz *= 1.0 + fractalPulse;
+        
+        // Interactive 3D transformation
+        mat4 interactiveRotation = rotX(rotX) * rotY(rotY) * rotZ(rotZ);
+        vec4 rotatedPos = interactiveRotation * vec4(pos, 1.0);
+        pos = rotatedPos.xyz;
 
-        mat4 wmat = rotZ(odd * PI * .5 + sin(tm));
+        mat4 wmat = rotZ(odd * PI * .5 + sin(tm) + rotY);
         wmat *= trans(vec3(0, cos(pairA * PI), 0));
-        wmat *= uniformScale(sin(pairA * PI));
+        wmat *= uniformScale(sin(pairA * PI) * (1.0 + interactionIntensity * 0.2));
         vec4 wp = wmat * vec4(pos, 1.);
         
         float su = abs(atan(wp.x, wp.z)) / PI;
         float sv = abs(wp.y) * 1.;
-        float s = 0.5 + 0.3 * sin(time + su * 10.0 + sv * 5.0);
-        wp.xyz *= mix(0.8, 1.2, pow(s, 1.));
+        float s = 0.5 + 0.3 * sin(time + su * 10.0 + sv * 5.0 + interactionIntensity * 5.0);
+        wp.xyz *= mix(0.8, 1.2 + interactionIntensity * 0.3, pow(s, 1.));
         
         float r = 2.5;
         mat4 mat = persp(radians(60.0), resolution.x / resolution.y, 0.1, 10.0);
-        vec3 eye = vec3(cos(tm) * r, sin(tm * 0.93) * r, sin(tm) * r);
+        vec3 eye = vec3(
+          cos(tm + rotY * 0.1) * r, 
+          sin(tm * 0.93 + rotX * 0.1) * r, 
+          sin(tm + rotZ * 0.1) * r
+        );
         vec3 target = vec3(0);
-        vec3 up = vec3(0., sin(tm2), cos(tm2));
+        vec3 up = vec3(sin(rotY * 0.05), sin(tm2 + rotX * 0.1), cos(tm2 + rotY * 0.1));
         
         mat *= cameraLookAt(eye, target, up);
         
@@ -293,11 +370,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         vec3 baseColor = mix(primaryColor, secondaryColor, colorMix);
            
         // Add spiral color bands for fixation
-        float spiralBands = sin(spiralRadius * 10.0 - spiralTime * 3.0) * hypnoticMode;
-        baseColor = mix(baseColor, vec3(1.0, 1.0, 1.0), spiralBands * 0.3);
+        float spiralBands = sin(spiralRadius * 10.0 - spiralTime * 3.0) * hypnoticMode * (1.0 + interactionIntensity);
+        baseColor = mix(baseColor, vec3(1.0, 1.0, 1.0), spiralBands * (0.3 + interactionIntensity * 0.2));
         
         vec3 color = baseColor;
-        v_color = vec4(color, mix(0.3, 1.0, pow(1.0 - sv, 2.0)));
+        v_color = vec4(color, mix(0.3 + interactionIntensity * 0.2, 1.0, pow(1.0 - sv, 2.0)));
         v_color.rgb *= v_color.a;
       }
     `;
@@ -356,6 +433,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     const tranceDepthLocation = gl.getUniformLocation(program, 'tranceDepth');
     const primaryColorLocation = gl.getUniformLocation(program, 'primaryColor');
     const secondaryColorLocation = gl.getUniformLocation(program, 'secondaryColor');
+    const mousePosLocation = gl.getUniformLocation(program, 'mousePos');
+    const userRotationLocation = gl.getUniformLocation(program, 'userRotation');
+    const interactionIntensityLocation = gl.getUniformLocation(program, 'interactionIntensity');
 
     // Create vertex buffer
     const numVertices = 2048;
@@ -398,13 +478,18 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
       gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
       
       // Hypnotic parameters based on props
-      const hypnoticIntensity = afterglow ? 1.0 : 0.3;
+      const hypnoticIntensity = afterglow ? 1.0 : (isHovering ? 0.7 : 0.3);
       const tranceLevel = breathPhase === 'inhale' ? 0.8 : 
                          breathPhase === 'hold' ? 1.0 :
                          breathPhase === 'exhale' ? 0.6 : 0.4;
       
       gl.uniform1f(hypnoticModeLocation, hypnoticIntensity);
       gl.uniform1f(tranceDepthLocation, tranceLevel);
+      
+      // Interactive uniforms
+      gl.uniform2f(mousePosLocation, mousePosition.x, mousePosition.y);
+      gl.uniform2f(userRotationLocation, rotation.x, rotation.y);
+      gl.uniform1f(interactionIntensityLocation, isHovering ? 0.5 : (isDragging ? 1.0 : 0.0));
       
       // Set ego state colors
       const egoColors = getEgoStateColor();
@@ -429,22 +514,31 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, []);
+  }, [rotation, mousePosition, isDragging, isHovering, afterglow, breathPhase]);
 
   const egoColors = getEgoStateColor();
   const goalSigil = getGoalSigil();
 
   const handlePointerDown = () => {
     setIsPressed(true);
+    if (onDragStart) onDragStart();
+    lastMousePos.current = mousePosition;
   };
 
   const handlePointerUp = () => {
     setIsPressed(false);
+    if (onDragEnd) onDragEnd();
     setTimeout(onTap, 100);
   };
 
   const handlePointerLeave = () => {
     setIsPressed(false);
+    setIsHovering(false);
+    if (onDragEnd) onDragEnd();
+  };
+
+  const handlePointerEnter = () => {
+    setIsHovering(true);
   };
 
   return (
@@ -452,44 +546,54 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
       <div className="relative flex items-center justify-center">
         <div
           className={`relative cursor-pointer transition-transform duration-200 select-none ${
-            isPressed ? 'scale-95' : 'scale-100'
-          } shadow-2xl shadow-black/40`}
+            isPressed ? 'scale-95' : isHovering ? 'scale-105' : 'scale-100'
+          } shadow-2xl shadow-black/40 hover:shadow-cyan-500/20`}
           style={{
             width: size || (window.innerWidth < 768 ? Math.min(window.innerWidth * 0.5, 200) : 280),
             height: size || (window.innerWidth < 768 ? Math.min(window.innerWidth * 0.5, 200) : 280),
             borderRadius: '50%',
             overflow: 'hidden',
-            background: 'rgba(0,0,0,0.1)',
-            border: '2px solid rgba(255,255,255,0.1)',
-            filter: afterglow ? 'brightness(1.2) saturate(1.1)' : `hue-rotate(${egoState === 'nurturer' ? '30deg' : egoState === 'sage' ? '60deg' : egoState === 'performer' ? '-30deg' : '0deg'})`,
+            background: isDragging ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.1)',
+            border: `2px solid ${isHovering ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)'}`,
+            filter: afterglow ? 'brightness(1.2) saturate(1.1) drop-shadow(0 0 20px rgba(20, 184, 166, 0.5))' : 
+                   isHovering ? 'brightness(1.1) saturate(1.05) drop-shadow(0 0 15px rgba(255, 255, 255, 0.3))' :
+                   `hue-rotate(${egoState === 'nurturer' ? '30deg' : egoState === 'sage' ? '60deg' : egoState === 'performer' ? '-30deg' : '0deg'})`,
             transform: `scale(${getBreathScale()})`,
-            transition: 'transform 4s ease-in-out',
+            transition: isDragging ? 'none' : 'transform 0.3s ease-out, filter 0.3s ease, border-color 0.3s ease',
             aspectRatio: '1 / 1',
             minWidth: '240px',
             minHeight: '240px',
             maxWidth: '100vw',
             maxHeight: '100vh',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            transformStyle: 'preserve-3d',
+            perspective: '1000px'
           }}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerLeave}
           onPointerLeave={handlePointerLeave}
+          onPointerEnter={handlePointerEnter}
         >
           <canvas
             ref={canvasRef}
             className="w-full h-full"
-            style={{ display: 'block' }}
+            style={{ 
+              display: 'block',
+              filter: isHovering ? 'brightness(1.1) contrast(1.1)' : 'none',
+              transition: 'filter 0.3s ease'
+            }}
           />
           
           {/* Goal Sigil Overlay */}
           {goalSigil && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div 
-                className="text-white/30 text-4xl font-light"
+                className="text-white/30 text-4xl font-light transition-all duration-300"
                 style={{
                   textShadow: `0 0 20px rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, 0.5)`,
-                  filter: 'blur(0.5px)'
+                  filter: isHovering ? 'blur(0px)' : 'blur(0.5px)',
+                  transform: `rotateX(${rotation.x * 0.05}deg) rotateY(${rotation.y * 0.05}deg)`
                 }}
               >
                 {goalSigil}
@@ -497,12 +601,25 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>(({
             </div>
           )}
           
+          {/* Interactive Glow Ring */}
+          {(isHovering || isDragging) && (
+            <div 
+              className="absolute inset-0 rounded-full pointer-events-none"
+              style={{
+                background: `conic-gradient(from ${rotation.y}deg, transparent, rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, 0.3), transparent)`,
+                animation: isDragging ? 'spin 2s linear infinite' : 'spin 8s linear infinite'
+              }}
+            />
+          )}
+          
           {/* Fallback CSS orb if WebGL fails */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div 
-              className="w-48 h-48 rounded-full animate-pulse"
+              className="w-48 h-48 rounded-full animate-pulse transition-all duration-300"
               style={{
-                background: `radial-gradient(circle, rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, 0.6) 0%, rgba(${egoColors.secondary[0] * 255}, ${egoColors.secondary[1] * 255}, ${egoColors.secondary[2] * 255}, 0.4) 100%)`
+                background: `radial-gradient(circle, rgba(${egoColors.primary[0] * 255}, ${egoColors.primary[1] * 255}, ${egoColors.primary[2] * 255}, ${isHovering ? 0.8 : 0.6}) 0%, rgba(${egoColors.secondary[0] * 255}, ${egoColors.secondary[1] * 255}, ${egoColors.secondary[2] * 255}, ${isHovering ? 0.6 : 0.4}) 100%)`,
+                transform: `rotateX(${rotation.x * 0.1}deg) rotateY(${rotation.y * 0.1}deg)`,
+                filter: isHovering ? 'brightness(1.2)' : 'brightness(1)'
               }}
             />
           </div>
