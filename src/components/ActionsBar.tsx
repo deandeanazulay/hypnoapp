@@ -103,15 +103,15 @@ export default function ActionsBar({
   };
 
   return (
-    <div className="px-2 sm:px-4">
-      <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl px-2 py-1.5">
+    <div className="px-2 sm:px-4 pb-2">
+      <div className="bg-black/80 backdrop-blur-xl border border-white/20 rounded-xl px-3 py-3 shadow-2xl">
         {/* Actions - Horizontal Scrollable */}
-        <div className="flex space-x-1.5 mb-1.5 overflow-x-auto scrollbar-hide pb-1">
+        <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-1">
           {allActions.map((action) => (
             <button
               key={action.id}
               onClick={() => handleActionClick(action)}
-              className={`flex-shrink-0 w-[80px] bg-gradient-to-br ${action.color} border border-white/20 rounded-lg p-2 hover:scale-105 hover:z-50 transition-all duration-200 relative group ${
+              className={`flex-shrink-0 w-[88px] bg-gradient-to-br ${action.color} border border-white/30 rounded-xl p-3 hover:scale-105 hover:z-50 transition-all duration-200 relative group shadow-lg ${
                 selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
               }`}
             >
@@ -123,28 +123,28 @@ export default function ActionsBar({
                       e.stopPropagation();
                       startEdit(action);
                     }}
-                    className="w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center"
+                    className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center"
                   >
-                    <Edit2 size={6} className="text-white" />
+                    <Edit2 size={8} className="text-white" />
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteCustomAction(action.id);
                     }}
-                    className="w-3 h-3 bg-red-500 rounded-full flex items-center justify-center"
+                    className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center"
                   >
-                    <X size={6} className="text-white" />
+                    <X size={8} className="text-white" />
                   </button>
                 </div>
               )}
               
-              <div className="flex flex-col items-center space-y-1">
-                <div className="w-4 h-4 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+              <div className="flex flex-col items-center space-y-2">
+                <div className="w-6 h-6 rounded-lg bg-black/30 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                   {action.icon}
                 </div>
                 <div className="text-center">
-                  <div className="text-white font-medium text-xs leading-tight w-full">
+                  <div className="text-white font-medium text-xs leading-tight w-full min-h-[32px] flex items-center justify-center">
                     {editingAction === action.id ? (
                       <input
                         type="text"
@@ -152,12 +152,12 @@ export default function ActionsBar({
                         onChange={(e) => setEditText(e.target.value)}
                         onBlur={() => saveEdit(action.id)}
                         onKeyPress={(e) => e.key === 'Enter' && saveEdit(action.id)}
-                        className="w-full bg-transparent text-white text-xs text-center border-none outline-none font-medium"
+                        className="w-full bg-transparent text-white text-xs text-center border-none outline-none font-medium px-1"
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
-                      <div className="truncate text-center">{action.name}</div>
+                      <div className="text-center leading-tight">{action.name}</div>
                     )}
                   </div>
                 </div>
@@ -168,14 +168,14 @@ export default function ActionsBar({
           {/* Add New Action Button */}
           <button
             onClick={onNavigateToCreate}
-            className="flex-shrink-0 w-[80px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-lg p-2 hover:scale-105 hover:z-50 transition-all duration-200 hover:border-white/50"
+            className="flex-shrink-0 w-[88px] bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/30 border-dashed rounded-xl p-3 hover:scale-105 hover:z-50 transition-all duration-200 hover:border-white/50 shadow-lg"
           >
-            <div className="flex flex-col items-center space-y-1">
-              <div className="w-4 h-4 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                <Plus size={12} className="text-white/60" />
+            <div className="flex flex-col items-center space-y-2">
+              <div className="w-6 h-6 rounded-lg bg-black/30 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                <Plus size={14} className="text-white/60" />
               </div>
               <div className="text-center">
-                <div className="text-white/60 font-medium text-xs leading-tight">
+                <div className="text-white/60 font-medium text-xs leading-tight min-h-[32px] flex items-center justify-center">
                   Create
                 </div>
               </div>
