@@ -484,14 +484,14 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   );
 
   const body = (
-    <div className="bg-black relative h-full overflow-hidden">
+    <div className="bg-black relative min-h-full">
       <div className="absolute inset-0 bg-gradient-to-br from-rose-950/20 via-black to-purple-950/20" />
-      <div className="relative z-10 h-full flex flex-col"> {/* Removed overflow-hidden */}
+      <div className="relative z-10 min-h-full flex flex-col">
         
         {mockFavorites.length > 0 ? (
           <>
             {/* Desktop Grid Layout */}
-            <div className="hidden lg:block flex-1 min-h-0 overflow-y-auto px-4">
+            <div className="hidden lg:block flex-1 px-4 pb-4">
               <div className="grid grid-cols-3 xl:grid-cols-4 gap-4 py-4">
                 {sortedFavorites.map((session) => (
                   <div key={session.id} className="h-[300px]">
@@ -502,7 +502,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
             </div>
 
             {/* Mobile/Tablet Horizontal Scrolling */}
-            <div className="lg:hidden flex-1 min-h-0 overflow-hidden px-4">
+            <div className="lg:hidden flex-1 px-4">
               <div 
                 ref={scrollContainerRef}
                 className="flex gap-4 h-full overflow-x-auto scrollbar-hide snap-x snap-mandatory py-4"
@@ -541,7 +541,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
             </div>
 
             {/* Insights Section - Hidden on Small Screens */}
-            <div className="hidden lg:block bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-t border-violet-500/20 p-4">
+            <div className="hidden lg:block bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-t border-violet-500/20 p-6">
               <div className="max-w-6xl mx-auto">
                 <div className="flex items-center space-x-3 mb-4">
                   <BarChart3 size={20} className="text-violet-400" />
