@@ -274,14 +274,14 @@ html, body, #root {
 /* iOS Safari Safe Area Support */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(1rem, calc(1rem + env(safe-area-inset-bottom)));
   }
 }
 
 /* Fallback for older iOS versions */
 @supports (padding-bottom: constant(safe-area-inset-bottom)) {
   .safe-area-bottom {
-    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: max(1rem, calc(1rem + constant(safe-area-inset-bottom)));
   }
 }
 
