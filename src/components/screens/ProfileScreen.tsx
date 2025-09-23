@@ -273,6 +273,11 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
 
             <div className="pt-3 border-t border-white/10">
               <div className="flex items-center justify-between text-xs">
+                <span className="text-white/60">Level {user.level}</span>
+              </div>
+            </div>
+          </div>
+          
           {/* Quick Actions Card */}
           <div className="glass-card-premium bg-gradient-to-br from-orange-500/10 to-amber-500/10 p-6 hover:border-orange-500/40 transition-all duration-300">
             <div className="flex items-center space-x-3 mb-4">
@@ -331,7 +336,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 <h3 className="text-white font-semibold text-lg">Personalized Insights</h3>
                 <p className="text-indigo-400 text-sm">AI-powered recommendations</p>
               </div>
-                <span className="text-white/60">Level {user.level}</span>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-gradient-to-br from-indigo-500/5 to-blue-500/5 rounded-lg border border-indigo-500/20">
@@ -345,7 +350,6 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 <p className="text-indigo-400 text-sm font-medium ml-8">Best time: 7:00 PM - 9:00 PM</p>
               </div>
               
-              </div>
               <div className="p-4 bg-gradient-to-br from-green-500/5 to-teal-500/5 rounded-lg border border-green-500/20">
                 <div className="flex items-start space-x-3 mb-2">
                   <span className="text-lg">📈</span>
@@ -392,3 +396,4 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
       />
     </>
   );
+}
