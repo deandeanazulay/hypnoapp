@@ -45,7 +45,7 @@ export default function EgoStatesModal() {
   // Get other available states (exclude current)
   const otherStates = egoStates
     .filter(state => state.id !== tempSelectedEgoState)
-    .slice(0, 8);
+    .slice(0, 6); // Show 6 states in 2x3 grid
 
   // Update temp selection when modal opens
   React.useEffect(() => {
@@ -57,7 +57,7 @@ export default function EgoStatesModal() {
   if (!isEgoModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ maxHeight: '100svh' }}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ maxHeight: '100dvh' }}>
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/90 backdrop-blur-xl"
@@ -65,7 +65,7 @@ export default function EgoStatesModal() {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-black/95 backdrop-blur-xl border border-white/20 rounded-3xl overflow-hidden shadow-2xl">
+      <div className="relative w-full max-w-sm bg-black/95 backdrop-blur-xl border border-white/20 rounded-3xl overflow-hidden shadow-2xl max-h-[85vh] overflow-y-auto">
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -87,11 +87,11 @@ export default function EgoStatesModal() {
               
               <div className="relative z-10">
                 <div className="text-4xl mb-3">{currentState.icon}</div>
-                <h3 className="text-white text-xl font-bold mb-1">{currentState.name}</h3>
+                <h3 className="text-white font-bold text-xl mb-2">{currentState.name}</h3>
                 <p className="text-white/90 text-sm mb-4">{currentState.role}</p>
                 
                 {/* Trait Pills */}
-                <div className="flex items-center justify-center space-x-2 flex-wrap gap-y-1">
+                <div className="flex items-center justify-center flex-wrap gap-2">
                   {currentState.usedFor.slice(0, 3).map((keyword, index) => (
                     <span
                       key={index}
@@ -108,23 +108,25 @@ export default function EgoStatesModal() {
           {/* Explore Other States */}
           <div>
             <h3 className="text-white text-base font-semibold mb-3">Explore Other States</h3>
-            <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-3">
               {otherStates.map((state) => (
                 <button
                   key={state.id}
                   onClick={() => setTempSelectedEgoState(state.id)}
-                  className={`relative p-3 rounded-lg border transition-all duration-300 text-left group hover:scale-105 bg-gradient-to-br ${state.color} border-white/20 hover:border-white/40`}
+                  className={`relative p-4 rounded-xl border transition-all duration-300 text-left group hover:scale-105 bg-gradient-to-br ${state.color} border-white/20 hover:border-white/40 min-h-[100px]`}
                 >
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="text-lg">{state.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-white font-semibold text-sm truncate">{state.name}</h4>
-                      <p className="text-white/70 text-xs truncate">{state.role.split(',')[0]}</p>
+                  <div className="flex flex-col justify-between h-full">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <span className="text-2xl">{state.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-white font-semibold text-sm">{state.name}</h4>
+                        <p className="text-white/70 text-xs">{state.role.split(',')[0]}</p>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="text-xs text-white/60">
-                    {getUsageCount(state.id)} sessions
+                    
+                    <div className="text-xs text-white/60">
+                      {getUsageCount(state.id)} sessions
+                    </div>
                   </div>
                 </button>
               ))}
@@ -156,7 +158,7 @@ export default function EgoStatesModal() {
           {/* Action Button */}
           <button
             onClick={handleChannelState}
-            className="w-full py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-all duration-300 shadow-lg"
+            className="w-full py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-all duration-300 shadow-lg"
           >
             Channel This State
           </button>
