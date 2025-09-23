@@ -21,9 +21,8 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
     return typeMatch && difficultyMatch;
   });
 
-  // Show max 4 cards on main view, rest in modal
-  const displayedProtocols = filteredProtocols.slice(0, 4);
-  const remainingProtocols = filteredProtocols.slice(4);
+  // Show all protocols in scrollable view
+  const displayedProtocols = filteredProtocols;
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -47,8 +46,8 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
     <button
       key={protocol.id}
       onClick={() => setSelectedProtocol(protocol)}
-      className={`card-premium bg-gradient-to-br ${getTypeColor(protocol.type)} p-4 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full w-full text-left opacity-80 hover:opacity-100`}
-      style={{ minHeight: '44px', willChange: 'transform, opacity' }}
+      className={`card-premium bg-gradient-to-br ${getTypeColor(protocol.type)} p-4 transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 flex flex-col justify-between h-full w-full text-left opacity-80 hover:opacity-100 relative z-10 hover:z-20`}
+      style={{ minHeight: '160px', willChange: 'transform, opacity' }}
     >
       <div className="flex items-start justify-between space-x-2 mb-2">
         <div className="flex-1 min-w-0">
@@ -88,28 +87,24 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   );
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full w-full flex items-center justify-center overflow-hidden">
-          <div className="max-w-[1200px] max-h-[88vh] h-full w-full scale-to-fit">
+    <div className="flex flex-col h-screen">
+      <main className="flex-1 overflow-y-auto">
+        <div className="min-h-full w-full">
+          <div className="max-w-[1200px] w-full mx-auto">
             
             {/* Background */}
-            <div className="h-full bg-gradient-to-br from-black via-blue-950/20 to-purple-950/20 relative overflow-hidden">
+            <div className="min-h-full bg-gradient-to-br from-black via-blue-950/20 to-purple-950/20 relative">
               <div className="absolute inset-0">
                 <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/5 rounded-full blur-3xl" />
               </div>
 
               {/* Header */}
-              <div className="relative z-10 px-4 pt-4 pb-2">
+              <div className="relative z-10 px-4 pt-4 pb-4 sticky top-0 bg-gradient-to-b from-black/95 to-transparent backdrop-blur-sm">
                 <h1 className="text-[var(--ink-1)] text-xl font-bold mb-1 text-shadow-premium">Explore Protocols</h1>
                 <p className="text-[var(--ink-dim)] text-sm">Discover hypnosis journeys and techniques</p>
-              </div>
-
-              {/* Content Grid */}
-              <div className="relative z-10 h-full grid grid-rows-[auto,1fr] gap-3 px-4 pb-4">
                 
                 {/* Filters Row */}
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 mt-3">
                   {['all', 'induction', 'deepener', 'complete'].slice(0, 3).map((filter) => (
                     <button
                       key={filter}
@@ -132,37 +127,17 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                     More Filters
                   </button>
                 </div>
+              </div>
+
+              {/* Content Grid */}
+              <div className="relative z-10 px-4 pb-20">
                 
-                {/* Protocol Grid - 2x2 on desktop, 1x2 on mobile */}
-                <div className="grid h-full gap-4 grid-cols-1 sm:grid-cols-2 overflow-hidden">
+                {/* Protocol Grid - Scrollable */}
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredProtocols.length > 0 ? (
-                    <>
-                      <div className="grid grid-rows-2 gap-4">
-                        {displayedProtocols.slice(0, 2).map((protocol) => (
-                          renderProtocolCard(protocol)
-                        ))}
-                      </div>
-                      <div className="grid grid-rows-2 gap-4">
-                        {displayedProtocols[2] && renderProtocolCard(displayedProtocols[2])}
-                        {displayedProtocols[3] ? (
-                          renderProtocolCard(displayedProtocols[3])
-                        ) : remainingProtocols.length > 0 ? (
-                          <button
-                            onClick={() => setShowMore(true)}
-                            className="card-premium p-4 text-center transition-all duration-300 hover:scale-105 hover:shadow-xl opacity-80 hover:opacity-100 bg-gradient-to-br from-white/10 to-gray-500/10"
-                            style={{ minHeight: '44px', willChange: 'transform, opacity' }}
-                          >
-                            <div className="flex flex-col items-center justify-center h-full">
-                              <Plus size={24} className="text-[var(--ink-2)] mb-2" />
-                              <span className="text-[var(--ink-1)] font-medium text-sm text-shadow-premium">More Protocols</span>
-                              <span className="text-[var(--ink-dim)] text-xs">+{remainingProtocols.length} available</span>
-                            </div>
-                          </button>
-                        ) : null}
-                      </div>
-                    </>
+                    displayedProtocols.map((protocol) => renderProtocolCard(protocol))
                   ) : (
-                    <div className="col-span-full flex items-center justify-center h-full">
+                    <div className="col-span-full flex items-center justify-center py-20">
                       <div className="text-center">
                         <Filter size={48} className="text-white/20 mx-auto mb-4" />
                         <h3 className="text-[var(--ink-2)] text-xl font-medium mb-2">No protocols found</h3>
@@ -229,31 +204,13 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
         </ModalShell>
       )}
 
-      {/* More Protocols Modal */}
-      {showMore && (
-        <ModalShell
-          isOpen={true}
-          onClose={() => setShowMore(false)}
-          title={`All ${selectedFilter.charAt(0).toUpperCase() + selectedFilter.slice(1)} Protocols`}
-          className="max-h-[86vh] overflow-auto"
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
-            {remainingProtocols.map((protocol) => (
-              <div key={protocol.id} className="h-auto">
-                {renderProtocolCard(protocol)}
-              </div>
-            ))}
-          </div>
-        </ModalShell>
-      )}
-
       {/* Protocol Details Modal */}
       {selectedProtocol && (
         <ModalShell
           isOpen={true}
           onClose={() => setSelectedProtocol(null)}
           title={selectedProtocol.name}
-          className="max-h-[86vh] overflow-auto"
+          className="max-h-[86vh] overflow-auto z-50"
           footer={
             <button
               onClick={() => {
