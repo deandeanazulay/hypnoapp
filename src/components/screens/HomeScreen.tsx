@@ -1,78 +1,39 @@
 import React, { useState } from 'react';
-import EgoStatesRow from '../EgoStatesRow';
 import ActionsBar from '../ActionsBar';
-import WebGLOrb from '../WebGLOrb';
-import { useGameState } from '../GameStateManager';
-import { Clock, Zap, Target } from 'lucide-react';
+import CSSOrb from '../ui/CSSOrb';
+import { EGO_STATES, useAppStore } from '../../store';
 import { TabId } from '../../types/Navigation';
+import { THEME, getEgoColor } from '../../config/theme';
 
 interface HomeScreenProps {
-  selectedEgoState: string;
-  onEgoStateChange: (egoState: string) => void;
   onOrbTap: () => void;
-  activeTab: TabId;
   onTabChange: (tabId: TabId) => void;
   selectedAction: any;
   onActionSelect: (action: any) => void;
 }
 
 export default function HomeScreen({ 
-  selectedEgoState, 
-  onEgoStateChange, 
   onOrbTap, 
-  activeTab,
   onTabChange,
   selectedAction,
   onActionSelect
 }: HomeScreenProps) {
-  const { user } = useGameState();
+  const { activeEgoState, openModal } = useAppStore();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
-  // Get greeting based on time of day
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  // Format last session time
-  const getLastSessionText = () => {
-    if (!user.lastSessionDate) return null;
-    
-    const lastSession = new Date(user.lastSessionDate);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - lastSession.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Last session: Just now';
-    if (diffInHours < 24) return `Last session: ${diffInHours}h ago`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays === 1) return 'Last session: Yesterday';
-    if (diffInDays < 7) return `Last session: ${diffInDays}d ago`;
-    
-    return 'Last session: Over a week ago';
-  };
+  const currentState = EGO_STATES.find(s => s.id === activeEgoState) || EGO_STATES[0];
 
   const handleActionSelect = (action: any) => {
     onActionSelect(action);
   };
 
-  const handleOrbTap = () => {
-    // Start session with selected action (if any) and ego state
-    onOrbTap();
-  };
-  const lastSessionText = getLastSessionText();
-
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      setMousePosition({
-        x: (e.clientX - rect.left) / rect.width,
-        y: (e.clientY - rect.top) / rect.height
-      });
-    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMousePosition({
+      x: (e.clientX - rect.left) / rect.width,
+      y: (e.clientY - rect.top) / rect.height
+    });
   };
 
   return (
@@ -110,12 +71,31 @@ export default function HomeScreen({
       {/* Main Layout - Perfect vertical distribution */}
       <div className="relative z-10 h-full flex flex-col">
         
-        {/* Ego States Row */}
+        {/* Simplified Ego States Row */}
         <div className="flex-shrink-0 py-1">
-          <EgoStatesRow 
-            selectedEgoState={selectedEgoState}
-            onEgoStateChange={onEgoStateChange}
-          />
+          <div className="relative overflow-hidden w-full flex justify-center items-center py-2">
+            <div className="flex items-center space-x-2 px-4 animate-scroll-x">
+              {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => {
+                const isSelected = activeEgoState === state.id;
+                const egoColor = getEgoColor(state.id);
+                return (
+                  <div key={`${state.id}-${index}`} className="flex-shrink-0">
+                    <button
+                      onClick={() => useAppStore.getState().setActiveEgoState(state.id)}
+                      className={`w-9 h-9 rounded-full bg-gradient-to-br ${egoColor.bg} border-2 flex items-center justify-center transition-all duration-300 hover:scale-105 ${
+                        isSelected ? 'border-white/60 scale-110 opacity-100' : 'border-white/20 opacity-50'
+                      }`}
+                      style={{
+                        boxShadow: isSelected ? `0 0 20px ${egoColor.accent}80` : `0 0 10px ${egoColor.accent}40`
+                      }}
+                    >
+                      <span className="text-sm">{state.icon}</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Center Section - Orb Supreme */}
@@ -133,14 +113,10 @@ export default function HomeScreen({
                   justifyContent: 'center'
                 }}
               >
-                <WebGLOrb
+                <CSSOrb
                   onTap={onOrbTap}
-                  afterglow={user.lastSessionDate !== null}
-                  egoState={selectedEgoState}
-                  mousePosition={mousePosition}
-                  isDragging={isDragging}
-                  onDragStart={() => setIsDragging(true)}
-                  onDragEnd={() => setIsDragging(false)}
+                  afterglow={false}
+                  egoState={activeEgoState}
                   size={window.innerWidth < 768 ? 
                     Math.max(200, Math.min(window.innerWidth * 0.6, 280)) :
                     Math.max(240, Math.min(window.innerHeight * 0.3, 300))
@@ -151,7 +127,7 @@ export default function HomeScreen({
               {/* Session configuration display - always visible */}
               <div className="mt-3 text-center relative z-20 bg-black/40 backdrop-blur-xl rounded-xl px-3 py-2 border border-white/10 shadow-lg">
                 <p className="text-teal-400 text-sm font-medium">
-                  {selectedEgoState.charAt(0).toUpperCase() + selectedEgoState.slice(1)} Mode
+                  {currentState.name} Mode
                 </p>
                 {selectedAction && (
                   <p className="text-orange-400 text-sm font-medium">
@@ -172,7 +148,6 @@ export default function HomeScreen({
             <p className="text-white/50 text-xs font-medium">Choose session type</p>
           </div>
           <ActionsBar 
-            selectedEgoState={selectedEgoState}
             selectedAction={selectedAction}
             onActionSelect={handleActionSelect}
             onNavigateToCreate={() => onTabChange('create')}
@@ -180,16 +155,17 @@ export default function HomeScreen({
         </div>
       </div>
 
-      {/* Achievement notifications */}
-      {user.achievements.length > 0 && (
-        <div className="absolute top-20 right-4 bg-gradient-to-r from-amber-400 to-orange-400 text-black px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-20">
-          {user.achievements[user.achievements.length - 1]}
-        </div>
-      )}
-
-      {/* CSS for additional animations */}
       <style jsx>{`
-        /* Removed all space background animations for calm experience */
+        @keyframes scroll-x {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-40%); }
+        }
+        .animate-scroll-x {
+          animation: scroll-x 30s linear infinite;
+        }
+        .animate-scroll-x:hover {
+          animation-play-state: paused;
+        }
       `}</style>
     </div>
   );
