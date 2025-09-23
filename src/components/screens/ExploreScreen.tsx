@@ -14,6 +14,27 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // Responsive cards per view
+  const getCardsPerView = () => {
+    if (typeof window === 'undefined') return 1;
+    if (window.innerWidth >= 1024) return 3; // desktop: 3 cards
+    if (window.innerWidth >= 768) return 2;  // tablet: 2 cards
+    return 1; // mobile: 1 card
+  };
+  
+  const [cardsPerView, setCardsPerView] = useState(getCardsPerView);
+  
+  // Update cards per view on resize
+  React.useEffect(() => {
+    const handleResize = () => {
+      setCardsPerView(getCardsPerView());
+      setCurrentIndex(0); // Reset to first page when screen size changes
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const filteredProtocols = DEFAULT_PROTOCOLS.filter(protocol => {
     const typeMatch = selectedFilter === 'all' || protocol.type === selectedFilter;
@@ -21,20 +42,25 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
     return typeMatch && difficultyMatch;
   });
 
-  const maxVisibleCards = 1; // Show one card at a time for better mobile experience
+  const totalPages = Math.ceil(filteredProtocols.length / cardsPerView);
   const canScrollLeft = currentIndex > 0;
-  const canScrollRight = currentIndex < filteredProtocols.length - maxVisibleCards;
+  const canScrollRight = currentIndex < totalPages - 1;
 
   const scrollLeft = () => {
     if (canScrollLeft) {
-      setCurrentIndex(prev => Math.max(0, prev - 1));
+      setCurrentIndex(prev => prev - 1);
     }
   };
 
   const scrollRight = () => {
     if (canScrollRight) {
-      setCurrentIndex(prev => Math.min(filteredProtocols.length - 1, prev + 1));
+      setCurrentIndex(prev => prev + 1);
     }
+  };
+  
+  const getCurrentCards = () => {
+    const startIndex = currentIndex * cardsPerView;
+    return filteredProtocols.slice(startIndex, startIndex + cardsPerView);
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -147,7 +173,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
         {filteredProtocols.length > 0 ? (
           <div className="h-full flex flex-col relative">
             {/* Navigation Arrows - Only show if more than 1 card */}
-            {filteredProtocols.length > maxVisibleCards && (
+            {totalPages > 1 && (
               <>
                 <button
                   onClick={scrollLeft}
@@ -170,30 +196,23 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
               </>
             )}
             
-            <div className="flex-1 overflow-hidden px-4 sm:px-16">
+            <div className="flex-1 overflow-hidden px-4 sm:px-8 lg:px-4">
               <div 
-                className="flex h-full pb-4 transition-transform duration-300 ease-out gap-4" 
+                className="grid h-full pb-4 transition-transform duration-300 ease-out gap-4" 
                 style={{ 
-                  transform: `translateX(-${currentIndex * 100}%)`,
-                  width: `${filteredProtocols.length * 100}%`
+                  gridTemplateColumns: `repeat(${cardsPerView}, 1fr)`,
                 }}
-              >
-                {filteredProtocols.map((protocol, index) => (
-                  <div 
-                    key={protocol.id}
-                    className="flex-shrink-0 w-full px-2"
-                  >
-                    {renderProtocolCard(protocol)}
-                  </div>
+                {getCurrentCards().map((protocol) => (
+                  renderProtocolCard(protocol)
                 ))}
               </div>
             </div>
             
             {/* Page indicators */}
-            {filteredProtocols.length > 1 && (
+            {totalPages > 1 && (
               <div className="flex justify-center mt-4 mb-2">
                 <div className="flex space-x-2">
-                  {filteredProtocols.map((_, index) => (
+                  {Array.from({ length: totalPages }).map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentIndex(index)}
