@@ -359,4 +359,14 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
     return false;
   }
+
+  return {
+    user,
+    updateUserState,
+    completeSession,
+    getOrbState,
+    canAccess,
+    spendTokens
+  };
+};
 }
