@@ -17,11 +17,15 @@ interface CustomProtocol {
 
 interface CreateScreenProps {
   onProtocolCreate: (protocol: CustomProtocol) => void;
+  onShowAuth: () => void;
 }
 
-export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
+export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScreenProps) {
   const { user, canAccess } = useGameState();
   const { showToast } = useUIStore();
+  
+  // Local state for auth modal
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   const [protocol, setProtocol] = useState<Partial<CustomProtocol>>({
     name: 'Untitled Journey',

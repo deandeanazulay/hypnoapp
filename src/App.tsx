@@ -171,7 +171,7 @@ function App() {
       case 'explore':
         return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
       case 'create':
-        return <CreateScreen onProtocolCreate={handleCustomProtocolCreate} />;
+        return <CreateScreen onProtocolCreate={handleCustomProtocolCreate} onShowAuth={() => setShowAuthModal(true)} />;
       case 'favorites':
         return <FavoritesScreen onSessionSelect={handleFavoriteSessionSelect} />;
       case 'profile':
