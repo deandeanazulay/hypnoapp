@@ -132,7 +132,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden overflow-y-auto">
+    <div className="min-h-screen bg-black text-white overflow-x-hidden overflow-y-auto" style={{ height: '100vh', overflowY: 'scroll' }}>
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4">

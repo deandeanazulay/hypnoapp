@@ -127,10 +127,12 @@ function App() {
   // Show landing page first
   if (showLanding) {
     return (
-      <LandingPage
-        onEnterApp={handleEnterApp}
-        onShowAuth={handleShowAuth}
-      />
+      <div style={{ height: '100vh', overflow: 'hidden' }}>
+        <LandingPage
+          onEnterApp={handleEnterApp}
+          onShowAuth={handleShowAuth}
+        />
+      </div>
     );
   }
 
