@@ -202,132 +202,133 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
     <div className="bg-black relative px-4 py-4 h-full flex items-center justify-center">
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/20 via-black to-purple-950/20" />
       <div className="relative z-10 w-full max-w-4xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
-          
-          {/* Premium Features Card */}
-          <div className="glass-card-premium bg-gradient-to-br from-purple-500/10 to-pink-500/10 p-6 hover:border-purple-500/40 transition-all duration-300">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
-                <span className="text-2xl">👑</span>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+            
+            {/* Premium Features Card */}
+            <div className="glass-card-premium bg-gradient-to-br from-purple-500/10 to-pink-500/10 p-6 hover:border-purple-500/40 transition-all duration-300">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+                  <span className="text-2xl">👑</span>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Premium Features</h3>
+                  <p className="text-purple-400 text-sm">Unlock your potential</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-white font-semibold text-lg">Premium Features</h3>
-                <p className="text-purple-400 text-sm">Unlock your potential</p>
+              
+              <PremiumFeatures 
+                currentTier={user.plan}
+                onUpgrade={handleUpgrade}
+              />
+            </div>
+
+            {/* Recent Activity & Achievements */}
+            <div className="glass-card-premium bg-gradient-to-br from-teal-500/10 to-cyan-500/10 p-6 hover:border-teal-500/40 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center">
+                    <span className="text-2xl">⚡</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold text-lg">Recent Activity</h3>
+                    <p className="text-teal-400 text-sm">Your transformation journey</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={openEgoModal}
+                  className="px-3 py-2 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 text-sm font-medium hover:bg-teal-500/30 transition-colors"
+                >
+                  View Analytics
+                </button>
+              </div>
+
+              <div className="space-y-3 mb-4">
+                {getRecentActivity().length > 0 ? (
+                  getRecentActivity().map((activity, index) => (
+                    <div key={index} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg border border-white/10">
+                      <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm">{activity.icon}</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-white text-sm font-medium">{activity.name}</div>
+                        <div className="text-white/60 text-xs">
+                          {activity.timeAgo}
+                          {activity.description && ` • ${activity.description}`}
+                        </div>
+                      </div>
+                      {activity.xp && (
+                        <div className="text-teal-400 text-xs font-medium">+{activity.xp} XP</div>
+                      )}
+                      {activity.badge && (
+                        <div className="text-yellow-400 text-xs font-medium">BADGE</div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-white/60 text-sm">Complete your first session to see activity</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-white/10">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-white/60">Level {user.level}</span>
+                </div>
               </div>
             </div>
             
-            <PremiumFeatures 
-              currentTier={user.plan}
-              onUpgrade={handleUpgrade}
-            />
-          </div>
-
-          {/* Recent Activity & Achievements */}
-          <div className="glass-card-premium bg-gradient-to-br from-teal-500/10 to-cyan-500/10 p-6 hover:border-teal-500/40 transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center">
-                  <span className="text-2xl">⚡</span>
+            {/* Quick Actions Card */}
+            <div className="glass-card-premium bg-gradient-to-br from-orange-500/10 to-amber-500/10 p-6 hover:border-orange-500/40 transition-all duration-300">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
+                  <span className="text-2xl">⚙️</span>
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold text-lg">Recent Activity</h3>
-                  <p className="text-teal-400 text-sm">Your transformation journey</p>
+                  <h3 className="text-white font-semibold text-lg">Quick Actions</h3>
+                  <p className="text-orange-400 text-sm">Personalize your experience</p>
                 </div>
               </div>
-              <button 
-                onClick={openEgoModal}
-                className="px-3 py-2 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 text-sm font-medium hover:bg-teal-500/30 transition-colors"
-              >
-                View Analytics
-              </button>
-            </div>
 
-            <div className="space-y-3 mb-4">
-              {getRecentActivity().length > 0 ? (
-                getRecentActivity().map((activity, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg border border-white/10">
-                    <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm">{activity.icon}</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-white text-sm font-medium">{activity.name}</div>
-                      <div className="text-white/60 text-xs">
-                        {activity.timeAgo}
-                        {activity.description && ` • ${activity.description}`}
-                      </div>
-                    </div>
-                    {activity.xp && (
-                      <div className="text-teal-400 text-xs font-medium">+{activity.xp} XP</div>
-                    )}
-                    {activity.badge && (
-                      <div className="text-yellow-400 text-xs font-medium">BADGE</div>
-                    )}
+              <div className="space-y-3">
+                <button 
+                  onClick={() => setShowSettings(true)}
+                  className="w-full flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-lg">🔧</span>
+                    <span className="text-white text-sm">Settings & Preferences</span>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-white/60 text-sm">Complete your first session to see activity</p>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-3 border-t border-white/10">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-white/60">Level {user.level}</span>
+                  <ChevronRight size={16} className="text-white/40" />
+                </button>
+                
+                <button 
+                  onClick={openEgoModal}
+                  className="w-full flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-lg">🎭</span>
+                    <span className="text-white text-sm">Explore Ego States</span>
+                  </div>
+                  <ChevronRight size={16} className="text-white/40" />
+                </button>
+                
+                <button 
+                  onClick={() => showToast({ type: 'info', message: 'Export feature coming soon!' })}
+                  className="w-full flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-lg">📚</span>
+                    <span className="text-white text-sm">Export Progress</span>
+                  </div>
+                  <ChevronRight size={16} className="text-white/40" />
+                </button>
               </div>
             </div>
           </div>
-          
-          {/* Quick Actions Card */}
-          <div className="glass-card-premium bg-gradient-to-br from-orange-500/10 to-amber-500/10 p-6 hover:border-orange-500/40 transition-all duration-300">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
-                <span className="text-2xl">⚙️</span>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-lg">Quick Actions</h3>
-                <p className="text-orange-400 text-sm">Personalize your experience</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <button 
-                onClick={() => setShowSettings(true)}
-                className="w-full flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">🔧</span>
-                  <span className="text-white text-sm">Settings & Preferences</span>
-                </div>
-                <ChevronRight size={16} className="text-white/40" />
-              </button>
-              
-              <button 
-                onClick={openEgoModal}
-                className="w-full flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">🎭</span>
-                  <span className="text-white text-sm">Explore Ego States</span>
-                </div>
-                <ChevronRight size={16} className="text-white/40" />
-              </button>
-              
-              <button 
-                onClick={() => showToast({ type: 'info', message: 'Export feature coming soon!' })}
-                className="w-full flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">📚</span>
-                  <span className="text-white text-sm">Export Progress</span>
-                </div>
-                <ChevronRight size={16} className="text-white/40" />
-              </button>
-            </div>
-          </div>
-        </div>
-        {/* Second Row - Personalized Insights (spans full width) */}
-        <div className="glass-card-premium bg-gradient-to-br from-indigo-500/10 to-blue-500/10 p-6 hover:border-indigo-500/40 transition-all duration-300 mt-6">
+          {/* Second Row - Personalized Insights (spans full width) */}
+          <div className="glass-card-premium bg-gradient-to-br from-indigo-500/10 to-blue-500/10 p-6 hover:border-indigo-500/40 transition-all duration-300 mt-6">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center">
                 <span className="text-2xl">💡</span>
@@ -378,7 +379,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               </div>
             </div>
           </div>
-        </div>
+        </>
       </div>
     </div>
   );
