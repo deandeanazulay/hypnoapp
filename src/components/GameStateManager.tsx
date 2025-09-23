@@ -170,12 +170,11 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const defaultProfile: Partial<UserProfile> = {
       id: authUser.id,
-      email: authUser.email || '',
+      email: authUser.email || authUser.user_metadata?.email || '',
       level: 1,
       experience: 0,
       current_state: 'calm',
       session_streak: 0,
-      last_session_time: null,
       achievements: [],
       orb_energy: 0.3,
       depth: 1,
@@ -185,7 +184,6 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       tokens: 50,
       plan: 'free',
       daily_sessions_used: 0,
-      last_session_date: null,
       ego_state_usage: {
         guardian: 0,
         rebel: 0,
@@ -203,7 +201,7 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         warrior: 0,
         visionary: 0
       },
-      active_ego_state: 'guardian',
+      active_ego_state: 'guardian'
     };
 
     const { data, error } = await supabase
@@ -213,12 +211,21 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       .single();
 
     if (error) {
-      // If error is due to profile already existing, that's fine
-      if (error.code !== '23505') { // 23505 is unique constraint violation
-        console.error('Error creating user profile:', error);
+      console.error('Error creating user profile:', error);
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      
+      // If it's a unique constraint violation, profile already exists
+      if (error.code === '23505') {
+        await loadUserProfile();
+      } else {
+        // For other errors, still try to load in case profile was created
+        await loadUserProfile();
       }
-      // Try to load existing profile anyway
-      await loadUserProfile();
     } else {
       await loadUserProfile();
     }
