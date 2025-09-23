@@ -153,8 +153,6 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Main Content - Perfect vertical distribution */}
-      <div className="relative z-10 h-full flex flex-col px-4">
         
         {/* Header - Compact */}
         <div className="flex-shrink-0 pt-2 pb-4">

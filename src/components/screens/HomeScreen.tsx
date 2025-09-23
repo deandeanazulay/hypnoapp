@@ -66,7 +66,7 @@ export default function HomeScreen({
   return (
     <div className="h-full bg-black relative overflow-hidden flex flex-col">
       {/* Background gradient */}
-      <div className="fixed inset-0">
+      <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-950/20 via-black to-purple-950/20" />
         {user.lastSessionDate && (
           <div className="absolute inset-0 bg-gradient-to-br from-teal-950/10 via-black to-orange-950/10" />

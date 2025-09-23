@@ -198,29 +198,34 @@ function App() {
 
   const MainApp = () => (
     <GameStateProvider>
-      <>
-        {/* Global HUD - MapleStory style */}
-        <GlobalHUD />
+      <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
+        {/* Global HUD - Fixed at top */}
+        <div className="flex-shrink-0 relative z-50">
+          <GlobalHUD />
+        </div>
         
-        <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
-          {/* Sacred Orb Background Protection */}
-          <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900/50 to-black pointer-events-none z-0" />
+        {/* Main Body Content - Flex grow */}
+        <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden">
+          {/* Background Protection */}
+          <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900/50 to-black pointer-events-none" />
           
-          {/* Main Content */}
-          <div className="flex-1 min-h-0 flex flex-col relative z-10 pt-16">
+          {/* Tab Content */}
+          <div className="relative z-10 h-full overflow-hidden">
             {renderCurrentTab()}
-          </div>
-          
-          {/* Bottom Navigation - Fixed */}
-          <div className="flex-shrink-0 relative z-50">
-            <NavigationTabs
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
           </div>
         </div>
         
-        {/* Global Modals */}
+        {/* Bottom Navigation - Fixed at bottom */}
+        <div className="flex-shrink-0 relative z-50">
+          <NavigationTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </div>
+      </div>
+      
+      {/* Global Modals - Outside main structure */}
+      <>
         <EgoStatesModal />
         <AuthModal 
           isOpen={showAuthModal}

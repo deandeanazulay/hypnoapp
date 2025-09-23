@@ -107,8 +107,8 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   );
 
   return (
-    <div className="flex flex-col h-screen">
-      <main className="flex-1 overflow-y-auto">
+    <div className="h-full flex flex-col overflow-hidden">
+      <main className="flex-1 min-h-0 overflow-y-auto">
         <div className="min-h-full w-full">
           <div className="max-w-[1200px] w-full mx-auto">
             

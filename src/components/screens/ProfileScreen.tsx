@@ -150,7 +150,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   const personaEvolution = getPersonaEvolution();
 
   const header = (
-    <div className="relative z-10 px-4 pt-2 pb-2 flex items-center justify-between">
+    <div className="flex-shrink-0 px-4 pt-2 pb-2 flex items-center justify-between">
       <div>
         <h1 className="text-[var(--ink-1)] text-lg font-bold mb-1 text-shadow-premium">
           Mirror of the Mind
