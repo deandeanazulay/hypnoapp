@@ -146,12 +146,13 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
   const isValid = protocol.name && protocol.induction && protocol.deepener;
 
   return (
-    <div className="h-full bg-black relative overflow-hidden flex flex-col">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-black to-teal-950/20" />
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
-      </div>
+    <>
+      <div className="h-full bg-black relative overflow-hidden flex flex-col">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-black to-teal-950/20" />
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
+        </div>
 
         
         {/* Header - Compact */}
@@ -589,6 +590,6 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
           )}
         </div>
       </ModalShell>
-    </div>
+    </>
   );
 }
