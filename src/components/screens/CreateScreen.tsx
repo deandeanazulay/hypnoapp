@@ -128,8 +128,8 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
     <div className="bg-black relative px-4 py-4 h-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-black to-teal-950/20" />
       <div className="relative z-10 h-full">
-        {/* 2x3 Card Grid */}
-        <div className="grid grid-cols-2 grid-rows-3 gap-4 h-full">
+        {/* Responsive Card Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full auto-rows-fr">
           
           {/* Protocol Name Card */}
           <div className="glass-card-premium p-5 bg-gradient-to-br from-purple-500/10 to-teal-500/10 hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-500/20 group">
@@ -167,7 +167,7 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
               max="30"
               value={protocol.duration || 15}
               onChange={(e) => setProtocol(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
-              className="w-full h-3 bg-white/20 rounded-lg appearance-none cursor-pointer mb-3 glass-progress"
+              className="w-full h-3 bg-white/20 rounded-lg appearance-none cursor-pointer mb-3 glass-slider"
             />
             <div className="flex justify-between text-white/60 text-xs">
               <span>5m</span>
