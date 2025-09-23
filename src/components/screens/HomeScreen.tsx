@@ -77,23 +77,23 @@ export default function HomeScreen({
       <div className="relative z-10 h-full flex flex-col">
         
         {/* Ego States Row */}
-        <div className="flex-shrink-0 pt-1 pb-2">
+        <div className="flex-shrink-0 py-1">
           <EgoStatesRow 
             selectedEgoState={selectedEgoState}
             onEgoStateChange={onEgoStateChange}
           />
         </div>
 
-        {/* Center Section - Orb Supreme (god of the app - never cut off) */}
-        <div className="flex-1 flex items-center justify-center min-h-0 relative z-20 px-4 -mt-4">
-          <div className="w-full h-full flex items-center justify-center -mt-8">
-            <div className="flex flex-col items-center justify-center max-w-none -mt-4">
+        {/* Center Section - Orb Supreme */}
+        <div className="flex-1 flex items-center justify-center min-h-0 relative z-20 px-4">
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center max-w-none">
               {/* Orb Container - Sacred Space */}
               <div 
-                className="relative z-30 p-2" 
+                className="relative z-30" 
                 style={{ 
-                  minHeight: Math.max(320, window.innerHeight * 0.4),
-                  minWidth: Math.max(320, window.innerWidth * 0.6),
+                  minHeight: Math.max(240, Math.min(window.innerHeight * 0.35, 320)),
+                  minWidth: Math.max(240, Math.min(window.innerWidth * 0.6, 320)),
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
@@ -103,16 +103,15 @@ export default function HomeScreen({
                   onTap={onOrbTap}
                   afterglow={user.lastSessionDate !== null}
                   egoState={selectedEgoState}
-                  size={Math.min(
-                    Math.max(240, window.innerWidth * 0.45), 
-                    Math.max(280, window.innerHeight * 0.35),
-                    320
-                  )}
+                  size={window.innerWidth < 768 ? 
+                    Math.max(200, Math.min(window.innerWidth * 0.6, 280)) :
+                    Math.max(240, Math.min(window.innerHeight * 0.3, 300))
+                  }
                 />
               </div>
                 
               {/* Session configuration display - always visible */}
-              <div className="mt-2 text-center relative z-20 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
+              <div className="mt-3 text-center relative z-20 bg-black/60 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
                 <p className="text-teal-400 text-sm font-medium">
                   {selectedEgoState.charAt(0).toUpperCase() + selectedEgoState.slice(1)} Mode
                 </p>
@@ -130,8 +129,8 @@ export default function HomeScreen({
         </div>
 
         {/* Bottom Section - Actions Bar */}
-        <div className="flex-shrink-0 pb-2 -mt-6">
-          <div className="text-center mb-1">
+        <div className="flex-shrink-0 pb-2">
+          <div className="text-center mb-2">
             <p className="text-white/40 text-xs">Choose session type</p>
           </div>
           <ActionsBar 
