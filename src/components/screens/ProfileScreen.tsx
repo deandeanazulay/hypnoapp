@@ -1,6 +1,7 @@
 import React from 'react';
 import { Settings, Award, TrendingUp, Calendar, Target, ChevronRight, Zap, Crown, Star, Sparkles, Play } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
+import { useAuth } from '../../hooks/useAuth';
 import { useAppStore, getEgoState } from '../../state/appStore';
 import { useUIStore } from '../../state/uiStore';
 import PageShell from '../layout/PageShell';
@@ -13,6 +14,7 @@ interface ProfileScreenProps {
 
 export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: ProfileScreenProps) {
   const { user } = useGameState();
+  const { user: authUser, signOut } = useAuth();
   const { activeEgoState, openEgoModal } = useAppStore();
   const { showToast } = useUIStore();
   const [showSettings, setShowSettings] = React.useState(false);
@@ -51,6 +53,22 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
     });
   };
 
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      showToast({
+        type: 'error',
+        message: 'Failed to sign out. Please try again.',
+        duration: 4000
+      });
+    } else {
+      showToast({
+        type: 'success',
+        message: 'Successfully signed out',
+        duration: 3000
+      });
+    }
+  };
   // Get formatted recent activity
   const getRecentActivity = () => {
     const activities = [];
@@ -96,17 +114,28 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
     <div className="relative z-10 px-4 pt-4 pb-2 flex items-center justify-between">
       <div>
         <h1 className="text-[var(--ink-1)] text-xl font-bold mb-1 text-shadow-premium">
-          Profile
+          {authUser?.email ? `Welcome, ${authUser.email.split('@')[0]}` : 'Profile'}
         </h1>
         <p className="text-[var(--ink-dim)] text-xs font-medium uppercase tracking-wide">Your transformation journey</p>
       </div>
-      <button
-        onClick={() => setShowSettings(true)} 
-        className="group w-10 h-10 rounded-xl card-premium hover:scale-110 transition-all duration-300 flex items-center justify-center opacity-80 hover:opacity-100"
-        style={{ minHeight: '44px', minWidth: '44px' }}
-      >
-        <Settings size={16} className="text-white group-hover:rotate-90 transition-transform duration-300" />
-      </button>
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => setShowSettings(true)} 
+          className="group w-10 h-10 rounded-xl card-premium hover:scale-110 transition-all duration-300 flex items-center justify-center opacity-80 hover:opacity-100"
+          style={{ minHeight: '44px', minWidth: '44px' }}
+        >
+          <Settings size={16} className="text-white group-hover:rotate-90 transition-transform duration-300" />
+        </button>
+        {authUser && (
+          <button
+            onClick={handleSignOut}
+            className="px-3 py-2 text-xs bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 hover:border-red-500/40 text-red-400 rounded-lg transition-all duration-300 hover:scale-105"
+            style={{ minHeight: '36px' }}
+          >
+            Sign Out
+          </button>
+        )}
+      </div>
     </div>
   );
 

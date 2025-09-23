@@ -9,7 +9,9 @@ import UnifiedSessionWorld from './components/UnifiedSessionWorld';
 import { GameStateProvider } from './components/GameStateManager';
 import EgoStatesModal from './components/modals/EgoStatesModal';
 import ToastManager from './components/layout/ToastManager';
+import AuthModal from './components/auth/AuthModal';
 import { useAppStore } from './state/appStore';
+import { useAuth } from './hooks/useAuth';
 import './styles/glass.css';
 import { TabId } from './types/Navigation';
 
@@ -17,12 +19,31 @@ type AppMode = 'navigation' | 'session';
 
 function App() {
   const { activeEgoState, setActiveEgoState } = useAppStore();
+  const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
   const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [selectedAction, setSelectedAction] = useState<any>(null);
   const [sessionConfig, setSessionConfig] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Show auth modal for unauthenticated users after a delay
+  React.useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      const timer = setTimeout(() => {
+        setShowAuthModal(true);
+      }, 3000); // Show after 3 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, authLoading]);
 
   const handleOrbTap = () => {
+    // If not authenticated, show auth modal
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
     // Start session with current ego state
     setSessionConfig({
       egoState: activeEgoState,
@@ -37,6 +58,12 @@ function App() {
   };
 
   const handleProtocolSelect = (protocol: any) => {
+    // If not authenticated, show auth modal  
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
     // Start session with current ego state and any selected action
     setSessionConfig({
       egoState: activeEgoState,
@@ -63,6 +90,12 @@ function App() {
   };
 
   const handleFavoriteSessionSelect = (session: any) => {
+    // If not authenticated, show auth modal
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
     // Start favorited session
     setSessionConfig({
       egoState: activeEgoState,
@@ -72,6 +105,18 @@ function App() {
     });
     setCurrentMode('session');
   };
+
+  // Show loading screen while auth is loading
+  if (authLoading) {
+    return (
+      <div className="h-screen w-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-teal-400/20 border-t-teal-400 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white/60 text-sm">Loading Libero...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Session mode - full screen wizard
   if (currentMode === 'session') {
@@ -153,6 +198,10 @@ function App() {
         
         {/* Global Modals */}
         <EgoStatesModal />
+        <AuthModal 
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+        />
         
         {/* Toast Notifications */}
         <ToastManager />
