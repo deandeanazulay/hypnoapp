@@ -18,7 +18,7 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
     id: 'mystic-subscription',
     name: 'Mystic Subscription',
     description: 'Unlock your full potential with unlimited sessions, all 15 archetypal guides, and premium features.',
-    priceId: import.meta.env.VITE_STRIPE_MYSTIC_PRICE_ID || 'price_1QRockLNNCdK8vdNKQZSWMdP',
+    priceId: import.meta.env.VITE_STRIPE_MYSTIC_PRICE_ID || 'price_1O5KtBLNNCdK8vdNzWI4NLuO',
     price: 27.00,
     currency: 'usd',
     interval: 'month',
