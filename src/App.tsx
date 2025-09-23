@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
 import HomeScreen from './components/screens/HomeScreen';
 import ExploreScreen from './components/screens/ExploreScreen';
@@ -11,6 +12,8 @@ import { GameStateProvider } from './components/GameStateManager';
 import EgoStatesModal from './components/modals/EgoStatesModal';
 import ToastManager from './components/layout/ToastManager';
 import AuthModal from './components/auth/AuthModal';
+import PaymentSuccess from './components/PaymentSuccess';
+import PaymentCancelled from './components/PaymentCancelled';
 import { useAppStore } from './state/appStore';
 import { useAuth } from './hooks/useAuth';
 import './styles/glass.css';
@@ -192,8 +195,7 @@ function App() {
     }
   };
 
-  // Navigation mode - tabbed interface
-  return (
+  const MainApp = () => (
     <GameStateProvider>
       <>
         <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
@@ -225,6 +227,16 @@ function App() {
         <ToastManager />
       </>
     </GameStateProvider>
+  );
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-cancelled" element={<PaymentCancelled />} />
+        <Route path="*" element={<MainApp />} />
+      </Routes>
+    </Router>
   );
 }
 

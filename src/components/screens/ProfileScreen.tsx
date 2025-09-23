@@ -4,6 +4,7 @@ import { useGameState } from '../GameStateManager';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppStore, getEgoState } from '../../state/appStore';
 import { useUIStore } from '../../state/uiStore';
+import { paymentService } from '../../lib/stripe';
 import PageShell from '../layout/PageShell';
 import SettingsModal from '../modals/SettingsModal';
 
@@ -20,10 +21,18 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   const [showSettings, setShowSettings] = React.useState(false);
   const [animatedXP, setAnimatedXP] = React.useState(0);
   const [isLoaded, setIsLoaded] = React.useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = React.useState<'free' | 'active' | 'cancelled' | 'past_due'>('free');
+  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
 
   const currentState = getEgoState(activeEgoState);
   const currentXP = user.experience % 100;
 
+  // Load subscription status
+  React.useEffect(() => {
+    if (authUser) {
+      paymentService.getSubscriptionStatus().then(setSubscriptionStatus);
+    }
+  }, [authUser]);
   // Animate XP counter on load
   React.useEffect(() => {
     setIsLoaded(true);
@@ -45,12 +54,30 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   }, [currentXP]);
 
   // Handle upgrade plan action
-  const handleUpgrade = (tier: string) => {
-    showToast({
-      type: 'info',
-      message: `Upgrade to ${tier.toUpperCase()} plan coming soon! We'll notify you when available.`,
-      duration: 4000
-    });
+  const handleUpgrade = async () => {
+    if (!authUser) {
+      showToast({
+        type: 'error',
+        message: 'Please sign in to upgrade to premium',
+        duration: 4000
+      });
+      return;
+    }
+
+    try {
+      setIsProcessingPayment(true);
+      const { url } = await paymentService.createCheckoutSession('mystic-subscription');
+      window.location.href = url;
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      showToast({
+        type: 'error',
+        message: error.message || 'Failed to start checkout. Please try again.',
+        duration: 5000
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -278,48 +305,77 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-h-0">
               
               {/* Premium Card */}
-              <div className="group cursor-pointer relative overflow-hidden flex flex-col justify-between animate-stagger-in bg-black/40 border border-yellow-400/30 rounded-2xl p-4 sm:p-3 hover:scale-[1.02] transition-all duration-500" style={{ animationDelay: '300ms', boxShadow: 'var(--shadow-card)' }}>
+              <div className={`group cursor-pointer relative overflow-hidden flex flex-col justify-between animate-stagger-in rounded-2xl p-4 sm:p-3 hover:scale-[1.02] transition-all duration-500 ${
+                subscriptionStatus === 'active' 
+                  ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border border-teal-400/40' 
+                  : 'bg-black/40 border border-yellow-400/30'
+              }`} style={{ animationDelay: '300ms', boxShadow: 'var(--shadow-card)' }}>
                 
                 {/* Shimmer line */}
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-400/80 to-transparent animate-pulse" />
+                <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent to-transparent animate-pulse ${
+                  subscriptionStatus === 'active' 
+                    ? 'via-teal-400/80' 
+                    : 'via-amber-400/80'
+                }`} />
                 
                 <div className="relative z-10">
                   <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-9 h-9 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-amber-500/40 to-yellow-500/30 border border-amber-400/50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                      <Crown size={18} className="text-amber-400 group-hover:rotate-12 transition-transform duration-300" />
+                    <div className={`w-9 h-9 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br border flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ${
+                      subscriptionStatus === 'active'
+                        ? 'from-teal-500/40 to-cyan-500/30 border-teal-400/50'
+                        : 'from-amber-500/40 to-yellow-500/30 border-amber-400/50'
+                    }`}>
+                      <Crown size={18} className={`group-hover:rotate-12 transition-transform duration-300 ${
+                        subscriptionStatus === 'active' ? 'text-teal-400' : 'text-amber-400'
+                      }`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-1 mb-0.5">
-                        <h3 className="text-[var(--ink-1)] font-bold text-base sm:text-sm text-shadow-premium">Go Premium</h3>
-                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs sm:text-[8px] rounded-full border border-amber-500/40 font-bold uppercase">
-                          Exclusive
+                        <h3 className="text-[var(--ink-1)] font-bold text-base sm:text-sm text-shadow-premium">
+                          {subscriptionStatus === 'active' ? 'Premium Active' : 'Go Premium'}
+                        </h3>
+                        <span className={`px-2 py-0.5 text-xs sm:text-[8px] rounded-full border font-bold uppercase ${
+                          subscriptionStatus === 'active'
+                            ? 'bg-teal-500/20 text-teal-400 border-teal-500/40'
+                            : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                        }`}>
+                          {subscriptionStatus === 'active' ? 'Active' : 'Exclusive'}
                         </span>
                       </div>
-                      <p className="text-amber-400/80 text-sm sm:text-[10px] font-medium">Unlock Everything</p>
+                      <p className={`text-sm sm:text-[10px] font-medium ${
+                        subscriptionStatus === 'active' ? 'text-teal-400/80' : 'text-amber-400/80'
+                      }`}>
+                        {subscriptionStatus === 'active' ? 'All Features Unlocked' : 'Unlock Everything'}
+                      </p>
                     </div>
                   </div>
                   
                   <div className="space-y-2 sm:space-y-1 mb-4 sm:mb-2">
                     <div className="flex items-center text-[var(--ink-2)] text-sm sm:text-[10px]">
-                      <Zap size={14} className="text-amber-400 mr-2 opacity-80" />
+                      <Zap size={14} className={`mr-2 opacity-80 ${subscriptionStatus === 'active' ? 'text-teal-400' : 'text-amber-400'}`} />
                       <span>Unlimited Sessions</span>
                     </div>
                     <div className="flex items-center text-[var(--ink-2)] text-sm sm:text-[10px]">
-                      <Star size={14} className="text-amber-400 mr-2 opacity-80" />
+                      <Star size={14} className={`mr-2 opacity-80 ${subscriptionStatus === 'active' ? 'text-teal-400' : 'text-amber-400'}`} />
                       <span>Premium Voices</span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="relative z-10">
-                  <button
-                    onClick={() => handleUpgrade('pro')}
-                    className="btn-shimmer w-full px-3 py-3 sm:py-2 bg-gradient-to-r from-amber-400 to-yellow-300 rounded-lg text-black font-semibold text-sm sm:text-[10px] hover:scale-105 transition-all duration-300"
-                    style={{ minHeight: '36px' }}
-                  >
-                    <span className="relative z-10">UNLOCK EVERYTHING</span>
-                  </button>
-                </div>
+                {subscriptionStatus !== 'active' && (
+                  <div className="relative z-10">
+                    <button
+                      onClick={handleUpgrade}
+                      disabled={isProcessingPayment}
+                      className="btn-shimmer w-full px-3 py-3 sm:py-2 bg-gradient-to-r from-amber-400 to-yellow-300 rounded-lg text-black font-semibold text-sm sm:text-[10px] hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ minHeight: '36px' }}
+                    >
+                      <span className="relative z-10">
+                        {isProcessingPayment ? 'PROCESSING...' : 'UNLOCK EVERYTHING'}
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Recent Activity - Timeline */}

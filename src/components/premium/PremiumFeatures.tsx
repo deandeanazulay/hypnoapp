@@ -1,5 +1,7 @@
 import React from 'react';
 import { Crown, Zap, Sparkles, Shield, HeadphonesIcon, Infinity } from 'lucide-react';
+import { paymentService } from '../../lib/stripe';
+import { useUIStore } from '../../state/uiStore';
 
 interface PremiumFeature {
   id: string;
@@ -59,6 +61,8 @@ interface PremiumFeaturesProps {
 }
 
 export default function PremiumFeatures({ currentTier = 'free', onUpgrade }: PremiumFeaturesProps) {
+  const { showToast } = useUIStore();
+  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
   const getFeatureStatus = (feature: PremiumFeature) => {
     const tierLevels = { free: 0, pro: 1, premium: 2, ultimate: 3 };
     const currentLevel = tierLevels[currentTier];
@@ -76,6 +80,38 @@ export default function PremiumFeatures({ currentTier = 'free', onUpgrade }: Pre
     }
   };
 
+  const handleUpgrade = async (tier: string) => {
+    try {
+      setIsProcessingPayment(true);
+      if (tier === 'pro' || tier === 'premium') {
+        const { url } = await paymentService.createCheckoutSession('mystic-subscription');
+        window.location.href = url;
+      } else {
+        showToast({
+          type: 'info',
+          message: `${tier.toUpperCase()} tier coming soon! We'll notify you when available.`,
+          duration: 4000
+        });
+      }
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      if (error.message === 'User not authenticated') {
+        showToast({
+          type: 'error',
+          message: 'Please sign in to upgrade to premium',
+          duration: 4000
+        });
+      } else {
+        showToast({
+          type: 'error',
+          message: error.message || 'Failed to start checkout. Please try again.',
+          duration: 5000
+        });
+      }
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-3 mb-6">
@@ -115,10 +151,11 @@ export default function PremiumFeatures({ currentTier = 'free', onUpgrade }: Pre
                   
                   {!isAvailable && (
                     <button
-                      onClick={() => onUpgrade(feature.tier)}
-                      className="glass-button text-xs py-2 px-4 bg-gradient-to-r from-teal-400 to-cyan-400 text-black font-semibold rounded-lg hover:scale-105 transition-transform duration-200"
+                      onClick={() => handleUpgrade(feature.tier)}
+                      disabled={isProcessingPayment}
+                      className="glass-button text-xs py-2 px-4 bg-gradient-to-r from-teal-400 to-cyan-400 text-black font-semibold rounded-lg hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Upgrade to {feature.tier.charAt(0).toUpperCase() + feature.tier.slice(1)}
+                      {isProcessingPayment ? 'Processing...' : `Upgrade to ${feature.tier.charAt(0).toUpperCase() + feature.tier.slice(1)}`}
                     </button>
                   )}
                 </div>

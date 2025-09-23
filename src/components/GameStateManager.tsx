@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, UserProfile } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { paymentService } from '../lib/stripe';
 
 interface UserState {
   level: number;
@@ -19,6 +20,7 @@ interface UserState {
   dailySessionsUsed: number;
   lastSessionDate: string | null;
   egoStateUsage: { [key: string]: number }; // Session counts per ego state
+  subscriptionStatus: 'free' | 'active' | 'cancelled' | 'past_due';
 }
 
 interface GameState {
@@ -74,7 +76,8 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       trickster: 4,
       warrior: 9,
       visionary: 5
-    }
+    },
+    subscriptionStatus: 'free'
   });
 
   // Load saved state
@@ -138,8 +141,13 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         plan: profile.plan,
         dailySessionsUsed: profile.daily_sessions_used,
         lastSessionDate: profile.last_session_date,
-        egoStateUsage: profile.ego_state_usage
+        egoStateUsage: profile.ego_state_usage,
+        subscriptionStatus: 'free' // Will be updated by subscription status check
       });
+      
+      // Load subscription status
+      const subscriptionStatus = await paymentService.getSubscriptionStatus();
+      setUser(prev => ({ ...prev, subscriptionStatus }));
     }
   };
 
@@ -336,17 +344,22 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
 
   const canAccess = (feature: string) => {
+    // Check subscription status for premium features
+    if (user.subscriptionStatus === 'active') {
+      return true;
+    }
+    
     switch (feature) {
       case 'unlimited_sessions':
-        return user.plan !== 'free';
+        return user.subscriptionStatus === 'active';
       case 'hypoxia':
-        return user.plan !== 'free';
+        return user.subscriptionStatus === 'active';
       case 'premium_voices':
-        return user.plan !== 'free';
+        return user.subscriptionStatus === 'active';
       case 'custom_outlines':
-        return user.plan !== 'free';
+        return user.subscriptionStatus === 'active';
       case 'daily_session':
-        return user.plan === 'free' ? user.dailySessionsUsed < 1 : true;
+        return user.subscriptionStatus === 'active' ? true : user.dailySessionsUsed < 1;
       default:
         return true;
     }

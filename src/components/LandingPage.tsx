@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Star, Zap, Shield, Crown, ChevronRight, Check, Users, Award, TrendingUp, Sparkles, Eye, Heart, Brain, Menu, X } from 'lucide-react';
 import WebGLOrb from './WebGLOrb';
+import { paymentService, STRIPE_PRODUCTS } from '../lib/stripe';
+import { useUIStore } from '../state/uiStore';
 
 interface LandingPageProps {
   onEnterApp: () => void;
@@ -11,6 +13,8 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const { showToast } = useUIStore();
 
   useEffect(() => {
     setIsLoaded(true);
@@ -20,6 +24,31 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
     return () => clearInterval(interval);
   }, []);
 
+  const handleUpgrade = async () => {
+    try {
+      setIsProcessingPayment(true);
+      const { url } = await paymentService.createCheckoutSession('mystic-subscription');
+      window.location.href = url;
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      if (error.message === 'User not authenticated') {
+        onShowAuth();
+        showToast({
+          type: 'info',
+          message: 'Please sign in to upgrade to premium',
+          duration: 4000
+        });
+      } else {
+        showToast({
+          type: 'error',
+          message: error.message || 'Failed to start checkout. Please try again.',
+          duration: 5000
+        });
+      }
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
   const features = [
     {
       icon: <Brain size={24} className="text-teal-400" />,
@@ -102,9 +131,10 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
         "Premium AI voices",
         "Deep analytics"
       ],
-      cta: "Upgrade Now",
+      cta: isProcessingPayment ? "Processing..." : "Upgrade Now",
       popular: true,
-      action: onShowAuth
+      action: handleUpgrade,
+      disabled: isProcessingPayment
     },
     {
       name: "Visionary", 
@@ -407,14 +437,14 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
 
                 <button
                   onClick={plan.action}
-                 disabled={plan.comingSoon}
+                  disabled={plan.comingSoon || plan.disabled}
                   className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-300 hover:scale-105 ${
                     plan.popular
                       ? 'bg-gradient-to-r from-teal-400 to-cyan-400 text-black shadow-lg shadow-teal-400/25'
                      : plan.comingSoon
                      ? 'bg-white/10 text-white/50 cursor-not-allowed border border-white/10'
                       : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
-                  }`}
+                  } ${plan.disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
                   {plan.cta}
                 </button>
