@@ -344,6 +344,12 @@ export default function CreateScreen({ onProtocolCreate }: CreateScreenProps) {
         )}
       </div>
 
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
+
       {/* Protocol Name Modal */}
       <ModalShell
         isOpen={showNameModal}
