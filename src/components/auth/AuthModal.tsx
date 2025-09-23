@@ -100,6 +100,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           setFormError('Please check your email and click the confirmation link before signing in.')
         } else if (errorMessage.includes('User already registered')) {
           setFormError('An account with this email already exists. Try signing in instead.')
+        } else if (errorMessage.includes('Database error saving new user')) {
+          setFormError('Failed to create account due to a server error. Please contact support or check your Supabase project settings (e.g., RLS policies, email configuration).')
         } else {
           setFormError(errorMessage)
         }
