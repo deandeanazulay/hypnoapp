@@ -32,10 +32,6 @@ function safeSize(width: number, height: number) {
   return { w: Math.floor(width * scale), h: Math.floor(height * scale) };
 }
 
-const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
-}
-)
-)
 const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const {
     onTap,
@@ -44,6 +40,7 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     className = '',
     afterglow = false
   } = props;
+
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -53,12 +50,14 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const isActiveRef = useRef(true);
   const [webglSupported, setWebglSupported] = React.useState<boolean | null>(null);
   const [contextLost, setContextLost] = React.useState(false);
+  
+  // Alien state for fractal mathematics
   const alienStateRef = useRef({
     pulse: 0,
     intensity: 1,
     colorShift: 0,
     organicOffset: 0,
-    tentaclePhase: 0
+    fractalPhase: 0
   });
 
   // State for animations
@@ -187,18 +186,15 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     sphereGeometry.userData = { originalPositions };
     
     // Add initial mathematical noise pattern
-    const originalPositions = sphereGeometry.attributes.position.array.slice();
-    sphereGeometry.userData = { originalPositions };
     const positions = sphereGeometry.attributes.position.array;
     for (let i = 0; i < positions.length; i += 3) {
       const x = positions[i];
-      const y = positions[i + 1]; 
+      const y = positions[i + 1];
       const z = positions[i + 2];
       
       // Add mathematical fractal pattern
       const fractalNoise = Math.sin(x * 0.5) * Math.cos(y * 0.3) * Math.sin(z * 0.7) * 0.2;
       const secondaryNoise = Math.sin(x * 1.2) * Math.cos(y * 0.8) * Math.sin(z * 1.5) * 0.1;
-      const length = Math.sqrt(x * x + y * y + z * z);
       const factor = 1 + (fractalNoise + secondaryNoise) * 0.15;
       
       positions[i] = x * factor;
@@ -246,6 +242,7 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     
     // Store references for animation
     orbMesh.userData = { glowMesh1, pulseMesh, sphereGeometry };
+
     // Start animation loop
     animate();
   };
@@ -265,7 +262,7 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     // Color intensity shifts
     alienState.intensity = 1 + Math.sin(time * 0.7) * 0.3;
     
-    // Organic offset for tentacle-like movement
+    // Organic offset for movement
     alienState.organicOffset = Math.sin(time * 0.5) * 0.02;
     
     // Fractal deformation phase
@@ -345,48 +342,6 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       // Update material opacity for alien intensity
       const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
       material.opacity = (afterglow ? 0.95 : 0.8) * alienState.intensity;
-      
-      // Animate alien tentacles
-      const userData = orbMeshRef.current.userData;
-      if (userData.tentacles) {
-        userData.tentacles.forEach((tentacle: THREE.Group, tentacleIndex: number) => {
-          tentacle.children.forEach((segment: THREE.Mesh, segmentIndex: number) => {
-            const segmentData = segment.userData;
-            const segmentTime = time + segmentData.phaseOffset;
-            
-            // Slimy writhing motion
-            const writhe = Math.sin(segmentTime * 3 + segmentIndex * 0.5) * 0.4;
-            const undulate = Math.cos(segmentTime * 2 + segmentIndex * 0.3) * 0.3;
-            const pulse = Math.sin(segmentTime * 4 + tentacleIndex * 0.7) * 0.2;
-            
-            // Calculate organic tentacle position
-            const baseRadius = 10 + segmentIndex * 1.5;
-            const tentacleAngle = segmentData.baseAngle + writhe * 0.3;
-            
-            segment.position.x = baseRadius * Math.cos(tentacleAngle) + undulate;
-            segment.position.y = baseRadius * Math.sin(tentacleAngle) + pulse;
-            segment.position.z = segmentIndex * 1.2 + Math.sin(segmentTime * 2) * 0.8;
-            
-            // Slimy scale pulsation
-            const slimyScale = 0.8 + 0.4 * Math.sin(segmentTime * 5 + segmentIndex * 0.8);
-            segment.scale.setScalar(slimyScale);
-            
-            // Slimy opacity variation
-            const material = segment.material as THREE.MeshBasicMaterial;
-            material.opacity = 0.4 + 0.4 * Math.sin(segmentTime * 3 + segmentIndex * 0.4);
-            
-            // Slimy rotation
-            segment.rotation.x = Math.sin(segmentTime * 2) * 0.5;
-            segment.rotation.y = Math.cos(segmentTime * 1.5) * 0.3;
-            segment.rotation.z = Math.sin(segmentTime * 4) * 0.2;
-          });
-          
-          // Whole tentacle base movement - like it's rooted to the orb
-          tentacle.rotation.x = Math.sin(time * 0.5 + tentacleIndex) * 0.2;
-          tentacle.rotation.y = Math.cos(time * 0.3 + tentacleIndex) * 0.3;
-          tentacle.rotation.z = Math.sin(time * 0.7 + tentacleIndex) * 0.1;
-        });
-      }
       
       // Animate glow layers
       const userData = orbMeshRef.current.userData;
