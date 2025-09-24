@@ -440,10 +440,10 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       </header>
 
       {/* Main Content - 3 Section Layout */}
-      <div className="absolute inset-0 pt-32 pb-40 flex flex-col">
+      <div className="absolute inset-0 pt-32 pb-60 flex flex-col">
         
         {/* Orb Section - Centered */}
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center min-h-0 py-8">
           <div className="text-center">
             <div 
               className="transition-transform duration-1000 ease-in-out"
@@ -475,14 +475,21 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
 
         {/* Status Section - Below Orb */}
-        <div className="">
+        <div className="flex-shrink-0 pb-4">
           <div className="max-w-lg mx-auto">
+            
+            {/* Eye Fixation Instruction */}
+            <div className="text-center mb-4">
+              <div className="text-white/80 text-sm font-light">
+                Focus softly on the center dot
+              </div>
+            </div>
             
             {/* Breathing Instructions - Above Chat */}
             <div className="text-center mb-20">
               <div className="text-white/80 text-sm mb-3 font-light">
                 Focus softly on the center dot
-              </div>
+            <div className="text-center mb-4">
               <div className="text-white/90 text-xl font-light mb-2">
                 {getBreathingInstruction()}
               </div>
@@ -498,7 +505,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             </div>
 
             {/* Depth Indicator */}
-            <div className="bg-white/10 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 text-center">
+            <div className="bg-white/10 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 text-center mb-3">
                 <span 
                   className="font-bold"
                   style={{ color: egoColor.accent }}
@@ -532,7 +539,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       </div>
 
       {/* Chat Interface - Fixed Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 p-6 pt-40">
+      <div className="absolute bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 max-h-60">
         <div className="max-w-4xl mx-auto space-y-4">
           
           {/* Latest AI Message */}
