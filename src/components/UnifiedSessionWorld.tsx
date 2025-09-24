@@ -527,7 +527,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         
         {/* Chat Interface - Fixed Height at Bottom */}
         <div className="flex-shrink-0 bg-black/95 backdrop-blur-xl border-t border-white/10">
-      <div className="absolute bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 max-h-60">
           <div className="px-6 py-4 max-h-48 overflow-y-auto">
           
           {/* Latest AI Message */}
