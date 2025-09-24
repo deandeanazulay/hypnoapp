@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Pause, SkipForward, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import Orb from './Orb';
 import AIVoiceSystem from './AIVoiceSystem';
 import { useGameState } from './GameStateManager';
 import { getEgoState } from '../store';
@@ -281,9 +282,14 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
         {/* The Orb - inheriting color from ego state */}
         <div className="mb-6">
-          <div className="w-80 h-80 rounded-full bg-gradient-to-br from-teal-500/30 to-purple-500/30 border-4 border-white/20 flex items-center justify-center mx-auto">
-            <div className={`w-40 h-40 rounded-full bg-gradient-to-br from-teal-400/40 to-cyan-400/40 ${sessionState.isActive ? 'animate-pulse animate-spin-slow' : 'animate-spin-slow'}`} />
-          </div>
+          <Orb
+            ref={orbRef}
+            onTap={() => {}} // Disabled during session
+            size={320}
+            egoState={sessionConfig.egoState}
+            variant="auto"
+            afterglow={sessionState.isActive}
+          />
         </div>
 
         {/* Session Guidance */}
