@@ -137,7 +137,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 break;
               case 'exhale':
                 newBreathing = 'hold-exhale';
-                newCount = 2; // Hold empty for 2 seconds
+                newCount = 4; // Hold empty for 2 seconds
                 break;
               case 'hold-exhale':
                 newBreathing = 'inhale';
