@@ -442,10 +442,10 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       </header>
 
       {/* Main Content - Perfect Flexbox Layout */}
-      <div className="flex flex-col h-full pt-32 pb-4">
+      <div className="flex flex-col h-full pt-24 pb-4">
         
         {/* Status Indicators - Positioned below header */}
-        <div className="absolute top-32 left-6 z-20 pt-4">
+        <div className="absolute top-24 left-6 z-20 pt-4">
           <div className="flex flex-col items-start space-y-2">
             <span className="text-white/60 text-xs uppercase tracking-wide">Depth</span>
             <div className="flex items-center space-x-1">
