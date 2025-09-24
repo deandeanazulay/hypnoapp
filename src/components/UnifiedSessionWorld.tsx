@@ -306,3 +306,6 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange }: 
           ))}
         </div>
       )}
+    </div>
+  );
+}
