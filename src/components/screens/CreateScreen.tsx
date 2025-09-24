@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Save, Clock, Zap, Target, Sparkles, Edit3, Crown, Infinity, Music, Star, Lock, Play, Eye, Waves, Book, Wind } from 'lucide-react';
-import Orb from '../Orb';
 import AuthModal from '../auth/AuthModal';
 import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
@@ -70,7 +69,6 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       iconData: { type: 'Waves', props: { size: 24, className: 'text-teal-400' } },
       color: 'from-teal-500/20 to-cyan-500/20',
       preview: 'Starting from the top of your head, feel tension melting away...',
-      orbEffect: { color: 'teal', animation: 'wave' }
     },
     { 
       id: 'rapid-induction', 
@@ -79,7 +77,6 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       iconData: { type: 'Zap', props: { size: 24, className: 'text-yellow-400' } },
       color: 'from-yellow-500/20 to-orange-500/20',
       preview: 'Sleep now... and as your eyes close, you drop deep...',
-      orbEffect: { color: 'yellow', animation: 'flare' }
     },
     { 
       id: 'eye-fixation', 
@@ -88,7 +85,6 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       iconData: { type: 'Eye', props: { size: 24, className: 'text-purple-400' } },
       color: 'from-purple-500/20 to-indigo-500/20',
       preview: 'Focus on the orb... deeper and deeper... letting go...',
-      orbEffect: { color: 'purple', animation: 'spiral' }
     },
     { 
       id: 'breath-work', 
@@ -97,7 +93,6 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       iconData: { type: 'Wind', props: { size: 24, className: 'text-green-400' } },
       color: 'from-green-500/20 to-emerald-500/20',
       preview: 'With each breath, you sink deeper into yourself...',
-      orbEffect: { color: 'green', animation: 'pulse' }
     }
   ];
 
@@ -166,27 +161,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
   // Update orb based on current choices
   useEffect(() => {
-    let newOrbState = { ...orbState };
-    
-    // Duration affects energy/intensity
-    newOrbState.energy = Math.min(0.3 + (protocol.duration || 15) * 0.02, 1.0);
-    newOrbState.intensity = 0.8 + (protocol.duration || 15) * 0.01;
-    
-    // Induction affects color and animation
-    const selectedInduction = inductionOptions.find(opt => opt.id === protocol.induction);
-    if (selectedInduction) {
-      // Map color names to actual ego state IDs
-      const colorToEgoState: { [key: string]: string } = {
-        'teal': 'guardian',
-        'yellow': 'explorer', 
-        'purple': 'mystic',
-        'green': 'healer'
-      };
-      newOrbState.color = colorToEgoState[selectedInduction.orbEffect.color] || 'guardian';
-      newOrbState.animation = selectedInduction.orbEffect.animation;
-    }
-    
-    setOrbState(newOrbState);
+    // Orb state updates removed - no orb to update
   }, [protocol.duration, protocol.induction, protocol.deepener]);
 
   const canCreateCustom = canAccess('custom_outlines');
@@ -662,50 +637,13 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       </div>
 
       {/* Main Content with Orb */}
-      <div className="flex-1 min-h-0 relative z-10 flex flex-col lg:flex-row">
+      <div className="flex-1 min-h-0 relative z-10 flex flex-col">
         
         {/* Left Side - Form Content */}
         <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-24">
           {renderStepContent()}
         </div>
 
-        {/* Right Side - Reactive Orb (Desktop) */}
-        <div className="hidden lg:flex lg:w-80 lg:flex-col lg:items-center lg:justify-center lg:px-6 lg:py-8">
-          <div className="text-center mb-6">
-            <h3 className="text-white font-medium text-lg mb-2">Live Preview</h3>
-            <p className="text-white/60 text-sm">Your orb evolves as you create</p>
-          </div>
-          
-          <div className="flex items-center justify-center">
-            <Orb
-              onTap={() => {}}
-              size={240}
-              egoState={orbState.color}
-              variant="auto"
-              afterglow={true}
-            />
-          </div>
-          
-          <div className="mt-4 text-center">
-            <p className="text-white/70 text-sm">
-              {protocol.name || 'Unnamed Journey'}
-            </p>
-            <p className="text-white/50 text-xs">
-              {protocol.duration}m • {protocol.induction ? inductionOptions.find(opt => opt.id === protocol.induction)?.name : 'No gateway selected'}
-            </p>
-          </div>
-        </div>
-
-        {/* Mobile Orb - Smaller, Floating */}
-        <div className="lg:hidden fixed top-32 right-4 z-20 bg-black/50 backdrop-blur-sm rounded-full p-2 border border-white/20">
-          <Orb
-            onTap={() => {}}
-            size={80}
-            egoState={orbState.color}
-            variant="auto"
-            afterglow={true}
-          />
-        </div>
       </div>
 
       {/* Navigation Footer */}
