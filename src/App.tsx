@@ -12,6 +12,7 @@ import { GameStateProvider } from './components/GameStateManager';
 import EgoStatesModal from './components/modals/EgoStatesModal';
 import ToastManager from './components/layout/ToastManager';
 import AuthModal from './components/auth/AuthModal';
+import GlobalHUD from './components/HUD/GlobalHUD';
 import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancelled from './components/PaymentCancelled';
 import { useViewportLayout } from './hooks/useViewportLayout';
@@ -211,8 +212,11 @@ function App() {
   const MainApp = () => (
     <GameStateProvider>
       <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
+        {/* Global Header HUD */}
+        <GlobalHUD />
+        
         {/* Main Body Content - Flex grow */}
-        <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content">
+        <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content" style={{ paddingTop: '48px' }}>
           {/* Background Protection */}
           <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900/50 to-black pointer-events-none" />
           
