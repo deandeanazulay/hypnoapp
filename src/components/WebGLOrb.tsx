@@ -252,8 +252,12 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const egoColorInfo = getEgoColor(egoState);
     const color = new THREE.Color(egoColorInfo.accent);
 
+    // Calculate scale based on size prop (base size is 280px)
+    const baseSize = 280;
+    const scaleMultiplier = size / baseSize;
+    const sphereRadius = 10 * scaleMultiplier;
     // Create fractal sphere geometry - ONCE
-    const sphereGeometry = new THREE.SphereGeometry(10, 64, 64);
+    const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 64, 64);
     
     // Store original vertex positions for fractal deformation
     const originalPositions = sphereGeometry.attributes.position.array.slice();
@@ -276,7 +280,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     scene.add(orbMesh);
 
     // Add glow layers
-    const glowGeometry = new THREE.SphereGeometry(9.5, 32, 32);
+    const glowGeometry = new THREE.SphereGeometry(sphereRadius * 0.95, 32, 32);
     const glowMaterial1 = new THREE.MeshBasicMaterial({
       color: color,
       transparent: true,
@@ -287,7 +291,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     scene.add(glowMesh1);
     
     // Second pulsing layer
-    const pulseGeometry = new THREE.SphereGeometry(8, 32, 32);
+    const pulseGeometry = new THREE.SphereGeometry(sphereRadius * 0.8, 32, 32);
     const pulseMaterial = new THREE.MeshBasicMaterial({
       color: color,
       transparent: true,
