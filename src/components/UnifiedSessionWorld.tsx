@@ -426,16 +426,16 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
 
   const breathingLabels = {
     inhale: 'Breathe In',
-    hold: 'Hold',
+    'hold-inhale': 'Hold',
     exhale: 'Breathe Out', 
-    rest: 'Natural Breathing'
+    'hold-exhale': 'Hold'
   };
 
   const breathingColors = {
     inhale: 'bg-teal-400',
-    hold: 'bg-yellow-400',
+    'hold-inhale': 'bg-yellow-400',
     exhale: 'bg-orange-400',
-    rest: 'bg-gray-400'
+    'hold-exhale': 'bg-blue-400'
   };
 
   useEffect(() => {
