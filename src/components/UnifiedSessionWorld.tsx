@@ -681,7 +681,9 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         {/* Controls Section */}
         <div className="px-4 py-3 bg-black/95 backdrop-blur-xl space-y-3">
           {/* Top Row - Session Controls (Smaller) */}
-          <div className="flex items-center justify-center space-x-4">
+          <div className="flex items-center space-x-4">
+            {/* Left Side - Vertical Controls */}
+            <div className="flex flex-col space-y-2">
               <button
                 onClick={togglePause}
                 className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
@@ -714,6 +716,11 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               >
               {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
               {sessionState.isPaused ? <Play size={16} className="ml-0.5" /> : <Pause size={16} />}
+            </div>
+            
+            {/* Right Side - Phase Info or Additional Space */}
+            <div className="flex-1 text-center">
+              <div className="text-white/60 text-xs">{getPhaseTitle()}</div>
           </div>
           
           {/* Bottom Row - Communication */}
