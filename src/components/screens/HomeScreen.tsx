@@ -74,8 +74,8 @@ export default function HomeScreen({
       <div className="relative z-10 h-full flex flex-col">
         
         {/* Simplified Ego States Row */}
-        <div className="flex-shrink-0 py-1">
-          <div className="relative w-full flex justify-center items-center py-2">
+        <div className="flex-shrink-0 py-1 relative z-40">
+          <div className="relative w-full flex justify-center items-center py-2 z-40">
             <div className="flex items-center space-x-2 px-4 animate-scroll-x">
               {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => {
                 const isSelected = activeEgoState === state.id;
