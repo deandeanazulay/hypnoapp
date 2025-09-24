@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { GameStateProvider } from './components/GameStateManager';
 import { useAppStore } from './store';
 import { useSimpleAuth } from './hooks/useSimpleAuth';
 import { useViewportLayout } from './hooks/useViewportLayout';
 
-// Screens
-import HomeScreen from './components/screens/HomeScreen';
-import ExploreScreen from './components/screens/ExploreScreen';
-import CreateScreen from './components/screens/CreateScreen';
-import FavoritesScreen from './components/screens/FavoritesScreen';
-import ProfileScreen from './components/screens/ProfileScreen';
+// Lazy-loaded Screens
+const HomeScreen = React.lazy(() => import('./components/screens/HomeScreen'));
+const ExploreScreen = React.lazy(() => import('./components/screens/ExploreScreen'));
+const CreateScreen = React.lazy(() => import('./components/screens/CreateScreen'));
+const FavoritesScreen = React.lazy(() => import('./components/screens/FavoritesScreen'));
+const ProfileScreen = React.lazy(() => import('./components/screens/ProfileScreen'));
 
 // Layout Components
 import NavigationTabs from './components/NavigationTabs';
@@ -37,6 +37,18 @@ import LandingPage from './components/LandingPage';
 
 import { QUICK_ACTIONS } from './utils/actions';
 import { useProtocolStore } from './state/protocolStore';
+
+// Loading fallback component for lazy-loaded screens
+function ScreenLoadingFallback() {
+  return (
+    <div className="h-full flex items-center justify-center bg-black">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-teal-400/30 border-t-teal-400 rounded-full animate-spin mx-auto mb-3"></div>
+        <p className="text-white/60 text-sm">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   useViewportLayout();
@@ -104,34 +116,40 @@ export default function App() {
 
   // Render current tab content
   const renderCurrentTab = () => {
-    switch (activeTab) {
-      case 'home':
-        return (
-          <HomeScreen
-            onOrbTap={handleOrbTap}
-            onTabChange={setActiveTab}
-            selectedEgoState={activeEgoState}
-            onEgoStateChange={setActiveEgoState}
-            activeTab={activeTab}
-            onShowAuth={handleShowAuth}
-          />
-        );
-      case 'explore':
-        return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
-      case 'create':
-        return <CreateScreen onProtocolCreate={handleProtocolCreate} onShowAuth={handleShowAuth} />;
-      case 'favorites':
-        return <FavoritesScreen onSessionSelect={handleFavoriteSelect} />;
-      case 'profile':
-        return (
-          <ProfileScreen
-            selectedEgoState={activeEgoState}
-            onEgoStateChange={setActiveEgoState}
-          />
-        );
-      default:
-        return null;
-    }
+    return (
+      <Suspense fallback={<ScreenLoadingFallback />}>
+        {(() => {
+          switch (activeTab) {
+            case 'home':
+              return (
+                <HomeScreen
+                  onOrbTap={handleOrbTap}
+                  onTabChange={setActiveTab}
+                  selectedEgoState={activeEgoState}
+                  onEgoStateChange={setActiveEgoState}
+                  activeTab={activeTab}
+                  onShowAuth={handleShowAuth}
+                />
+              );
+            case 'explore':
+              return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
+            case 'create':
+              return <CreateScreen onProtocolCreate={handleProtocolCreate} onShowAuth={handleShowAuth} />;
+            case 'favorites':
+              return <FavoritesScreen onSessionSelect={handleFavoriteSelect} />;
+            case 'profile':
+              return (
+                <ProfileScreen
+                  selectedEgoState={activeEgoState}
+                  onEgoStateChange={setActiveEgoState}
+                />
+              );
+            default:
+              return null;
+          }
+        })()}
+      </Suspense>
+    );
   };
 
   // Event Handlers
