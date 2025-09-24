@@ -93,7 +93,7 @@ export default function EgoStatesModal() {
                 
                 {/* Trait Pills */}
                 <div className="flex items-center justify-center flex-wrap gap-2">
-                  {currentState.usedFor.slice(0, 3).map((keyword, index) => (
+                  {(currentState.usedFor || []).slice(0, 3).map((keyword, index) => (
                     <span
                       key={index}
                       className="px-3 py-1 bg-black/20 backdrop-blur-sm border border-white/20 text-white/90 rounded-full text-xs font-medium"
