@@ -57,7 +57,7 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
   console.log('[ORB-WRAPPER] Rendering orb, useWebGL:', useWebGL);
 
   // Render the appropriate orb type - NEVER switch after initial render
-  return useWebGL ? <WebGLOrb {...props} /> : <CSSOrb {...props} />;
+  return useWebGL ? <WebGLOrb {...props} size={size} /> : <CSSOrb {...props} size={size} />;
 }
 
 // Re-export the ref type for convenience

@@ -49,19 +49,6 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       // Initial State
       activeTab: 'home',
-  // Convenience methods for ego states modal
-  openEgoModal: () => set((state) => ({
-    modals: { ...state.modals, egoStates: true }
-  })),
-  
-  closeEgoModal: () => set((state) => ({
-    modals: { ...state.modals, egoStates: false }
-  })),
-  
-  get isEgoModalOpen() {
-    return get().modals.egoStates;
-  },
-  
       activeEgoState: 'guardian',
       isLoading: false,
       modals: {
@@ -85,6 +72,19 @@ export const useAppStore = create<AppState>()(
       closeModal: (modal) => set((state) => ({
         modals: { ...state.modals, [modal]: false }
       })),
+      
+      // Convenience methods for ego states modal
+      openEgoModal: () => set((state) => ({
+        modals: { ...state.modals, egoStates: true }
+      })),
+      
+      closeEgoModal: () => set((state) => ({
+        modals: { ...state.modals, egoStates: false }
+      })),
+      
+      get isEgoModalOpen() {
+        return get().modals.egoStates;
+      },
       
       showToast: (toast) => {
         const id = Date.now().toString();
@@ -116,21 +116,126 @@ export const useAppStore = create<AppState>()(
 
 // Ego States Data (simplified, consolidated)
 export const EGO_STATES = [
-  { id: 'guardian', name: 'Guardian', icon: '🛡️', role: 'Protector' },
-  { id: 'rebel', name: 'Rebel', icon: '🔥', role: 'Liberator' },
-  { id: 'healer', name: 'Healer', icon: '🌿', role: 'Nurturer' },
-  { id: 'explorer', name: 'Explorer', icon: '🌍', role: 'Adventurer' },
-  { id: 'mystic', name: 'Mystic', icon: '✨', role: 'Transcendent' },
-  { id: 'sage', name: 'Sage', icon: '📜', role: 'Teacher' },
-  { id: 'child', name: 'Child', icon: '🎈', role: 'Playful' },
-  { id: 'performer', name: 'Performer', icon: '🎭', role: 'Expressive' },
-  { id: 'shadow', name: 'Shadow', icon: '🌑', role: 'Integrator' },
-  { id: 'builder', name: 'Builder', icon: '🛠️', role: 'Creator' },
-  { id: 'seeker', name: 'Seeker', icon: '🔭', role: 'Student' },
-  { id: 'lover', name: 'Lover', icon: '💞', role: 'Connector' },
-  { id: 'trickster', name: 'Trickster', icon: '🃏', role: 'Pattern Breaker' },
-  { id: 'warrior', name: 'Warrior', icon: '⚔️', role: 'Fighter' },
-  { id: 'visionary', name: 'Visionary', icon: '🌌', role: 'Prophet' }
+  { 
+    id: 'guardian' as EgoStateId, 
+    name: 'Guardian', 
+    icon: '🛡️', 
+    role: 'Protector', 
+    color: 'from-blue-600/20 to-blue-800/20',
+    description: 'The protective guide that keeps you safe'
+  },
+  { 
+    id: 'rebel' as EgoStateId, 
+    name: 'Rebel', 
+    icon: '🔥', 
+    role: 'Liberator', 
+    color: 'from-red-600/20 to-red-800/20',
+    description: 'The revolutionary force that breaks limitations'
+  },
+  { 
+    id: 'healer' as EgoStateId, 
+    name: 'Healer', 
+    icon: '🌿', 
+    role: 'Nurturer', 
+    color: 'from-green-600/20 to-green-800/20',
+    description: 'The compassionate guide for restoration'
+  },
+  { 
+    id: 'explorer' as EgoStateId, 
+    name: 'Explorer', 
+    icon: '🌍', 
+    role: 'Adventurer', 
+    color: 'from-yellow-500/20 to-yellow-700/20',
+    description: 'The curious seeker of new possibilities'
+  },
+  { 
+    id: 'mystic' as EgoStateId, 
+    name: 'Mystic', 
+    icon: '✨', 
+    role: 'Transcendent', 
+    color: 'from-purple-600/20 to-purple-800/20',
+    description: 'The spiritual guide to higher consciousness'
+  },
+  { 
+    id: 'sage' as EgoStateId, 
+    name: 'Sage', 
+    icon: '📜', 
+    role: 'Teacher', 
+    color: 'from-gray-300/20 to-gray-500/20',
+    description: 'The wise teacher sharing ancient knowledge'
+  },
+  { 
+    id: 'child' as EgoStateId, 
+    name: 'Child', 
+    icon: '🎈', 
+    role: 'Playful', 
+    color: 'from-orange-500/20 to-orange-700/20',
+    description: 'The joyful spirit of wonder and play'
+  },
+  { 
+    id: 'performer' as EgoStateId, 
+    name: 'Performer', 
+    icon: '🎭', 
+    role: 'Expressive', 
+    color: 'from-pink-600/20 to-pink-800/20',
+    description: 'The creative artist expressing authentic self'
+  },
+  { 
+    id: 'shadow' as EgoStateId, 
+    name: 'Shadow', 
+    icon: '🌑', 
+    role: 'Integrator', 
+    color: 'from-indigo-900/20 to-black/20',
+    description: 'The hidden aspects seeking integration'
+  },
+  { 
+    id: 'builder' as EgoStateId, 
+    name: 'Builder', 
+    icon: '🛠️', 
+    role: 'Creator', 
+    color: 'from-gray-600/20 to-orange-600/20',
+    description: 'The practical architect of new realities'
+  },
+  { 
+    id: 'seeker' as EgoStateId, 
+    name: 'Seeker', 
+    icon: '🔭', 
+    role: 'Student', 
+    color: 'from-indigo-600/20 to-teal-600/20',
+    description: 'The eternal student of truth and wisdom'
+  },
+  { 
+    id: 'lover' as EgoStateId, 
+    name: 'Lover', 
+    icon: '💞', 
+    role: 'Connector', 
+    color: 'from-rose-600/20 to-pink-500/20',
+    description: 'The heart that connects all beings'
+  },
+  { 
+    id: 'trickster' as EgoStateId, 
+    name: 'Trickster', 
+    icon: '🃏', 
+    role: 'Pattern Breaker', 
+    color: 'from-green-500/20 to-purple-600/20',
+    description: 'The clever disruptor of rigid patterns'
+  },
+  { 
+    id: 'warrior' as EgoStateId, 
+    name: 'Warrior', 
+    icon: '⚔️', 
+    role: 'Fighter', 
+    color: 'from-red-700/20 to-black/20',
+    description: 'The courageous fighter for justice'
+  },
+  { 
+    id: 'visionary' as EgoStateId, 
+    name: 'Visionary', 
+    icon: '🌌', 
+    role: 'Prophet', 
+    color: 'from-violet-600/20 to-blue-400/20',
+    description: 'The seer of future possibilities'
+  }
 ] as const;
 
 // Helper functions

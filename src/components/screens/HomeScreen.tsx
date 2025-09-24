@@ -24,15 +24,11 @@ export default function HomeScreen({
   onEgoStateChange,
   activeTab
 }: HomeScreenProps) {
-  const { activeEgoState, openModal } = useAppStore();
+  const { activeEgoState } = useAppStore();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
   const currentState = EGO_STATES.find(s => s.id === activeEgoState) || EGO_STATES[0];
-
-  const handleActionSelect = (action: any) => {
-    onActionSelect(action);
-  };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -150,7 +146,7 @@ export default function HomeScreen({
           </div>
           <ActionsBar 
             selectedAction={selectedAction}
-            onActionSelect={handleActionSelect}
+            onActionSelect={onActionSelect}
             onNavigateToCreate={() => onTabChange('create')}
           />
         </div>
