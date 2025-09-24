@@ -103,17 +103,52 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
               </div>
 
               <div>
-                <label className="block text-white/80 text-sm mb-2">Duration</label>
-                <select
-                  value={protocol.duration}
-                  onChange={(e) => setProtocol(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-400/50 transition-all"
-                >
-                  <option value={5} className="bg-black">5 minutes</option>
-                  <option value={10} className="bg-black">10 minutes</option>
-                  <option value={15} className="bg-black">15 minutes</option>
-                  <option value={20} className="bg-black">20 minutes</option>
-                </select>
+                <label className="block text-white/80 text-sm mb-3">Duration</label>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/60 text-sm">5 min</span>
+                    <span className="text-white font-bold text-lg">{protocol.duration} minutes</span>
+                    <span className="text-white/60 text-sm">30 min</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min="5"
+                      max="30"
+                      step="5"
+                      value={protocol.duration}
+                      onChange={(e) => setProtocol(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                      className="glass-slider w-full"
+                      style={{
+                        background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${((protocol.duration - 5) / 25) * 100}%, rgba(255,255,255,0.2) ${((protocol.duration - 5) / 25) * 100}%, rgba(255,255,255,0.2) 100%)`
+                      }}
+                    />
+                    {/* Duration markers */}
+                    <div className="flex justify-between mt-2 px-1">
+                      {[5, 10, 15, 20, 25, 30].map((duration) => (
+                        <div key={duration} className="flex flex-col items-center">
+                          <div className={`w-1.5 h-1.5 rounded-full transition-all ${
+                            duration <= protocol.duration ? 'bg-teal-400' : 'bg-white/20'
+                          }`} />
+                          <span className={`text-xs mt-1 transition-all ${
+                            duration === protocol.duration ? 'text-teal-400 font-medium' : 'text-white/40'
+                          }`}>
+                            {duration}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Duration Helper Text */}
+                  <div className="text-center">
+                    <p className="text-white/50 text-xs">
+                      {protocol.duration <= 10 ? 'Perfect for quick sessions' :
+                       protocol.duration <= 20 ? 'Ideal for deep work' :
+                       'Extended transformation journey'}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
