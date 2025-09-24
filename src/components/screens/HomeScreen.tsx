@@ -60,17 +60,16 @@ export default function HomeScreen({
 
       {/* 2. Main Orb Section - Takes remaining space and centers orb */}
       <div className="flex-1 min-h-0 flex items-center justify-center relative z-30">
-        <Orb
+        <div className="flex items-center justify-center">
           onTap={onOrbTap}
           afterglow={false}
           egoState={activeEgoState}
-          size={380}
           variant="webgl"
         />
       </div>
 
       {/* 3. Actions Bar - Fixed at bottom with proper spacing */}
-      <div className="flex-shrink-0 px-4 relative z-40 -mt-20">
+      <div className="flex-shrink-0 px-4 relative z-40">
         <ActionsBar 
           selectedAction={selectedAction}
           onActionSelect={onActionSelect}
