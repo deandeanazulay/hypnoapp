@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 let supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+let supabase: any
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Missing Supabase environment variables. App will run in offline mode.')
@@ -22,16 +23,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
     })
   };
   // Export mock client instead of throwing
-  export const supabase = mockClient as any;
+  supabase = mockClient as any;
 } else {
   // Ensure URL has protocol to prevent 'Failed to fetch' errors
   if (supabaseUrl && !supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
     supabaseUrl = `https://${supabaseUrl}`
   }
 
-  export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+  supabase = createClient(supabaseUrl, supabaseAnonKey)
 }
 
+export { supabase }
 
 // Database Types
 export interface UserProfile {
