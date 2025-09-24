@@ -10,13 +10,19 @@ interface HomeScreenProps {
   onTabChange: (tabId: TabId) => void;
   selectedAction: any;
   onActionSelect: (action: any) => void;
+  selectedEgoState?: string;
+  onEgoStateChange?: (egoStateId: string) => void;
+  activeTab?: TabId;
 }
 
 export default function HomeScreen({ 
   onOrbTap, 
   onTabChange,
   selectedAction,
-  onActionSelect
+  onActionSelect,
+  selectedEgoState,
+  onEgoStateChange,
+  activeTab
 }: HomeScreenProps) {
   const { activeEgoState, openModal } = useAppStore();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
