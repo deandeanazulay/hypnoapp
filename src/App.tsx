@@ -229,10 +229,12 @@ function App() {
         </div>
         
         {/* Bottom Navigation - Portaled to document.body */}
-        <NavigationTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        {!showHypnoPortal && (
+          <NavigationTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        )}
       </div>
       
       {/* Global Modals - Outside main structure */}

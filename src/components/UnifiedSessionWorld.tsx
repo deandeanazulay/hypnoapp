@@ -219,7 +219,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const actionContent = getActionSpecificContent();
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden z-[100]" style={{ opacity: 1 }}>
+    <div className="fixed inset-0 bg-black overflow-hidden z-[1001]" style={{ opacity: 1 }}>
       {/* Cosmic Background matching ego state */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/20 to-black" />
