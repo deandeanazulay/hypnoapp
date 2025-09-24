@@ -119,7 +119,7 @@ export default function HomeScreen({
                   onTap={onOrbTap}
                   afterglow={false}
                   egoState={activeEgoState}
-                  size={window.innerWidth < 768 ? 300 : 400}
+                  size={window.innerWidth < 768 ? 400 : 600}
                   variant="webgl"
                 />
               </div>
