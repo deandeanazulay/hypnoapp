@@ -415,7 +415,6 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       user,
       updateUserState,
       completeSession,
-      getOrbState,
       canAccess,
       spendTokens
     }}>
