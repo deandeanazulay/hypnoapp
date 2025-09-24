@@ -64,7 +64,7 @@ export default function HomeScreen({
           <Orb
           onTap={onOrbTap}
           afterglow={false}
-          size={240}
+          size={500}
           variant="webgl"
         />
         </div>
