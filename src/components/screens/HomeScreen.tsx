@@ -117,7 +117,7 @@ export default function HomeScreen({
                 }}
               >
                 <Orb
-                  onTap={handleOrbClick}
+                  onTap={onOrbTap}
                   afterglow={false}
                   egoState={activeEgoState}
                   size={window.innerWidth < 768 ? 450 : 540}
