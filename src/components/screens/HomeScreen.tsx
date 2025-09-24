@@ -48,7 +48,7 @@ export default function HomeScreen({
       </div>
 
       {/* 1. Ego States Carousel - Fixed Height */}
-      <div className="flex-shrink-0 h-16 flex items-center justify-center relative z-40 pt-2">
+      <div className="flex-shrink-0 h-12 flex items-center justify-center relative z-40">
         <EgoStatesCarousel 
           activeEgoState={activeEgoState}
           onEgoStateChange={(egoStateId) => {
@@ -59,20 +59,20 @@ export default function HomeScreen({
       </div>
 
       {/* 2. Main Orb Section - Takes remaining space and centers orb */}
-      <div className="flex-1 min-h-0 flex items-center justify-center relative z-30 -mt-4">
-        <div className="flex items-center justify-center -mb-8">
+      <div className="flex-1 min-h-0 flex items-center justify-center relative z-30 -mt-8">
+        <div className="flex items-center justify-center -mb-16">
           <Orb
             onTap={onOrbTap}
             afterglow={false}
             egoState={activeEgoState}
-            size={360}
+            size={380}
             variant="webgl"
           />
         </div>
       </div>
 
       {/* 3. Actions Bar - Fixed at bottom with proper spacing */}
-      <div className="flex-shrink-0 px-4 relative z-40 -mt-6">
+      <div className="flex-shrink-0 px-4 relative z-40 -mt-12">
         <ActionsBar 
           selectedAction={selectedAction}
           onActionSelect={onActionSelect}
