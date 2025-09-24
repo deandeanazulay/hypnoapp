@@ -490,7 +490,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 Cycle {sessionState.breathingCycle}
               </div>
             </div>
-          </div></thinking>
+          </div>
         </div>
 
         {/* Status Section - Below Orb */}
