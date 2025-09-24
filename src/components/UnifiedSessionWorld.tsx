@@ -283,7 +283,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         {/* The Orb - inheriting color from ego state */}
         <div className="mb-6">
           <Orb
-            ref={orbRef}
             onTap={() => {}} // Disabled during session
             size={320}
             egoState={sessionConfig.egoState}
