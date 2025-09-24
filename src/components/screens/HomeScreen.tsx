@@ -83,9 +83,9 @@ export default function HomeScreen({
           />
           
           {/* Orb Guidance Text - Closer to orb */}
-          <div className="text-center max-w-md ">
+          <div className="text-center max-w-md px-4 -mt-8">
             {/* Current Ego State in Color */}
-            <div className="mb-3">
+            <div className="">
               <span 
                 className="text-2xl font-light"
                 style={{ color: getEgoColor(activeEgoState).accent }}
