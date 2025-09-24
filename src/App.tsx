@@ -17,7 +17,7 @@ import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancelled from './components/PaymentCancelled';
 import { useViewportLayout } from './hooks/useViewportLayout';
 import { useAppStore } from './store';
-import { useAuth } from './hooks/useSimpleAuth';
+import { useSimpleAuth as useAuth } from './hooks/useSimpleAuth';
 import { useProtocolStore } from './state/protocolStore';
 import { Target } from 'lucide-react';
 import './styles/glass.css';
