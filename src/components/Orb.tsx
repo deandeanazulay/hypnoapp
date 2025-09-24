@@ -23,17 +23,24 @@ function supportsWebGL(): boolean {
 export default function Orb({ variant = 'auto', ...props }: OrbProps) {
   const [useWebGL, setUseWebGL] = useState<boolean | null>(null);
 
-  // Detect WebGL support only once
+  // Detect WebGL support once and never change
   useEffect(() => {
+    console.log('[ORB-WRAPPER] Detecting WebGL support, variant:', variant);
+    
     if (variant === 'css') {
+      console.log('[ORB-WRAPPER] Forced CSS mode');
       setUseWebGL(false);
     } else if (variant === 'webgl') {
-      setUseWebGL(supportsWebGL());
+      const supported = supportsWebGL();
+      console.log('[ORB-WRAPPER] Forced WebGL mode, supported:', supported);
+      setUseWebGL(supported);
     } else {
       // Auto: prefer WebGL if supported
-      setUseWebGL(supportsWebGL());
+      const supported = supportsWebGL();
+      console.log('[ORB-WRAPPER] Auto mode, WebGL supported:', supported);
+      setUseWebGL(supported);
     }
-  }, [variant]);
+  }, []); // No dependencies - detect once only
 
   // Show loading while detecting
   if (useWebGL === null) {
@@ -47,7 +54,9 @@ export default function Orb({ variant = 'auto', ...props }: OrbProps) {
     );
   }
 
-  // Render the appropriate orb type - never switch after initial render
+  console.log('[ORB-WRAPPER] Rendering orb, useWebGL:', useWebGL);
+
+  // Render the appropriate orb type - NEVER switch after initial render
   return useWebGL ? <WebGLOrb {...props} /> : <CSSOrb {...props} />;
 }
 

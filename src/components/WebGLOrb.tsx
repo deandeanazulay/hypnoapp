@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react';
 import * as THREE from 'three';
 import { getEgoColor } from '../config/theme';
 
@@ -48,6 +48,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const orbMeshRef = useRef<THREE.LineSegments | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const isActiveRef = useRef(true);
+  const initializedRef = useRef(false);
   const [webglSupported, setWebglSupported] = React.useState<boolean | null>(null);
   const [contextLost, setContextLost] = React.useState(false);
   
@@ -77,15 +78,68 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     }
   }));
 
-  // Check WebGL support on mount
+  // Stable tap handler - no re-init on function change
+  const handleTap = useCallback(() => {
+    onTap?.();
+  }, [onTap]);
+
+  // Check WebGL support once on mount
   useEffect(() => {
-    console.log('WebGL support check running');
+    console.log('[ORB] Checking WebGL support');
     setWebglSupported(supportsWebGL());
   }, []);
 
-  // Initialize Three.js scene
+  // Initialize once with guard - StrictMode proof
   useEffect(() => {
-    if (webglSupported === false || !containerRef.current || contextLost) return;
+    if (webglSupported === false || !containerRef.current || initializedRef.current || contextLost) {
+      return;
+    }
+    
+    console.log('[ORB] Initializing WebGL scene');
+    initializedRef.current = true;
+    initializeOrb();
+    
+    return () => {
+      console.log('[ORB] Component unmounting - cleaning up');
+      disposeScene();
+    };
+  }, [webglSupported]); // Only depend on WebGL support
+
+  // Attach tap handler separately - no scene re-init
+  useEffect(() => {
+    const canvas = rendererRef.current?.domElement;
+    if (!canvas) return;
+    
+    canvas.addEventListener('click', handleTap);
+    return () => canvas.removeEventListener('click', handleTap);
+  }, [handleTap]);
+
+  // Handle resize separately - no scene re-init
+  useEffect(() => {
+    const handleResize = () => {
+      if (!rendererRef.current || !cameraRef.current) return;
+      
+      const { w, h } = safeSize(size, size);
+      cameraRef.current.aspect = w / h;
+      cameraRef.current.updateProjectionMatrix();
+      rendererRef.current.setSize(w, h, false);
+      
+      // Update canvas display size
+      const canvas = rendererRef.current.domElement;
+      canvas.style.width = `${size}px`;
+      canvas.style.height = `${size}px`;
+    };
+
+    handleResize(); // Apply current size
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [size]);
+
+  const initializeOrb = () => {
+    if (!containerRef.current) {
+      console.error('[ORB] No container ref available');
+      return;
+    }
 
     const container = containerRef.current;
     
@@ -125,114 +179,87 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const canvas = renderer.domElement;
     canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
+      console.log('[ORB] WebGL context lost');
       setContextLost(true);
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
+        animationIdRef.current = null;
       }
     });
 
     canvas.addEventListener('webglcontextrestored', () => {
+      console.log('[ORB] WebGL context restored');
       setContextLost(false);
       // Reinitialize scene
-      initializeOrb();
+      setTimeout(() => {
+        if (isActiveRef.current) {
+          initializeGeometry();
+          animate();
+        }
+      }, 100);
     });
 
-    // Style canvas
+    // Style canvas - predictable stacking
     canvas.style.width = `${size}px`;
     canvas.style.height = `${size}px`;
     canvas.style.cursor = 'pointer';
     canvas.style.position = 'relative';
     canvas.style.zIndex = '10';
     canvas.style.pointerEvents = 'auto';
+    canvas.style.overflow = 'visible';
     canvas.className = 'orb-canvas';
-
-    // Add click handler
-    canvas.addEventListener('click', onTap);
 
     try {
       container.appendChild(canvas);
+      console.log('[ORB] Canvas appended to container');
     } catch (error) {
-      console.error('Error appending canvas:', error);
+      console.error('[ORB] Error appending canvas:', error);
       return;
     }
 
-    // Initialize orb geometry
-    initializeOrb();
+    // Initialize geometry and start animation
+    initializeGeometry();
+    
+    // Start animation with delay to ensure everything is ready
+    setTimeout(() => {
+      if (isActiveRef.current && !contextLost) {
+        console.log('[ORB] Starting animation loop');
+        animate();
+      }
+    }, 50);
+  };
 
-    return () => {
-      // Don't set isActiveRef to false immediately - let animation finish current frame
-      setTimeout(() => {
-        isActiveRef.current = false;
-      }, 16); // One frame delay
-      
-      if (animationIdRef.current) {
-        cancelAnimationFrame(animationIdRef.current);
-        animationIdRef.current = null;
-      }
-      canvas.removeEventListener('click', onTap);
-      canvas.removeEventListener('webglcontextlost', () => {});
-      canvas.removeEventListener('webglcontextrestored', () => {});
-      if (container && container.contains(canvas)) {
-        try {
-          container.removeChild(canvas);
-        } catch (error) {
-          console.error('Error removing canvas:', error);
-        }
-      }
-      if (renderer) {
-        try {
-          renderer.dispose();
-        } catch (error) {
-          console.error('Error disposing renderer:', error);
-        }
-      }
-    };
-  }, [webglSupported, size, onTap]);
-
-  const initializeOrb = () => {
+  const initializeGeometry = () => {
     if (!sceneRef.current || !rendererRef.current || !cameraRef.current || contextLost) {
-      console.error('Failed to initialize orb - missing references');
+      console.error('[ORB] Cannot initialize geometry - missing references');
       return;
     }
 
     const scene = sceneRef.current;
-    const renderer = rendererRef.current;
-    const camera = cameraRef.current;
 
     // Clear existing orb
     if (orbMeshRef.current) {
       scene.remove(orbMeshRef.current);
+      if (orbMeshRef.current.userData.glowMesh1) {
+        scene.remove(orbMeshRef.current.userData.glowMesh1);
+      }
+      if (orbMeshRef.current.userData.pulseMesh) {
+        scene.remove(orbMeshRef.current.userData.pulseMesh);
+      }
     }
 
     // Get ego state colors
     const egoColorInfo = getEgoColor(egoState);
     const color = new THREE.Color(egoColorInfo.accent);
 
-    // Create fractal sphere geometry that can deform mathematically
+    // Create fractal sphere geometry - ONCE
     const sphereGeometry = new THREE.SphereGeometry(10, 64, 64);
     
     // Store original vertex positions for fractal deformation
     const originalPositions = sphereGeometry.attributes.position.array.slice();
     sphereGeometry.userData = { originalPositions };
     
-    // Add initial mathematical noise pattern
-    const positions = sphereGeometry.attributes.position.array;
-    for (let i = 0; i < positions.length; i += 3) {
-      const x = positions[i];
-      const y = positions[i + 1];
-      const z = positions[i + 2];
-      
-      // Add mathematical fractal pattern
-      const fractalNoise = Math.sin(x * 0.5) * Math.cos(y * 0.3) * Math.sin(z * 0.7) * 0.2;
-      const secondaryNoise = Math.sin(x * 1.2) * Math.cos(y * 0.8) * Math.sin(z * 1.5) * 0.1;
-      const factor = 1 + (fractalNoise + secondaryNoise) * 0.15;
-      
-      positions[i] = x * factor;
-      positions[i + 1] = y * factor;
-      positions[i + 2] = z * factor;
-    }
-    sphereGeometry.attributes.position.needsUpdate = true;
-    
+    // Create wireframe ONCE - don't recreate every frame
     const wireframeGeometry = new THREE.WireframeGeometry(sphereGeometry);
     
     // Create material with ego state color
@@ -248,7 +275,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     orbMeshRef.current = orbMesh;
     scene.add(orbMesh);
 
-    // Add multiple alien glow layers
+    // Add glow layers
     const glowGeometry = new THREE.SphereGeometry(9.5, 32, 32);
     const glowMaterial1 = new THREE.MeshBasicMaterial({
       color: color,
@@ -271,19 +298,15 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     scene.add(pulseMesh);
     
     // Store references for animation
-    orbMesh.userData = { glowMesh1, pulseMesh, sphereGeometry };
+    orbMesh.userData = { glowMesh1, pulseMesh, sphereGeometry, wireframeGeometry };
 
-    // Start animation loop with delay to ensure everything is ready
-    setTimeout(() => {
-      if (isActiveRef.current) {
-        animate();
-      }
-    }, 50);
+    console.log('[ORB] Geometry initialized successfully');
   };
 
   const animate = () => {
-    // More robust animation loop
+    // Guard against inactive state
     if (!isActiveRef.current) {
+      console.log('[ORB] Animation stopped - component inactive');
       return;
     }
     
@@ -310,7 +333,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     // Fractal deformation phase
     alienState.fractalPhase = time * 0.6;
 
-    // Apply fractal deformations to the sphere geometry
+    // Apply fractal deformations to the sphere geometry - NO WIREFRAME RECREATION
     if (orbMeshRef.current && orbMeshRef.current.userData.sphereGeometry) {
       const geometry = orbMeshRef.current.userData.sphereGeometry;
       const originalPositions = geometry.userData.originalPositions;
@@ -351,12 +374,14 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         positions[i + 2] = origZ * deformationFactor * speakingMod;
       }
       
+      // Only flag positions as dirty - DON'T recreate wireframe
       geometry.attributes.position.needsUpdate = true;
       
-      // Update wireframe
-      const wireframeGeometry = new THREE.WireframeGeometry(geometry);
-      orbMeshRef.current.geometry.dispose();
-      orbMeshRef.current.geometry = wireframeGeometry;
+      // Update wireframe efficiently
+      const wireframe = orbMeshRef.current.userData.wireframeGeometry;
+      if (wireframe) {
+        wireframe.setFromGeometry(geometry);
+      }
     }
 
     // Alien breathing - more dramatic and irregular
@@ -385,35 +410,34 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
       material.opacity = (afterglow ? 0.9 : 0.7) * alienState.intensity;
       
-      // Animate glow layers
+      // Animate glow layers with more subtlety
       const userData = orbMeshRef.current.userData;
       if (userData.glowMesh1) {
-        userData.glowMesh1.scale.setScalar(0.95 + alienState.pulse * 0.05);
+        userData.glowMesh1.scale.setScalar(0.98 + alienState.pulse * 0.02);
         userData.glowMesh1.rotation.x = -alienRotationX * 0.5;
         userData.glowMesh1.rotation.y = -alienRotationY * 0.3;
         
         const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
-        glowMat.opacity = (afterglow ? 0.15 : 0.08) * (1 + alienState.pulse * 0.1);
+        glowMat.opacity = (afterglow ? 0.15 : 0.08) * (1 + alienState.pulse * 0.05);
       }
       
       if (userData.pulseMesh) {
-        const pulseScale = 0.85 + Math.abs(alienState.pulse) * 0.1;
+        const pulseScale = 0.9 + Math.abs(alienState.pulse) * 0.05;
         userData.pulseMesh.scale.setScalar(pulseScale);
         userData.pulseMesh.rotation.z = time * 0.5;
         
         const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
-        pulseMat.opacity = 0.05 + Math.abs(alienState.pulse) * 0.03;
+        pulseMat.opacity = 0.03 + Math.abs(alienState.pulse) * 0.02;
       }
 
       // Speaking indicator - alien excitement
       if (isSpeaking) {
-        // Rapid color shifting when speaking
-        material.opacity = 0.3 + 0.15 * Math.sin(time * 8);
+        material.opacity = 0.4 + 0.2 * Math.sin(time * 8);
       }
 
       // Listening indicator - alien attention mode
       if (isListening) {
-        material.opacity = 0.2 + 0.25 * Math.sin(time * 10);
+        material.opacity = 0.3 + 0.3 * Math.sin(time * 10);
       }
     }
 
@@ -433,15 +457,15 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         animationIdRef.current = requestAnimationFrame(animate);
       }
     } catch (error) {
-      console.error('WebGL render error:', error);
-      // Don't immediately set context lost - try to continue
-      if (isActiveRef.current) {
+      console.error('[ORB] WebGL render error:', error);
+      // Continue trying unless context is lost
+      if (isActiveRef.current && !contextLost) {
         animationIdRef.current = requestAnimationFrame(animate);
       }
     }
   };
 
-  // Update alien orb color when ego state changes
+  // Update orb color when ego state changes
   useEffect(() => {
     if (orbMeshRef.current && sceneRef.current) {
       const egoColorInfo = getEgoColor(egoState);
@@ -462,29 +486,59 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     }
   }, [egoState]);
 
-  // Handle resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (!rendererRef.current || !cameraRef.current || !containerRef.current) return;
-      
-      const container = containerRef.current;
-      const { w, h } = safeSize(size, size);
-      
-      cameraRef.current.aspect = w / h;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(w, h, false);
-    };
+  const disposeScene = () => {
+    console.log('[ORB] Disposing scene');
+    
+    // Stop animation
+    isActiveRef.current = false;
+    if (animationIdRef.current) {
+      cancelAnimationFrame(animationIdRef.current);
+      animationIdRef.current = null;
+    }
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [size]);
+    // Clean up Three.js objects
+    if (orbMeshRef.current) {
+      const userData = orbMeshRef.current.userData;
+      if (userData.glowMesh1) {
+        userData.glowMesh1.geometry?.dispose();
+        userData.glowMesh1.material?.dispose();
+      }
+      if (userData.pulseMesh) {
+        userData.pulseMesh.geometry?.dispose();
+        userData.pulseMesh.material?.dispose();
+      }
+      if (userData.sphereGeometry) {
+        userData.sphereGeometry.dispose();
+      }
+      if (userData.wireframeGeometry) {
+        userData.wireframeGeometry.dispose();
+      }
+      orbMeshRef.current.geometry?.dispose();
+      orbMeshRef.current.material?.dispose();
+    }
+
+    if (rendererRef.current) {
+      try {
+        rendererRef.current.dispose();
+      } catch (error) {
+        console.error('[ORB] Error disposing renderer:', error);
+      }
+    }
+
+    // Clear references
+    sceneRef.current = null;
+    rendererRef.current = null;
+    cameraRef.current = null;
+    orbMeshRef.current = null;
+    initializedRef.current = false;
+  };
 
   // Don't render anything if WebGL check is pending
   if (webglSupported === null) {
     return (
       <div 
         className={`flex items-center justify-center ${className}`}
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, zIndex: 10, pointerEvents: 'auto', overflow: 'visible' }}
       >
         <div className="w-8 h-8 border-2 border-teal-400/30 border-t-teal-400 rounded-full animate-spin" />
       </div>
@@ -496,7 +550,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     return (
       <div 
         className={`flex items-center justify-center bg-red-500/20 border border-red-500/40 rounded-full ${className}`}
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, zIndex: 10, pointerEvents: 'auto', overflow: 'visible' }}
       >
         <div className="text-center p-4">
           <div className="text-red-400 text-sm font-medium mb-2">WebGL Required</div>
@@ -511,7 +565,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     return (
       <div 
         className={`flex items-center justify-center bg-yellow-500/20 border border-yellow-500/40 rounded-full ${className}`}
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, zIndex: 10, pointerEvents: 'auto', overflow: 'visible' }}
       >
         <div className="text-center p-4">
           <div className="text-yellow-400 text-sm font-medium mb-2">Reconnecting...</div>
@@ -524,8 +578,14 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   return (
     <div 
       ref={containerRef}
-      className={`orb-container ${className}`}
-      style={{ width: size, height: size }}
+      className={`orb-container relative ${className}`}
+      style={{ 
+        width: size, 
+        height: size, 
+        zIndex: 10, 
+        pointerEvents: 'auto', 
+        overflow: 'visible' 
+      }}
     />
   );
 });
