@@ -216,7 +216,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               <div className="text-center">
                 {/* Profile Orb - Centered like Telegram avatar */}
                 <div className="flex justify-center mb-4">
-                  <div className="w-20 h-20 flex items-center justify-center overflow-hidden">
+                  <div className="w-24 h-24 flex items-center justify-center">
                     <Orb
                       onTap={() => {}}
                       egoState={activeEgoState}
