@@ -213,51 +213,38 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
             
             {/* Row 1: Ego State Showcase */}
             <div className="card-premium p-4 animate-stagger-in bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-purple-500/30 flex-shrink-0" style={{ animationDelay: '100ms' }}>
-              <div className="flex items-center space-x-4">
-                {/* Living Orb - Desktop */}
-                <div className="flex-shrink-0 hidden sm:flex sm:items-center sm:justify-center w-8 h-8 overflow-hidden">
-                  <Orb
-                    onTap={() => {}}
-                    egoState={activeEgoState}
-                    size={32}
-                    variant="webgl"
-                  />
+              <div className="text-center">
+                {/* Profile Orb - Centered like Telegram avatar */}
+                <div className="flex justify-center mb-4">
+                  <div className="w-20 h-20 flex items-center justify-center overflow-hidden">
+                    <Orb
+                      onTap={() => {}}
+                      egoState={activeEgoState}
+                      size={80}
+                      variant="webgl"
+                    />
+                  </div>
                 </div>
                 
-                {/* Current State Info */}
-                <div className="flex-1 min-w-0 space-y-2">
-                  <div className="flex items-center space-x-3 sm:hidden">
-                    <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 overflow-hidden">
-                      <Orb
-                        onTap={() => {}}
-                        egoState={activeEgoState}
-                        size={24}
-                        variant="webgl"
-                      />
-                    </div>
-                    <div>
-                      <h2 className="text-white font-bold text-base">Current Archetype</h2>
-                      <h3 className="text-purple-300 font-semibold text-lg">{currentState.name}</h3>
-                    </div>
-                  </div>
-                  
-                  <div className="hidden sm:block">
+                {/* Current State Info - Centered */}
+                <div className="space-y-3">
+                  <div>
                     <h2 className="text-white font-bold text-lg mb-1">Current Archetype</h2>
-                    <h3 className="text-purple-300 font-semibold text-xl mb-2">{currentState.name}</h3>
+                    <h3 className="text-purple-300 font-semibold text-2xl mb-3">{currentState.name}</h3>
                   </div>
                   
-                  <p className="text-white/80 text-sm mb-3 leading-relaxed">
+                  <p className="text-white/80 text-sm mb-4 leading-relaxed max-w-sm mx-auto">
                     {getDailyIntention()}
                   </p>
                   
-                  <div className="flex space-x-2">
+                  <div className="flex justify-center space-x-2">
                     <button
                       onClick={openEgoModal}
-                      className="px-3 py-2 bg-purple-500/30 border border-purple-400/50 text-purple-200 rounded-lg text-xs font-medium hover:bg-purple-500/40 transition-all duration-300 hover:scale-105"
+                      className="px-4 py-2 bg-purple-500/30 border border-purple-400/50 text-purple-200 rounded-lg text-sm font-medium hover:bg-purple-500/40 transition-all duration-300 hover:scale-105"
                     >
                       Switch State
                     </button>
-                    <button className="px-3 py-2 bg-white/10 border border-white/20 text-white/80 rounded-lg text-xs font-medium hover:bg-white/20 transition-all duration-300 hover:scale-105">
+                    <button className="px-4 py-2 bg-white/10 border border-white/20 text-white/80 rounded-lg text-sm font-medium hover:bg-white/20 transition-all duration-300 hover:scale-105">
                       Reflect
                     </button>
                   </div>
