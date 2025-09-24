@@ -429,7 +429,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       case 'inhale': return 'Inhale';
       case 'hold-inhale': return 'Hold';
       case 'exhale': return 'Exhale';
-      case 'hold-exhale': return 'Rest';
+      case 'hold-exhale': return 'Hold';
       default: return 'Breathe';
     }
   };
