@@ -559,10 +559,10 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           </div>
         </div>
         
-        {/* 1. Orb Section - Takes most space, perfectly centered */}
-        <div className="flex-1 flex items-center justify-center min-h-0 relative">
+        {/* 1. Orb Section - Takes most space, centered with proper spacing */}
+        <div className="flex-1 flex items-center justify-center min-h-0 relative pt-16 pb-8">
           {/* Eye Fixation Instruction - Absolutely positioned above orb */}
-          <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-10">
+          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
             <p className="text-white/80 text-sm font-light text-center">
               Focus softly on the center dot
             </p>
@@ -595,8 +595,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           </div>
         </div>
         
-        {/* 2. Breathing Instructions - Clean centered section */}
-        {/* 3. Chat Interface - Fixed height, proper container */}
+        {/* 3. Chat Interface - Compact and expandable */}
         <div className="flex-shrink-0">
           {/* Drag Handle */}
           <div 
@@ -615,45 +614,52 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           
           <div 
             ref={chatContainerRef} 
-            className="px-6 overflow-y-auto transition-all duration-200"
+            className="px-6 overflow-y-auto transition-all duration-200 scrollbar-hide"
             style={{ height: `${chatHeight}px` }}
           >
           
-          {/* Latest AI Message */}
-          {conversation.length > 0 && (
-            <div className="mb-4">
-              {/* Show last AI message */}
-              {conversation.slice(-1).map((msg, i) => (
-                msg.role === 'ai' && (
-                  <GlassCard key={i} variant="premium" className="p-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Brain size={14} className="text-teal-400" />
-                      <span className="text-teal-100 font-medium text-sm">Libero</span>
+            {/* Chat Messages */}
+            {conversation.length > 0 && (
+              <div className="space-y-3 mb-4">
+                {conversation.slice(-3).map((msg, i) => (
+                  <div key={i} className={`${msg.role === 'ai' ? 'text-left' : 'text-right'}`}>
+                    <div className={`inline-block max-w-[85%] p-3 rounded-2xl ${
+                      msg.role === 'ai' 
+                        ? 'bg-teal-500/20 border border-teal-500/30 text-teal-100' 
+                        : 'bg-white/10 border border-white/20 text-white'
+                    }`}>
+                      <div className="flex items-center space-x-2 mb-1">
+                        {msg.role === 'ai' ? <Brain size={12} className="text-teal-400" /> : <MessageCircle size={12} className="text-white/60" />}
+                        <span className="text-xs font-medium opacity-80">
+                          {msg.role === 'ai' ? 'Libero' : 'You'}
+                        </span>
+                      </div>
+                      <p className="text-sm leading-relaxed">{msg.content}</p>
                     </div>
-                    <p className="text-teal-100 leading-relaxed">{msg.content}</p>
-                  </GlassCard>
-                )
-              ))}
-              
-              {/* Thinking indicator */}
-              {isThinking && (
-                <GlassCard variant="premium" className="p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Brain size={14} className="text-teal-400" />
-                    <span className="text-teal-100 font-medium text-sm">Libero</span>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Loader size={16} className="text-teal-400 animate-spin" />
-                    <span className="text-teal-100">Tuning into your energy...</span>
+                ))}
+                
+                {/* Thinking indicator */}
+                {isThinking && (
+                  <div className="text-left">
+                    <div className="inline-block bg-teal-500/20 border border-teal-500/30 p-3 rounded-2xl">
+                      <div className="flex items-center space-x-2">
+                        <Brain size={12} className="text-teal-400" />
+                        <span className="text-xs font-medium text-teal-100">Libero</span>
+                      </div>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Loader size={14} className="text-teal-400 animate-spin" />
+                        <span className="text-sm text-teal-100">Tuning into your energy...</span>
+                      </div>
+                    </div>
                   </div>
-                </GlassCard>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Input Interface - Clean bottom section */}
-          <div className="px-6 bg-black/95 backdrop-blur-xl border-t border-white/10 pt-4">
+          {/* Input Interface */}
+          <div className="px-6 py-4 bg-black/95 backdrop-blur-xl border-t border-white/10">
             <form onSubmit={handleSubmit}>
               <div className="flex items-center space-x-3">
                 {/* Voice Button */}
