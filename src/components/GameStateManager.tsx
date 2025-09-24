@@ -274,10 +274,16 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         .eq('id', authUser.id);
 
       if (error) {
-        console.error('Error saving user profile:', error);
+        // Handle specific error codes gracefully
+        if (error.code === 'OFFLINE') {
+          console.log('App running in offline mode - user profile saved locally');
+          return;
+        }
+        console.warn('Error saving user profile to Supabase:', error);
       }
     } catch (error) {
-      console.warn('Network error saving user profile, continuing with local state:', error);
+      // Handle network errors gracefully - don't log as error since app still works
+      console.log('Network error saving user profile, continuing with local state. This is normal if Supabase is not configured.');
       // Gracefully continue - data is still saved in local state via useEffect
     }
   };

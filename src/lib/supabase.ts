@@ -4,15 +4,34 @@ let supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+  console.warn('Missing Supabase environment variables. App will run in offline mode.')
+  // Create a mock client that returns empty results instead of failing
+  const mockClient = {
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      signInWithPassword: () => Promise.resolve({ error: { message: 'Supabase not configured' } }),
+      signUp: () => Promise.resolve({ error: { message: 'Supabase not configured' } }),
+      signOut: () => Promise.resolve({ error: null })
+    },
+    from: () => ({
+      select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: { code: 'OFFLINE' } }) }) }),
+      insert: () => Promise.resolve({ data: null, error: { code: 'OFFLINE' } }),
+      update: () => ({ eq: () => Promise.resolve({ error: { code: 'OFFLINE' } }) }),
+      upsert: () => Promise.resolve({ error: { code: 'OFFLINE' } })
+    })
+  };
+  // Export mock client instead of throwing
+  export const supabase = mockClient as any;
+} else {
+  // Ensure URL has protocol to prevent 'Failed to fetch' errors
+  if (supabaseUrl && !supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
+    supabaseUrl = `https://${supabaseUrl}`
+  }
+
+  export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 }
 
-// Ensure URL has protocol to prevent 'Failed to fetch' errors
-if (supabaseUrl && !supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
-  supabaseUrl = `https://${supabaseUrl}`
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Database Types
 export interface UserProfile {
