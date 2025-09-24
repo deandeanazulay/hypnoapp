@@ -145,7 +145,7 @@ The Orb = reusable component across pages (always same animation engine).
 
 ✅ With this as the default Bolt knowledgebase, every patch or feature Bolt makes will:
 
-Respect the no-scroll / shrink-to-fit rule.
+Respect the shrink-to-fit rule.
 
 Treat the Orb as Libero, not just an animation.
 
