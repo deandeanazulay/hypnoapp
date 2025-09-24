@@ -47,8 +47,8 @@ export default function HomeScreen({
         ))}
       </div>
 
-      {/* 1. Ego States Carousel */}
-      <div className="flex-shrink-0 py-3 relative z-40">
+      {/* 1. Ego States Carousel - Fixed Height */}
+      <div className="flex-shrink-0 h-20 flex items-center justify-center relative z-40">
         <EgoStatesCarousel 
           activeEgoState={activeEgoState}
           onEgoStateChange={(egoStateId) => {
@@ -58,23 +58,20 @@ export default function HomeScreen({
         />
       </div>
 
-      {/* 2. Orb Section */}
-      <div className="flex-1 flex items-center justify-center relative z-30 px-4">
-        <OrbSection 
-          onOrbTap={onOrbTap}
-          egoState={activeEgoState}
-        />
+      {/* 2. Main Orb Section - Takes remaining space and centers orb */}
+      <div className="flex-1 min-h-0 flex items-center justify-center relative z-30">
+        <div className="flex items-center justify-center">
+          <Orb
+            onTap={onOrbTap}
+            afterglow={false}
+            egoState={activeEgoState}
+            size={320}
+            variant="webgl"
+          />
+        </div>
       </div>
 
-      {/* 3. Text Section */}
-      <div className="flex-shrink-0 py-4 relative z-20">
-        <TextSection 
-          currentState={currentState}
-          selectedAction={selectedAction}
-        />
-      </div>
-
-      {/* 4. Actions Bar */}
+      {/* 3. Actions Bar - Fixed at bottom with proper spacing */}
       <div className="flex-shrink-0 pb-2 px-4 relative z-10">
         <ActionsBar 
           selectedAction={selectedAction}
@@ -86,7 +83,7 @@ export default function HomeScreen({
   );
 }
 
-// 1. Ego States Carousel Component
+// 1. Ego States Carousel Component - Perfectly centered
 interface EgoStatesCarouselProps {
   activeEgoState: string;
   onEgoStateChange: (egoStateId: string) => void;
@@ -95,10 +92,12 @@ interface EgoStatesCarouselProps {
 function EgoStatesCarousel({ activeEgoState, onEgoStateChange }: EgoStatesCarouselProps) {
   return (
     <div className="relative overflow-hidden w-full flex justify-center items-center">
+      {/* Gradient overlays for fade effect */}
       <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
       
-      <div className="flex items-center space-x-2 px-4 animate-scroll-x">
+      {/* Perfectly centered scrolling container */}
+      <div className="flex items-center justify-center space-x-3 px-8 animate-scroll-x">
         {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => {
           const isSelected = activeEgoState === state.id;
           const egoColor = getEgoColor(state.id);
@@ -106,63 +105,19 @@ function EgoStatesCarousel({ activeEgoState, onEgoStateChange }: EgoStatesCarous
             <div key={`${state.id}-${index}`} className="flex-shrink-0">
               <button
                 onClick={() => onEgoStateChange(state.id)}
-                className={`w-9 h-9 rounded-full bg-gradient-to-br ${egoColor.bg} border-2 flex items-center justify-center transition-all duration-300 hover:scale-105 ${
-                  isSelected ? 'border-white/60 scale-110 opacity-100' : 'border-white/20 opacity-50'
+                className={`w-12 h-12 rounded-full bg-gradient-to-br ${egoColor.bg} border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
+                  isSelected ? 'border-white/80 scale-115 opacity-100' : 'border-white/30 opacity-60 hover:opacity-80'
                 }`}
                 style={{
                   boxShadow: isSelected ? `0 0 20px ${egoColor.accent}80` : `0 0 10px ${egoColor.accent}40`
                 }}
               >
-                <span className="text-sm">{state.icon}</span>
+                <span className="text-lg">{state.icon}</span>
               </button>
             </div>
           );
         })}
       </div>
-    </div>
-  );
-}
-
-// 2. Orb Section Component
-interface OrbSectionProps {
-  onOrbTap: () => void;
-  egoState: string;
-}
-
-function OrbSection({ onOrbTap, egoState }: OrbSectionProps) {
-  return (
-    <div className="flex items-center justify-center">
-      <div className="flex items-center justify-center w-80 h-80">
-        <Orb
-          onTap={onOrbTap}
-          afterglow={false}
-          egoState={egoState}
-          size={320}
-          variant="webgl"
-        />
-      </div>
-    </div>
-  );
-}
-
-// 3. Text Section Component
-interface TextSectionProps {
-  currentState: any;
-  selectedAction: any;
-}
-
-function TextSection({ currentState, selectedAction }: TextSectionProps) {
-  return (
-    <div className="text-center px-4">
-      <h2 className="text-white text-xl font-light mb-2">
-        {currentState.name} Mode
-      </h2>
-      <p className="text-white/70 text-sm mb-1">
-        {selectedAction ? `${selectedAction.name} ready` : 'Select action & tap orb'}
-      </p>
-      <p className="text-white/50 text-xs">
-        Choose session type
-      </p>
     </div>
   );
 }
