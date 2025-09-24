@@ -103,20 +103,18 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                 className="w-full bg-white/10 border border-white/20 rounded-xl px-6 py-4 text-white text-lg placeholder-white/50 focus:outline-none focus:border-purple-400/50 focus:bg-white/15 transition-all"
               />
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-white/70 text-sm mb-2">Duration</label>
-                  <select
-                    value={protocol.duration}
-                    onChange={(e) => setProtocol(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-400/50 transition-all"
-                  >
-                    <option value={5} className="bg-black">5 minutes</option>
-                    <option value={10} className="bg-black">10 minutes</option>
-                    <option value={15} className="bg-black">15 minutes</option>
-                    <option value={20} className="bg-black">20 minutes</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Duration</label>
+                <select
+                  value={protocol.duration}
+                  onChange={(e) => setProtocol(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-400/50 transition-all"
+                >
+                  <option value={5} className="bg-black">5 minutes</option>
+                  <option value={10} className="bg-black">10 minutes</option>
+                  <option value={15} className="bg-black">15 minutes</option>
+                  <option value={20} className="bg-black">20 minutes</option>
+                </select>
               </div>
             </div>
           </div>
@@ -227,102 +225,103 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
   return (
     <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
-      {/* Background */}
+      {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Main Layout */}
-      <div className="relative z-10 h-full flex flex-col" style={{ paddingTop: '60px', paddingBottom: 'calc(var(--total-nav-height, 80px) + 140px)' }}>
-        
-        {/* Top Progress Indicator */}
-        <div className="flex-shrink-0 flex justify-center pt-6 pb-4">
-          <div className="flex items-center space-x-4">
-            {[1, 2, 3].map((step) => (
-              <div key={step} className="flex items-center">
-                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
-                  step === currentStep
-                    ? 'border-purple-400 bg-purple-400/20 text-purple-400'
-                    : step < currentStep
-                    ? 'border-teal-400 bg-teal-400/20 text-teal-400'
-                    : 'border-white/30 text-white/50'
-                }`}>
-                  {step}
+      <PageShell
+        body={
+          <div className="relative z-10 h-full overflow-y-auto pb-32" style={{ paddingTop: '60px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)' }}>
+            <div className="px-4 space-y-6">
+              
+              {/* Top Progress Indicator */}
+              <div className="flex justify-center pt-6">
+                <div className="flex items-center space-x-4">
+                  {[1, 2, 3].map((step) => (
+                    <div key={step} className="flex items-center">
+                      <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
+                        step === currentStep
+                          ? 'border-purple-400 bg-purple-400/20 text-purple-400'
+                          : step < currentStep
+                          ? 'border-teal-400 bg-teal-400/20 text-teal-400'
+                          : 'border-white/30 text-white/50'
+                      }`}>
+                        {step}
+                      </div>
+                      {step < 3 && (
+                        <div className={`w-8 h-0.5 mx-2 ${
+                          step < currentStep ? 'bg-teal-400' : 'bg-white/30'
+                        }`} />
+                      )}
+                    </div>
+                  ))}
                 </div>
-                {step < 3 && (
-                  <div className={`w-8 h-0.5 mx-2 ${
-                    step < currentStep ? 'bg-teal-400' : 'bg-white/30'
-                  }`} />
-                )}
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Step Content - Centered */}
-        <div className="flex-1 flex items-center justify-center px-4">
-          <GlassCard variant="premium" className="max-w-md w-full p-6">
-            {renderStep()}
-          </GlassCard>
-        </div>
-      </div>
+              {/* Main Content Card */}
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                {renderStep()}
+              </div>
 
-      {/* Fixed Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40" style={{ paddingBottom: 'calc(var(--total-nav-height, 80px) + 8px)' }}>
-        <div className="bg-black/95 backdrop-blur-xl border-t border-white/10 px-4 py-4">
-          {/* Step Indicator */}
-          <div className="text-center mb-4">
-            <div className="text-white/60 text-sm mb-2">Step {currentStep} of 3</div>
-            <div className="flex justify-center space-x-2">
-              {[1, 2, 3].map((step) => (
-                <div
-                  key={step}
-                  className={`w-8 h-1 rounded-full transition-all duration-300 ${
-                    step <= currentStep ? 'bg-teal-400' : 'bg-white/20'
-                  }`}
-                />
-              ))}
+              {/* Bottom Navigation */}
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                {/* Step Indicator */}
+                <div className="text-center mb-4">
+                  <div className="text-white/60 text-sm mb-2">Step {currentStep} of 3</div>
+                  <div className="flex justify-center space-x-2">
+                    {[1, 2, 3].map((step) => (
+                      <div
+                        key={step}
+                        className={`w-8 h-1 rounded-full transition-all duration-300 ${
+                          step <= currentStep ? 'bg-teal-400' : 'bg-white/20'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Navigation Buttons */}
+                <div className="flex justify-between items-center">
+                  <button
+                    onClick={handleBack}
+                    disabled={currentStep === 1}
+                    className={`px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 ${
+                      currentStep === 1 ? 'invisible' : ''
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <ArrowLeft size={16} />
+                      <span>Back</span>
+                    </div>
+                  </button>
+
+                  {currentStep < 3 ? (
+                    <button
+                      onClick={handleNext}
+                      disabled={!canProceed()}
+                      className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span>Next</span>
+                        <ArrowRight size={16} />
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleComplete}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 flex items-center space-x-2"
+                    >
+                      <Wand2 size={16} />
+                      <span>Create</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between items-center max-w-md mx-auto">
-            <button
-              onClick={handleBack}
-              disabled={currentStep === 1}
-              className={`px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 ${
-                currentStep === 1 ? 'invisible' : ''
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <ArrowLeft size={16} />
-                <span>Back</span>
-              </div>
-            </button>
-
-            {currentStep < 3 ? (
-              <button
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                <div className="flex items-center space-x-2">
-                  <span>Next</span>
-                  <ArrowRight size={16} />
-                </div>
-              </button>
-            ) : (
-              <button
-                onClick={handleComplete}
-                className="px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 flex items-center space-x-2"
-              >
-                <Wand2 size={16} />
-                <span>Create</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+        }
+      />
     </div>
   );
 }
