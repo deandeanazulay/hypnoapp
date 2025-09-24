@@ -303,6 +303,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               {sessionState.phase === 'integration' && "Integrating this transformation into your being."}
               {sessionState.phase === 'completion' && "Bringing this awareness back with you."}
             </p>
+          </div>
         </div>
       </div>
 
