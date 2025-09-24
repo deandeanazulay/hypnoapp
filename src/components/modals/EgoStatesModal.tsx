@@ -253,6 +253,67 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
         </div>
       )}
 
+      {/* Input Interface */}
+      <div className="bg-black/95 backdrop-blur-xl rounded-2xl border border-white/20 p-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="flex items-center space-x-3">
+            {/* Voice Input Button */}
+            <button
+              type="button"
+              onClick={toggleListening}
+              disabled={!isMicEnabled || isThinking}
+              className={`p-3 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 ${
+                isListening 
+                  ? 'bg-red-500/20 border-2 border-red-500/60 text-red-400 animate-pulse' 
+                  : 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
+              }`}
+            >
+              <Mic size={20} />
+            </button>
+
+            {/* Text Input */}
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder={isListening ? "Listening..." : "Type your message or use voice..."}
+                disabled={isListening || isThinking}
+                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all disabled:opacity-50"
+              />
+              
+              {/* Speaking indicator */}
+              {isSpeaking && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2 text-teal-400">
+                  <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
+                  <span className="text-xs">Libero is speaking</span>
+                </div>
+              )}
+            </div>
+
+            {/* Send Button */}
+            <button
+              type="submit"
+              disabled={!textInput.trim() || isThinking}
+              className="p-3 bg-teal-500/20 border border-teal-500/40 text-teal-400 rounded-full hover:bg-teal-500/30 transition-all hover:scale-110 disabled:opacity-50"
+            >
+              <Send size={20} />
+            </button>
+          </div>
+
+          {/* Status and Controls */}
+          <div className="flex items-center justify-between">
+            {/* Status */}
+            <div className="flex items-center space-x-2 text-xs text-white/60">
+              {isListening && (
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                  <span>Listening...</span>
+                </div>
+              )}
+              {isSpeaking && (
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
                   <span className="text-xs">Libero is speaking</span>
                 </div>
               )}
