@@ -79,6 +79,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
   // Check WebGL support on mount
   useEffect(() => {
+    console.log('WebGL support check running');
     setWebglSupported(supportsWebGL());
   }, []);
 
@@ -87,6 +88,12 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     if (webglSupported === false || !containerRef.current || contextLost) return;
 
     const container = containerRef.current;
+    
+    // Clear any existing content first
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+    
     const { w, h } = safeSize(size, size);
 
     // Scene setup
@@ -142,30 +149,51 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     // Add click handler
     canvas.addEventListener('click', onTap);
 
-    container.appendChild(canvas);
+    try {
+      container.appendChild(canvas);
+    } catch (error) {
+      console.error('Error appending canvas:', error);
+      return;
+    }
 
     // Initialize orb geometry
     initializeOrb();
 
     return () => {
-      isActiveRef.current = false;
+      // Don't set isActiveRef to false immediately - let animation finish current frame
+      setTimeout(() => {
+        isActiveRef.current = false;
+      }, 16); // One frame delay
+      
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
+        animationIdRef.current = null;
       }
       canvas.removeEventListener('click', onTap);
       canvas.removeEventListener('webglcontextlost', () => {});
       canvas.removeEventListener('webglcontextrestored', () => {});
       if (container && container.contains(canvas)) {
-        container.removeChild(canvas);
+        try {
+          container.removeChild(canvas);
+        } catch (error) {
+          console.error('Error removing canvas:', error);
+        }
       }
       if (renderer) {
-        renderer.dispose();
+        try {
+          renderer.dispose();
+        } catch (error) {
+          console.error('Error disposing renderer:', error);
+        }
       }
     };
   }, [webglSupported, size, onTap]);
 
   const initializeOrb = () => {
-    if (!sceneRef.current || !rendererRef.current || !cameraRef.current || contextLost) return;
+    if (!sceneRef.current || !rendererRef.current || !cameraRef.current || contextLost) {
+      console.error('Failed to initialize orb - missing references');
+      return;
+    }
 
     const scene = sceneRef.current;
     const renderer = rendererRef.current;
@@ -245,12 +273,23 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     // Store references for animation
     orbMesh.userData = { glowMesh1, pulseMesh, sphereGeometry };
 
-    // Start animation loop
-    animate();
+    // Start animation loop with delay to ensure everything is ready
+    setTimeout(() => {
+      if (isActiveRef.current) {
+        animate();
+      }
+    }, 50);
   };
 
   const animate = () => {
-    if (!isActiveRef.current || !rendererRef.current || !cameraRef.current || !sceneRef.current || contextLost) {
+    // More robust animation loop
+    if (!isActiveRef.current) {
+      return;
+    }
+    
+    if (!rendererRef.current || !cameraRef.current || !sceneRef.current || contextLost) {
+      // Retry animation in next frame if components aren't ready
+      animationIdRef.current = requestAnimationFrame(animate);
       return;
     }
 
@@ -388,10 +427,17 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
     try {
       rendererRef.current.render(sceneRef.current, cameraRef.current);
-      animationIdRef.current = requestAnimationFrame(animate);
+      
+      // Only continue animation if still active
+      if (isActiveRef.current) {
+        animationIdRef.current = requestAnimationFrame(animate);
+      }
     } catch (error) {
       console.error('WebGL render error:', error);
-      setContextLost(true);
+      // Don't immediately set context lost - try to continue
+      if (isActiveRef.current) {
+        animationIdRef.current = requestAnimationFrame(animate);
+      }
     }
   };
 

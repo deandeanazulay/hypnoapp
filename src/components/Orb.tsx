@@ -21,24 +21,33 @@ function supportsWebGL(): boolean {
 }
 
 export default function Orb({ variant = 'auto', ...props }: OrbProps) {
-  const [useWebGL, setUseWebGL] = useState<boolean>(() => {
-    // Synchronous detection on first render to prevent switching
-    if (variant === 'css') return false;
-    if (variant === 'webgl') return supportsWebGL();
-    // Auto: prefer WebGL if supported
-    return supportsWebGL();
-  });
+  const [useWebGL, setUseWebGL] = useState<boolean | null>(null);
 
-  // Only detect once on mount, never change after that
+  // Detect WebGL support only once
   useEffect(() => {
-    if (variant !== 'auto') return; // Don't change if explicitly set
-    
-    // Only run if we haven't already decided
-    const hasWebGL = supportsWebGL();
-    setUseWebGL(hasWebGL);
-  }, []); // Empty dependency array - only run once
+    if (variant === 'css') {
+      setUseWebGL(false);
+    } else if (variant === 'webgl') {
+      setUseWebGL(supportsWebGL());
+    } else {
+      // Auto: prefer WebGL if supported
+      setUseWebGL(supportsWebGL());
+    }
+  }, [variant]);
 
-  // Always return the same component type to prevent remounting
+  // Show loading while detecting
+  if (useWebGL === null) {
+    return (
+      <div 
+        className={`flex items-center justify-center ${props.className || ''}`}
+        style={{ width: props.size || 280, height: props.size || 280 }}
+      >
+        <div className="w-8 h-8 border-2 border-teal-400/30 border-t-teal-400 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Render the appropriate orb type - never switch after initial render
   return useWebGL ? <WebGLOrb {...props} /> : <CSSOrb {...props} />;
 }
 

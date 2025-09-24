@@ -26,7 +26,7 @@ interface CreateScreenProps {
 type WizardStep = 'name' | 'duration' | 'induction' | 'deepener' | 'finalize';
 
 export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScreenProps) {
-  const { user, canAccess } = useGameState();
+  const { user, canAccess, activeEgoState } = useGameState();
   const { showToast } = useAppStore();
   const { isAuthenticated } = useAuth();
   const { addCustomAction } = useProtocolStore();
@@ -681,7 +681,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
           <div className="flex items-center justify-center mb-4">
             <Orb
               onTap={() => {}}
-              egoState={orbState.color}
+              egoState={activeEgoState}
               size={200}
               variant="webgl"
             />
