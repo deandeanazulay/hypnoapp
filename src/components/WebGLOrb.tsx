@@ -84,7 +84,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
   // Initialize Three.js scene
   useEffect(() => {
-    if (webglSupported === false || !containerRef.current) return;
+    if (webglSupported === false || !containerRef.current || contextLost) return;
 
     const container = containerRef.current;
     const { w, h } = safeSize(size, size);
@@ -155,15 +155,17 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       canvas.removeEventListener('click', onTap);
       canvas.removeEventListener('webglcontextlost', () => {});
       canvas.removeEventListener('webglcontextrestored', () => {});
-      if (container.contains(canvas)) {
+      if (container && container.contains(canvas)) {
         container.removeChild(canvas);
       }
-      renderer.dispose();
+      if (renderer) {
+        renderer.dispose();
+      }
     };
   }, [webglSupported, size, onTap]);
 
   const initializeOrb = () => {
-    if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return;
+    if (!sceneRef.current || !rendererRef.current || !cameraRef.current || contextLost) return;
 
     const scene = sceneRef.current;
     const renderer = rendererRef.current;
@@ -248,8 +250,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   };
 
   const animate = () => {
-    if (!isActiveRef.current || !rendererRef.current || !cameraRef.current || !sceneRef.current) return;
-    if (contextLost) return;
+    if (!isActiveRef.current || !rendererRef.current || !cameraRef.current || !sceneRef.current || contextLost) {
+      return;
+    }
 
     const time = Date.now() * 0.001;
     const alienState = alienStateRef.current;
@@ -383,8 +386,13 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       cameraRef.current.lookAt(0, 0, 0);
     }
 
-    rendererRef.current.render(sceneRef.current, cameraRef.current);
-    animationIdRef.current = requestAnimationFrame(animate);
+    try {
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
+      animationIdRef.current = requestAnimationFrame(animate);
+    } catch (error) {
+      console.error('WebGL render error:', error);
+      setContextLost(true);
+    }
   };
 
   // Update alien orb color when ego state changes

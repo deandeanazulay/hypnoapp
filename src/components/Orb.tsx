@@ -21,35 +21,36 @@ function supportsWebGL(): boolean {
 }
 
 export default function Orb({ variant = 'auto', ...props }: OrbProps) {
-  const [useWebGL, setUseWebGL] = useState<boolean | null>(null);
+  const [useWebGL, setUseWebGL] = useState<boolean>(false); // Default to CSS to prevent flashing
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Defer until client to avoid SSR mismatches
-    if (variant === 'auto') {
-      setUseWebGL(supportsWebGL());
-    } else if (variant === 'webgl') {
-      setUseWebGL(supportsWebGL());
-    } else {
-      setUseWebGL(false);
-    }
-  }, [variant]);
+    // Only run once on mount to prevent re-renders
+    if (!isInitialized) {
+      const detectWebGL = () => {
+        if (variant === 'css') {
+          setUseWebGL(false);
+        } else if (variant === 'webgl') {
+          setUseWebGL(supportsWebGL());
+        } else {
+          // Auto-detect but prefer CSS for stability
+          setUseWebGL(supportsWebGL() && window.innerWidth > 768);
+        }
+        setIsInitialized(true);
+      };
 
-  // Loading state to avoid hydration flashes
-  if (useWebGL === null) {
-    return (
-      <div 
-        className={`flex items-center justify-center ${props.className || ''}`}
-        style={{ width: props.size || 280, height: props.size || 280 }}
-      >
-        <div className="w-8 h-8 border-2 border-teal-400/30 border-t-teal-400 rounded-full animate-spin" />
-      </div>
-    );
+      // Small delay to ensure DOM is ready
+      const timeoutId = setTimeout(detectWebGL, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [variant, isInitialized]);
+
+  // Show CSS orb immediately, upgrade to WebGL if supported
+  if (!isInitialized) {
+    return <CSSOrb {...props} />;
   }
 
-  // Force WebGL unless explicitly unsupported or CSS variant requested
-  const shouldUseWebGL = variant === 'css' ? false : useWebGL;
-
-  return shouldUseWebGL ? <WebGLOrb {...props} /> : <CSSOrb {...props} />;
+  return useWebGL ? <WebGLOrb {...props} /> : <CSSOrb {...props} />;
 }
 
 // Re-export the ref type for convenience
