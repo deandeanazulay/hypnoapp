@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import ActionsBar from '../ActionsBar';
-import Orb from '../Orb';
 import { EGO_STATES, useAppStore } from '../../store';
 import { TabId } from '../../types/Navigation';
 import { THEME, getEgoColor } from '../../config/theme';
@@ -113,16 +112,22 @@ export default function HomeScreen({
                   justifyContent: 'center'
                 }}
               >
-                <Orb
-                  onTap={onOrbTap}
-                  afterglow={false}
-                  egoState={activeEgoState}
-                  size={window.innerWidth < 768 ? 
-                    Math.max(200, Math.min(window.innerWidth * 0.6, 280)) :
-                    Math.max(240, Math.min(window.innerHeight * 0.3, 300))
-                  }
-                  variant="webgl"
-                />
+                <button
+                  onClick={onOrbTap}
+                  className="relative group cursor-pointer transition-transform duration-300 hover:scale-105"
+                  style={{
+                    width: window.innerWidth < 768 ? 
+                      Math.max(200, Math.min(window.innerWidth * 0.6, 280)) :
+                      Math.max(240, Math.min(window.innerHeight * 0.3, 300)),
+                    height: window.innerWidth < 768 ? 
+                      Math.max(200, Math.min(window.innerWidth * 0.6, 280)) :
+                      Math.max(240, Math.min(window.innerHeight * 0.3, 300))
+                  }}
+                >
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-teal-500/30 to-purple-500/30 border-4 border-white/20 flex items-center justify-center animate-pulse group-hover:animate-none">
+                    <div className="w-1/2 h-1/2 rounded-full bg-gradient-to-br from-teal-400/40 to-cyan-400/40 animate-spin-slow" />
+                  </div>
+                </button>
               </div>
                 
               {/* Session configuration display - always visible */}
