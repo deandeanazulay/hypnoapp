@@ -96,9 +96,10 @@ const quickGoals: Goal[] = [
 interface GoalPickerProps {
   onSelect: (goal: Goal) => void;
   onClose: () => void;
+  onNavigateToCreate: () => void;
 }
 
-export default function GoalPicker({ onSelect, onClose }: GoalPickerProps) {
+export default function GoalPicker({ onSelect, onClose, onNavigateToCreate }: GoalPickerProps) {
   const [showCustom, setShowCustom] = useState(false);
   const [customGoal, setCustomGoal] = useState({
     name: '',
@@ -162,7 +163,10 @@ export default function GoalPicker({ onSelect, onClose }: GoalPickerProps) {
 
             {/* Custom Goal Button */}
             <button
-              onClick={() => setShowCustom(true)}
+              onClick={() => {
+                onClose();
+                onNavigateToCreate();
+              }}
               className="w-full p-4 rounded-xl bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/20 hover:border-white/30 transition-all duration-200 hover:scale-105"
             >
               <div className="flex items-center justify-center space-x-3">

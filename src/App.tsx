@@ -280,6 +280,7 @@ export default function App() {
             <GoalPicker
               onSelect={handleGoalSelect}
               onClose={() => setShowGoalPicker(false)}
+              onNavigateToCreate={() => setActiveTab('create')}
             />
           )}
 
