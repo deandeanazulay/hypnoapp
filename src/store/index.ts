@@ -37,6 +37,9 @@ interface AppState {
   setLoading: (loading: boolean) => void;
   openModal: (modal: keyof AppState['modals']) => void;
   closeModal: (modal: keyof AppState['modals']) => void;
+  openEgoModal: () => void;
+  closeEgoModal: () => void;
+  isEgoModalOpen: boolean;
   showToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
 }
@@ -46,6 +49,19 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       // Initial State
       activeTab: 'home',
+  // Convenience methods for ego states modal
+  openEgoModal: () => set((state) => ({
+    modals: { ...state.modals, egoStates: true }
+  })),
+  
+  closeEgoModal: () => set((state) => ({
+    modals: { ...state.modals, egoStates: false }
+  })),
+  
+  get isEgoModalOpen() {
+    return get().modals.egoStates;
+  },
+  
       activeEgoState: 'guardian',
       isLoading: false,
       modals: {
