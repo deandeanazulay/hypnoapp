@@ -2,7 +2,7 @@ import React from 'react';
 import { XCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { paymentService } from '../lib/stripe';
-import { useUIStore } from '../state/uiStore';
+import { useUIStore } from '../store';
 
 export default function PaymentCancelled() {
   const navigate = useNavigate();

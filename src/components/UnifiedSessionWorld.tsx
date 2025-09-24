@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Pause, SkipForward, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
-import WebGLOrb from './WebGLOrb';
+import CSSOrb from './ui/CSSOrb';
 import AIVoiceSystem from './AIVoiceSystem';
 import { useGameState } from './GameStateManager';
 import { getEgoState } from '../state/appStore';
@@ -280,14 +280,11 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
         {/* The Orb - inheriting color from ego state */}
         <div className="mb-6">
-          <WebGLOrb
+          <CSSOrb
             ref={orbRef}
             onTap={() => {}} // Disabled during session
             size={320}
-            egoState={sessionConfig.egoState}
-            afterglow={sessionState.isActive}
-            breathPhase={sessionState.breathing}
-            selectedGoal={selectedGoal}
+            state={sessionConfig.egoState}
           />
         </div>
 

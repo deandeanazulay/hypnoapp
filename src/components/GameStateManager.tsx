@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, UserProfile } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useSimpleAuth';
 import { paymentService } from '../lib/stripe';
 import { useUIStore } from '../state/uiStore';
 
