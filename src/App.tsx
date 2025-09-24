@@ -13,6 +13,7 @@ import EgoStatesModal from './components/modals/EgoStatesModal';
 import ToastManager from './components/layout/ToastManager';
 import AuthModal from './components/auth/AuthModal';
 import GlobalHUD from './components/HUD/GlobalHUD';
+import SettingsModal from './components/modals/SettingsModal';
 import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancelled from './components/PaymentCancelled';
 import { useViewportLayout } from './hooks/useViewportLayout';
@@ -240,6 +241,12 @@ function App() {
       {/* Global Modals - Outside main structure */}
       <>
         <EgoStatesModal />
+        <SettingsModal 
+          isOpen={useAppStore.getState().modals.settings}
+          onClose={() => useAppStore.getState().closeModal('settings')}
+          selectedEgoState={activeEgoState}
+          onEgoStateChange={setActiveEgoState}
+        />
         <AuthModal 
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
