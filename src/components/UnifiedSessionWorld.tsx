@@ -258,8 +258,6 @@ IMPORTANT: This is a CUSTOM protocol session. You should:
 5. Start immediately with the protocol and begin the actual hypnosis script
 6. Create a full hypnotic induction based on the protocol specifications
 7. Do NOT ask what they want to work on - they already defined it in the protocol
-6. Create a full hypnotic induction based on the protocol specifications
-7. Do NOT ask what they want to work on - they already defined it in the protocol
 ` : ''}
 
 YOUR ROLE AS LIBERO:
@@ -392,24 +390,4 @@ function getContextualFallback(context: SessionContext, userMessage: string, req
     },
     explorer: {
       induction: "You're beginning an incredible journey of discovery. Feel the excitement of exploring new territories within yourself.",
-      deepening: "Go deeper into this unexplored territory. Each step reveals new insights and possibilities you've never seen before.",
-      response: "What an amazing discovery you're making. Keep exploring - there's so much more to uncover."
-    }
-  }
-  
-  const stateResponses = egoResponses[egoState] || egoResponses.guardian
-  const response = stateResponses[requestType] || stateResponses.response
-  
-  // Add depth-appropriate language
-  const depthModifiers = [
-    "", // depth 1
-    "Feel this even more deeply... ",
-    "Going much deeper now... ",
-    "At this profound level... ",
-    "In this deepest state... "
-  ]
-  
-  const modifier = depthModifiers[Math.min(depth - 1, 4)] || ""
-  
-  return modifier + response
-}
+      deepening: "Go deeper into this unexplored territory. Each step reveals new insights
