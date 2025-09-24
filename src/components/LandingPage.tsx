@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Star, Zap, Shield, Crown, ChevronRight, Check, Users, Award, TrendingUp, Sparkles, Eye, Heart, Brain, Menu, X } from 'lucide-react';
+import Orb from './Orb';
 import { paymentService, STRIPE_PRODUCTS } from '../lib/stripe';
 import { useAppStore } from '../store';
 
@@ -247,6 +248,14 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
           {/* Orb */}
+          <div className={`mb-6 md:mb-12 transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
+            <Orb
+              onTap={() => {}}
+              size={window.innerWidth < 768 ? 200 : 280}
+              variant="webgl"
+              egoState="guardian"
+            />
+          </div>
 
           {/* Hero Text */}
           <div className={`transition-all duration-1000 delay-300 mb-6 md:mb-0 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>

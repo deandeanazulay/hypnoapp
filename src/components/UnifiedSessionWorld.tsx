@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Pause, SkipForward, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import Orb from './Orb';
 import AIVoiceSystem from './AIVoiceSystem';
 import { useGameState } from './GameStateManager';
 import { getEgoState } from '../store';
@@ -36,6 +37,7 @@ interface SessionState {
 export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfig }: UnifiedSessionWorldProps) {
   const { completeSession } = useGameState();
   const { showToast } = useAppStore();
+  const orbRef = useRef<any>(null);
   
   const [sessionState, setSessionState] = useState<SessionState>({
     phase: 'preparation',
@@ -279,6 +281,16 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
 
         {/* The Orb - inheriting color from ego state */}
+        <div className="mb-6">
+          <Orb
+            ref={orbRef}
+            onTap={() => {}} // Disabled during session
+            size={320}
+            egoState={sessionConfig.egoState}
+            variant="auto"
+            afterglow={sessionState.isActive}
+          />
+        </div>
 
         {/* Session Guidance */}
         <div className="text-center max-w-md">
@@ -371,7 +383,13 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               breathing: state.breathing || prev.breathing,
               depth: state.depth || prev.depth
             }));
+            
+            // Update orb if available
+            if (orbRef.current) {
+              orbRef.current.updateState(state);
+            }
           }}
+          orbRef={orbRef}
         />
       )}
 

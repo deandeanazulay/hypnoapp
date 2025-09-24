@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Save, Clock, Zap, Target, Sparkles, Edit3, Crown, Infinity, Music, Star, Lock, Play, Eye, Waves, Book, Wind } from 'lucide-react';
+import Orb from '../Orb';
 import AuthModal from '../auth/AuthModal';
 import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
@@ -668,6 +669,43 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
           {renderStepContent()}
         </div>
 
+        {/* Right Side - Reactive Orb (Desktop) */}
+        <div className="hidden lg:flex lg:w-80 lg:flex-col lg:items-center lg:justify-center lg:px-6 lg:py-8">
+          <div className="text-center mb-6">
+            <h3 className="text-white font-medium text-lg mb-2">Live Preview</h3>
+            <p className="text-white/60 text-sm">Your orb evolves as you create</p>
+          </div>
+          
+          <div className="flex items-center justify-center">
+            <Orb
+              onTap={() => {}}
+              size={240}
+              egoState={orbState.color}
+              variant="auto"
+              afterglow={true}
+            />
+          </div>
+          
+          <div className="mt-4 text-center">
+            <p className="text-white/70 text-sm">
+              {protocol.name || 'Unnamed Journey'}
+            </p>
+            <p className="text-white/50 text-xs">
+              {protocol.duration}m • {protocol.induction ? inductionOptions.find(opt => opt.id === protocol.induction)?.name : 'No gateway selected'}
+            </p>
+          </div>
+        </div>
+
+        {/* Mobile Orb - Smaller, Floating */}
+        <div className="lg:hidden fixed top-32 right-4 z-20 bg-black/50 backdrop-blur-sm rounded-full p-2 border border-white/20">
+          <Orb
+            onTap={() => {}}
+            size={80}
+            egoState={orbState.color}
+            variant="auto"
+            afterglow={true}
+          />
+        </div>
       </div>
 
       {/* Navigation Footer */}

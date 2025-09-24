@@ -6,6 +6,8 @@ import { useAppStore, getEgoState } from '../../store';
 import { paymentService } from '../../lib/stripe';
 import PageShell from '../layout/PageShell';
 import SettingsModal from '../modals/SettingsModal';
+import Orb from '../Orb';
+import CSSOrb from '../ui/CSSOrb';
 
 interface ProfileScreenProps {
   selectedEgoState: string;
@@ -213,9 +215,36 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
             {/* Row 1: Ego State Showcase */}
             <div className="card-premium p-4 animate-stagger-in bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-purple-500/30 flex-shrink-0" style={{ animationDelay: '100ms' }}>
               <div className="flex items-center space-x-4">
+                {/* Living Orb */}
+                <div className="flex-shrink-0 hidden sm:flex sm:items-center sm:justify-center">
+                  <Orb
+                    onTap={() => {}}
+                    size={80}
+                    variant="auto"
+                    egoState={activeEgoState}
+                    afterglow={true}
+                    className="cursor-pointer hover:scale-110 transition-transform duration-300"
+                  />
+                </div>
+                
                 {/* Current State Info */}
                 <div className="flex-1 min-w-0 space-y-2">
-                  <div>
+                  <div className="flex items-center space-x-3 sm:hidden">
+                    <Orb
+                      onTap={() => {}}
+                      size={50}
+                      egoState={activeEgoState}
+                      variant="auto"
+                      afterglow={true}
+                      className="cursor-pointer hover:scale-110 transition-transform duration-300"
+                    />
+                    <div>
+                      <h2 className="text-white font-bold text-base">Current Archetype</h2>
+                      <h3 className="text-purple-300 font-semibold text-lg">{currentState.name}</h3>
+                    </div>
+                  </div>
+                  
+                  <div className="hidden sm:block">
                     <h2 className="text-white font-bold text-lg mb-1">Current Archetype</h2>
                     <h3 className="text-purple-300 font-semibold text-xl mb-2">{currentState.name}</h3>
                   </div>
