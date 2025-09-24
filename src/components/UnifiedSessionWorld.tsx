@@ -35,7 +35,7 @@ interface SessionState {
 
 export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfig }: UnifiedSessionWorldProps) {
   const { user, updateUser, addExperience, incrementStreak } = useGameState();
-  const { activeEgoState, showToast } = useAppStore();
+  const { activeEgoState, showToast, openEgoModal } = useAppStore();
   
   const [sessionState, setSessionState] = useState<SessionState>({
     depth: 1,
@@ -394,7 +394,8 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       <header className="absolute top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div
+            <button
+              onClick={openEgoModal}
               className="w-12 h-12 rounded-full border-2 flex items-center justify-center"
               style={{ 
                 background: `linear-gradient(135deg, ${egoColor.accent}60, ${egoColor.accent}40)`,
@@ -402,7 +403,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               }}
             >
               <span className="text-lg">{egoState.icon}</span>
-            </div>
+            </button>
             <div>
               <h2 className="text-white font-semibold text-lg">
                 {sessionConfig.customProtocol?.name || `${egoState.name} Session`}
@@ -443,8 +444,8 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       {/* Main Content - Perfect Flexbox Layout */}
       <div className="flex flex-col h-full pt-32 pb-4">
         
-        {/* Status Indicators - Positioned at top corners */}
-        <div className="absolute top-0 left-6 z-20 pt-4">
+        {/* Status Indicators - Positioned below header */}
+        <div className="absolute top-32 left-6 z-20 pt-4">
           <div className="flex flex-col items-start space-y-2">
             <span className="text-white/60 text-xs uppercase tracking-wide">Depth</span>
             <div className="flex items-center space-x-1">
@@ -464,7 +465,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           </div>
         </div>
         
-        <div className="absolute top-0 right-6 z-20 pt-4">
+        <div className="absolute top-32 right-6 z-20 pt-4">
           <div className="flex flex-col items-end space-y-2">
             <span className="text-white/60 text-xs uppercase tracking-wide">Phase</span>
             <span 
