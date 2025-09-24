@@ -476,7 +476,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
         {/* Status Section - Below Orb */}
         <div className="">
-          <div className="max-w-lg mx-auto">
+          <div className="max-w-lg">
             
             {/* Breathing Instructions - Above Chat */}
             <div className="text-center mb-20">
