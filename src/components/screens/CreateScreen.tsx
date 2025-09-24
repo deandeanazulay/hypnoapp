@@ -409,7 +409,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                     <Brain size={16} className="text-teal-400" />
                     <span>Protocol Preview</span>
                   </h3>
-function renderStepContent() {
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between bg-black/20 rounded-lg p-2 border border-white/10">
                       <span className="text-white/70">Name</span>
                       <span className="text-white font-medium">{protocol.name || 'Untitled'}</span>
@@ -426,6 +426,7 @@ function renderStepContent() {
                       <span className="text-white/70">Goals</span>
                       <span className="text-white font-medium">{protocol.goals.length > 0 ? protocol.goals.join(', ') : 'None selected'}</span>
                     </div>
+                  </div>
                   </div>
                 </div>
               )}
@@ -448,9 +449,8 @@ function renderStepContent() {
                   <li className="flex items-start space-x-2">
                     <span className="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0" />
                     <span>Your protocol will appear in the actions bar after creation</span>
-        <div className="space-y-4">
+                  </li>
                 </ul>
-            <h2 className="text-white text-lg font-light mb-2">Name Your Journey</h2>
             </div>
           </div>
         }
