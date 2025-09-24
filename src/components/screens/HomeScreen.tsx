@@ -93,8 +93,7 @@ export default function HomeScreen({
             size={400}
             variant="webgl"
           />
-        </div></parameter>
-        />
+        </div>
         </div>
       </div>
 
