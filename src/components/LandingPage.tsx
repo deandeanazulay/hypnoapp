@@ -253,7 +253,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
               <Orb
                 onTap={() => {}}
                 egoState="guardian"
-                size={window.innerWidth < 768 ? 360 : 480}
+                size={window.innerWidth < 768 ? 280 : 360}
                 variant="webgl"
                 afterglow={true}
               />
