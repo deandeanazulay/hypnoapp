@@ -134,7 +134,7 @@ interface FavoritesScreenProps {
 }
 
 export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProps) {
-  const { user } = useGameState();
+  const { user, isLoading } = useGameState();
   const { activeEgoState } = useAppStore();
   const [selectedSession, setSelectedSession] = useState<FavoriteSession | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('recent');
@@ -143,6 +143,42 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+
+  // Show loading state while user data is being fetched
+  if (isLoading || !user) {
+    return (
+      <PageShell
+        header={
+          <div className="bg-black/80 backdrop-blur-xl border-b border-white/10">
+            <div className="px-4 pt-2 pb-4">
+              <h1 className="text-white text-xl font-light mb-2 bg-gradient-to-r from-white to-rose-400 bg-clip-text text-transparent">Mind Vault</h1>
+              <p className="text-white/70 text-sm mb-4">Loading your transformative sessions...</p>
+              
+              <div className="grid grid-cols-3 gap-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 text-center animate-pulse">
+                    <div className="bg-white/20 h-6 w-8 rounded mx-auto mb-2"></div>
+                    <div className="bg-white/10 h-3 w-12 rounded mx-auto"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        }
+        body={
+          <div className="bg-black relative min-h-full flex items-center justify-center">
+            <div className="text-center p-8">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6 border border-rose-500/30 animate-pulse">
+                <Heart size={32} className="text-rose-400" />
+              </div>
+              <h3 className="text-white/80 text-xl font-medium mb-4">Loading Your Mind Vault...</h3>
+              <p className="text-white/50 mb-6 max-w-sm">Preparing your collection of transformative experiences</p>
+            </div>
+          </div>
+        }
+      />
+    );
+  }
 
   // Sort sessions
   const sortedFavorites = [...mockFavorites].sort((a, b) => {
@@ -461,7 +497,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
             <div className="text-teal-300/80 text-xs font-medium">Level</div>
           </div>
           <div className="bg-gradient-to-br from-orange-500/20 to-amber-500/20 backdrop-blur-md rounded-xl p-3 border border-orange-500/30 text-center hover:border-orange-400/50 transition-all duration-300 hover:scale-105 group">
-            <div className="text-orange-400 text-xl font-bold group-hover:scale-110 transition-transform">{user.sessionStreak}</div>
+            <div className="text-orange-400 text-xl font-bold group-hover:scale-110 transition-transform">{user.session_streak}</div>
             <div className="text-orange-300/80 text-xs font-medium">Streak</div>
           </div>
           <div className="bg-gradient-to-br from-rose-500/20 to-pink-500/20 backdrop-blur-md rounded-xl p-3 border border-rose-500/30 text-center hover:border-rose-400/50 transition-all duration-300 hover:scale-105 group">

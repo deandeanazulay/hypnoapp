@@ -30,15 +30,19 @@ export default function ActionsBar({
 
   return createPortal(
     <div className="actions-bar">
-      <GlassCard className="px-3 py-3">
-        <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-1">
+      <GlassCard className="px-3 py-3 overflow-hidden">
+        <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1" style={{ 
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch'
+        }}>
           {allActions.map((action) => {
             const IconComponent = action.icon;
             return (
               <button
                 key={action.id}
                 onClick={() => handleActionClick(action)}
-                className={`flex-shrink-0 w-[88px] bg-gradient-to-br ${action.color} border border-white/30 rounded-xl p-3 hover:scale-105 transition-all duration-200 shadow-lg ${
+                className={`flex-shrink-0 min-w-[88px] w-[88px] bg-gradient-to-br ${action.color} border border-white/30 rounded-xl p-3 hover:scale-105 transition-all duration-200 shadow-lg ${
                   selectedAction?.id === action.id ? 'ring-2 ring-white/30' : ''
                 }`}
               >
@@ -57,7 +61,7 @@ export default function ActionsBar({
           {/* Add New Action Button */}
           <button
             onClick={onNavigateToCreate}
-            className="flex-shrink-0 w-[88px] bg-white/10 border border-white/30 border-dashed rounded-xl p-3 hover:scale-105 transition-all duration-200 hover:border-white/50"
+            className="flex-shrink-0 min-w-[88px] w-[88px] bg-white/10 border border-white/30 border-dashed rounded-xl p-3 hover:scale-105 transition-all duration-200 hover:border-white/50"
           >
             <div className="flex flex-col items-center space-y-2">
               <div className="w-6 h-6 rounded-lg bg-black/30 border border-white/30 flex items-center justify-center">
