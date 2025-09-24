@@ -54,6 +54,8 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragRotation, setDragRotation] = React.useState(0);
   const [lastMousePos, setLastMousePos] = React.useState({ x: 0, y: 0 });
+  const [dragStartTime, setDragStartTime] = React.useState(0);
+  const [dragDistance, setDragDistance] = React.useState(0);
   
   // Alien state for fractal mathematics
   const alienStateRef = useRef({
@@ -127,28 +129,50 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const handlePointerDown = (e: PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      setIsDragging(true);
-      draggingRef.current = true;
+      console.log('[WEBGL-ORB] Pointer down');
       setLastMousePos({ x: e.clientX, y: e.clientY });
+      setDragStartTime(Date.now());
+      setDragDistance(0);
       canvas.style.cursor = 'grabbing';
     };
     
     const handlePointerMove = (e: PointerEvent) => {
-      if (!draggingRef.current) return;
-      
-      e.preventDefault();
+      const currentTime = Date.now();
+      const timeSinceStart = currentTime - dragStartTime;
       const deltaX = e.clientX - lastMousePos.x;
-      const rotationSpeed = 0.01; // Adjust sensitivity
-      const newRotation = dragRotationRef.current + deltaX * rotationSpeed;
+      const deltaY = e.clientY - lastMousePos.y;
+      const currentDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       
-      setDragRotation(newRotation);
-      dragRotationRef.current = newRotation;
+      // Update total drag distance
+      setDragDistance(prev => prev + currentDistance);
+      
+      // If we've moved enough distance or held for enough time, consider it a drag
+      if (dragDistance > 10 || timeSinceStart > 200) {
+        if (!isDragging) {
+          console.log('[WEBGL-ORB] Starting drag mode');
+          setIsDragging(true);
+          draggingRef.current = true;
+        }
+        
+        e.preventDefault();
+        const rotationSpeed = 0.02; // Increased sensitivity
+        const newRotation = dragRotationRef.current + deltaX * rotationSpeed;
+        
+        console.log('[WEBGL-ORB] Dragging, rotation:', newRotation);
+        setDragRotation(newRotation);
+        dragRotationRef.current = newRotation;
+      }
+      
       setLastMousePos({ x: e.clientX, y: e.clientY });
     };
     
     const handlePointerUp = (e: PointerEvent) => {
-      if (!draggingRef.current) {
-        // This was a tap, not a drag
+      const wasDragging = isDragging;
+      
+      console.log('[WEBGL-ORB] Pointer up, was dragging:', wasDragging);
+      
+      if (!wasDragging) {
+        // This was a tap
         e.preventDefault();
         e.stopPropagation();
         console.log('[WEBGL-ORB] Tap detected, calling handleTap');
@@ -157,6 +181,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       
       setIsDragging(false);
       draggingRef.current = false;
+      setDragDistance(0);
       canvas.style.cursor = 'pointer';
     };
     
@@ -459,14 +484,14 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     
     // Alien rotation - multi-axis, unpredictable
     const baseRotationSpeed = afterglow ? 0.4 : 0.25;
-    const alienRotationX = time * baseRotationSpeed + Math.sin(time * 0.3) * 0.1;
-    const alienRotationY = time * baseRotationSpeed * 0.7 + Math.cos(time * 0.4) * 0.15;
+    const alienRotationX = time * baseRotationSpeed + Math.sin(time * 0.3) * 0.1 + (isDragging ? 0 : 0);
+    const alienRotationY = (isDragging ? dragRotation : time * baseRotationSpeed * 0.7) + Math.cos(time * 0.4) * 0.15;
     const alienRotationZ = Math.sin(time * 0.2) * 0.05;
     
     if (orbMeshRef.current) {
       orbMeshRef.current.scale.setScalar(breathingScale);
-      orbMeshRef.current.rotation.x = alienRotationX + (isDragging ? 0 : 0);
-      orbMeshRef.current.rotation.y = alienRotationY + dragRotation; 
+      orbMeshRef.current.rotation.x = alienRotationX;
+      orbMeshRef.current.rotation.y = alienRotationY;
       orbMeshRef.current.rotation.z = alienRotationZ;
       
       // Alien organic movement
@@ -474,6 +499,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         orbMeshRef.current.position.x = Math.sin(time * 0.3) * 0.5;
         orbMeshRef.current.position.y = Math.cos(time * 0.4) * 0.3;
         orbMeshRef.current.position.z = Math.sin(time * 0.2) * 0.2;
+      } else {
+        // Keep position stable during drag
+        orbMeshRef.current.position.x = 0;
+        orbMeshRef.current.position.y = 0;
+        orbMeshRef.current.position.z = 0;
       }
       
       // Update material opacity for alien intensity

@@ -30,6 +30,8 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragRotation, setDragRotation] = React.useState(0);
   const [lastMousePos, setLastMousePos] = React.useState({ x: 0, y: 0 });
+  const [dragStartTime, setDragStartTime] = React.useState(0);
+  const [dragDistance, setDragDistance] = React.useState(0);
 
   useImperativeHandle(ref, () => ({
     updateState: () => {},
@@ -40,31 +42,56 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   const egoColor = getEgoColor(egoState);
   
   const handlePointerDown = (e: React.PointerEvent) => {
+    console.log('[CSS-ORB] Pointer down');
     setIsPressed(true);
-    setIsDragging(true);
     setLastMousePos({ x: e.clientX, y: e.clientY });
+    setDragStartTime(Date.now());
+    setDragDistance(0);
+    e.currentTarget.style.cursor = 'grabbing';
   };
   
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
-    
+    const currentTime = Date.now();
+    const timeSinceStart = currentTime - dragStartTime;
     const deltaX = e.clientX - lastMousePos.x;
-    const rotationSpeed = 0.5; // Degrees per pixel
-    const newRotation = dragRotation + deltaX * rotationSpeed;
+    const deltaY = e.clientY - lastMousePos.y;
+    const currentDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     
-    setDragRotation(newRotation);
+    // Update total drag distance
+    setDragDistance(prev => prev + currentDistance);
+    
+    // If we've moved enough distance or held for enough time, consider it a drag
+    if (dragDistance > 10 || timeSinceStart > 200) {
+      if (!isDragging) {
+        console.log('[CSS-ORB] Starting drag mode');
+        setIsDragging(true);
+      }
+      
+      const rotationSpeed = 2; // Degrees per pixel - increased sensitivity
+      const newRotation = dragRotation + deltaX * rotationSpeed;
+      
+      console.log('[CSS-ORB] Dragging, rotation:', newRotation);
+      setDragRotation(newRotation);
+    }
+    
     setLastMousePos({ x: e.clientX, y: e.clientY });
   };
   
   const handlePointerUp = (e: React.PointerEvent) => {
-    if (!isDragging) {
-      // This was a tap, not a drag
+    const wasDragging = isDragging;
+    
+    console.log('[CSS-ORB] Pointer up, was dragging:', wasDragging);
+    
+    if (!wasDragging) {
+      // This was a tap
       console.log('[CSS-ORB] Tap detected, calling onTap');
       onTap();
     }
     
     setIsPressed(false);
     setIsDragging(false);
+    setDragDistance(0);
+    e.currentTarget.style.cursor = 'grab';
   };
   
   const handlePointerEnter = () => setIsHovering(true);
@@ -103,7 +130,7 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
         style={{ 
           width: `${orbSize}px`, 
           height: `${orbSize}px`,
-          transform: `${isPressed ? 'scale(0.95)' : isHovering ? 'scale(1.05)' : 'scale(1.0)'} rotate(${dragRotation}deg)`,
+          transform: `${isPressed && !isDragging ? 'scale(0.95)' : isHovering ? 'scale(1.05)' : 'scale(1.0)'} rotateY(${dragRotation}deg)`,
           cursor: isDragging ? 'grabbing' : 'grab'
         }}
         onPointerDown={handlePointerDown}
@@ -124,7 +151,8 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
             boxShadow: afterglow 
               ? `0 0 ${orbSize * 0.3}px ${egoColor.accent}70, 0 0 ${orbSize * 0.6}px ${egoColor.accent}40, inset 0 0 ${orbSize * 0.1}px rgba(255,255,255,0.3)`
               : `0 0 ${orbSize * 0.2}px ${egoColor.accent}60, inset 0 0 ${orbSize * 0.05}px rgba(255,255,255,0.2)`,
-            filter: isHovering ? 'brightness(1.1)' : 'none'
+            filter: isHovering ? 'brightness(1.1)' : 'none',
+            transition: isDragging ? 'none' : 'transform 0.3s ease'
           }}
         >
           {/* Inner Glow */}
