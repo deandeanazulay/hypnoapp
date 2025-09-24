@@ -280,7 +280,7 @@ export default function App() {
           <GlobalHUD />
           
           {/* Main Body Content - Flex grow */}
-          <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content" style={{ paddingTop: '48px' }}>
+          <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content" style={{ paddingTop: '40px' }}>
             {/* Current Tab Content */}
             <div className="relative z-10 h-full">
               {renderCurrentTab()}
