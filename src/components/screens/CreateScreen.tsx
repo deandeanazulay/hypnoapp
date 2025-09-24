@@ -83,7 +83,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-6">
+          <div className="">
             <div className="text-center">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-teal-400 flex items-center justify-center mx-auto ">
                 <Wand2 size={24} className="text-black" />
