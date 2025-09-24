@@ -25,7 +25,7 @@ export default function PageShell({ header, body, footer, className = '' }: Page
         </div>
       )}
       
-      <div className="flex-1 min-h-0"> {/* Removed overflow-hidden here, let parent handle */}
+      <div className="flex-1 min-h-0">
         {body}
       </div>
       

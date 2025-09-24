@@ -54,7 +54,7 @@ export default function HomeScreen({
         <div className="absolute inset-0 bg-black" />
         
         {/* Static Cosmic Background */}
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0">
           {/* Static gradient background */}
           <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/10 to-teal-950/10" />
           
@@ -79,7 +79,7 @@ export default function HomeScreen({
         
         {/* Simplified Ego States Row */}
         <div className="flex-shrink-0 py-1">
-          <div className="relative overflow-hidden w-full flex justify-center items-center py-2">
+          <div className="relative w-full flex justify-center items-center py-2">
             <div className="flex items-center space-x-2 px-4 animate-scroll-x">
               {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => {
                 const isSelected = activeEgoState === state.id;

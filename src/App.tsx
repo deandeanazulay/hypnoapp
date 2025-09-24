@@ -212,12 +212,12 @@ function App() {
         </div>
         
         {/* Main Body Content - Flex grow */}
-        <div className="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden app-content" style={{ paddingBottom: 'var(--total-nav-height)' }}>
+        <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content" style={{ paddingBottom: 'var(--total-nav-height)' }}>
           {/* Background Protection */}
           <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900/50 to-black pointer-events-none" />
           
           {/* Tab Content */}
-          <div className="relative z-10 h-full overflow-hidden">
+          <div className="relative z-10 h-full">
             {renderCurrentTab()}
           </div>
         </div>
