@@ -530,7 +530,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         {/* 3. Status Indicators - Glass card with proper spacing */}
         {/* 3. Chat Interface - Fixed height, proper container */}
         <div className="flex-shrink-0">
-          <div className="px-6 max-h-64 overflow-y-auto mb-4">
+          <div className="px-6 max-h-64 overflow-y-auto ">
           
           {/* Latest AI Message */}
           {conversation.length > 0 && (
