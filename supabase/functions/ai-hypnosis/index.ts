@@ -330,6 +330,7 @@ function getFallbackResponse(requestType: string): string {
   }
   
   return fallbacks[requestType] || "Continue breathing and trust the process. You're doing beautifully."
+}
 
 function getContextualFallback(context: SessionContext, userMessage: string, requestType: string): string {
   const { egoState, phase, depth } = context
