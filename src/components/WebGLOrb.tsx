@@ -167,9 +167,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     };
     
     const handlePointerUp = (e: PointerEvent) => {
-      const wasDragging = isDragging;
+      const currentTime = Date.now();
+      const totalTime = currentTime - dragStartTime;
+      const wasDragging = isDragging || dragDistance > 5 || totalTime > 300;
       
-      console.log('[WEBGL-ORB] Pointer up, was dragging:', wasDragging);
+      console.log('[WEBGL-ORB] Pointer up, was dragging:', wasDragging, 'distance:', dragDistance, 'time:', totalTime);
       
       if (!wasDragging) {
         // This was a tap
@@ -177,10 +179,13 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         e.stopPropagation();
         console.log('[WEBGL-ORB] Tap detected, calling handleTap');
         handleTap();
+      } else {
+        console.log('[WEBGL-ORB] Drag detected, NOT calling handleTap');
       }
       
       setIsDragging(false);
       draggingRef.current = false;
+      setDragDistance(0);
       setDragDistance(0);
       canvas.style.cursor = 'pointer';
     };

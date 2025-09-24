@@ -78,14 +78,20 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   };
   
   const handlePointerUp = (e: React.PointerEvent) => {
-    const wasDragging = isDragging;
+    const currentTime = Date.now();
+    const totalTime = currentTime - dragStartTime;
+    const wasDragging = isDragging || dragDistance > 5 || totalTime > 300;
     
-    console.log('[CSS-ORB] Pointer up, was dragging:', wasDragging);
+    console.log('[CSS-ORB] Pointer up, was dragging:', wasDragging, 'distance:', dragDistance, 'time:', totalTime);
     
     if (!wasDragging) {
       // This was a tap
+      e.preventDefault();
+      e.stopPropagation();
       console.log('[CSS-ORB] Tap detected, calling onTap');
       onTap();
+    } else {
+      console.log('[CSS-ORB] Drag detected, NOT calling onTap');
     }
     
     setIsPressed(false);
