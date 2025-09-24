@@ -238,7 +238,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
       </header>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen md:min-h-screen flex items-center justify-center overflow-hidden pt-16 md:pt-20">
+      <section className="relative min-h-screen md:min-h-screen flex items-center justify-center overflow-hidden pt-20 md:pt-24">
         {/* Cosmic Background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/30 to-teal-950/30" />
@@ -246,14 +246,14 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         </div>
 
-        <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
+        <div className="relative z-10 max-w-6xl mx-auto px-4 text-center">
           {/* Orb */}
-          <div className={`mb-6 md:mb-12 transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
+          <div className={`mb-4 md:mb-6 transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
             <div className="flex justify-center">
               <Orb
                 onTap={() => {}}
                 egoState="guardian"
-                size={window.innerWidth < 768 ? 280 : 360}
+                size={window.innerWidth < 768 ? 240 : 280}
                 variant="webgl"
                 afterglow={true}
               />
@@ -261,42 +261,42 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
           </div>
 
           {/* Hero Text */}
-          <div className={`transition-all duration-1000 delay-300 mb-6 md:mb-0 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-            <h1 className="text-4xl md:text-7xl font-light mb-3 md:mb-6 bg-gradient-to-r from-white via-teal-400 to-purple-400 bg-clip-text text-transparent leading-tight">
+          <div className={`transition-all duration-1000 delay-300 mb-4 md:mb-6 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+            <h1 className="text-4xl md:text-6xl font-light mb-2 md:mb-4 bg-gradient-to-r from-white via-teal-400 to-purple-400 bg-clip-text text-transparent leading-tight">
               Libero
             </h1>
-            <p className="text-lg md:text-2xl font-light text-white/80 mb-3 md:mb-4">
+            <p className="text-lg md:text-xl font-light text-white/80 mb-2 md:mb-3">
               The Hypnotist That Frees Minds
             </p>
-            <p className="text-base md:text-lg text-white/60 mb-6 md:mb-12 max-w-2xl mx-auto leading-relaxed px-4">
+            <p className="text-sm md:text-base text-white/60 mb-4 md:mb-6 max-w-xl mx-auto leading-relaxed px-2">
               Transform limiting beliefs through archetypal hypnosis. Channel ancient wisdom. Unlock your authentic power.
             </p>
           </div>
 
           {/* Hero CTAs - More Prominent */}
-          <div className={`flex flex-col sm:flex-row gap-4 md:gap-6 justify-center mb-8 md:mb-16 transition-all duration-1000 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+          <div className={`flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mb-6 md:mb-8 transition-all duration-1000 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
             <button
               onClick={onEnterApp}
-              className="group px-8 md:px-10 py-3 md:py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-2xl text-black font-bold text-base md:text-lg hover:scale-105 transition-all duration-300 shadow-2xl shadow-teal-400/25 flex items-center justify-center space-x-3"
+              className="group px-6 md:px-8 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-bold text-sm md:text-base hover:scale-105 transition-all duration-300 shadow-2xl shadow-teal-400/25 flex items-center justify-center space-x-2"
             >
-              <Play size={20} className="md:w-6 md:h-6" />
+              <Play size={16} className="md:w-5 md:h-5" />
               <span>Experience Free</span>
-              <ChevronRight size={20} className="md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight size={16} className="md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
               onClick={onShowAuth}
-              className="px-8 md:px-10 py-3 md:py-4 bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-2xl text-white font-bold text-base md:text-lg hover:bg-white/20 hover:scale-105 transition-all duration-300"
+              className="px-6 md:px-8 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white font-bold text-sm md:text-base hover:bg-white/20 hover:scale-105 transition-all duration-300"
             >
               Unlock Everything
             </button>
           </div>
 
           {/* Social Proof */}
-          <div className={`transition-all duration-1000 delay-700 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+          <div className={`transition-all duration-1000 delay-700 mb-4 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 text-center">
               {stats.map((stat, index) => (
                 <div key={index} className="opacity-80 hover:opacity-100 transition-opacity">
-                  <div className="text-xl md:text-3xl font-bold text-teal-400 mb-1 md:mb-2">{stat.number}</div>
+                  <div className="text-lg md:text-2xl font-bold text-teal-400 mb-1">{stat.number}</div>
                   <div className="text-white/60 text-xs md:text-sm">{stat.label}</div>
                 </div>
               ))}
