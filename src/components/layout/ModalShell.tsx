@@ -43,7 +43,9 @@ export default function ModalShell({
         onClick={onClose} 
       />
       
-      <div className={`relative bg-black/95 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl shadow-purple-500/20 max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col ${className}`}>
+      <div className={`relative bg-black/95 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl shadow-purple-500/20 max-w-4xl w-full mx-4 flex flex-col ${className}`}
+        style={{ maxHeight: '90vh' }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10 flex-shrink-0">
           <h2 className="text-white text-2xl font-light">{title}</h2>
@@ -55,8 +57,8 @@ export default function ModalShell({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 min-h-0 overflow-hidden p-6">
+        {/* Content - Scrollable */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-6">
           {children}
         </div>
 

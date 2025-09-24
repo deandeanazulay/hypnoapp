@@ -523,6 +523,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
         isOpen={showFilters}
         onClose={() => setShowFilters(false)}
         title="Filter Protocols"
+        className="max-w-lg"
         footer={
           <div className="flex space-x-3">
             <button
@@ -540,7 +541,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
           </div>
         }
       >
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto">
           {/* Duration */}
           <div>
             <h3 className="text-white font-medium mb-3">Duration</h3>
@@ -629,9 +630,9 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
         isOpen={showGuide}
         onClose={() => setShowGuide(false)}
         title="Hypnosis Protocol Guide"
-        className="max-w-2xl"
+        className="max-w-2xl overflow-y-auto"
       >
-        <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="space-y-4 overflow-y-auto">
           {/* How to Pick */}
           <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-4 border border-teal-500/20">
             <button
@@ -753,6 +754,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
           isOpen={true}
           onClose={() => setSelectedProtocol(null)}
           title={selectedProtocol.name}
+          className="max-w-lg"
           footer={
             <button
               onClick={() => {
@@ -765,7 +767,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
             </button>
           }
         >
-          <div className="space-y-6">
+          <div className="space-y-6 overflow-y-auto">
             <div className={`bg-gradient-to-br ${getTypeColor(selectedProtocol.type)} rounded-xl p-6 border border-white/30`}>
               <div className="flex items-center justify-between mb-4">
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(selectedProtocol.difficulty)}`}>

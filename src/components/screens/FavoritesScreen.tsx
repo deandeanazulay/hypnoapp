@@ -681,7 +681,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
         isOpen={!!selectedSession}
         onClose={() => setSelectedSession(null)}
         title={selectedSession?.name || ''}
-        className="max-w-lg"
+        className="max-w-lg overflow-y-auto"
         footer={
           <div className="flex space-x-3">
             <button className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium rounded-xl transition-all duration-300 hover:scale-105">
@@ -702,7 +702,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
         }
       >
         {selectedSession && (
-          <div className="space-y-6">
+          <div className="space-y-6 overflow-y-auto">
             {/* Session Overview */}
             <div className={`bg-gradient-to-br ${getEgoStateColor(selectedSession.egoState)} rounded-2xl p-6 border border-white/30 relative overflow-hidden`}>
               <div className="flex items-center space-x-4 mb-4">

@@ -195,11 +195,11 @@ export default function SettingsModal({ isOpen, onClose, selectedEgoState, onEgo
         isOpen={isOpen}
         onClose={onClose}
         title="Settings"
-        className={isMobile ? "mx-2 my-4 max-h-[95vh]" : "md:max-w-4xl"}
+        className={isMobile ? "mx-2 my-4" : "md:max-w-4xl"}
       >
         {isMobile ? (
           /* Mobile Layout - Full Screen Stacked */
-          <div className="h-full flex flex-col">
+          <div className="flex flex-col">
             {/* Mobile Tab Navigation */}
             <div className="flex-shrink-0 mb-6">
               <div className="grid grid-cols-3 gap-2">
@@ -225,13 +225,13 @@ export default function SettingsModal({ isOpen, onClose, selectedEgoState, onEgo
             </div>
 
             {/* Mobile Content */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="overflow-y-auto">
               {renderTabContent()}
             </div>
           </div>
         ) : (
           /* Desktop Layout - Sidebar */
-          <div className="flex h-full">
+          <div className="flex min-h-[400px]">
             {/* Sidebar */}
             <div className="w-1/3 pr-6 border-r border-white/10">
               <div className="space-y-2">
@@ -256,7 +256,7 @@ export default function SettingsModal({ isOpen, onClose, selectedEgoState, onEgo
             </div>
 
             {/* Content */}
-            <div className="flex-1 pl-6">
+            <div className="flex-1 pl-6 overflow-y-auto">
               {renderTabContent()}
             </div>
           </div>

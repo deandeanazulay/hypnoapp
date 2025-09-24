@@ -39,9 +39,9 @@ export default function EgoStatesModal() {
       isOpen={modals.egoStates}
       onClose={() => closeModal('egoStates')}
       title="Choose how Libero shows up for you"
-      className="max-w-4xl"
+      className="max-w-4xl overflow-y-auto"
     >
-      <div className="space-y-6">
+      <div className="space-y-6 overflow-y-auto">
         {/* Usage Insights */}
         {user && mostUsedState && (
           <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-4 border border-teal-500/20">
@@ -57,7 +57,7 @@ export default function EgoStatesModal() {
         )}
 
         {/* Ego States Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pb-4">
           {EGO_STATES.map((state) => {
             const isSelected = selectedState === state.id;
             const isActive = activeEgoState === state.id;
