@@ -55,6 +55,10 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const [textInput, setTextInput] = useState('');
   const [conversation, setConversation] = useState<Array<{role: 'ai' | 'user', content: string, timestamp: number}>>([]);
   const [isThinking, setIsThinking] = useState(false);
+  const [chatHeight, setChatHeight] = useState(80); // Default chat height in pixels
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartY, setDragStartY] = useState(0);
+  const [dragStartHeight, setDragStartHeight] = useState(0);
 
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
@@ -335,6 +339,48 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     }
   };
 
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setDragStartY(clientY);
+    setDragStartHeight(chatHeight);
+    
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleDragMove = (e: MouseEvent | TouchEvent) => {
+    if (!isDragging) return;
+    
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const deltaY = dragStartY - clientY; // Positive when dragging up
+    const newHeight = Math.max(80, Math.min(400, dragStartHeight + deltaY));
+    
+    setChatHeight(newHeight);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    document.body.style.userSelect = '';
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleDragMove);
+      document.addEventListener('mouseup', handleDragEnd);
+      document.addEventListener('touchmove', handleDragMove);
+      document.addEventListener('touchend', handleDragEnd);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleDragMove);
+        document.removeEventListener('mouseup', handleDragEnd);
+        document.removeEventListener('touchmove', handleDragMove);
+        document.removeEventListener('touchend', handleDragEnd);
+      };
+    }
+  }, [isDragging, dragStartY, dragStartHeight]);
+
   const handleSessionComplete = () => {
     if (user) {
       addExperience(20);
@@ -480,16 +526,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           </div>
         </div>
         
-        {/* Breathing Instruction - Centered between indicators */}
-        <div className="absolute top-32 left-1/2 transform -translate-x-1/2 z-20">
-          <div className="text-center">
-            <span className="text-white/60 text-xs uppercase tracking-wide mb-2 block">Breathing</span>
-            <div className="text-white/90 text-xl font-light">
-              {getBreathingInstruction()}
-            </div>
-          </div>
-        </div>
-        
         <div className="absolute top-24 right-6 z-20 pt-4">
           <div className="flex flex-col items-end space-y-2">
             <span className="text-white/60 text-xs uppercase tracking-wide">Phase</span>
@@ -543,9 +579,38 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
         
         {/* 2. Breathing Instructions - Clean centered section */}
+        <div className="flex-shrink-0 text-center py-4 space-y-3">
+          {/* Breathing Instructions */}
+          <div className="space-y-1">
+            <div className="text-white/90 text-xl font-light">
+              {getBreathingInstruction()}
+            </div>
+          </div>
+        </div>
+        
+        {/* 3. Status Indicators - Glass card with proper spacing */}
         {/* 3. Chat Interface - Fixed height, proper container */}
         <div className="flex-shrink-0">
-          <div ref={chatContainerRef} className="px-6 max-h-20 overflow-y-auto">
+          {/* Drag Handle */}
+          <div 
+            className={`px-6 py-2 cursor-ns-resize hover:bg-white/5 transition-colors select-none ${
+              isDragging ? 'bg-white/10' : ''
+            }`}
+            onMouseDown={handleDragStart}
+            onTouchStart={handleDragStart}
+          >
+            <div className="flex justify-center">
+              <div className={`w-12 h-1 rounded-full transition-all duration-200 ${
+                isDragging ? 'bg-teal-400 shadow-lg' : 'bg-white/40 hover:bg-white/60'
+              }`} />
+            </div>
+          </div>
+          
+          <div 
+            ref={chatContainerRef} 
+            className="px-6 overflow-y-auto transition-all duration-200"
+            style={{ height: `${chatHeight}px` }}
+          >
           
           {/* Latest AI Message */}
           {conversation.length > 0 && (
