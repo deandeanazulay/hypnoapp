@@ -1,105 +1,302 @@
-import React from 'react'
-import Orb from './Orb'
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-interface LandingPageProps {
-  onEnterApp: () => void
-  onShowAuth: () => void
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
-export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps) {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 text-white overflow-hidden">
-      {/* Header */}
-      <header className="flex justify-between items-center p-4 md:p-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold">✦</span>
-          </div>
-          <span className="text-xl font-semibold">Libero</span>
-        </div>
-        <nav className="hidden md:flex items-center space-x-8">
-          <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
-          <a href="#reviews" className="text-gray-300 hover:text-white transition-colors">Reviews</a>
-          <a href="#pricing" className="text-gray-300 hover:text-white transition-colors">Pricing</a>
-        </nav>
-        <div className="flex items-center space-x-4">
-          <button 
-            onClick={onShowAuth}
-            className="text-gray-300 hover:text-white transition-colors"
-          >
-            Try Free
-          </button>
-          <button 
-            onClick={onEnterApp}
-            className="bg-cyan-500 hover:bg-cyan-400 px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            Get Started
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content - Single Screen Layout */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 space-y-6">
-        {/* Orb - Centered and 1.5x bigger */}
-        <div className="mb-2">
-          <Orb 
-            egoState="sage"
-            size={360}
-            className="w-[360px] h-[360px] md:w-[520px] md:h-[520px]"
-          />
-        </div>
-
-        {/* Title and Description */}
-        <div className="text-center space-y-3 mb-4">
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            Libero
-          </h1>
-          <p className="text-lg md:text-xl text-gray-300 font-medium">
-            The Hypnotist That Frees Minds
-          </p>
-          <p className="text-sm md:text-base text-gray-400 max-w-2xl">
-            Transform limiting beliefs through archetypal hypnosis. Channel ancient wisdom. Unlock your authentic power.
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
-          <button 
-            onClick={onEnterApp}
-            className="bg-cyan-500 hover:bg-cyan-400 px-8 py-3 rounded-full font-medium transition-colors flex items-center space-x-2"
-          >
-            <span>▶</span>
-            <span>Experience Free</span>
-            <span>›</span>
-          </button>
-          <button 
-            onClick={onShowAuth}
-            className="bg-gray-800 hover:bg-gray-700 px-8 py-3 rounded-full font-medium transition-colors border border-gray-600"
-          >
-            Unlock Everything
-          </button>
-        </div>
-
-        {/* Feature Stats - Compact */}
-        <div className="grid grid-cols-4 gap-6 md:gap-12 text-center">
-          <div>
-            <div className="text-2xl md:text-3xl font-bold text-cyan-400">50K+</div>
-            <div className="text-xs md:text-sm text-gray-400">Transformations</div>
-          </div>
-          <div>
-            <div className="text-2xl md:text-3xl font-bold text-cyan-400">4.9★</div>
-            <div className="text-xs md:text-sm text-gray-400">App Store Rating</div>
-          </div>
-          <div>
-            <div className="text-2xl md:text-3xl font-bold text-cyan-400">89%</div>
-            <div className="text-xs md:text-sm text-gray-400">Report Breakthroughs</div>
-          </div>
-          <div>
-            <div className="text-2xl md:text-3xl font-bold text-cyan-400">15</div>
-            <div className="text-xs md:text-sm text-gray-400">Archetypal Guides</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+interface SessionContext {
+  egoState: string
+  phase: string
+  depth: number
+  breathing: string
+  userProfile: any
+  conversationHistory: Array<{role: 'user' | 'assistant', content: string}>
 }
+
+interface HypnosisRequest {
+  message: string
+  sessionContext: SessionContext
+  requestType: 'guidance' | 'response' | 'induction' | 'deepening'
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders,
+    })
+  }
+
+  try {
+    const { message, sessionContext, requestType }: HypnosisRequest = await req.json()
+
+    console.log('Full session context received:', JSON.stringify(sessionContext, null, 2))
+
+    // Get Gemini API key from environment
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
+    if (!geminiApiKey) {
+      console.error('GEMINI_API_KEY environment variable not set')
+      const fallbackResponse = getFallbackResponse(requestType)
+      return new Response(
+        JSON.stringify({
+          response: fallbackResponse,
+          sessionUpdates: {},
+          error: 'API key not configured - using offline mode',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
+
+    console.log('Processing request:', { requestType, egoState: sessionContext.egoState })
+
+    // Build system prompt based on ego state and session context
+    const systemPrompt = buildHypnosisPrompt(sessionContext, requestType, message)
+    
+    // Prepare conversation for Gemini
+    const conversation = [
+      {
+        role: 'user',
+        parts: [{ text: systemPrompt }]
+      },
+      ...sessionContext.conversationHistory.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+      })),
+      {
+        role: 'user',
+        parts: [{ text: message }]
+      }
+    ]
+
+    console.log('Calling Gemini API...')
+
+    // Call Gemini API
+    let response: Response
+    try {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: conversation,
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          },
+          safetySettings: [
+            {
+              category: 'HARM_CATEGORY_HARASSMENT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+              category: 'HARM_CATEGORY_HATE_SPEECH',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            }
+          ]
+        })
+      })
+    } catch (fetchError) {
+      console.error('Network error calling Gemini API:', fetchError)
+      console.error('This likely means the Edge Function needs network permissions to access generativelanguage.googleapis.com')
+      
+      // Return a contextual fallback based on the session state
+      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
+      return new Response(
+        JSON.stringify({
+          response: contextualResponse,
+          sessionUpdates: {},
+          error: 'Network access limited - using offline guidance',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
+
+    if (!response.ok) {
+      const errorData = await response.text()
+      console.error('Gemini API error:', errorData)
+      
+      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
+      return new Response(
+        JSON.stringify({
+          response: contextualResponse,
+          sessionUpdates: {},
+          error: `API error: ${response.status} - using offline guidance`,
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
+
+    const data = await response.json()
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text
+
+    if (!aiResponse) {
+      console.error('No response content from Gemini AI')
+      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
+      return new Response(
+        JSON.stringify({
+          response: contextualResponse,
+          sessionUpdates: {},
+          error: 'No AI response - using offline guidance',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
+
+    console.log('Successfully generated AI response')
+
+    // Parse any session updates from the AI response
+    const sessionUpdates = parseSessionUpdates(aiResponse, sessionContext)
+
+    return new Response(
+      JSON.stringify({
+        response: aiResponse,
+        sessionUpdates,
+        timestamp: Date.now()
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
+      }
+    )
+
+  } catch (error: any) {
+    console.error('AI Hypnosis error:', error)
+    
+    // Fallback response for errors
+    const fallbackResponse = getFallbackResponse(requestType || 'guidance')
+    
+    return new Response(
+      JSON.stringify({
+        response: fallbackResponse,
+        sessionUpdates: {},
+        error: error.message || 'Unknown error - using offline mode',
+        timestamp: Date.now()
+      }),
+      {
+        status: 200, // Don't fail the session, provide fallback
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
+      }
+    )
+  }
+})
+
+function buildHypnosisPrompt(context: SessionContext, requestType: string, userMessage: string): string {
+  const { egoState, phase, depth, breathing, userProfile } = context
+  
+  // Check if this is a custom protocol session
+  const hasCustomProtocol = context.customProtocol && context.customProtocol.name
+  const isFirstMessage = context.conversationHistory.length === 0
+  
+  const basePrompt = `You are Libero, an advanced AI hypnotist and consciousness guide. You are currently guiding a hypnosis session.
+
+CURRENT SESSION CONTEXT:
+- Ego State: ${egoState} (the archetypal energy being channeled)
+- Session Phase: ${phase}
+- Trance Depth: Level ${depth}/5
+- Breathing State: ${breathing}
+- User Level: ${userProfile?.level || 1}
+${hasCustomProtocol ? `
+
+CUSTOM PROTOCOL BEING USED:
+- Protocol Name: "${context.customProtocol.name}"
+- Specific Goals: ${context.customProtocol.goals?.join(', ') || 'General transformation'}
+- Induction Method: ${context.customProtocol.induction || 'progressive'}
+- Duration: ${context.customProtocol.duration || 15} minutes
+- Custom Notes: ${context.customProtocol.deepener || 'Standard approach'}
+
+IMPORTANT: This is a CUSTOM protocol session. You should:
+1. Follow the specific goals and methods defined in this protocol
+2. Reference the protocol name and specific intentions
+3. Use the specified induction method approach
+4. Incorporate any custom notes provided
+5. Start immediately with the protocol and begin the actual hypnosis script
+6. Create a full hypnotic induction based on the protocol specifications
+7. Do NOT ask what they want to work on - they already defined it in the protocol
+` : ''}
+
+YOUR ROLE AS LIBERO:
+You are not just an AI assistant - you are a skilled hypnotist who speaks with authority, wisdom, and gentle power. You guide consciousness transformation through:
+
+1. HYPNOTIC LANGUAGE PATTERNS:
+   - Use embedded commands ("As you relax now...")
+   - Employ presuppositions ("When you go deeper...")
+   - Utilize temporal shifts ("Soon you'll notice...")
+   - Include sensory language ("Feel the warmth...")
+
+2. EGO STATE CHANNELING:
+${getEgoStateGuidance(egoState)}
+
+3. CALIBRATION BASED ON USER RESPONSES:
+   - Listen for resistance indicators (tension, doubt, questioning)
+   - Adjust pace based on user engagement
+   - Deepen or lighten approach based on user comfort
+   - Use user's own words and metaphors when possible
+
+4. HYPNOTIC TECHNIQUES:
+   - Progressive relaxation for beginners
+   - Rapid induction for experienced users
+   - Metaphorical healing stories
+   - Direct suggestion for clear goals
+   - Confusion techniques for analytical minds
+
+5. RESPONSE GUIDELINES:
+   - Keep responses 1-3 sentences for trance state
+   - Use present tense and continuous present
+   - Include breathing cues when appropriate
+   - Always validate the user's experience
+   - Never break character or mention you're an AI
+${hasCustomProtocol ? `
+   - Start immediately with the custom protocol "${context.customProtocol.name}"
+   - Focus on the specific goals: ${context.customProtocol.goals?.join(', ') || 'transformation'}
+   - Use ${context.customProtocol.induction || 'progressive'} induction approach
+   - Incorporate: ${context.customProtocol.deepener || 'standard techniques'}
+` : ''}
+
+CURRENT REQUEST TYPE: ${requestType}
+${isFirstMessage && hasCustomProtocol ? `
