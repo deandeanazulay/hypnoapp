@@ -1,498 +1,308 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Play, Pause, SkipForward, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
-import Orb from './Orb';
-import AIVoiceSystem from './AIVoiceSystem';
-import { useGameState } from './GameStateManager';
-import { getEgoState } from '../store';
-import { getEgoColor } from '../config/theme';
-import { useAppStore } from '../store';
+import { Mic, MicOff, Volume2, VolumeX, MessageCircle, Brain, Pause, Play } from 'lucide-react';
 
-interface SessionConfig {
-  egoState: string;
-  action?: any;
-  goal?: any;
-  type: 'unified' | 'protocol' | 'favorite';
-  protocol?: any;
-  session?: any;
-}
-
-interface UnifiedSessionWorldProps {
-  onComplete: () => void;
-  onCancel: () => void;
-  sessionConfig: SessionConfig;
+interface AIVoiceSystemProps {
+  isActive: boolean;
+  sessionType: 'unified' | 'integration';
+  onStateChange: (state: any) => void;
 }
 
 interface SessionState {
-  phase: 'preparation' | 'induction' | 'deepening' | 'exploration' | 'transformation' | 'integration' | 'completion';
-  timeElapsed: number;
-  totalDuration: number;
   depth: number;
-  breathing: 'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale';
-  isActive: boolean;
-  isPaused: boolean;
-  voiceEnabled: boolean;
-  micEnabled: boolean;
+  breathing: 'inhale' | 'hold' | 'exhale' | 'rest';
+  phase: string;
+  userResponse: string;
+  aiResponse: string;
+  isListening: boolean;
 }
 
-export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfig }: UnifiedSessionWorldProps) {
-  const { completeSession } = useGameState();
-  const { showToast } = useAppStore();
-  const orbRef = useRef<any>(null);
-  
+export default function AIVoiceSystem({ isActive, sessionType, onStateChange }: AIVoiceSystemProps) {
   const [sessionState, setSessionState] = useState<SessionState>({
-    phase: 'preparation',
-    timeElapsed: 0,
-    totalDuration: sessionConfig.action?.duration || 900, // 15 minutes default
     depth: 1,
     breathing: 'rest',
-    isActive: false,
-    isPaused: false,
-    voiceEnabled: true,
-    micEnabled: true
+    phase: 'preparation',
+    userResponse: '',
+    aiResponse: '',
+    isListening: false,
+    isSpeaking: false
   });
 
-  // Get ego state info
-  const egoState = getEgoState(sessionConfig.egoState as any);
-  const egoColorInfo = getEgoColor(sessionConfig.egoState);
-  const selectedAction = sessionConfig.action;
-  const selectedGoal = sessionConfig.goal;
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
+  const [conversation, setConversation] = useState<Array<{role: 'ai' | 'user', content: string, timestamp: number}>>([]);
+  
+  const recognitionRef = useRef<any>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Timer for session progression
+  // Initialize speech systems
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (sessionState.isActive && !sessionState.isPaused) {
-      interval = setInterval(() => {
-        setSessionState(prev => {
-          const newTimeElapsed = prev.timeElapsed + 1;
-          
-          // Auto-complete when time is up
-          if (newTimeElapsed >= prev.totalDuration) {
-            handleSessionComplete();
-            return prev;
+    if (typeof window !== 'undefined') {
+      synthRef.current = window.speechSynthesis;
+      
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'en-US';
+
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = Array.from(event.results)
+            .map((result: any) => result[0])
+            .map((result: any) => result.transcript)
+            .join('');
+
+          if (event.results[event.results.length - 1].isFinal) {
+            handleUserSpeech(transcript);
           }
-          
-          // Update phase based on time progression
-          let newPhase = prev.phase;
-          const progress = newTimeElapsed / prev.totalDuration;
-          
-          if (progress < 0.1) newPhase = 'preparation';
-          else if (progress < 0.25) newPhase = 'induction';
-          else if (progress < 0.5) newPhase = 'deepening';
-          else if (progress < 0.75) newPhase = 'exploration';
-          else if (progress < 0.9) newPhase = 'transformation';
-          else if (progress < 0.95) newPhase = 'integration';
-          else newPhase = 'completion';
-          
-          return {
-            ...prev,
-            timeElapsed: newTimeElapsed,
-            phase: newPhase,
-            depth: Math.min(prev.depth + 0.01, 5) // Gradual deepening
-          };
-        });
-      }, 1000);
+        };
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.log('Speech recognition error:', event.error);
+          setSessionState(prev => ({ ...prev, isListening: false }));
+        };
+      }
     }
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [sessionState.isActive, sessionState.isPaused, sessionState.totalDuration]);
+  }, []);
 
-  const handleSessionComplete = () => {
-    completeSession(
-      selectedAction?.name || 'General Session',
-      sessionState.timeElapsed
-    );
-    
-    showToast({
-      type: 'success',
-      message: `Session complete! Channeled ${egoState.name} energy for transformation.`,
-      duration: 4000
-    });
-    
-    onComplete();
-  };
-
-  const handleStart = () => {
-    setSessionState(prev => ({ ...prev, isActive: true }));
-  };
-
-  const handlePause = () => {
-    setSessionState(prev => ({ ...prev, isPaused: !prev.isPaused }));
-  };
-
-  const handleSkip = () => {
-    // Skip to next phase or complete
-    const phaseOrder = ['preparation', 'induction', 'deepening', 'exploration', 'transformation', 'integration', 'completion'];
-    const currentIndex = phaseOrder.indexOf(sessionState.phase);
-    
-    if (currentIndex < phaseOrder.length - 1) {
-      const nextPhase = phaseOrder[currentIndex + 1] as SessionState['phase'];
-      setSessionState(prev => ({ ...prev, phase: nextPhase }));
-    } else {
-      handleSessionComplete();
-    }
-  };
-
-  const toggleVoice = () => {
-    setSessionState(prev => ({ ...prev, voiceEnabled: !prev.voiceEnabled }));
-  };
-
-  const toggleMic = () => {
-    setSessionState(prev => ({ ...prev, micEnabled: !prev.micEnabled }));
-  };
-
-  // Breathing cycle management
-  useEffect(() => {
-    if (!sessionState.isActive || sessionState.isPaused) return;
-
-    const breathingDurations = {
-      inhale: 4000,   // 4 seconds
-      hold: 4000,     // 4 seconds
-      exhale: 6000,   // 6 seconds
-      rest: 2000      // 2 seconds
-    };
-
-    const duration = breathingDurations[sessionState.breathing];
-    
-    const timer = setTimeout(() => {
-      setSessionState(prev => {
-        const breathingCycle = ['inhale', 'hold', 'exhale', 'rest'] as const;
-        const currentIndex = breathingCycle.indexOf(prev.breathing);
-        const nextBreathing = breathingCycle[(currentIndex + 1) % breathingCycle.length];
-        
-        return { ...prev, breathing: nextBreathing };
-      });
-    }, duration);
-
-    return () => clearTimeout(timer);
-  }, [sessionState.breathing, sessionState.isActive, sessionState.isPaused]);
-
-  const getPhaseDescription = () => {
-    const descriptions = {
-      preparation: 'Getting comfortable and centered',
-      induction: 'Entering the hypnotic state',
-      deepening: 'Going deeper into trance',
-      exploration: 'Exploring inner landscapes',
-      transformation: 'Installing new patterns',
-      integration: 'Integrating changes',
-      completion: 'Returning to awareness'
-    };
-    
-    return descriptions[sessionState.phase];
-  };
-
-  const getActionSpecificContent = () => {
-    if (!selectedAction) return null;
-    
-    const actionContent: { [key: string]: { title: string; suggestion: string } } = {
-      'stress-relief': {
-        title: 'Releasing Tension',
-        suggestion: 'Notice how each breath releases more stress and brings deeper calm'
+  // AI Response Generator
+  const generateAIResponse = (userInput: string, currentState: SessionState) => {
+    const responses = {
+      unified: {
+        preparation: [
+          "Perfect. I can sense your readiness. Let's begin this journey together by finding your natural breathing rhythm.",
+          "Good. I feel your presence here with me. We'll start with breathing, then explore deeper.",
+          "Excellent. Your energy is calm and focused. I'll guide you through breathing, then we'll work on what matters most to you."
+        ],
+        deepening: [
+          "I can feel you going deeper now. Your breathing is natural and relaxed. What would you like to work on?",
+          "That's it. You're doing beautifully. Now, tell me what's been on your mind lately.",
+          "Perfect. I sense you're ready to explore. What belief or feeling would you like to transform?"
+        ],
+        trance: [
+          "You're in a beautiful state now. Your subconscious mind is open and receptive. Let's work with what you've shared.",
+          "Wonderful. I can feel your deep relaxation. Your mind is perfectly calm and focused. I sense some resistance here - that's normal.",
+          "Excellent depth. Your inner wisdom is now fully accessible. Feel how this new understanding settles into your being."
+        ],
+        exploration: [
+          "I sense some resistance here. That's completely normal. What comes up for you when I say that?",
+          "Your energy shifted just then. Tell me what you're experiencing in your body right now.",
+          "I feel you connecting with something important. Share what's arising - there's no judgment here."
+        ],
+        processing: [
+          "That's a powerful insight. How does that feel in your body right now? Notice any changes.",
+          "I can sense the shift happening. You're doing incredible work. Let's anchor this new feeling.",
+          "Beautiful. Your subconscious is releasing what no longer serves you. Breathe into this new space."
+        ],
+        integration: [
+          "Feel how this new understanding settles into every cell of your being. It's becoming part of you.",
+          "Perfect. This transformation is now part of who you are. Notice how different you feel.",
+          "Excellent. You're integrating this change at the deepest level. This is your new normal."
+        ]
       },
-      'focus-boost': {
-        title: 'Sharpening Concentration', 
-        suggestion: 'Feel your mind becoming laser-focused and crystal clear'
-      },
-      'confidence': {
-        title: 'Building Self-Assurance',
-        suggestion: 'Sense your inner confidence growing stronger with each moment'
-      },
-      'energy-up': {
-        title: 'Boosting Vitality',
-        suggestion: 'Feel renewed energy flowing through every cell of your being'
-      },
-      'sleep-prep': {
-        title: 'Preparing for Rest',
-        suggestion: 'Allow yourself to naturally drift toward peaceful sleep'
+      integration: {
+        completion: [
+          "Feel how this new understanding settles into every cell of your being.",
+          "Perfect. This transformation is now part of who you are.",
+          "Excellent. You're integrating this change at the deepest level."
+        ]
       }
     };
+
+    const sessionResponses = responses[sessionType];
+    if (!sessionResponses) {
+      return "I'm here with you. Continue to breathe and trust the process.";
+    }
     
-    return actionContent[selectedAction.id] || {
-      title: selectedAction.name,
-      suggestion: 'Trust in the process of transformation'
+    const currentResponses = sessionResponses[currentState.phase as keyof typeof sessionResponses];
+    
+    if (Array.isArray(currentResponses)) {
+      return currentResponses[Math.floor(Math.random() * currentResponses.length)];
+    }
+    
+    return "I'm here with you. Continue to breathe and trust the process.";
+  };
+
+  // Handle user speech input
+  const handleUserSpeech = (transcript: string) => {
+    const timestamp = Date.now();
+    setConversation(prev => [...prev, { role: 'user', content: transcript, timestamp }]);
+    
+    // Generate AI response
+    const aiResponse = generateAIResponse(transcript, sessionState);
+    
+    setTimeout(() => {
+      setConversation(prev => [...prev, { role: 'ai', content: aiResponse, timestamp: timestamp + 1000 }]);
+      if (isVoiceEnabled) {
+        speakText(aiResponse);
+      }
+    }, 1000);
+
+    setSessionState(prev => ({ 
+      ...prev, 
+      userResponse: transcript,
+      aiResponse: aiResponse,
+      isListening: false 
+    }));
+  };
+
+  // Text-to-speech
+  const speakText = (text: string) => {
+    if (!synthRef.current || !isVoiceEnabled) return;
+
+    // Stop any current speech
+    synthRef.current.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.8;
+    utterance.pitch = 0.9;
+    utterance.volume = 0.8;
+
+    // Find a calm, soothing voice
+    const voices = synthRef.current.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.includes('Female') || 
+      voice.name.includes('Samantha') ||
+      voice.name.includes('Karen')
+    ) || voices[0];
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onstart = () => {
+      setSessionState(prev => ({ ...prev, isSpeaking: true }));
     };
+
+    utterance.onend = () => {
+      setSessionState(prev => ({ ...prev, isSpeaking: false }));
+    };
+
+    currentUtteranceRef.current = utterance;
+    synthRef.current.speak(utterance);
   };
 
-  const progress = sessionState.totalDuration > 0 ? (sessionState.timeElapsed / sessionState.totalDuration) * 100 : 0;
-  const actionContent = getActionSpecificContent();
+  // Start/stop listening
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
 
-  return (
-    <div className="fixed inset-0 bg-black overflow-hidden z-[1001]" style={{ opacity: 1 }}>
-      {/* Cosmic Background matching ego state */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/20 to-black" />
-        
-        {/* Subtle orb-colored glow effects */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-      </div>
-
-      {/* Session Header */}
-      <div className="relative z-20 flex items-center justify-between p-4 bg-black/80 backdrop-blur-xl border-b border-white/10">
-        <div className="flex items-center space-x-3">
-          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${egoState.color} flex items-center justify-center border border-white/30 shadow-lg`}>
-            <span className="text-lg">{egoState.icon}</span>
-          </div>
-          <div>
-            <h1 className="text-white font-semibold text-lg">{egoState.name} Session</h1>
-            {actionContent && (
-              <p className="text-white/70 text-sm">{actionContent.title}</p>
-            )}
-          </div>
-        </div>
-        
-        <button
-          onClick={onCancel}
-          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300"
-        >
-          <X size={20} className="text-white/60 hover:text-white" />
-        </button>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="relative z-20 px-4 pb-2">
-        <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-          <div 
-            className={`h-full bg-gradient-to-r ${egoColorInfo.bg} rounded-full transition-all duration-300`}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <div className="flex items-center justify-between mt-2 text-xs text-white/60">
-          <span>{Math.floor(sessionState.timeElapsed / 60)}:{(sessionState.timeElapsed % 60).toString().padStart(2, '0')}</span>
-          <span className="capitalize">{sessionState.phase}</span>
-          <span>{Math.floor(sessionState.totalDuration / 60)}:{(sessionState.totalDuration % 60).toString().padStart(2, '0')}</span>
-        </div>
-      </div>
-
-      {/* Central Orb Area */}
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-4">
-        {/* Session Info */}
-        <div className="text-center mb-6 hidden sm:block">
-          <h2 className="text-white text-xl font-light mb-2">
-            {getPhaseDescription()}
-          </h2>
-          {actionContent && (
-            <p className="text-white/70 text-sm max-w-md leading-relaxed">
-              {actionContent.suggestion}
-            </p>
-          )}
-        </div>
-
-        {/* The Orb - inheriting color from ego state */}
-        <div className="mb-6 flex items-center justify-center w-80 h-80 flex-shrink-0">
-          <Orb
-            onTap={() => {}}
-            afterglow={true}
-            egoState={sessionConfig.egoState}
-            size={320}
-            variant="webgl"
-          />
-        </div>
-
-        {/* Session Guidance */}
-        <div className="text-center max-w-md">
-          <div className="bg-black/60 backdrop-blur-xl rounded-xl p-4 border border-white/20">
-            <p className="text-white/80 text-sm leading-relaxed">
-              {sessionState.phase === 'preparation' && "Find a comfortable position. We'll begin when you're ready."}
-              {sessionState.phase === 'induction' && "Allow your eyes to close naturally. Focus on the orb's energy."}
-              {sessionState.phase === 'deepening' && "Going deeper now. Each breath takes you further within."}
-              {sessionState.phase === 'exploration' && `Working with ${egoState.name} energy. ${actionContent?.suggestion}`}
-              {sessionState.phase === 'transformation' && "Installing new patterns. Feel the change happening."}
-              {sessionState.phase === 'integration' && "Integrating this transformation into your being."}
-              {sessionState.phase === 'completion' && "Bringing this awareness back with you."}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Session Controls */}
-      <div className="fixed bottom-4 left-4 right-4 z-30">
-        <div className="bg-black/95 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-2xl shadow-purple-500/20">
-          <div className="flex items-center justify-center space-x-4">
-          {!sessionState.isActive ? (
-            <button
-              onClick={handleStart}
-              className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-2xl text-black font-bold text-lg hover:scale-105 transition-transform duration-200 shadow-2xl shadow-teal-400/30"
-            >
-              <Play size={24} />
-              <span>Start Hypnosis</span>
-            </button>
-          ) : (
-            <>
-              {/* Pause/Resume */}
-              <button
-                onClick={handlePause}
-                className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110"
-              >
-                {sessionState.isPaused ? 
-                  <Play size={24} className="text-white ml-0.5" /> : 
-                  <Pause size={24} className="text-white" />
-                }
-              </button>
-
-              {/* Skip Phase */}
-              <button
-                onClick={handleSkip}
-                className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110"
-              >
-                <SkipForward size={24} className="text-white" />
-              </button>
-
-              {/* Voice Toggle */}
-              <button
-                onClick={toggleVoice}
-                className={`w-14 h-14 rounded-full border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
-                  sessionState.voiceEnabled ? 'bg-teal-500/20 text-teal-400' : 'bg-white/10 text-white/60'
-                }`}
-              >
-                {sessionState.voiceEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
-              </button>
-
-              {/* Mic Toggle */}
-              <button
-                onClick={toggleMic}
-                className={`w-14 h-14 rounded-full border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
-                  sessionState.micEnabled ? 'bg-blue-500/20 text-blue-400' : 'bg-white/10 text-white/60'
-                }`}
-              >
-                {sessionState.micEnabled ? <Mic size={24} /> : <MicOff size={24} />}
-              </button>
-
-              {/* Complete Session */}
-              <button
-                onClick={handleSessionComplete}
-                className="px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-bold hover:scale-105 transition-transform duration-200"
-              >
-                Complete
-              </button>
-            </>
-          )}
-          </div>
-        </div>
-      </div>
-
-      {/* AI Voice System */}
-      {sessionState.isActive && (
-        <AIVoiceSystem
-          isActive={sessionState.isActive}
-          sessionType="unified"
-          onStateChange={(state) => {
-            setSessionState(prev => ({
-              ...prev,
-              breathing: state.breathing || prev.breathing,
-              depth: state.depth || prev.depth
-            }));
-            
-            // Update orb if available
-            if (orbRef.current) {
-              orbRef.current.updateState(state);
-            }
-          }}
-          orbRef={orbRef}
-        />
-      )}
-
-
-      {/* Breathing Guide with Timings */}
-      {sessionState.isActive && (
-        <div className="absolute top-20 left-4 z-30">
-          <BreathingIndicator 
-            currentPhase={sessionState.breathing}
-            isActive={sessionState.isActive && !sessionState.isPaused}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Breathing Indicator Component with Timings
-interface BreathingIndicatorProps {
-  currentPhase: 'inhale' | 'hold' | 'exhale' | 'rest';
-  isActive: boolean;
-}
-
-function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps) {
-  const [timeRemaining, setTimeRemaining] = useState(0);
-  
-  const breathingDurations = {
-    inhale: 4000,   // 4 seconds
-    hold: 4000,     // 4 seconds
-    exhale: 6000,   // 6 seconds
-    rest: 2000      // 2 seconds
+    if (sessionState.isListening) {
+      recognitionRef.current.stop();
+      setSessionState(prev => ({ ...prev, isListening: false }));
+    } else {
+      recognitionRef.current.start();
+      setSessionState(prev => ({ ...prev, isListening: true }));
+    }
   };
 
-  const breathingLabels = {
-    inhale: 'Breathe In',
-    hold: 'Hold',
-    exhale: 'Breathe Out', 
-    rest: 'Natural Breathing'
-  };
-
-  const breathingColors = {
-    inhale: 'bg-teal-400',
-    hold: 'bg-yellow-400',
-    exhale: 'bg-orange-400',
-    rest: 'bg-gray-400'
-  };
-
+  // Session progression
   useEffect(() => {
     if (!isActive) return;
+
+    // Proper breathing cycle: 4s inhale, 4s hold, 6s exhale, 2s rest = 16s total
+    const breathingDurations = {
+      'inhale': 4000,  // 4 seconds
+      'hold': 4000,    // 4 seconds  
+      'exhale': 6000,  // 6 seconds
+      'rest': 2000     // 2 seconds
+    };
+
+    let breathingTimer: NodeJS.Timeout;
+    let isCleanedUp = false;
     
-    const duration = breathingDurations[currentPhase];
-    setTimeRemaining(Math.ceil(duration / 1000));
-    
-    const interval = setInterval(() => {
-      setTimeRemaining(prev => Math.max(0, prev - 1));
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [currentPhase, isActive]);
+    const cycleBreathing = (currentBreathing: typeof sessionState.breathing) => {
+      if (isCleanedUp) return;
+      
+      const duration = breathingDurations[currentBreathing];
+      
+      breathingTimer = setTimeout(() => {
+        if (isCleanedUp) return;
+        
+        setSessionState(prev => {
+          const breathingCycle = ['inhale', 'hold', 'exhale', 'rest'] as const;
+          const currentIndex = breathingCycle.indexOf(currentBreathing);
+          const nextBreathing = breathingCycle[(currentIndex + 1) % breathingCycle.length];
+          
+          // Progress depth based on session type (slower, more realistic)
+          let newDepth = prev.depth;
+          if (sessionType === 'unified' && Math.random() > 0.95) {
+            newDepth = Math.min(prev.depth + 0.02, 5);
+          }
+          
+          // Update phase based on depth and time
+          let newPhase = prev.phase;
+          if (newDepth > 1.5 && prev.phase === 'preparation') {
+            newPhase = 'deepening';
+          } else if (newDepth > 2.5 && prev.phase === 'deepening') {
+            newPhase = 'exploration';
+          } else if (newDepth > 3.5 && prev.phase === 'exploration') {
+            newPhase = 'trance';
+          } else if (newDepth > 4 && prev.phase === 'trance') {
+            newPhase = 'integration';
+          }
+
+          const newState = {
+            ...prev,
+            breathing: nextBreathing,
+            depth: newDepth,
+            phase: newPhase
+          };
+
+          onStateChange(newState);
+          
+          // Schedule next cycle
+          cycleBreathing(nextBreathing);
+          
+          return newState;
+        });
+      }, duration);
+    };
+
+    // Start the breathing cycle
+    cycleBreathing(sessionState.breathing);
+
+    return () => {
+      isCleanedUp = true;
+      if (breathingTimer) {
+        clearTimeout(breathingTimer);
+      }
+    };
+  }, [isActive, sessionType, onStateChange]);
+
+  // Auto-start AI guidance
+  useEffect(() => {
+    if (isActive && conversation.length === 0) {
+      setTimeout(() => {
+        const welcomeMessage = sessionType === 'unified' 
+          ? "Welcome. I'm here to guide you through a complete journey - breathing, deepening, and transformation. Are you ready to begin?"
+          : "Feel how this new understanding settles into every cell of your being.";
+        
+        setConversation([{ role: 'ai', content: welcomeMessage, timestamp: Date.now() }]);
+        if (isVoiceEnabled) {
+          speakText(welcomeMessage);
+        }
+      }, 2000);
+    }
+  }, [isActive, sessionType, isVoiceEnabled]);
 
   if (!isActive) return null;
 
   return (
-    <div className="bg-black/90 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 shadow-2xl">
-        <div className="flex items-center justify-center space-x-4">
-          {/* Breathing Phase Indicator */}
-          <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full transition-all duration-300 ${breathingColors[currentPhase]} ${
-              currentPhase !== 'rest' ? 'animate-pulse' : ''
-            }`} />
-            <span className="text-white font-medium text-sm">
-              {breathingLabels[currentPhase]}
-            </span>
-          </div>
-          
-          {/* Timer - only show for timed phases */}
-          {currentPhase !== 'rest' && (
-            <>
-              <div className="w-px h-4 bg-white/30" />
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">{timeRemaining}</span>
-                </div>
-                <div className="text-white/60 text-xs">
-                  {timeRemaining > 1 ? 'seconds' : 'second'}
-                </div>
+    <div className="fixed bottom-20 left-4 right-4 z-40">
+      {/* Conversation Display */}
+      {conversation.length > 0 && (
+        <div className="bg-black/95 backdrop-blur-xl rounded-2xl p-2 mb-2 max-h-16 overflow-y-auto border border-white/20">
+          {conversation.slice(-2).map((msg, i) => (
+            <div key={i} className={`mb-0.5 last:mb-0 ${msg.role === 'ai' ? 'text-teal-400' : 'text-white'}`}>
+              <div className="flex items-center space-x-1 mb-0.5">
+                {msg.role === 'ai' ? <Brain size={12} /> : <MessageCircle size={12} />}
+                <span className="text-xs opacity-50">
+                  {msg.role === 'ai' ? 'AI Guide' : 'You'}
+                </span>
               </div>
-            </>
-          )}
+              <p className="text-xs leading-tight">{msg.content}</p>
+            </div>
+          ))}
         </div>
-        
-        {/* Progress bar for current breathing phase */}
-        {true && (
-          <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden mt-2">
-            <div 
-              className={`h-full ${breathingColors[currentPhase]} rounded-full transition-all duration-100`}
-              style={{ 
-                width: `${((breathingDurations[currentPhase] / 1000 - timeRemaining) / (breathingDurations[currentPhase] / 1000)) * 100}%` 
-              }}
-            />
-          </div>
-        )}
-    </div>
-  );
-}
+      )}
