@@ -380,7 +380,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       // Update wireframe efficiently
       const wireframe = orbMeshRef.current.userData.wireframeGeometry;
       if (wireframe) {
-        wireframe.setFromGeometry(geometry);
+        // Dispose old wireframe and create new one
+        wireframe.dispose();
+        const newWireframe = new THREE.WireframeGeometry(geometry);
+        orbMeshRef.current.geometry = newWireframe;
+        orbMeshRef.current.userData.wireframeGeometry = newWireframe;
       }
     }
 
