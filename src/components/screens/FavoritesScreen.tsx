@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Heart, Play, Clock, Star, Trash2, Share2, Pin, Award, TrendingUp, BarChart3, Crown } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState } from '../../store';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import PageShell from '../layout/PageShell';
 import ModalShell from '../layout/ModalShell';
 
@@ -82,6 +83,7 @@ interface FavoritesScreenProps {
 export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProps) {
   const { user, isLoading } = useGameState();
   const { activeEgoState, showToast } = useAppStore();
+  const { isAuthenticated } = useAuth();
   const [selectedSession, setSelectedSession] = useState<FavoriteSession | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
 
@@ -130,6 +132,36 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   const avgRating = mockFavorites.reduce((sum, s) => sum + s.rating, 0) / mockFavorites.length;
   const treasuresCount = mockFavorites.length;
   const pinnedCount = mockFavorites.filter(s => s.isPinned).length;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-rose-500/10 to-purple-500/5 rounded-full blur-3xl" />
+        </div>
+
+        <PageShell
+          body={
+            <div className="h-full flex items-center justify-center p-4">
+              <div className="text-center max-w-sm">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6 border border-rose-500/30">
+                  <Heart size={32} className="text-rose-400" />
+                </div>
+                <h3 className="text-white text-xl font-light mb-4">Sign in to view your favorites</h3>
+                <button
+                  onClick={() => openModal('auth')}
+                  className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
+                >
+                  Sign In
+                </button>
+              </div>
+            </div>
+          }
+        />
+      </div>
+    );
+  }
 
   if (isLoading || !user) {
     return (

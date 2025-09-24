@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Play, Clock, Star, Filter, Plus, Zap, Waves, Eye, Wind, Book, ChevronRight, ChevronDown, Search, X, Heart, Users, TrendingUp, Award, Target, HelpCircle, BookOpen, Shield, Sparkles, Brain, Moon, Mic, Volume2 } from 'lucide-react';
 import { DEFAULT_PROTOCOLS, Protocol } from '../../types/Navigation';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
+import { useAppStore } from '../../store';
 import PageShell from '../layout/PageShell';
 import ModalShell from '../layout/ModalShell';
 
@@ -42,6 +44,8 @@ const sortOptions = [
 ];
 
 export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) {
+  const { isAuthenticated } = useAuth();
+  const { openModal, showToast } = useAppStore();
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'induction' | 'deepener' | 'complete'>('all');
   const [filters, setFilters] = useState<FilterState>({
     duration: [],
@@ -57,6 +61,18 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
   const [showGuide, setShowGuide] = useState(false);
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
   const [expandedGuideSection, setExpandedGuideSection] = useState<string | null>(null);
+
+  const handleProtocolSelect = (protocol: Protocol) => {
+    if (!isAuthenticated) {
+      openModal('auth');
+      showToast({
+        type: 'warning',
+        message: 'Please sign in to start a session'
+      });
+      return;
+    }
+    onProtocolSelect(protocol);
+  };
 
   const applyQuickCollection = (collection: any) => {
     // Apply filter based on collection
@@ -758,7 +774,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
           footer={
             <button
               onClick={() => {
-                onProtocolSelect(selectedProtocol);
+                handleProtocolSelect(selectedProtocol);
                 setSelectedProtocol(null);
               }}
               className="w-full px-6 py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-bold text-lg hover:scale-105 transition-transform duration-200 shadow-2xl shadow-teal-400/25"

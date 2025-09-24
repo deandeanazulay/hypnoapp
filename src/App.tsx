@@ -203,6 +203,16 @@ export default function App() {
   function handleProtocolSelect(protocol: any) {
     console.log('[APP] Protocol selected:', protocol);
     
+    if (!isAuthenticated) {
+      console.log('[APP] Not authenticated, showing auth modal');
+      openModal('auth');
+      showToast({
+        type: 'warning',
+        message: 'Please sign in to start a session'
+      });
+      return;
+    }
+    
     const config = {
       egoState: activeEgoState,
       protocol,
@@ -217,6 +227,16 @@ export default function App() {
   function handleProtocolCreate(protocol: any) {
     console.log('[APP] Protocol created:', protocol);
     
+    if (!isAuthenticated) {
+      console.log('[APP] Not authenticated, showing auth modal');
+      openModal('auth');
+      showToast({
+        type: 'warning',
+        message: 'Please sign in to create and use protocols'
+      });
+      return;
+    }
+    
     const config = {
       egoState: activeEgoState,
       customProtocol: protocol,
@@ -230,6 +250,16 @@ export default function App() {
 
   function handleFavoriteSelect(session: any) {
     console.log('[APP] Favorite selected:', session);
+    
+    if (!isAuthenticated) {
+      console.log('[APP] Not authenticated, showing auth modal');
+      openModal('auth');
+      showToast({
+        type: 'warning',
+        message: 'Please sign in to access your favorites'
+      });
+      return;
+    }
     
     const config = {
       egoState: session.egoState,
