@@ -86,7 +86,6 @@ export default function HomeScreen({
                       onClick={() => {
                         const { setActiveEgoState, openEgoModal } = useAppStore.getState();
                         setActiveEgoState(state.id);
-                        openEgoModal();
                       }}
                       className={`w-9 h-9 rounded-full bg-gradient-to-br ${egoColor.bg} border-2 flex items-center justify-center transition-all duration-300 hover:scale-105 ${
                         isSelected ? 'border-white/60 scale-110 opacity-100' : 'border-white/20 opacity-50'
