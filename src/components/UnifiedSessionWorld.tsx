@@ -688,35 +688,35 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             <div className="flex items-center justify-center space-x-6">
               <button
                 onClick={togglePause}
-                className={`w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+                className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
                   sessionState.isPaused 
                     ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/30' 
                     : 'bg-red-500/20 border-red-500/40 text-red-400 shadow-red-500/30'
                 }`}
               >
-                {sessionState.isPaused ? <Play size={24} /> : <Pause size={24} />}
+                {sessionState.isPaused ? <Play size={20} className="ml-0.5" /> : <Pause size={20} />}
               </button>
               
               <button
                 onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-                className={`w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+                className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
                   isVoiceEnabled 
                     ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/30' 
                     : 'bg-white/10 border-white/30 text-white/60'
                 }`}
               >
-                {isVoiceEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
+                {isVoiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
               </button>
               
               <button
                 onClick={() => setIsMicEnabled(!isMicEnabled)}
-                className={`w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+                className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
                   isMicEnabled 
                     ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 shadow-blue-500/30' 
                     : 'bg-white/10 border-white/30 text-white/60'
                 }`}
               >
-                {isMicEnabled ? <Mic size={24} /> : <MicOff size={24} />}
+                {isMicEnabled ? <Mic size={20} /> : <MicOff size={20} />}
               </button>
             </div>
             
@@ -734,7 +734,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                       : 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30'
                   }`}
                 >
-                  <Mic size={20} />
+                  <Mic size={18} />
                 </button>
                 
                 {/* Text Input */}
@@ -752,23 +752,9 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                     disabled={!textInput.trim() || isThinking}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-teal-500/30 border border-teal-500/50 text-teal-400 hover:bg-teal-500/40 hover:shadow-lg hover:shadow-teal-500/30 transition-all disabled:opacity-50 hover:scale-110 backdrop-blur-sm"
                   >
-                    <Send size={16} />
+                    <Send size={16} className="ml-0.5" />
                   </button>
                 </div>
-                
-                {/* Voice Record Button (Right) */}
-                <button
-                  type="button"
-                  onClick={toggleListening}
-                  disabled={!isMicEnabled || isThinking}
-                  className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 backdrop-blur-sm border-2 ${
-                    sessionState.isListening 
-                      ? 'bg-red-500/20 border-red-500/60 text-red-400 animate-pulse shadow-lg shadow-red-500/30' 
-                      : 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30'
-                  }`}
-                >
-                  <Mic size={20} />
-                </button>
               </div>
             </form>
           </div>
