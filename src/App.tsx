@@ -53,6 +53,7 @@ function App() {
   };
 
   const handleOrbTap = () => {
+  }
   const handleBeginTap = () => {
     // If not authenticated, show auth modal
     if (!isAuthenticated) {
