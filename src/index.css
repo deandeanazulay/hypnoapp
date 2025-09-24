@@ -313,7 +313,7 @@ canvas {
   left: 0; 
   right: 0;
   bottom: calc(var(--tabs-h) + max(8px, var(--safe-bottom)));
-  z-index: 10020;                 /* above everything UI */
+  z-index: 30;                    /* above content but below modals */
   display: flex;
   gap: 10px;
   justify-content: center;
