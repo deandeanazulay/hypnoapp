@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import ActionsBar from '../ActionsBar';
-import Orb from '../orb/Orb';
+import Orb from '../Orb';
 import { EGO_STATES, useAppStore } from '../../store';
 import { TabId } from '../../types/Navigation';
 import { THEME, getEgoColor } from '../../config/theme';
 
 interface HomeScreenProps {
-  onBeginTap: () => void;
+  onOrbTap: () => void;
   onTabChange: (tabId: TabId) => void;
   selectedAction: any;
   onActionSelect: (action: any) => void;
 }
 
 export default function HomeScreen({ 
-  onBeginTap,
+  onOrbTap, 
   onTabChange,
   selectedAction,
   onActionSelect
@@ -102,17 +102,31 @@ export default function HomeScreen({
         <div className="flex-1 flex items-center justify-center min-h-0 relative z-20 px-4">
           <div className="w-full h-full flex items-center justify-center">
             <div className="flex flex-col items-center justify-center max-w-none">
-              {/* Libero Orb */}
-              <Orb
-                onTap={onBeginTap}
-                size={280}
-                egoState={activeEgoState}
-                afterglow={false}
-                className="animate-float"
-              />
+              {/* Orb Container - Sacred Space */}
+              <div 
+                className="relative z-30" 
+                style={{ 
+                  minHeight: Math.max(240, Math.min(window.innerHeight * 0.35, 320)),
+                  minWidth: Math.max(240, Math.min(window.innerWidth * 0.6, 320)),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Orb
+                  onTap={onOrbTap}
+                  afterglow={false}
+                  egoState={activeEgoState}
+                  size={window.innerWidth < 768 ? 
+                    Math.max(200, Math.min(window.innerWidth * 0.6, 280)) :
+                    Math.max(240, Math.min(window.innerHeight * 0.3, 300))
+                  }
+                  variant="webgl"
+                />
+              </div>
                 
-              {/* Session configuration display */}
-              <div className="mt-6 text-center relative z-20 bg-black/40 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/10 shadow-lg">
+              {/* Session configuration display - always visible */}
+              <div className="mt-3 text-center relative z-20 bg-black/40 backdrop-blur-xl rounded-xl px-3 py-2 border border-white/10 shadow-lg">
                 <p className="text-teal-400 text-sm font-medium">
                   {currentState.name} Mode
                 </p>
@@ -122,7 +136,7 @@ export default function HomeScreen({
                   </p>
                 )}
                 <p className="text-white/60 text-xs mt-1">
-                  {selectedAction ? 'Tap to begin' : 'Select action below'}
+                  {selectedAction ? 'Tap orb to begin' : 'Select action & tap orb'}
                 </p>
               </div>
             </div>
@@ -152,14 +166,6 @@ export default function HomeScreen({
         }
         .animate-scroll-x:hover {
           animation-play-state: paused;
-        }
-        
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-8px) rotate(0.5deg); }
-        }
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
         }
       `}</style>
     </div>
