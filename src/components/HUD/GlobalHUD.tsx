@@ -3,6 +3,7 @@ import { TrendingUp, Calendar, Target, Award, Crown, Zap, Coins } from 'lucide-r
 import { useGameState } from '../GameStateManager';
 import { paymentService, STRIPE_PRODUCTS } from '../../lib/stripe';
 import { useAppStore, getEgoState } from '../../store';
+import { getEgoColor } from '../../config/theme';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 
 interface GlobalHUDProps {
@@ -14,6 +15,7 @@ export default function GlobalHUD({ onShowAuth }: GlobalHUDProps) {
   const { activeEgoState, openEgoModal, showToast } = useAppStore();
   const { isAuthenticated } = useAuth();
   const currentState = getEgoState(activeEgoState);
+  const egoColorInfo = getEgoColor(activeEgoState);
   const [subscriptionStatus, setSubscriptionStatus] = React.useState<'free' | 'active' | 'cancelled' | 'past_due'>('free');
   const [showPricingModal, setShowPricingModal] = React.useState(false);
   const [showTokenShop, setShowTokenShop] = React.useState(false);
