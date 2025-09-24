@@ -265,45 +265,60 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
             </GlassCard>
 
             {/* Navigation */}
-            <div className="flex justify-between items-center max-w-md mx-auto mt-6 mb-20">
-              <GlassButton
-                onClick={handleBack}
-                variant="secondary"
-                disabled={currentStep === 1}
-                className={currentStep === 1 ? 'invisible' : ''}
-              >
-                <div className="flex items-center space-x-2">
-                  <ArrowLeft size={16} />
-                  <span>Back</span>
+            {/* Fixed Bottom Navigation */}
+            <div className="fixed bottom-0 left-0 right-0 z-40 pb-20">
+              <div className="bg-black/95 backdrop-blur-xl border-t border-white/10 px-4 py-4">
+                {/* Step Indicator */}
+                <div className="text-center mb-4">
+                  <div className="text-white/60 text-sm mb-2">Step {currentStep} of 3</div>
+                  <div className="flex justify-center space-x-2">
+                    {[1, 2, 3].map((step) => (
+                      <div
+                        key={step}
+                        className={`w-8 h-1 rounded-full transition-all duration-300 ${
+                          step <= currentStep ? 'bg-teal-400' : 'bg-white/20'
+                        }`}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </GlassButton>
 
-              <div className="text-white/60 text-sm">
-                Step {currentStep} of 3
+                {/* Navigation Buttons */}
+                <div className="flex justify-between items-center max-w-md mx-auto">
+                  <button
+                    onClick={handleBack}
+                    disabled={currentStep === 1}
+                    className={`px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 ${
+                      currentStep === 1 ? 'invisible' : ''
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <ArrowLeft size={16} />
+                      <span>Back</span>
+                    </div>
+                  </button>
+                  {currentStep < 3 ? (
+                    <button
+                      onClick={handleNext}
+                      disabled={!canProceed()}
+                      className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span>Next</span>
+                        <ArrowRight size={16} />
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleComplete}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 flex items-center space-x-2"
+                    >
+                      <Wand2 size={16} />
+                      <span>Create</span>
+                    </button>
+                  )}
+                </div>
               </div>
-
-              {currentStep < 3 ? (
-                <GlassButton
-                  onClick={handleNext}
-                  variant="primary"
-                  disabled={!canProceed()}
-                >
-                  <div className="flex items-center space-x-2">
-                    <span>Next</span>
-                    <ArrowRight size={16} />
-                  </div>
-                </GlassButton>
-              ) : (
-                <GlassButton
-                  onClick={handleComplete}
-                  variant="primary"
-                >
-                  <div className="flex items-center space-x-2">
-                    <Wand2 size={16} />
-                    <span>Create</span>
-                  </div>
-                </GlassButton>
-              )}
             </div>
           </div>
         </div>
