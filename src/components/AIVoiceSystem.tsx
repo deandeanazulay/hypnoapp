@@ -307,61 +307,7 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange }: 
         </div>
       )}
 
-      {/* Control Panel */}
-      <div className="bg-black/95 backdrop-blur-xl rounded-xl p-2 border border-white/20">
-        <div className="flex items-center justify-between">
-          {/* Session Info */}
-          <div className="flex items-center space-x-4">
-            <div className="text-white text-xs">
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${
-                  sessionState.breathing === 'inhale' ? 'bg-teal-400' :
-                  sessionState.breathing === 'hold-inhale' ? 'bg-yellow-400' :
-                  sessionState.breathing === 'exhale' ? 'bg-orange-400' :
-                  sessionState.breathing === 'hold-exhale' ? 'bg-blue-400' : 'bg-gray-400'
-                }`} />
-                <span className="capitalize">{sessionState.breathing}</span>
-              </div>
-              <div className="text-xs text-white/50 mt-0.5">
-                Depth: L{Math.floor(sessionState.depth)} • {sessionState.phase}
-              </div>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="flex items-center space-x-1">
-            {/* Voice Toggle */}
-            <button
-              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-              className={`p-1.5 rounded-full transition-colors ${
-                isVoiceEnabled ? 'bg-teal-500/20 text-teal-400' : 'bg-white/10 text-white/60'
-              }`}
-            >
-              {isVoiceEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-            </button>
-
-            {/* Mic Toggle */}
-            <button
-              onClick={toggleListening}
-              className={`p-1.5 rounded-full transition-colors ${
-                sessionState.isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 
-                isMicEnabled ? 'bg-blue-500/20 text-blue-400' : 'bg-white/10 text-white/60'
-              }`}
-            >
-              {sessionState.isListening ? <MicOff size={14} /> : <Mic size={14} />}
-            </button>
-
-            {/* Speaking Indicator */}
-            {sessionState.isSpeaking && (
               <div className="flex items-center space-x-0.5 px-1">
-                <div className="w-0.5 h-3 bg-teal-400 rounded-full animate-pulse" />
-                <div className="w-0.5 h-4 bg-teal-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }} />
-                <div className="w-0.5 h-3 bg-teal-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
