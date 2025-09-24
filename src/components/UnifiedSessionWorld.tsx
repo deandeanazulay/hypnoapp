@@ -255,7 +255,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       <div className="relative z-20 px-4 pb-2">
         <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
           <div 
-            className={`h-full bg-gradient-to-r ${egoState.color} rounded-full transition-all duration-300`}
+            className={`h-full bg-gradient-to-r ${egoColorInfo.bg} rounded-full transition-all duration-300`}
             style={{ width: `${progress}%` }}
           />
         </div>
