@@ -33,12 +33,14 @@ function safeSize(width: number, height: number) {
 }
 
 const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
-  onTap,
-  size = 280,
-  egoState = 'guardian',
-  className = '',
-  afterglow = false
-}, ref) => {
+const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
+  const {
+    onTap,
+    size = 280,
+    egoState = 'guardian',
+    className = '',
+    afterglow = false
+  } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
