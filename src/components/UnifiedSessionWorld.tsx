@@ -59,7 +59,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const orbRef = useRef<any>(null);
-  const breathingTimerRef = useRef<NodeJS.Timeout | null>(null);</thinking>
+  const breathingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const egoState = getEgoState(activeEgoState);
   const egoColor = getEgoColor(activeEgoState);
