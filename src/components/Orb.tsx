@@ -21,35 +21,24 @@ function supportsWebGL(): boolean {
 }
 
 export default function Orb({ variant = 'auto', ...props }: OrbProps) {
-  const [useWebGL, setUseWebGL] = useState<boolean>(false); // Default to CSS to prevent flashing
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [useWebGL, setUseWebGL] = useState<boolean>(() => {
+    // Synchronous detection on first render to prevent switching
+    if (variant === 'css') return false;
+    if (variant === 'webgl') return supportsWebGL();
+    // Auto: prefer WebGL if supported
+    return supportsWebGL();
+  });
 
+  // Only detect once on mount, never change after that
   useEffect(() => {
-    // Only run once on mount to prevent re-renders
-    if (!isInitialized) {
-      const detectWebGL = () => {
-        if (variant === 'css') {
-          setUseWebGL(false);
-        } else if (variant === 'webgl') {
-          setUseWebGL(supportsWebGL());
-        } else {
-          // Auto-detect but prefer CSS for stability
-          setUseWebGL(supportsWebGL() && window.innerWidth > 768);
-        }
-        setIsInitialized(true);
-      };
+    if (variant !== 'auto') return; // Don't change if explicitly set
+    
+    // Only run if we haven't already decided
+    const hasWebGL = supportsWebGL();
+    setUseWebGL(hasWebGL);
+  }, []); // Empty dependency array - only run once
 
-      // Small delay to ensure DOM is ready
-      const timeoutId = setTimeout(detectWebGL, 100);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [variant, isInitialized]);
-
-  // Show CSS orb immediately, upgrade to WebGL if supported
-  if (!isInitialized) {
-    return <CSSOrb {...props} />;
-  }
-
+  // Always return the same component type to prevent remounting
   return useWebGL ? <WebGLOrb {...props} /> : <CSSOrb {...props} />;
 }
 
