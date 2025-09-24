@@ -61,6 +61,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const orbRef = useRef<any>(null);
   const breathingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const egoState = getEgoState(activeEgoState);
   const egoColor = getEgoColor(activeEgoState);
@@ -251,6 +252,13 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         if (isVoiceEnabled) {
           speakText(data.response);
         }
+        
+        // Auto-scroll to bottom after AI message
+        setTimeout(() => {
+          if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+          }
+        }, 100);
       }
     } catch (error) {
       console.error('AI conversation error:', error);
@@ -261,6 +269,13 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       if (isVoiceEnabled) {
         speakText(fallbackMessage);
       }
+      
+      // Auto-scroll to bottom after fallback message
+      setTimeout(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+      }, 100);
     } finally {
       setIsThinking(false);
     }
@@ -530,7 +545,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         {/* 3. Status Indicators - Glass card with proper spacing */}
         {/* 3. Chat Interface - Fixed height, proper container */}
         <div className="flex-shrink-0">
-          <div className="px-6 max-h-64 overflow-y-auto ">
+          <div ref={chatContainerRef} className="px-6 max-h-20 overflow-y-auto">
           
           {/* Latest AI Message */}
           {conversation.length > 0 && (
