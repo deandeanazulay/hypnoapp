@@ -25,7 +25,8 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
 
   // Debug wrapper for onTap
   const debugOnTap = () => {
-    console.log('[ORB-WRAPPER] Orb tapped, calling onTap');
+    console.log('[ORB-WRAPPER] Orb tapped, calling onTap function');
+    console.log('[ORB-WRAPPER] onTap function exists:', typeof props.onTap);
     props.onTap();
   };
 

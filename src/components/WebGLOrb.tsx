@@ -111,11 +111,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const canvas = rendererRef.current?.domElement;
     if (!canvas) return;
     
-    console.log('[ORB] Attaching robust event handlers to canvas');
+    console.log('[ORB] Attaching event handlers to canvas, canvas pointer events:', canvas.style.pointerEvents);
     
     // Ensure canvas can receive events
     canvas.style.pointerEvents = 'auto';
-    canvas.style.zIndex = '50';
+    canvas.style.zIndex = '100';
     canvas.style.position = 'relative';
     
     // Robust event handling for mobile + desktop
@@ -123,18 +123,19 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       e.preventDefault();
       e.stopPropagation();
       console.log('[WEBGL-ORB] Event triggered:', e.type);
+      console.log('[WEBGL-ORB] Calling handleTap function');
       handleTap();
     };
     
     // Multiple event types for maximum compatibility
-    canvas.addEventListener('pointerup', handleEvent, { passive: false });
-    canvas.addEventListener('touchend', handleEvent, { passive: false });
     canvas.addEventListener('click', handleEvent, { passive: false });
+    canvas.addEventListener('touchend', handleEvent, { passive: false });
+    canvas.addEventListener('pointerup', handleEvent, { passive: false });
     
     return () => {
-      canvas.removeEventListener('pointerup', handleEvent as any);
-      canvas.removeEventListener('touchend', handleEvent as any);
       canvas.removeEventListener('click', handleEvent as any);
+      canvas.removeEventListener('touchend', handleEvent as any);
+      canvas.removeEventListener('pointerup', handleEvent as any);
     };
   }, [handleTap]);
 

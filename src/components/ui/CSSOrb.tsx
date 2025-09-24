@@ -53,14 +53,14 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('[CSS-ORB] Click event triggered');
+    console.log('[CSS-ORB] Click event triggered, calling onTap');
     onTap();
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('[CSS-ORB] Touch end event triggered');
+    console.log('[CSS-ORB] Touch end event triggered, calling onTap');
     onTap();
   };
   // Calculate responsive sizing
