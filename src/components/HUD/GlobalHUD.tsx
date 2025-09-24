@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, User } from 'lucide-react';
+import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
@@ -7,7 +7,7 @@ import { getEgoColor } from '../../config/theme';
 
 export default function GlobalHUD() {
   const { user } = useGameState();
-  const { activeEgoState, openModal } = useAppStore();
+  const { activeEgoState, openModal, openEgoModal, showToast } = useAppStore();
   const { isAuthenticated } = useAuth();
   
   if (!isAuthenticated || !user) {
@@ -46,6 +46,66 @@ export default function GlobalHUD() {
   const xpProgress = (user.experience % 100) / 100;
   const sessionsLeft = user.plan === 'free' ? Math.max(0, 1 - user.daily_sessions_used) : '∞';
 
+  const handleEgoStateClick = () => {
+    openEgoModal();
+  };
+
+  const handlePlanClick = () => {
+    if (user.plan === 'free') {
+      showToast({
+        type: 'info',
+        message: 'Upgrade to Premium for unlimited sessions, exclusive ego states, and AI voice guidance!'
+      });
+    } else {
+      showToast({
+        type: 'success',
+        message: 'You have Premium access! Enjoy unlimited sessions.'
+      });
+    }
+  };
+
+  const handleTokensClick = () => {
+    showToast({
+      type: 'info',
+      message: `You have ${user.tokens} tokens. Use them for custom protocols and premium features.`
+    });
+  };
+
+  const handleLevelClick = () => {
+    const nextLevelXp = (user.level * 100) - user.experience;
+    showToast({
+      type: 'info',
+      message: `Level ${user.level}! ${nextLevelXp} XP needed for next level.`
+    });
+  };
+
+  const handleStreakClick = () => {
+    if (user.session_streak > 0) {
+      showToast({
+        type: 'success',
+        message: `Amazing! ${user.session_streak} day streak. Keep the momentum going!`
+      });
+    } else {
+      showToast({
+        type: 'info',
+        message: 'Start a session today to begin your transformation streak!'
+      });
+    }
+  };
+
+  const handleAwardsClick = () => {
+    if (user.achievements.length > 0) {
+      showToast({
+        type: 'success',
+        message: `You've earned ${user.achievements.length} achievements! View them in your profile.`
+      });
+    } else {
+      showToast({
+        type: 'info',
+        message: 'Complete sessions to unlock achievements and badges!'
+      });
+    }
+  };
   return (
     <div 
       data-hud
@@ -54,7 +114,8 @@ export default function GlobalHUD() {
       <div className="flex items-center justify-between text-xs sm:text-sm">
         {/* Left: Ego State */}
         <div className="flex items-center space-x-2">
-          <div 
+          <button
+            onClick={handleEgoStateClick}
             className="w-8 h-8 rounded-full bg-gradient-to-br border-2 flex items-center justify-center"
             style={{ 
               background: `linear-gradient(135deg, ${egoColor.accent}60, ${egoColor.accent}40)`,
@@ -62,9 +123,14 @@ export default function GlobalHUD() {
             }}
           >
             <span className="text-sm">{egoState.icon}</span>
-          </div>
+          </button>
           <div className="hidden sm:block">
-            <div className="text-white font-medium">{egoState.name}</div>
+            <button 
+              onClick={handleEgoStateClick}
+              className="text-white font-medium hover:text-white/80 transition-colors text-left"
+            >
+              {egoState.name}
+            </button>
             <div className="text-white/60 text-xs">{egoState.role}</div>
           </div>
         </div>
@@ -73,14 +139,20 @@ export default function GlobalHUD() {
         <div className="flex items-center space-x-3 sm:space-x-6">
           {/* Level */}
           <div className="flex items-center space-x-1">
-            <div className="w-6 h-6 rounded bg-teal-500/20 border border-teal-500/40 flex items-center justify-center">
+            <button 
+              onClick={handleLevelClick}
+              className="w-6 h-6 rounded bg-teal-500/20 border border-teal-500/40 flex items-center justify-center hover:bg-teal-500/30 hover:scale-110 transition-all"
+            >
               <span className="text-teal-400 font-bold text-xs">L{user.level}</span>
-            </div>
+            </button>
             <span className="text-white/60 hidden sm:inline">Level</span>
           </div>
 
           {/* XP Progress */}
-          <div className="flex items-center space-x-2">
+          <button 
+            onClick={handleLevelClick}
+            className="flex items-center space-x-2 hover:scale-105 transition-all"
+          >
             <span className="text-orange-400 font-medium">{user.experience % 100}/100 XP</span>
             <div className="w-16 h-2 bg-white/20 rounded-full overflow-hidden">
               <div 
@@ -88,13 +160,16 @@ export default function GlobalHUD() {
                 style={{ width: `${xpProgress * 100}%` }}
               />
             </div>
-          </div>
+          </button>
 
           {/* Streak */}
-          <div className="flex items-center space-x-1">
+          <button 
+            onClick={handleStreakClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
             <span className="text-yellow-400 font-medium">{user.session_streak}d</span>
             <span className="text-white/60 hidden sm:inline">streak</span>
-          </div>
+          </button>
 
           {/* Sessions */}
           <div className="flex items-center space-x-1">
@@ -103,23 +178,32 @@ export default function GlobalHUD() {
           </div>
 
           {/* Awards */}
-          <div className="flex items-center space-x-1">
+          <button 
+            onClick={handleAwardsClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
             <span className="text-blue-400 font-medium">{user.achievements.length}</span>
             <span className="text-white/60 hidden sm:inline">Awards</span>
-          </div>
+          </button>
         </div>
 
         {/* Right: Tokens & Plan */}
         <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-1">
+          <button 
+            onClick={handleTokensClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
             <span className="text-yellow-400 font-medium">{user.tokens}</span>
             <span className="text-white/60 hidden sm:inline">tokens</span>
-          </div>
+          </button>
           
-          <div className="flex items-center space-x-1">
+          <button 
+            onClick={handlePlanClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
             <span className="text-green-400 font-medium uppercase">{user.plan}</span>
             <span className="text-white/60 hidden sm:inline">Plan</span>
-          </div>
+          </button>
           
           <div className="flex items-center space-x-1">
             <span className="text-teal-400 font-medium">{sessionsLeft}</span>
