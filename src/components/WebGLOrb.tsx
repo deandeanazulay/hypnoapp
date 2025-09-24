@@ -51,11 +51,6 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const initializedRef = useRef(false);
   const [webglSupported, setWebglSupported] = React.useState<boolean | null>(null);
   const [contextLost, setContextLost] = React.useState(false);
-  const [isDragging, setIsDragging] = React.useState(false);
-  const [dragRotation, setDragRotation] = React.useState(0);
-  const [lastMousePos, setLastMousePos] = React.useState({ x: 0, y: 0 });
-  const [dragStartTime, setDragStartTime] = React.useState(0);
-  const [dragDistance, setDragDistance] = React.useState(0);
   
   // Alien state for fractal mathematics
   const alienStateRef = useRef({
@@ -70,8 +65,6 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const [isSpeaking, setIsSpeaking] = React.useState(false);
   const [isListening, setIsListening] = React.useState(false);
   const [currentState, setCurrentState] = React.useState<any>({});
-  const draggingRef = useRef(false);
-  const dragRotationRef = useRef(0);
 
   useImperativeHandle(ref, () => ({
     updateState: (state: any) => {
@@ -125,82 +118,24 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     canvas.style.zIndex = '100';
     canvas.style.position = 'relative';
     
-    // Drag handling
-    const handlePointerDown = (e: PointerEvent) => {
+    // Robust event handling for mobile + desktop
+    const handleEvent = (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log('[WEBGL-ORB] Pointer down');
-      setLastMousePos({ x: e.clientX, y: e.clientY });
-      setDragStartTime(Date.now());
-      setDragDistance(0);
-      canvas.style.cursor = 'grabbing';
+      console.log('[WEBGL-ORB] Event triggered:', e.type);
+      console.log('[WEBGL-ORB] Calling handleTap function');
+      handleTap();
     };
     
-    const handlePointerMove = (e: PointerEvent) => {
-      const currentTime = Date.now();
-      const timeSinceStart = currentTime - dragStartTime;
-      const deltaX = e.clientX - lastMousePos.x;
-      const deltaY = e.clientY - lastMousePos.y;
-      const currentDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      
-      // Update total drag distance
-      setDragDistance(prev => prev + currentDistance);
-      
-      // If we've moved enough distance or held for enough time, consider it a drag
-      if (dragDistance > 10 || timeSinceStart > 200) {
-        if (!isDragging) {
-          console.log('[WEBGL-ORB] Starting drag mode');
-          setIsDragging(true);
-          draggingRef.current = true;
-        }
-        
-        e.preventDefault();
-        const rotationSpeed = 0.02; // Increased sensitivity
-        const newRotation = dragRotationRef.current + deltaX * rotationSpeed;
-        
-        console.log('[WEBGL-ORB] Dragging, rotation:', newRotation);
-        setDragRotation(newRotation);
-        dragRotationRef.current = newRotation;
-      }
-      
-      setLastMousePos({ x: e.clientX, y: e.clientY });
-    };
-    
-    const handlePointerUp = (e: PointerEvent) => {
-      const currentTime = Date.now();
-      const totalTime = currentTime - dragStartTime;
-      const wasDragging = isDragging || dragDistance > 5 || totalTime > 300;
-      
-      console.log('[WEBGL-ORB] Pointer up, was dragging:', wasDragging, 'distance:', dragDistance, 'time:', totalTime);
-      
-      if (!wasDragging) {
-        // This was a tap
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('[WEBGL-ORB] Tap detected, calling handleTap');
-        handleTap();
-      } else {
-        console.log('[WEBGL-ORB] Drag detected, NOT calling handleTap');
-      }
-      
-      setIsDragging(false);
-      draggingRef.current = false;
-      setDragDistance(0);
-      setDragDistance(0);
-      canvas.style.cursor = 'pointer';
-    };
-    
-    // Add pointer events
-    canvas.addEventListener('pointerdown', handlePointerDown, { passive: false });
-    canvas.addEventListener('pointermove', handlePointerMove, { passive: false });
-    canvas.addEventListener('pointerup', handlePointerUp, { passive: false });
-    canvas.addEventListener('pointerleave', handlePointerUp, { passive: false });
+    // Multiple event types for maximum compatibility
+    canvas.addEventListener('click', handleEvent, { passive: false });
+    canvas.addEventListener('touchend', handleEvent, { passive: false });
+    canvas.addEventListener('pointerup', handleEvent, { passive: false });
     
     return () => {
-      canvas.removeEventListener('pointerdown', handlePointerDown as any);
-      canvas.removeEventListener('pointermove', handlePointerMove as any);
-      canvas.removeEventListener('pointerup', handlePointerUp as any);
-      canvas.removeEventListener('pointerleave', handlePointerUp as any);
+      canvas.removeEventListener('click', handleEvent as any);
+      canvas.removeEventListener('touchend', handleEvent as any);
+      canvas.removeEventListener('pointerup', handleEvent as any);
     };
   }, [handleTap]);
 
@@ -489,27 +424,20 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     
     // Alien rotation - multi-axis, unpredictable
     const baseRotationSpeed = afterglow ? 0.4 : 0.25;
-    const alienRotationX = time * baseRotationSpeed + Math.sin(time * 0.3) * 0.1 + (isDragging ? 0 : 0);
-    const alienRotationY = (isDragging ? dragRotation : time * baseRotationSpeed * 0.7) + Math.cos(time * 0.4) * 0.15;
+    const alienRotationX = time * baseRotationSpeed + Math.sin(time * 0.3) * 0.1;
+    const alienRotationY = time * baseRotationSpeed * 0.7 + Math.cos(time * 0.4) * 0.15;
     const alienRotationZ = Math.sin(time * 0.2) * 0.05;
     
     if (orbMeshRef.current) {
       orbMeshRef.current.scale.setScalar(breathingScale);
       orbMeshRef.current.rotation.x = alienRotationX;
-      orbMeshRef.current.rotation.y = alienRotationY;
+      orbMeshRef.current.rotation.y = alienRotationY; 
       orbMeshRef.current.rotation.z = alienRotationZ;
       
       // Alien organic movement
-      if (!isDragging) {
-        orbMeshRef.current.position.x = Math.sin(time * 0.3) * 0.5;
-        orbMeshRef.current.position.y = Math.cos(time * 0.4) * 0.3;
-        orbMeshRef.current.position.z = Math.sin(time * 0.2) * 0.2;
-      } else {
-        // Keep position stable during drag
-        orbMeshRef.current.position.x = 0;
-        orbMeshRef.current.position.y = 0;
-        orbMeshRef.current.position.z = 0;
-      }
+      orbMeshRef.current.position.x = Math.sin(time * 0.3) * 0.5;
+      orbMeshRef.current.position.y = Math.cos(time * 0.4) * 0.3;
+      orbMeshRef.current.position.z = Math.sin(time * 0.2) * 0.2;
       
       // Update material opacity for alien intensity
       const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
