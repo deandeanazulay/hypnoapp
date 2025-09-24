@@ -278,30 +278,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           </div>
         </div>
 
-        {/* Session Controls */}
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={togglePlayPause}
-            className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
-          >
-            {sessionState.isPlaying ? (
-              <Pause size={24} className="text-white" />
-            ) : (
-              <Play size={24} className="text-white ml-1" />
-            )}
-          </button>
-          
-          <button
-            onClick={() => setShowVoiceInterface(!showVoiceInterface)}
-            className={`w-12 h-12 rounded-full border transition-all hover:scale-110 ${
-              showVoiceInterface
-                ? 'bg-teal-500/20 border-teal-500/40 text-teal-400'
-                : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'
-            }`}
-          >
-            <MessageCircle size={20} />
-          </button>
-        </div>
 
         {/* Breathing Visual Cue */}
         <div className="mt-8 flex items-center justify-center">
@@ -332,28 +308,54 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
       </div>
 
-      {/* Voice Interface */}
-      {showVoiceInterface && (
-        <AIVoiceSystem
-          isActive={showVoiceInterface}
-          sessionType="unified"
-          onStateChange={(updates) => {
-            setSessionState(prev => ({ ...prev, ...updates }));
-          }}
-          sessionState={sessionState}
-          sessionConfig={sessionConfig}
-        />
-      )}
-
-      {/* Emergency Exit */}
-      <div className="absolute top-4 left-4 z-20">
-        <button
-          onClick={onCancel}
-          className="w-10 h-10 rounded-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 flex items-center justify-center transition-all hover:scale-110"
-        >
-          <X size={20} className="text-red-400" />
-        </button>
+      {/* Bottom Controls Bar */}
+      <div className="relative z-10 bg-black/90 backdrop-blur-xl border-t border-white/10 p-4">
+        {/* Session Controls */}
+        <div className="flex items-center justify-center space-x-6 mb-4">
+          <button
+            onClick={togglePlayPause}
+            className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+          >
+            {sessionState.isPlaying ? (
+              <Pause size={24} className="text-white" />
+            ) : (
+              <Play size={24} className="text-white ml-1" />
+            )}
+          </button>
+          
+          <button
+            onClick={() => setShowVoiceInterface(!showVoiceInterface)}
+            className={`w-12 h-12 rounded-full border transition-all hover:scale-110 ${
+              showVoiceInterface
+                ? 'bg-teal-500/20 border-teal-500/40 text-teal-400'
+                : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'
+            }`}
+          >
+            <MessageCircle size={20} />
+          </button>
+          
+          <button
+            onClick={onCancel}
+            className="w-12 h-12 rounded-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 flex items-center justify-center transition-all hover:scale-110"
+          >
+            <X size={20} className="text-red-400" />
+          </button>
+        </div>
+        
+        {/* Voice Interface - Always show when enabled */}
+        {showVoiceInterface && (
+          <AIVoiceSystem
+            isActive={true}
+            sessionType="unified"
+            onStateChange={(updates) => {
+              setSessionState(prev => ({ ...prev, ...updates }));
+            }}
+            sessionState={sessionState}
+            sessionConfig={sessionConfig}
+          />
+        )}
       </div>
+
     </div>
   );
 }
