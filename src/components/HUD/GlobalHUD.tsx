@@ -1,9 +1,8 @@
 import React from 'react';
 import { TrendingUp, Calendar, Target, Award, Crown, Zap, Coins } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
-import { useAppStore, getEgoState } from '../../state/appStore';
 import { paymentService, STRIPE_PRODUCTS } from '../../lib/stripe';
-import { useAppStore } from '../../store';
+import { useAppStore, getEgoState } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 
 interface GlobalHUDProps {

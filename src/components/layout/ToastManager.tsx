@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
-import { useToasts } from '../../state/uiStore';
+import { useToasts } from '../../store';
 
 const iconMap = {
   success: CheckCircle,
