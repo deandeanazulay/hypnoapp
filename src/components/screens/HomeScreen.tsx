@@ -5,14 +5,14 @@ import { TabId } from '../../types/Navigation';
 import { THEME, getEgoColor } from '../../config/theme';
 
 interface HomeScreenProps {
-  onOrbTap: () => void;
+  onBeginTap: () => void;
   onTabChange: (tabId: TabId) => void;
   selectedAction: any;
   onActionSelect: (action: any) => void;
 }
 
 export default function HomeScreen({ 
-  onOrbTap, 
+  onBeginTap,
   onTabChange,
   selectedAction,
   onActionSelect
@@ -104,7 +104,7 @@ export default function HomeScreen({
             <div className="flex flex-col items-center justify-center max-w-none">
               {/* Main Action Button */}
               <button
-                onClick={onOrbTap}
+                onClick={onBeginTap}
                 className="relative group cursor-pointer transition-transform duration-300 hover:scale-105 w-64 h-64 rounded-full bg-gradient-to-br from-teal-500/30 to-purple-500/30 border-4 border-white/20 flex items-center justify-center"
               >
                 <div className="text-white font-bold text-xl">Begin</div>

@@ -246,8 +246,6 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
         </div>
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
-          {/* Orb */}
-
           {/* Hero Text */}
           <div className={`transition-all duration-1000 delay-300 mb-6 md:mb-0 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
             <h1 className="text-4xl md:text-7xl font-light mb-3 md:mb-6 bg-gradient-to-r from-white via-teal-400 to-purple-400 bg-clip-text text-transparent leading-tight">

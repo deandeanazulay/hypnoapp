@@ -278,8 +278,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           )}
         </div>
 
-        {/* The Orb - inheriting color from ego state */}
-
         {/* Session Guidance */}
         <div className="text-center max-w-md">
           <div className="bg-black/60 backdrop-blur-xl rounded-xl p-4 border border-white/20">

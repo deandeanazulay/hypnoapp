@@ -280,32 +280,8 @@ html, body, #root {
 }
 
 
-/* Touch target minimum sizes */
-@media (pointer: coarse) {
-  button, [role="button"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
-}
-
-/* iOS Safari UI Fix - Bullet-proof positioning */
-
-/* Main scene section so the orb never overlaps the bar */
-#scene {
-  position: relative;
-  height: calc(var(--vvh) - var(--hud-h) - var(--tabs-h));
-  min-height: 340px;
-  overflow: hidden;
-}
 
 /* Canvas must not block touches or sit above UI */
-#scene canvas,
-#orb-canvas,
-canvas {
-  position: relative;
-  z-index: 0;
-  pointer-events: auto; /* Allow orb interaction */
-}
 
 /* ACTION BAR - fixed to viewport, above tabs & safe area */
 .actions-bar {
