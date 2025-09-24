@@ -104,23 +104,17 @@ export default function HomeScreen({
             <div className="flex flex-col items-center justify-center max-w-none">
               {/* Orb Container - Sacred Space */}
               <div 
-                className="relative z-30" 
+                className="relative z-30 flex items-center justify-center" 
                 style={{ 
-                  minHeight: Math.max(240, Math.min(window.innerHeight * 0.35, 320)),
-                  minWidth: Math.max(240, Math.min(window.innerWidth * 0.6, 320)),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  width: window.innerWidth < 768 ? '240px' : '320px',
+                  height: window.innerWidth < 768 ? '240px' : '320px'
                 }}
               >
                 <Orb
                   onTap={onOrbTap}
                   afterglow={false}
                   egoState={activeEgoState}
-                  size={window.innerWidth < 768 ? 
-                    Math.max(800, Math.min(window.innerWidth * 2.4, 1120)) :
-                    Math.max(960, Math.min(window.innerHeight * 1.2, 1200))
-                  }
+                  size={window.innerWidth < 768 ? 240 : 320}
                   variant="webgl"
                 />
               </div>

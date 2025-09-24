@@ -672,17 +672,17 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
         {/* Right Side - Reactive Orb (Desktop) */}
         {/* Right Side - Preview Panel (Desktop) */}
-        <div className="hidden lg:flex lg:w-80 lg:flex-col lg:items-center lg:justify-center lg:px-6 lg:py-8">
+        <div className="hidden lg:flex lg:w-64 lg:flex-col lg:items-center lg:justify-center lg:px-4 lg:py-8">
           <div className="text-center mb-6">
             <h3 className="text-white font-medium text-lg mb-2">Journey Preview</h3>
             <p className="text-white/60 text-sm">Your custom transformation</p>
           </div>
           
-          <div className="flex items-center justify-center mb-4">
+          <div className="flex items-center justify-center mb-4 w-32 h-32 flex-shrink-0">
             <Orb
               onTap={() => {}}
               egoState={activeEgoState}
-              size={800}
+              size={128}
               variant="webgl"
             />
           </div>
