@@ -48,102 +48,97 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
     setIsPressed(false);
   };
 
+  // Calculate responsive sizing
+  const orbSize = Math.min(size, 400);
+  const ringSize1 = orbSize * 0.8;
+  const ringSize2 = orbSize * 0.6;
+  const coreSize = orbSize * 0.4;
+
   return (
-    <div className={`flex justify-center items-center ${className}`} style={{ width: size, height: size }}>
+    <div className={`flex justify-center items-center ${className}`} style={{ width: orbSize, height: orbSize }}>
       <div
         className={`relative cursor-pointer select-none transition-all duration-300 ${
           isPressed ? 'scale-95' : isHovering ? 'scale-105' : 'scale-100'
         }`}
-        style={{ width: `${size}px`, height: `${size}px` }}
+        style={{ width: `${orbSize}px`, height: `${orbSize}px` }}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
       >
-        {/* Main Orb */}
+        {/* Main Orb Core */}
         <div 
-          className={`rounded-full border-2 border-white/30 shadow-2xl relative overflow-hidden`}
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/40 shadow-2xl relative overflow-hidden"
           style={{
-            width: `${size}px`,
-            height: `${size}px`,
-            background: `linear-gradient(135deg, ${egoColor.accent}40, ${egoColor.accent}80)`,
+            width: `${coreSize}px`,
+            height: `${coreSize}px`,
+            background: `radial-gradient(circle at 30% 30%, ${egoColor.accent}90, ${egoColor.accent}60, ${egoColor.accent}30)`,
             boxShadow: afterglow 
-              ? `0 0 60px ${egoColor.accent}90, inset 0 0 30px rgba(255,255,255,0.2)`
-              : `0 0 30px ${egoColor.accent}70, inset 0 0 15px rgba(255,255,255,0.15)`,
+              ? `0 0 ${orbSize * 0.3}px ${egoColor.accent}70, 0 0 ${orbSize * 0.6}px ${egoColor.accent}40, inset 0 0 ${orbSize * 0.1}px rgba(255,255,255,0.3)`
+              : `0 0 ${orbSize * 0.2}px ${egoColor.accent}60, inset 0 0 ${orbSize * 0.05}px rgba(255,255,255,0.2)`,
             filter: isHovering ? 'brightness(1.1)' : 'none'
           }}
         >
-          {/* Animated Rings */}
+          {/* Inner Glow */}
           <div 
-            className="absolute rounded-full border border-white/20 animate-spin-slow" 
-            style={{ 
-              top: `${size * 0.1}px`, 
-              left: `${size * 0.1}px`, 
-              right: `${size * 0.1}px`, 
-              bottom: `${size * 0.1}px` 
-            }} 
-          />
-          <div 
-            className="absolute rounded-full border border-white/10 animate-spin-slower" 
-            style={{ 
-              top: `${size * 0.2}px`, 
-              left: `${size * 0.2}px`, 
-              right: `${size * 0.2}px`, 
-              bottom: `${size * 0.2}px` 
-            }} 
-          />
-          
-          {/* Center Glow */}
-          <div 
-            className="absolute rounded-full"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full animate-pulse"
             style={{
-              top: `${size * 0.25}px`,
-              left: `${size * 0.25}px`,
-              right: `${size * 0.25}px`,
-              bottom: `${size * 0.25}px`,
-              background: `radial-gradient(circle, ${egoColor.accent}40 0%, transparent 70%)`,
-              animation: 'pulse 4s ease-in-out infinite'
+              width: `${coreSize * 0.7}px`,
+              height: `${coreSize * 0.7}px`,
+              background: `radial-gradient(circle, ${egoColor.accent}50 0%, transparent 70%)`
             }}
           />
-          
-          {/* Breathing Effect */}
-          <div 
-            className="absolute rounded-full border border-white/10"
-            style={{
-              top: `${size * 0.1}px`,
-              left: `${size * 0.1}px`,
-              right: `${size * 0.1}px`,
-              bottom: `${size * 0.1}px`,
-              animation: 'breathe 6s ease-in-out infinite'
-            }}
-          />
-          
-          {/* Speaking Indicator */}
-          {isSpeaking && (
-            <div 
-              className="absolute rounded-full border-2 border-teal-400 animate-pulse" 
-              style={{
-                top: 0,
-                left: 0,
-                width: `${size}px`,
-                height: `${size}px`
-              }}
-            />
-          )}
-          
-          {/* Listening Indicator */}
-          {isListening && (
-            <div 
-              className="absolute rounded-full border-2 border-red-400 animate-ping" 
-              style={{
-                top: 0,
-                left: 0,
-                width: `${size}px`,
-                height: `${size}px`
-              }}
-            />
-          )}
         </div>
+        
+        {/* Outer Ring 1 */}
+        <div 
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20 animate-spin-slow" 
+          style={{ 
+            width: `${ringSize1}px`,
+            height: `${ringSize1}px`
+          }} 
+        />
+        
+        {/* Outer Ring 2 */}
+        <div 
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 animate-spin-slower" 
+          style={{ 
+            width: `${ringSize2}px`,
+            height: `${ringSize2}px`
+          }} 
+        />
+        
+        {/* Breathing Effect Ring */}
+        <div 
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15"
+          style={{
+            width: `${orbSize * 0.9}px`,
+            height: `${orbSize * 0.9}px`,
+            animation: 'breathe 6s ease-in-out infinite'
+          }}
+        />
+        
+        {/* Speaking Indicator */}
+        {isSpeaking && (
+          <div 
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-teal-400 animate-pulse" 
+            style={{
+              width: `${orbSize}px`,
+              height: `${orbSize}px`
+            }}
+          />
+        )}
+        
+        {/* Listening Indicator */}
+        {isListening && (
+          <div 
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-red-400 animate-ping" 
+            style={{
+              width: `${orbSize}px`,
+              height: `${orbSize}px`
+            }}
+          />
+        )}
       </div>
       
       <style jsx>{`
@@ -152,12 +147,12 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
           50% { transform: scale(1.02); opacity: 1; }
         }
         @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+          from { transform: translate(-50%, -50%) rotate(0deg); }
+          to { transform: translate(-50%, -50%) rotate(360deg); }
         }
         @keyframes spin-slower {
-          from { transform: rotate(360deg); }
-          to { transform: rotate(0deg); }
+          from { transform: translate(-50%, -50%) rotate(360deg); }
+          to { transform: translate(-50%, -50%) rotate(0deg); }
         }
       `}</style>
     </div>
