@@ -475,7 +475,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
 
         {/* Status Section - Below Orb */}
-        <div className="flex-shrink-0 px-6 mb-6">
+        <div className="flex-shrink-0">
           <div className="max-w-lg mx-auto">
             
             {/* Breathing Instructions - Above Chat */}
