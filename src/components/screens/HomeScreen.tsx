@@ -78,14 +78,14 @@ export default function HomeScreen({
             onTap={handleOrbTap}
             egoState={activeEgoState}
             afterglow={false}
-            size={400}
+            size={350}
             variant="webgl"
           />
           
           {/* Orb Guidance Text - Closer to orb */}
           <div className="text-center max-w-md px-4 -mt-8">
             {/* Current Ego State in Color */}
-            <div className="">
+            <div className="mb-3">
               <span 
                 className="text-2xl font-light"
                 style={{ color: getEgoColor(activeEgoState).accent }}
