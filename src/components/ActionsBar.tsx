@@ -3,6 +3,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { Plus } from 'lucide-react';
 import { QUICK_ACTIONS } from '../utils/actions';
+import { CustomAction } from '../state/protocolStore';
 import { THEME } from '../config/theme';
 import GlassCard from './ui/GlassCard';
 
@@ -10,7 +11,7 @@ interface ActionsBarProps {
   selectedAction: any;
   onActionSelect: (action: any) => void;
   onNavigateToCreate: () => void;
-  customActions?: any[];
+  customActions?: CustomAction[];
 }
 
 export default function ActionsBar({ 
@@ -19,7 +20,23 @@ export default function ActionsBar({
   onNavigateToCreate,
   customActions = []
 }: ActionsBarProps) {
-  const allActions = [...QUICK_ACTIONS, ...customActions];
+  // Convert custom actions to match the expected format
+  const convertedCustomActions = customActions.map(action => ({
+    id: action.id,
+    name: action.name,
+    icon: ({ size, className }: any) => {
+      // Simple icon mapping for custom actions
+      const iconName = action.iconData?.type || 'Target';
+      if (iconName === 'Target') {
+        return <div className={`w-${size/4} h-${size/4} rounded border ${className}`} />;
+      }
+      return <div className={`w-${size/4} h-${size/4} rounded ${className}`}>✨</div>;
+    },
+    color: action.color,
+    description: action.description
+  }));
+
+  const allActions = [...QUICK_ACTIONS, ...convertedCustomActions];
 
   const handleActionClick = (action: any) => {
     onActionSelect(action.id === selectedAction?.id ? null : action);

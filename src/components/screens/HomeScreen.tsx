@@ -3,6 +3,7 @@ import ActionsBar from '../ActionsBar';
 import Orb from '../Orb';
 import { EGO_STATES, useAppStore } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
+import { useProtocolStore } from '../../state/protocolStore';
 import { TabId } from '../../types/Navigation';
 import { THEME, getEgoColor } from '../../config/theme';
 
@@ -29,6 +30,7 @@ export default function HomeScreen({
 }: HomeScreenProps) {
   const { activeEgoState } = useAppStore();
   const { isAuthenticated } = useAuth();
+  const { customActions } = useProtocolStore();
   
   const currentState = EGO_STATES.find(s => s.id === activeEgoState) || EGO_STATES[0];
 
@@ -102,6 +104,7 @@ export default function HomeScreen({
           selectedAction={selectedAction}
           onActionSelect={handleActionSelect}
           onNavigateToCreate={() => isAuthenticated ? onTabChange('create') : onShowAuth()}
+          customActions={customActions}
         />
       </div>
     </div>
