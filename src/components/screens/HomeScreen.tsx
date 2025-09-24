@@ -87,10 +87,13 @@ export default function HomeScreen({
       <div className="flex-1 min-h-0 flex items-center justify-center relative z-30">
         <div className="flex items-center justify-center">
           <Orb
-          onTap={handleOrbTap}
-          afterglow={false}
-          size={400}
-          variant="webgl"
+            onTap={handleOrbTap}
+            egoState={activeEgoState}
+            afterglow={false}
+            size={400}
+            variant="webgl"
+          />
+        </div></parameter>
         />
         </div>
       </div>
