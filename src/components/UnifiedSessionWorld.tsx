@@ -476,7 +476,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
         {/* Status Section - Below Orb */}
         <div className="">
-          <div className="max-w-lg">
+          <div className="max-w-lg mx-auto">
             
             {/* Breathing Instructions - Above Chat */}
             <div className="text-center mb-20">
@@ -532,7 +532,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       </div>
 
       {/* Chat Interface - Fixed Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 p-6">
+      <div className="absolute bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 p-6 pt-40">
         <div className="max-w-4xl mx-auto space-y-4">
           
           {/* Latest AI Message */}
