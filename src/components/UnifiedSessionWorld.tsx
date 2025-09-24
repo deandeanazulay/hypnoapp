@@ -28,6 +28,8 @@ interface SessionState {
   isPaused: boolean;
   timeElapsed: number;
   totalDuration: number;
+  breathingCount: number;
+  breathingCycle: number;
 }
 
 export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfig }: UnifiedSessionWorldProps) {
@@ -42,7 +44,9 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     isSpeaking: false,
     isPaused: false,
     timeElapsed: 0,
-    totalDuration: sessionConfig.customProtocol?.duration * 60 || 15 * 60
+    totalDuration: sessionConfig.customProtocol?.duration * 60 || 15 * 60,
+    breathingCount: 4,
+    breathingCycle: 1
   });
 
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
@@ -55,6 +59,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const orbRef = useRef<any>(null);
+  const breathingTimerRef = useRef<NodeJS.Timeout | null>(null);</thinking>
 
   const egoState = getEgoState(activeEgoState);
   const egoColor = getEgoColor(activeEgoState);
@@ -110,6 +115,54 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     }
   }, [sessionConfig, isVoiceEnabled]);
 
+  // Breathing cycle management
+  useEffect(() => {
+    if (!sessionState.isPaused) {
+      breathingTimerRef.current = setInterval(() => {
+        setSessionState(prev => {
+          let newCount = prev.breathingCount - 1;
+          let newBreathing = prev.breathing;
+          let newCycle = prev.breathingCycle;
+
+          if (newCount <= 0) {
+            // Move to next breathing phase
+            switch (prev.breathing) {
+              case 'inhale':
+                newBreathing = 'hold-inhale';
+                newCount = 4; // Hold for 4 seconds
+                break;
+              case 'hold-inhale':
+                newBreathing = 'exhale';
+                newCount = 6; // Exhale for 6 seconds
+                break;
+              case 'exhale':
+                newBreathing = 'hold-exhale';
+                newCount = 2; // Hold empty for 2 seconds
+                break;
+              case 'hold-exhale':
+                newBreathing = 'inhale';
+                newCount = 4; // Inhale for 4 seconds
+                newCycle = prev.breathingCycle + 1;
+                break;
+            }
+          }
+
+          return {
+            ...prev,
+            breathingCount: newCount,
+            breathing: newBreathing,
+            breathingCycle: newCycle
+          };
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (breathingTimerRef.current) {
+        clearInterval(breathingTimerRef.current);
+      }
+    };
+  }, [sessionState.isPaused]);
   // Timer
   useEffect(() => {
     if (!sessionState.isPaused) {
@@ -128,6 +181,9 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
+      }
+      if (breathingTimerRef.current) {
+        clearInterval(breathingTimerRef.current);
       }
     };
   }, [sessionState.isPaused]);
@@ -308,10 +364,26 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
   const getBreathingInstruction = () => {
     switch (sessionState.breathing) {
-      case 'inhale': return 'Breathe in slowly...';
-      case 'hold-inhale': return 'Hold gently...';
-      case 'exhale': return 'Breathe out slowly...';
-      default: return 'Rest naturally...';
+      case 'inhale': return 'Inhale';
+      case 'hold-inhale': return 'Hold';
+      case 'exhale': return 'Exhale';
+      case 'hold-exhale': return 'Rest';
+      default: return 'Breathe';
+    }
+  };
+
+  const getBreathingScale = () => {
+    switch (sessionState.breathing) {
+      case 'inhale': 
+        return 1 + (0.3 * (1 - sessionState.breathingCount / 4)); // Expand as count decreases
+      case 'hold-inhale': 
+        return 1.3; // Stay expanded
+      case 'exhale': 
+        return 1.3 - (0.3 * (1 - sessionState.breathingCount / 6)); // Contract as count decreases
+      case 'hold-exhale': 
+        return 1; // Stay contracted
+      default: 
+        return 1;
     }
   };
 
@@ -372,47 +444,74 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         
         {/* Orb Section - Centered */}
         <div className="flex-1 flex items-center justify-center">
-          <Orb
-            ref={orbRef}
-            onTap={togglePause}
-            egoState={activeEgoState}
-            size={320}
-            afterglow={sessionState.depth > 3}
-          />
+          <div className="text-center">
+            <div 
+              className="transition-transform duration-1000 ease-in-out"
+              style={{ 
+                transform: `scale(${getBreathingScale()})`,
+                filter: sessionState.depth > 3 ? `drop-shadow(0 0 40px ${egoColor.accent}80)` : 'none'
+              }}
+            >
+              <Orb
+                ref={orbRef}
+                onTap={togglePause}
+                egoState={activeEgoState}
+                size={280}
+                afterglow={sessionState.depth > 3}
+              />
+            </div>
+            
+            {/* Breathing Counter */}
+            <div className="mt-6 text-center">
+              <div className="text-white/90 text-xl font-light mb-2">
+                {getBreathingInstruction()}
+              </div>
+              <div 
+                className="text-4xl font-bold tabular-nums transition-all duration-300"
+                style={{ color: egoColor.accent }}
+              >
+                {sessionState.breathingCount}
+              </div>
+              <div className="text-white/60 text-sm mt-2">
+                Cycle {sessionState.breathingCycle}
+              </div>
+            </div>
+          </div></thinking>
         </div>
 
         {/* Status Section - Below Orb */}
         <div className="flex-shrink-0 px-6 mb-6">
           <div className="max-w-lg mx-auto">
-            {/* Phase Card */}
-            <div className="bg-white/10 backdrop-blur-xl rounded-2xl px-6 py-4 border border-white/20 text-center mb-4">
-              <h3 className="text-white text-xl font-light mb-2">
-                {getPhaseTitle()}
-              </h3>
-              <p className="text-white/70 text-sm">
-                {getBreathingInstruction()}
-              </p>
-            </div>
 
             {/* Depth Indicator */}
-            <div className="flex items-center justify-center space-x-3">
-              <span className="text-white/60 text-sm">Trance Depth</span>
-              <div className="flex space-x-2">
+            <div className="bg-white/10 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 text-center">
+                <span 
+                  className="font-bold"
+                  style={{ color: egoColor.accent }}
+                >
+                  {sessionState.depth}/5
+                </span>
+              </div>
+              <div className="flex items-center justify-center space-x-1">
                 {[1, 2, 3, 4, 5].map((level) => (
                   <div
                     key={level}
-                    className={`w-3 h-3 rounded-full border transition-all duration-300 ${
-                      level <= sessionState.depth
-                        ? 'border-transparent'
-                        : 'border-white/30'
+                    className={`w-2 h-2 rounded-full transition-all duration-500 ${
+                      level <= sessionState.depth ? 'opacity-100' : 'opacity-30'
                     }`}
                     style={{
-                      backgroundColor: level <= sessionState.depth ? egoColor.accent : 'transparent'
+                      backgroundColor: egoColor.accent
                     }}
                   />
                 ))}
-              </div>
               <span className="text-white font-medium">{sessionState.depth}/5</span>
+            </div>
+            
+            {/* Phase Card */}
+            <div className="bg-white/10 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 text-center">
+              <h3 className="text-white font-medium">
+                {getPhaseTitle()}
+              </h3>
             </div>
           </div>
         </div>
