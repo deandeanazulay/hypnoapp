@@ -426,16 +426,16 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
 
   const breathingLabels = {
     inhale: 'Breathe In',
-    'hold-inhale': 'Hold',
+    hold: 'Hold',
     exhale: 'Breathe Out', 
-    'hold-exhale': 'Hold'
+    rest: 'Natural Breathing'
   };
 
   const breathingColors = {
     inhale: 'bg-teal-400',
-    'hold-inhale': 'bg-yellow-400',
+    hold: 'bg-yellow-400',
     exhale: 'bg-orange-400',
-    'hold-exhale': 'bg-blue-400'
+    rest: 'bg-gray-400'
   };
 
   useEffect(() => {
@@ -483,7 +483,7 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
         </div>
         
         {/* Progress bar for current breathing phase */}
-        {currentPhase !== 'rest' && (
+        {true && (
           <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden mt-2">
             <div 
               className={`h-full ${breathingColors[currentPhase]} rounded-full transition-all duration-100`}
