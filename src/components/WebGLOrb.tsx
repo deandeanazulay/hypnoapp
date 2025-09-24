@@ -33,6 +33,9 @@ function safeSize(width: number, height: number) {
 }
 
 const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
+}
+)
+)
 const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const {
     onTap,
