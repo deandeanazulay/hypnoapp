@@ -500,11 +500,9 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             />
           </div>
         </div>
-      </header>
 
-      {/* Status Indicators Row - Fixed Position Below Header */}
-      <div className="absolute top-24 left-0 right-0 z-40 px-6 py-4">
-        <div className="flex items-center justify-between">
+        {/* Indicators - Integrated into Header */}
+        <div className="mt-4 flex items-center justify-between">
           {/* Depth Indicator */}
           <div className="flex flex-col items-start space-y-2">
             <span className="text-white/60 text-xs uppercase tracking-wide font-medium">Depth</span>
@@ -555,15 +553,16 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             </div>
           </div>
         </div>
-      </div>
+      </header>
+
         
       {/* Main Content Area - Flexible Layout */}
-      <div className="flex-1 flex flex-col pt-32 pb-6 min-h-0">
+      <div className="flex-1 flex flex-col min-h-0" style={{ paddingTop: '140px' }}>
         
         {/* Orb Section - Takes most space, perfectly centered */}
-        <div className="flex-1 flex items-center justify-center min-h-0 relative pt-20 pb-12">
+        <div className="flex-1 flex items-center justify-center min-h-0 relative">
           {/* Eye Fixation Instruction */}
-          <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-10">
+          <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 z-10">
             <p className="text-white/80 text-sm font-light text-center tracking-wide">
               Focus softly on the center dot
             </p>
