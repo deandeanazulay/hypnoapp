@@ -85,9 +85,9 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
     switch (currentStep) {
       case 1:
         return (
-          <div className="">
+          <div className="space-y-6">
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-teal-400 flex items-center justify-center mx-auto ">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-teal-400 flex items-center justify-center mx-auto mb-4">
                 <Wand2 size={24} className="text-black" />
               </div>
               <h2 className="text-white text-2xl font-light mb-2">Name Your Journey</h2>
@@ -125,7 +125,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       case 2:
         return (
           <div className="space-y-6">
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center mx-auto mb-4">
                 <Target size={24} className="text-black" />
               </div>
@@ -180,7 +180,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       case 3:
         return (
           <div className="space-y-6">
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-400 to-pink-400 flex items-center justify-center mx-auto mb-4">
                 <Heart size={24} className="text-black" />
               </div>
@@ -226,7 +226,6 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
   };
 
   return (
-    <PageShell>
     <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
@@ -325,6 +324,5 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
         </div>
       </div>
     </div>
-    </PageShell>
   );
 }
