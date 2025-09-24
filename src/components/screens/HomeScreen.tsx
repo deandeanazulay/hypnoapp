@@ -123,9 +123,9 @@ export default function HomeScreen({
                   variant="webgl"
                 />
               </div>
-                
-              {/* Session configuration display - always visible */}
-              <div className="mt-4 mb-4 text-center relative z-40 bg-black/60 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 shadow-lg mx-4">
+              
+              {/* Session configuration display - moved directly below orb */}
+              <div className="mt-6 text-center relative z-40 bg-black/60 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 shadow-lg mx-4">
                 <p className="text-teal-400 text-sm font-medium">
                   {currentState.name} Mode
                 </p>
@@ -138,15 +138,17 @@ export default function HomeScreen({
                   {selectedAction ? 'Tap orb to begin' : 'Select action & tap orb'}
                 </p>
               </div>
+              
+              {/* Choose session type text */}
+              <div className="mt-3 text-center">
+                <p className="text-white/50 text-xs font-medium">Choose session type</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Section - Actions Bar */}
         <div className="flex-shrink-0 pb-2 px-4 pt-4">
-          <div className="text-center mb-3">
-            <p className="text-white/50 text-xs font-medium">Choose session type</p>
-          </div>
           <ActionsBar 
             selectedAction={selectedAction}
             onActionSelect={onActionSelect}
