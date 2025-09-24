@@ -22,7 +22,6 @@ function supportsWebGL(): boolean {
 
 export default function Orb({ variant = 'auto', ...props }: OrbProps) {
   const [useWebGL, setUseWebGL] = useState<boolean | null>(null);
-  const [webglFailed, setWebglFailed] = useState(false);
 
   useEffect(() => {
     // Defer until client to avoid SSR mismatches
@@ -35,11 +34,6 @@ export default function Orb({ variant = 'auto', ...props }: OrbProps) {
     }
   }, [variant]);
 
-  // Listen for WebGL failures and fallback to CSS
-  const handleWebGLError = () => {
-    setWebglFailed(true);
-    setUseWebGL(false);
-  };
   // Loading state to avoid hydration flashes
   if (useWebGL === null) {
     return (
@@ -47,19 +41,15 @@ export default function Orb({ variant = 'auto', ...props }: OrbProps) {
         className={`flex items-center justify-center ${props.className || ''}`}
         style={{ width: props.size || 280, height: props.size || 280 }}
       >
-        <CSSOrb {...props} />
+        <div className="w-8 h-8 border-2 border-teal-400/30 border-t-teal-400 rounded-full animate-spin" />
       </div>
     );
   }
 
-  // Use CSS if WebGL failed, variant is CSS, or WebGL is unsupported
-  const shouldUseWebGL = variant === 'css' ? false : (useWebGL && !webglFailed);
+  // Force WebGL unless explicitly unsupported or CSS variant requested
+  const shouldUseWebGL = variant === 'css' ? false : useWebGL;
 
-  return shouldUseWebGL ? (
-    <WebGLOrb {...props} onError={handleWebGLError} />
-  ) : (
-    <CSSOrb {...props} />
-  );
+  return shouldUseWebGL ? <WebGLOrb {...props} /> : <CSSOrb {...props} />;
 }
 
 // Re-export the ref type for convenience
