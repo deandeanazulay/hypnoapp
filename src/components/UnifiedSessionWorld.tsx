@@ -506,7 +506,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       <div className="flex flex-col h-full pt-24 pb-4">
         
         {/* Status Indicators - Positioned below header */}
-        <div className="absolute top-24 left-6 z-20 pt-4">
+        <div className="absolute top-32 left-6 z-20">
           <div className="flex flex-col items-start space-y-2">
             <span className="text-white/60 text-xs uppercase tracking-wide">Depth</span>
             <div className="flex items-center space-x-1">
@@ -526,7 +526,24 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           </div>
         </div>
         
-        <div className="absolute top-24 right-6 z-20 pt-4">
+        {/* Breathing Instruction - Centered between indicators */}
+        <div className="absolute top-32 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="flex flex-col items-center space-y-2">
+            <span className="text-white/60 text-xs uppercase tracking-wide">Breathing</span>
+            <span 
+              className="text-lg font-medium px-4 py-2 rounded-full border"
+              style={{ 
+                color: egoColor.accent,
+                borderColor: egoColor.accent + '40',
+                backgroundColor: egoColor.accent + '20'
+              }}
+            >
+              {getBreathingInstruction()}
+            </span>
+          </div>
+        </div>
+        
+        <div className="absolute top-32 right-6 z-20">
           <div className="flex flex-col items-end space-y-2">
             <span className="text-white/60 text-xs uppercase tracking-wide">Phase</span>
             <span 
