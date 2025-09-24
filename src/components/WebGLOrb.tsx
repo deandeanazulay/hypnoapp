@@ -14,7 +14,6 @@ interface WebGLOrbProps {
   egoState?: string;
   className?: string;
   afterglow?: boolean;
-  onError?: () => void;
 }
 
 function supportsWebGL(): boolean {
@@ -27,7 +26,6 @@ function supportsWebGL(): boolean {
 }
 
 function safeSize(width: number, height: number) {
-  // Stay under common 4096*4096 limits on mobile
   const MAX = 4096;
   const scale = Math.min(1, MAX / Math.max(width, height));
   return { w: Math.floor(width * scale), h: Math.floor(height * scale) };
@@ -39,39 +37,25 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     size = 280,
     egoState = 'guardian',
     className = '',
-    afterglow = false,
-    onError
+    afterglow = false
   } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const orbMeshRef = useRef<THREE.LineSegments | null>(null);
+  const orbMeshRef = useRef<THREE.Mesh | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const isActiveRef = useRef(true);
-  const [webglSupported, setWebglSupported] = React.useState<boolean | null>(null);
-  
-  // Context loss tracking
   const contextLostRef = useRef(false);
   
-  // Alien state for fractal mathematics
-  const alienStateRef = useRef({
-    pulse: 0,
-    intensity: 1,
-    colorShift: 0,
-    organicOffset: 0,
-    fractalPhase: 0
-  });
-
   // State for animations
   const [isSpeaking, setIsSpeaking] = React.useState(false);
   const [isListening, setIsListening] = React.useState(false);
-  const [currentState, setCurrentState] = React.useState<any>({});
 
   useImperativeHandle(ref, () => ({
     updateState: (state: any) => {
-      setCurrentState(state);
+      // Handle state updates if needed
     },
     setSpeaking: (speaking: boolean) => {
       setIsSpeaking(speaking);
@@ -81,17 +65,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     }
   }));
 
-  // Check WebGL support on mount
-  useEffect(() => {
-    setWebglSupported(supportsWebGL());
-  }, []);
-
   // Initialize Three.js scene
   useEffect(() => {
-    if (webglSupported === false || !containerRef.current) {
-      onError?.();
-      return;
-    }
+    if (!containerRef.current) return;
 
     const container = containerRef.current;
     const { w, h } = safeSize(size, size);
@@ -106,7 +82,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     cameraRef.current = camera;
 
     // Renderer setup with iOS Safari optimizations
-    const MAX_DPR = 1.5; // Avoid huge textures on iOS
+    const MAX_DPR = 1.5;
     const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
 
     const renderer = new THREE.WebGLRenderer({
@@ -118,24 +94,27 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     
     renderer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
-    renderer.setClearColor(0x000000, 0); // Transparent background
+    renderer.setClearColor(0x000000, 0);
     rendererRef.current = renderer;
 
-    // WebGL context loss handling
     const canvas = renderer.domElement;
-    canvas.addEventListener('webglcontextlost', (e) => {
+
+    // Fixed event listener cleanup
+    const onLost = (e: Event) => {
       e.preventDefault();
       contextLostRef.current = true;
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }
-    });
-    
-    canvas.addEventListener('webglcontextrestored', () => {
+    };
+
+    const onRestored = () => {
       contextLostRef.current = false;
       initializeOrb();
-    });
+    };
 
+    canvas.addEventListener('webglcontextlost', onLost, false);
+    canvas.addEventListener('webglcontextrestored', onRestored, false);
 
     // Style canvas
     canvas.style.width = `${size}px`;
@@ -150,8 +129,6 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     canvas.addEventListener('click', onTap);
 
     container.appendChild(canvas);
-
-    // Initialize orb geometry
     initializeOrb();
 
     return () => {
@@ -160,21 +137,19 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         cancelAnimationFrame(animationIdRef.current);
       }
       canvas.removeEventListener('click', onTap);
-      canvas.removeEventListener('webglcontextlost', () => {});
-      canvas.removeEventListener('webglcontextrestored', () => {});
+      canvas.removeEventListener('webglcontextlost', onLost, false);
+      canvas.removeEventListener('webglcontextrestored', onRestored, false);
       if (container.contains(canvas)) {
         container.removeChild(canvas);
       }
       renderer.dispose();
     };
-  }, [webglSupported, size, onTap]);
+  }, [size, onTap]);
 
   const initializeOrb = () => {
     if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return;
 
     const scene = sceneRef.current;
-    const renderer = rendererRef.current;
-    const camera = cameraRef.current;
 
     // Clear existing orb
     if (orbMeshRef.current) {
@@ -185,70 +160,104 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const egoColorInfo = getEgoColor(egoState);
     const color = new THREE.Color(egoColorInfo.accent);
 
-    // Create fractal sphere geometry that can deform mathematically
-    const sphereGeometry = new THREE.SphereGeometry(10, 64, 64);
-    
-    // Store original vertex positions for fractal deformation
-    const originalPositions = sphereGeometry.attributes.position.array.slice();
-    sphereGeometry.userData = { originalPositions };
-    
-    // Add initial mathematical noise pattern
-    const positions = sphereGeometry.attributes.position.array;
-    for (let i = 0; i < positions.length; i += 3) {
-      const x = positions[i];
-      const y = positions[i + 1];
-      const z = positions[i + 2];
-      
-      // Add mathematical fractal pattern
-      const fractalNoise = Math.sin(x * 0.5) * Math.cos(y * 0.3) * Math.sin(z * 0.7) * 0.2;
-      const secondaryNoise = Math.sin(x * 1.2) * Math.cos(y * 0.8) * Math.sin(z * 1.5) * 0.1;
-      const factor = 1 + (fractalNoise + secondaryNoise) * 0.15;
-      
-      positions[i] = x * factor;
-      positions[i + 1] = y * factor;
-      positions[i + 2] = z * factor;
-    }
-    sphereGeometry.attributes.position.needsUpdate = true;
-    
-    const wireframeGeometry = new THREE.WireframeGeometry(sphereGeometry);
-    
-    // Create material with ego state color
-    const material = new THREE.LineBasicMaterial({
-      color: color,
-      transparent: true,
-      opacity: afterglow ? 0.6 : 0.4,
-      linewidth: 2
+    // 1) Base sphere geometry (created once)
+    const sphere = new THREE.SphereGeometry(10, 96, 96);
+
+    // 2) GPU-based shader material with wireframe
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uSpeak: { value: 0 },
+        uListen: { value: 0 },
+        uAfterglow: { value: afterglow ? 1 : 0 },
+        uColor: { value: color }
+      },
+      vertexShader: `
+        uniform float uTime;
+        uniform float uSpeak;
+        uniform float uListen;
+
+        // Classic noise function
+        float noise3(vec3 p) {
+          return sin(p.x * 0.8 + uTime) * cos(p.y * 1.2 + uTime * 0.7) * sin(p.z * 0.6 + uTime * 1.3);
+        }
+
+        void main() {
+          vec3 p = position;
+
+          // Spherical coordinate variations
+          float phi = atan(normal.y, normal.x);
+          float theta = acos(normal.z);
+
+          // Multiple fractal layers
+          float f1 = sin(phi * 3.0 + uTime * 0.8) * cos(theta * 2.0 + uTime * 0.5) * 0.4;
+          float f2 = sin(phi * 7.0 + uTime * 1.2) * cos(theta * 5.0 + uTime * 0.9) * 0.2;
+          float f3 = sin(phi * 11.0 + uTime * 0.6) * cos(theta * 8.0 + uTime * 1.1) * 0.15;
+
+          // Chaotic noise
+          float chaos = noise3(position) * 0.3;
+
+          // Alien pulse
+          float pulse = sin(uTime * 1.3) * 0.3 + sin(uTime * 2.7) * 0.2 + sin(uTime * 4.1) * 0.1;
+          
+          // Speaking/listening modulation
+          float speakMod = mix(1.0, 1.4, uSpeak) * (1.0 + 0.2 * sin(uTime * 8.0 + phi * 5.0));
+          float listenMod = mix(1.0, 1.2, uListen) * (1.0 + 0.2 * sin(uTime * 12.0 + phi * 7.0));
+
+          // Combine all deformations
+          float deform = 1.0 + (f1 + f2 + f3 + chaos + pulse) * 0.12;
+          deform *= speakMod * listenMod;
+
+          p *= deform;
+
+          // Push out slightly along normal for better wireframe visibility
+          p += normal * 0.02;
+
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        uniform float uAfterglow;
+        
+        void main() {
+          gl_FragColor = vec4(uColor, mix(0.4, 0.6, uAfterglow));
+        }
+      `,
+      wireframe: true,
+      transparent: true
     });
 
-    // Create mesh
-    const orbMesh = new THREE.LineSegments(wireframeGeometry, material);
-    orbMeshRef.current = orbMesh;
-    scene.add(orbMesh);
+    // 3) Create mesh
+    const orb = new THREE.Mesh(sphere, material);
+    orbMeshRef.current = orb;
+    scene.add(orb);
 
-    // Add multiple alien glow layers
-    const glowGeometry = new THREE.SphereGeometry(9.5, 32, 32);
-    const glowMaterial1 = new THREE.MeshBasicMaterial({
-      color: color,
-      transparent: true,
-      opacity: afterglow ? 0.12 : 0.06,
-      side: THREE.BackSide
-    });
-    const glowMesh1 = new THREE.Mesh(glowGeometry, glowMaterial1);
-    scene.add(glowMesh1);
+    // 4) Create glow shells once
+    const glow1 = new THREE.Mesh(
+      new THREE.SphereGeometry(9.5, 32, 32),
+      new THREE.MeshBasicMaterial({ 
+        color: color, 
+        transparent: true, 
+        opacity: afterglow ? 0.12 : 0.06, 
+        side: THREE.BackSide 
+      })
+    );
     
-    // Second pulsing layer
-    const pulseGeometry = new THREE.SphereGeometry(8, 32, 32);
-    const pulseMaterial = new THREE.MeshBasicMaterial({
-      color: color,
-      transparent: true,
-      opacity: 0.04,
-      side: THREE.BackSide
-    });
-    const pulseMesh = new THREE.Mesh(pulseGeometry, pulseMaterial);
-    scene.add(pulseMesh);
+    const glow2 = new THREE.Mesh(
+      new THREE.SphereGeometry(8.0, 32, 32),
+      new THREE.MeshBasicMaterial({ 
+        color: color, 
+        transparent: true, 
+        opacity: 0.04, 
+        side: THREE.BackSide 
+      })
+    );
     
+    scene.add(glow1, glow2);
+
     // Store references for animation
-    orbMesh.userData = { glowMesh1, pulseMesh, sphereGeometry };
+    orb.userData = { glow1, glow2, material };
 
     // Start animation loop
     animate();
@@ -257,133 +266,58 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const animate = () => {
     if (!isActiveRef.current || !rendererRef.current || !cameraRef.current || !sceneRef.current) return;
     if (contextLostRef.current) return;
-    if (contextLost) return;
 
-    const time = Date.now() * 0.001;
-    const alienState = alienStateRef.current;
+    const time = performance.now() * 0.001;
+    const orb = orbMeshRef.current as THREE.Mesh & { userData: any };
     
-    // Alien pulsing pattern - irregular, organic
-    alienState.pulse = Math.sin(time * 1.3) * 0.3 + 
-                      Math.sin(time * 2.7) * 0.2 + 
-                      Math.sin(time * 4.1) * 0.1;
-    
-    // Color intensity shifts
-    alienState.intensity = 1 + Math.sin(time * 0.7) * 0.3;
-    
-    // Organic offset for movement
-    alienState.organicOffset = Math.sin(time * 0.5) * 0.02;
-    
-    // Fractal deformation phase
-    alienState.fractalPhase = time * 0.6;
+    if (orb && orb.userData.material) {
+      const uniforms = orb.userData.material.uniforms;
+      
+      // Update shader uniforms (GPU-side)
+      uniforms.uTime.value = time;
+      uniforms.uSpeak.value = isSpeaking ? 1 : 0;
+      uniforms.uListen.value = isListening ? 1 : 0;
 
-    // Apply fractal deformations to the sphere geometry
-    if (orbMeshRef.current && orbMeshRef.current.userData.sphereGeometry) {
-      const geometry = orbMeshRef.current.userData.sphereGeometry;
-      const originalPositions = geometry.userData.originalPositions;
-      const positions = geometry.attributes.position.array;
+      // Breathing and rotation (CPU-side transforms)
+      const primaryPulse = 0.85 + 0.15 * Math.sin(time * 0.6);
+      const alienPulse = Math.sin(time * 1.3) * 0.3 + Math.sin(time * 2.7) * 0.2 + Math.sin(time * 4.1) * 0.1;
+      const breathingScale = primaryPulse * (1 + alienPulse * 0.08);
       
-      for (let i = 0; i < positions.length; i += 3) {
-        const origX = originalPositions[i];
-        const origY = originalPositions[i + 1];
-        const origZ = originalPositions[i + 2];
-        
-        // Mathematical fractal deformation
-        const phi = Math.atan2(origY, origX);
-        const theta = Math.acos(origZ / Math.sqrt(origX * origX + origY * origY + origZ * origZ));
-        
-        // Multiple fractal layers
-        const fractal1 = Math.sin(phi * 3 + time * 0.8) * Math.cos(theta * 2 + time * 0.5) * 0.4;
-        const fractal2 = Math.sin(phi * 7 + time * 1.2) * Math.cos(theta * 5 + time * 0.9) * 0.2;
-        const fractal3 = Math.sin(phi * 11 + time * 0.6) * Math.cos(theta * 8 + time * 1.1) * 0.15;
-        
-        // Chaotic mathematical noise
-        const chaos = Math.sin(origX * 0.8 + time) * Math.cos(origY * 1.2 + time * 0.7) * Math.sin(origZ * 0.6 + time * 1.3) * 0.3;
-        
-        // Combine all deformations
-        const totalDeformation = fractal1 + fractal2 + fractal3 + chaos + alienState.pulse;
-        const deformationFactor = 1 + totalDeformation * 0.12;
-        
-        // Apply speaking/listening effects
-        let speakingMod = 1;
-        if (isSpeaking) {
-          speakingMod = 1 + 0.4 * Math.sin(time * 8 + phi * 5) * Math.cos(time * 6 + theta * 3);
-        }
-        if (isListening) {
-          speakingMod = 1 + 0.2 * Math.sin(time * 12 + phi * 7) * Math.cos(time * 10 + theta * 4);
-        }
-        
-        positions[i] = origX * deformationFactor * speakingMod;
-        positions[i + 1] = origY * deformationFactor * speakingMod;
-        positions[i + 2] = origZ * deformationFactor * speakingMod;
-      }
-      
-      geometry.attributes.position.needsUpdate = true;
-      
-      // Update wireframe
-      const wireframeGeometry = new THREE.WireframeGeometry(geometry);
-      orbMeshRef.current.geometry.dispose();
-      orbMeshRef.current.geometry = wireframeGeometry;
-    }
+      orb.scale.setScalar(breathingScale);
 
-    // Alien breathing - more dramatic and irregular
-    const primaryPulse = 0.85 + 0.15 * Math.sin(time * 0.6);  // Main heartbeat
-    const secondaryPulse = 1 + alienState.pulse * 0.08;       // Irregular alien pulse
-    const breathingScale = primaryPulse * secondaryPulse;
-    
-    // Alien rotation - multi-axis, unpredictable
-    const baseRotationSpeed = afterglow ? 0.4 : 0.25;
-    const alienRotationX = time * baseRotationSpeed + Math.sin(time * 0.3) * 0.1;
-    const alienRotationY = time * baseRotationSpeed * 0.7 + Math.cos(time * 0.4) * 0.15;
-    const alienRotationZ = Math.sin(time * 0.2) * 0.05;
-    
-    if (orbMeshRef.current) {
-      orbMeshRef.current.scale.setScalar(breathingScale);
-      orbMeshRef.current.rotation.x = alienRotationX;
-      orbMeshRef.current.rotation.y = alienRotationY; 
-      orbMeshRef.current.rotation.z = alienRotationZ;
-      
-      // Alien organic movement
-      orbMeshRef.current.position.x = Math.sin(time * 0.3) * 0.5;
-      orbMeshRef.current.position.y = Math.cos(time * 0.4) * 0.3;
-      orbMeshRef.current.position.z = Math.sin(time * 0.2) * 0.2;
-      
-      // Update material opacity for alien intensity
-      const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
-      material.opacity = (afterglow ? 0.4 : 0.25) * alienState.intensity;
-      
+      // Alien rotation
+      const baseRotationSpeed = afterglow ? 0.4 : 0.25;
+      orb.rotation.x = time * baseRotationSpeed + Math.sin(time * 0.3) * 0.1;
+      orb.rotation.y = time * baseRotationSpeed * 0.7 + Math.cos(time * 0.4) * 0.15;
+      orb.rotation.z = Math.sin(time * 0.2) * 0.05;
+
+      // Organic movement
+      orb.position.x = Math.sin(time * 0.3) * 0.5;
+      orb.position.y = Math.cos(time * 0.4) * 0.3;
+      orb.position.z = Math.sin(time * 0.2) * 0.2;
+
       // Animate glow layers
-      const userData = orbMeshRef.current.userData;
-      if (userData.glowMesh1) {
-        userData.glowMesh1.scale.setScalar(0.9 + alienState.pulse * 0.2);
-        userData.glowMesh1.rotation.x = -alienRotationX * 0.5;
-        userData.glowMesh1.rotation.y = -alienRotationY * 0.3;
+      const { glow1, glow2 } = orb.userData;
+      if (glow1) {
+        glow1.scale.setScalar(0.9 + Math.sin(time * 1.1) * 0.1);
+        glow1.rotation.x = -orb.rotation.x * 0.5;
+        glow1.rotation.y = -orb.rotation.y * 0.3;
         
-        const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
-        glowMat.opacity = (afterglow ? 0.12 : 0.06) * (1 + alienState.pulse * 0.5);
+        const glowMat = glow1.material as THREE.MeshBasicMaterial;
+        glowMat.opacity = (afterglow ? 0.12 : 0.06) * (1 + Math.sin(time * 1.3) * 0.5);
       }
       
-      if (userData.pulseMesh) {
-        const pulseScale = 0.7 + Math.abs(alienState.pulse) * 0.4;
-        userData.pulseMesh.scale.setScalar(pulseScale);
-        userData.pulseMesh.rotation.z = time * 0.5;
+      if (glow2) {
+        const pulseScale = 0.7 + Math.abs(Math.sin(time * 2.0)) * 0.4;
+        glow2.scale.setScalar(pulseScale);
+        glow2.rotation.z = time * 0.5;
         
-        const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
-        pulseMat.opacity = 0.04 + Math.abs(alienState.pulse) * 0.08;
-      }
-
-      // Speaking indicator - alien excitement
-      if (isSpeaking) {
-        // Rapid color shifting when speaking
-        material.opacity = 0.3 + 0.15 * Math.sin(time * 8);
-      }
-
-      // Listening indicator - alien attention mode
-      if (isListening) {
-        material.opacity = 0.2 + 0.25 * Math.sin(time * 10);
+        const pulseMat = glow2.material as THREE.MeshBasicMaterial;
+        pulseMat.opacity = 0.04 + Math.abs(Math.sin(time * 2.0)) * 0.08;
       }
     }
 
-    // Dynamic camera movement - alien perspective shifts
+    // Dynamic camera movement
     if (cameraRef.current) {
       cameraRef.current.position.x = 3 * Math.sin(time * 0.12) + Math.sin(time * 0.8) * 0.5;
       cameraRef.current.position.y = 2 * Math.cos(time * 0.18) + Math.cos(time * 1.1) * 0.3;
@@ -395,23 +329,22 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     animationIdRef.current = requestAnimationFrame(animate);
   };
 
-  // Update alien orb color when ego state changes
+  // Update orb color when ego state changes
   useEffect(() => {
-    if (orbMeshRef.current && sceneRef.current) {
+    if (orbMeshRef.current && orbMeshRef.current.userData.material) {
       const egoColorInfo = getEgoColor(egoState);
       const color = new THREE.Color(egoColorInfo.accent);
-      const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
-      material.color = color;
       
-      // Update glow layers too
-      const userData = orbMeshRef.current.userData;
-      if (userData.glowMesh1) {
-        const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
-        glowMat.color = color;
+      const uniforms = orbMeshRef.current.userData.material.uniforms;
+      uniforms.uColor.value.copy(color);
+      
+      // Update glow layers
+      const { glow1, glow2 } = orbMeshRef.current.userData;
+      if (glow1) {
+        (glow1.material as THREE.MeshBasicMaterial).color.copy(color);
       }
-      if (userData.pulseMesh) {
-        const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
-        pulseMat.color = color;
+      if (glow2) {
+        (glow2.material as THREE.MeshBasicMaterial).color.copy(color);
       }
     }
   }, [egoState]);
@@ -421,7 +354,6 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const handleResize = () => {
       if (!rendererRef.current || !cameraRef.current || !containerRef.current) return;
       
-      const container = containerRef.current;
       const { w, h } = safeSize(size, size);
       
       cameraRef.current.aspect = w / h;
@@ -432,24 +364,6 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [size]);
-
-  // Don't render anything if WebGL check is pending
-  if (webglSupported === null) {
-    return (
-      <div 
-        className={`flex items-center justify-center ${className}`}
-        style={{ width: size, height: size }}
-      >
-        <div className="w-8 h-8 border-2 border-teal-400/30 border-t-teal-400 rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // Show error if WebGL is not supported
-  if (!webglSupported) {
-    onError?.();
-    return null;
-  }
 
   return (
     <div 
