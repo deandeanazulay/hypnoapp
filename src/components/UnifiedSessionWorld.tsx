@@ -465,7 +465,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           </div>
         </div>
         
-        <div className="absolute top-32 right-6 z-20 pt-4">
+        <div className="absolute top-24 right-6 z-20 pt-4">
           <div className="flex flex-col items-end space-y-2">
             <span className="text-white/60 text-xs uppercase tracking-wide">Phase</span>
             <span 
