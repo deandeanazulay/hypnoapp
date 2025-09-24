@@ -27,7 +27,7 @@ interface SessionState {
   timeElapsed: number;
   totalDuration: number;
   depth: number;
-  breathing: 'inhale' | 'hold' | 'exhale' | 'rest';
+  breathing: 'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale';
   isActive: boolean;
   isPaused: boolean;
   voiceEnabled: boolean;
@@ -64,7 +64,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     if (sessionState.isActive && !sessionState.isPaused) {
       interval = setInterval(() => {
         setSessionState(prev => {
-          const newTimeElapsed = prev.timeElapsed + 1;
+          const breathingCycle = ['inhale', 'hold-inhale', 'exhale', 'hold-exhale'] as const;
           
           // Auto-complete when time is up
           if (newTimeElapsed >= prev.totalDuration) {
@@ -303,7 +303,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               {sessionState.phase === 'integration' && "Integrating this transformation into your being."}
               {sessionState.phase === 'completion' && "Bringing this awareness back with you."}
             </p>
-          </div>
         </div>
       </div>
 

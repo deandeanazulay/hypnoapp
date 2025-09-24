@@ -316,8 +316,9 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange }: 
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${
                   sessionState.breathing === 'inhale' ? 'bg-teal-400' :
-                  sessionState.breathing === 'hold' ? 'bg-yellow-400' :
-                  sessionState.breathing === 'exhale' ? 'bg-orange-400' : 'bg-gray-400'
+                  sessionState.breathing === 'hold-inhale' ? 'bg-yellow-400' :
+                  sessionState.breathing === 'exhale' ? 'bg-orange-400' :
+                  sessionState.breathing === 'hold-exhale' ? 'bg-blue-400' : 'bg-gray-400'
                 }`} />
                 <span className="capitalize">{sessionState.breathing}</span>
               </div>
