@@ -44,7 +44,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     timeElapsed: 0,
     totalDuration: sessionConfig.action?.duration || 900, // 15 minutes default
     depth: 1,
-    breathing: 'rest',
+    breathing: 'hold-exhale',
     isActive: false,
     isPaused: false,
     voiceEnabled: true,
@@ -303,6 +303,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               {sessionState.phase === 'integration' && "Integrating this transformation into your being."}
               {sessionState.phase === 'completion' && "Bringing this awareness back with you."}
             </p>
+          </div>
         </div>
       </div>
 
@@ -482,7 +483,7 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
         </div>
         
         {/* Progress bar for current breathing phase */}
-        {true && (
+        {currentPhase !== 'rest' && (
           <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden mt-2">
             <div 
               className={`h-full ${breathingColors[currentPhase]} rounded-full transition-all duration-100`}
