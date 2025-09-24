@@ -16,7 +16,7 @@ import AuthModal from './components/auth/AuthModal';
 import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancelled from './components/PaymentCancelled';
 import { useViewportLayout } from './hooks/useViewportLayout';
-import { useAppStore } from './state/appStore';
+import { useAppStore } from './store';
 import { useAuth } from './hooks/useAuth';
 import { useProtocolStore } from './state/protocolStore';
 import { Target } from 'lucide-react';
