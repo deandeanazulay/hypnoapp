@@ -697,13 +697,13 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               
               <button
                 onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-              className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
                   isVoiceEnabled 
                     ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/30' 
                     : 'bg-white/10 border-white/30 text-white/60'
                 }`}
               >
-              {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
               </button>
               
               <button
@@ -715,11 +715,13 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 }`}
               >
                 {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+              </button>
             </div>
             
             {/* Right Side - Phase Info or Additional Space */}
             <div className="flex-1 text-center">
               <div className="text-white/60 text-xs">{getPhaseTitle()}</div>
+            </div>
           </div>
           
           {/* Bottom Row - Communication */}
