@@ -307,7 +307,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
               
               {/* Create Header */}
               <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
-                <div className="flex items-center ">
+                <div className="flex items-center space-x-3 mb-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-purple-500/40 flex items-center justify-center">
                     <Wand2 size={20} className="text-black" />
                   </div>
@@ -349,9 +349,9 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
               {/* Step Navigation */}
               <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
-                {/* Step Indicator */}
+                <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
                 <div className="text-center mb-3">
-                  <div className="text-white/60 text-sm mb-2">Step {currentStep} of 3</div>
+                    <Brain size={16} className="text-teal-400" />
                   <div className="flex justify-center space-x-2">
                     {[1, 2, 3].map((step) => (
                       <div
@@ -409,7 +409,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                     <Brain size={16} className="text-teal-400" />
                     <span>Protocol Preview</span>
                   </h3>
-                  <div className="space-y-2">
+function renderStepContent() {
                     <div className="flex items-center justify-between bg-black/20 rounded-lg p-2 border border-white/10">
                       <span className="text-white/70">Name</span>
                       <span className="text-white font-medium">{protocol.name || 'Untitled'}</span>
@@ -448,9 +448,9 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                   <li className="flex items-start space-x-2">
                     <span className="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0" />
                     <span>Your protocol will appear in the actions bar after creation</span>
-                  </li>
+        <div className="space-y-4">
                 </ul>
-              </div>
+            <h2 className="text-white text-lg font-light mb-2">Name Your Journey</h2>
             </div>
           </div>
         }
