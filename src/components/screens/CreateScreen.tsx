@@ -682,7 +682,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
             <Orb
               onTap={() => {}}
               egoState={activeEgoState}
-              size={64}
+             size={120}
               variant="webgl"
             />
           </div>
