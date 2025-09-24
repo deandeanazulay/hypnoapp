@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, UserProfile } from '../lib/supabase';
-import { useAuth } from '../hooks/useSimpleAuth';
+import { useSimpleAuth as useAuth } from '../hooks/useSimpleAuth';
 import { paymentService } from '../lib/stripe';
-import { useUIStore } from '../state/uiStore';
+import { useAppStore } from '../store';
 
 interface UserState {
   level: number;
@@ -282,7 +282,7 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const completeSession = (sessionType: string, duration: number) => {
-    const { showToast } = useUIStore.getState();
+    const { showToast } = useAppStore.getState();
     // Get current ego state from appStore
     const currentEgoState = localStorage.getItem('app-store') ? 
       JSON.parse(localStorage.getItem('app-store') || '{}').state?.activeEgoState || 'guardian' : 'guardian';

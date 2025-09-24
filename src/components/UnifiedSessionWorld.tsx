@@ -3,8 +3,8 @@ import { X, Play, Pause, SkipForward, Volume2, VolumeX, Mic, MicOff } from 'luci
 import CSSOrb from './ui/CSSOrb';
 import AIVoiceSystem from './AIVoiceSystem';
 import { useGameState } from './GameStateManager';
-import { getEgoState } from '../state/appStore';
-import { useUIStore } from '../state/uiStore';
+import { getEgoState } from '../store';
+import { useAppStore } from '../store';
 
 interface SessionConfig {
   egoState: string;
@@ -35,7 +35,7 @@ interface SessionState {
 
 export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfig }: UnifiedSessionWorldProps) {
   const { completeSession } = useGameState();
-  const { showToast } = useUIStore();
+  const { showToast } = useAppStore();
   const orbRef = useRef<any>(null);
   
   const [sessionState, setSessionState] = useState<SessionState>({

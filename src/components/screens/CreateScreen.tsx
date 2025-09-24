@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Save, Clock, Zap, Target, Sparkles, Edit3, Crown, Infinity, Music, Star, Lock, Play, Eye, Waves, Book, Wind } from 'lucide-react';
 import CSSOrb from '../ui/CSSOrb';
 import AuthModal from '../auth/AuthModal';
-import { useUIStore } from '../../state/uiStore';
+import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
 import { paymentService } from '../../lib/stripe';
-import { useAuth } from '../../hooks/useAuth';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useProtocolStore } from '../../state/protocolStore';
 
 interface CustomProtocol {
@@ -27,7 +27,7 @@ type WizardStep = 'name' | 'duration' | 'induction' | 'deepener' | 'finalize';
 
 export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScreenProps) {
   const { user, canAccess } = useGameState();
-  const { showToast } = useUIStore();
+  const { showToast } = useAppStore();
   const { isAuthenticated } = useAuth();
   const { addCustomAction } = useProtocolStore();
   const [showAuthModal, setShowAuthModal] = useState(false);

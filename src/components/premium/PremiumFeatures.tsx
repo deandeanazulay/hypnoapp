@@ -1,7 +1,7 @@
 import React from 'react';
 import { Crown, Zap, Sparkles, Shield, HeadphonesIcon, Infinity } from 'lucide-react';
 import { paymentService } from '../../lib/stripe';
-import { useUIStore } from '../../state/uiStore';
+import { useAppStore } from '../../store';
 
 interface PremiumFeature {
   id: string;
@@ -61,7 +61,7 @@ interface PremiumFeaturesProps {
 }
 
 export default function PremiumFeatures({ currentTier = 'free', onUpgrade }: PremiumFeaturesProps) {
-  const { showToast } = useUIStore();
+  const { showToast } = useAppStore();
   const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
   const getFeatureStatus = (feature: PremiumFeature) => {
     const tierLevels = { free: 0, pro: 1, premium: 2, ultimate: 3 };

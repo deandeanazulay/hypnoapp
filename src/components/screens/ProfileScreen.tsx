@@ -1,13 +1,12 @@
 import React from 'react';
 import { Settings, Award, TrendingUp, Calendar, Target, ChevronRight, Zap, Crown, Star, Sparkles, Play, Eye, Brain, Compass, Shield, Heart, BookOpen, Lock, ArrowRight, Flame, Moon, Sun, Infinity } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
-import { useAuth } from '../../hooks/useAuth';
-import { useAppStore, getEgoState } from '../../state/appStore';
-import { useUIStore } from '../../state/uiStore';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
+import { useAppStore, getEgoState } from '../../store';
 import { paymentService } from '../../lib/stripe';
 import PageShell from '../layout/PageShell';
 import SettingsModal from '../modals/SettingsModal';
-import WebGLOrb from '../WebGLOrb';
+import CSSOrb from '../ui/CSSOrb';
 
 interface ProfileScreenProps {
   selectedEgoState: string;
@@ -17,8 +16,7 @@ interface ProfileScreenProps {
 export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: ProfileScreenProps) {
   const { user } = useGameState();
   const { user: authUser, signOut } = useAuth();
-  const { activeEgoState, openEgoModal } = useAppStore();
-  const { showToast } = useUIStore();
+  const { activeEgoState, openEgoModal, showToast } = useAppStore();
   const [showSettings, setShowSettings] = React.useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = React.useState<'free' | 'active' | 'cancelled' | 'past_due'>('free');
   const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
@@ -218,11 +216,10 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               <div className="flex items-center space-x-4">
                 {/* Living Orb */}
                 <div className="flex-shrink-0 hidden sm:block">
-                  <WebGLOrb
+                  <CSSOrb
                     onTap={() => {}}
                     size={80}
-                    egoState={activeEgoState}
-                    afterglow={true}
+                    state={activeEgoState}
                     className="cursor-pointer hover:scale-110 transition-transform duration-300"
                   />
                 </div>
@@ -230,11 +227,10 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 {/* Current State Info */}
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex items-center space-x-3 sm:hidden">
-                    <WebGLOrb
+                    <CSSOrb
                       onTap={() => {}}
                       size={50}
-                      egoState={activeEgoState}
-                      afterglow={true}
+                      state={activeEgoState}
                       className="cursor-pointer hover:scale-110 transition-transform duration-300"
                     />
                     <div>
