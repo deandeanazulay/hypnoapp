@@ -64,14 +64,14 @@ export default function HomeScreen({
           <Orb
           onTap={onOrbTap}
           afterglow={false}
-          egoState={activeEgoState}
+          size={240}
           variant="webgl"
         />
         </div>
       </div>
 
       {/* 3. Actions Bar - Fixed at bottom with proper spacing */}
-      <div className="flex-shrink-0 px-4 relative z-40">
+      <div className="flex-shrink-0 px-4 pb-4 relative z-40">
         <ActionsBar 
           selectedAction={selectedAction}
           onActionSelect={onActionSelect}
