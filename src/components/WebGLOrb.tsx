@@ -14,6 +14,7 @@ interface WebGLOrbProps {
   egoState?: string;
   className?: string;
   afterglow?: boolean;
+  onError?: () => void;
 }
 
 function supportsWebGL(): boolean {
@@ -38,7 +39,8 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     size = 280,
     egoState = 'guardian',
     className = '',
-    afterglow = false
+    afterglow = false,
+    onError
   } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,7 +51,6 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const animationIdRef = useRef<number | null>(null);
   const isActiveRef = useRef(true);
   const [webglSupported, setWebglSupported] = React.useState<boolean | null>(null);
-  const [contextLost, setContextLost] = React.useState(false);
   
   // Alien state for fractal mathematics
   const alienStateRef = useRef({
@@ -84,7 +85,10 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
   // Initialize Three.js scene
   useEffect(() => {
-    if (webglSupported === false || !containerRef.current) return;
+    if (webglSupported === false || !containerRef.current) {
+      onError?.();
+      return;
+    }
 
     const container = containerRef.current;
     const { w, h } = safeSize(size, size);
@@ -118,17 +122,12 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const canvas = renderer.domElement;
     canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
-      setContextLost(true);
+      onError?.();
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }
     });
 
-    canvas.addEventListener('webglcontextrestored', () => {
-      setContextLost(false);
-      // Reinitialize scene
-      initializeOrb();
-    });
 
     // Style canvas
     canvas.style.width = `${size}px`;
@@ -439,32 +438,8 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
   // Show error if WebGL is not supported
   if (!webglSupported) {
-    return (
-      <div 
-        className={`flex items-center justify-center bg-red-500/20 border border-red-500/40 rounded-full ${className}`}
-        style={{ width: size, height: size }}
-      >
-        <div className="text-center p-4">
-          <div className="text-red-400 text-sm font-medium mb-2">WebGL Required</div>
-          <div className="text-red-300/80 text-xs">Please enable hardware acceleration</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show context lost indicator
-  if (contextLost) {
-    return (
-      <div 
-        className={`flex items-center justify-center bg-yellow-500/20 border border-yellow-500/40 rounded-full ${className}`}
-        style={{ width: size, height: size }}
-      >
-        <div className="text-center p-4">
-          <div className="text-yellow-400 text-sm font-medium mb-2">Reconnecting...</div>
-          <div className="w-6 h-6 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin mx-auto" />
-        </div>
-      </div>
-    );
+    onError?.();
+    return null;
   }
 
   return (
