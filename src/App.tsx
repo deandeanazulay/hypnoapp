@@ -210,7 +210,6 @@ function App() {
 
   const MainApp = () => (
     <GameStateProvider>
-      <GlobalHUD />
       <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
         {/* Main Body Content - Flex grow */}
         <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content">
@@ -237,6 +236,8 @@ function App() {
         <EgoStatesModal />
         <AuthModal 
           isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+        />
         {/* Toast Notifications */}
         <ToastManager />
       </>
