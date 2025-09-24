@@ -307,7 +307,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
               
               {/* Create Header */}
               <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
-                <div className="flex items-center space-x-3 mb-3">
+                <div className="flex items-center ">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-purple-500/40 flex items-center justify-center">
                     <Wand2 size={20} className="text-black" />
                   </div>
