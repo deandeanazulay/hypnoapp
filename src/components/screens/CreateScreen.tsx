@@ -226,7 +226,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
   };
 
   return (
-    <PageShell
+    <PageShell>
     <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
@@ -325,5 +325,6 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
         </div>
       </div>
     </div>
+    </PageShell>
   );
 }
