@@ -445,8 +445,47 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         
         {/* 1. Orb Section - Takes most space, perfectly centered */}
         <div className="flex-1 flex items-center justify-center min-h-0 relative">
+          {/* Status Indicators - Above orb, no background */}
+          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20">
+            <div className="flex items-center justify-center space-x-12">
+              {/* Depth Indicator */}
+              <div className="flex flex-col items-center space-y-2">
+                <span className="text-white/60 text-xs uppercase tracking-wide">Depth</span>
+                <div className="flex items-center space-x-1">
+                  {[1, 2, 3, 4, 5].map((level) => (
+                    <div
+                      key={level}
+                      className={`w-3 h-3 rounded-full transition-all duration-500 ${
+                        level <= sessionState.depth ? 'opacity-100 shadow-lg' : 'opacity-30'
+                      }`}
+                      style={{
+                        backgroundColor: egoColor.accent,
+                        boxShadow: level <= sessionState.depth ? `0 0 10px ${egoColor.accent}60` : 'none'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              {/* Phase Indicator */}
+              <div className="flex flex-col items-center space-y-2">
+                <span className="text-white/60 text-xs uppercase tracking-wide">Phase</span>
+                <span 
+                  className="text-sm font-medium px-3 py-1 rounded-full border"
+                  style={{ 
+                    color: egoColor.accent,
+                    borderColor: egoColor.accent + '40',
+                    backgroundColor: egoColor.accent + '20'
+                  }}
+                >
+                  {sessionState.phase.charAt(0).toUpperCase() + sessionState.phase.slice(1)}
+                </span>
+              </div>
+            </div>
+          </div>
+          
           {/* Eye Fixation Instruction - Absolutely positioned above orb */}
-          <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-10">
+          <div className="absolute top-32 left-1/2 transform -translate-x-1/2 z-10">
             <p className="text-white/80 text-sm font-light text-center">
               Focus softly on the center dot
             </p>
@@ -490,47 +529,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
         
         {/* 3. Status Indicators - Glass card with proper spacing */}
-        <div className="flex-shrink-0 px-6 mb-4">
-          <GlassCard className="p-4">
-            <div className="flex items-center justify-center space-x-8">
-              {/* Depth Indicator */}
-              <div className="flex flex-col items-center space-y-2">
-                <span className="text-white/60 text-xs uppercase tracking-wide">Depth</span>
-                <div className="flex items-center space-x-1">
-                  {[1, 2, 3, 4, 5].map((level) => (
-                    <div
-                      key={level}
-                      className={`w-3 h-3 rounded-full transition-all duration-500 ${
-                        level <= sessionState.depth ? 'opacity-100 shadow-lg' : 'opacity-30'
-                      }`}
-                      style={{
-                        backgroundColor: egoColor.accent,
-                        boxShadow: level <= sessionState.depth ? `0 0 10px ${egoColor.accent}60` : 'none'
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              {/* Phase Indicator */}
-              <div className="flex flex-col items-center space-y-2">
-                <span className="text-white/60 text-xs uppercase tracking-wide">Phase</span>
-                <span 
-                  className="text-sm font-medium px-3 py-1 rounded-full border"
-                  style={{ 
-                    color: egoColor.accent,
-                    borderColor: egoColor.accent + '40',
-                    backgroundColor: egoColor.accent + '20'
-                  }}
-                >
-                  {sessionState.phase.charAt(0).toUpperCase() + sessionState.phase.slice(1)}
-                </span>
-              </div>
-            </div>
-          </GlassCard>
-        </div>
-        
-        {/* 4. Chat Interface - Fixed height, proper container */}
+        {/* 3. Chat Interface - Fixed height, proper container */}
         <div className="flex-shrink-0">
           <div className="px-6 max-h-64 overflow-y-auto mb-4">
           
