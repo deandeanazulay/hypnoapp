@@ -608,25 +608,26 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         {/* Chat Messages Section */}
         <div 
           ref={chatContainerRef} 
-          className="px-4 py-3 overflow-y-auto scrollbar-hide bg-black/20 backdrop-blur-sm border-b border-white/10"
+          className="overflow-y-auto scrollbar-hide bg-black/20 backdrop-blur-sm border-b border-white/10"
           style={{ height: `${chatHeight}px` }}
         >
           {/* Drag Handle */}
           <div 
-            className={`flex justify-center pb-2 cursor-ns-resize hover:bg-white/5 transition-all duration-200 select-none ${
+            className={`sticky top-0 z-10 flex justify-center py-2 cursor-ns-resize hover:bg-white/10 transition-all duration-200 select-none bg-black/40 backdrop-blur-sm border-b border-white/5 ${
               isDragging ? 'bg-white/10' : ''
             }`}
             onMouseDown={handleDragStart}
             onTouchStart={handleDragStart}
           >
-            <div className={`w-12 h-1 rounded-full transition-all duration-200 ${
-              isDragging ? 'bg-teal-400 shadow-lg shadow-teal-400/50' : 'bg-white/40 hover:bg-white/60'
+            <div className={`w-16 h-1.5 rounded-full transition-all duration-200 ${
+              isDragging ? 'bg-teal-400 shadow-lg shadow-teal-400/50' : 'bg-white/60 hover:bg-white/80'
             }`} />
           </div>
           
           {/* Chat Messages */}
-          {conversation.length > 0 && (
-            <div className="space-y-3">
+          <div className="px-4 pb-3">
+            {conversation.length > 0 && (
+              <div className="space-y-3 pt-2">
               {conversation.slice(-4).map((msg, i) => (
                 <div key={i} className={`${msg.role === 'ai' ? 'text-left' : 'text-right'} animate-fade-in`}>
                   <div className={`inline-block max-w-[85%] p-3 rounded-xl backdrop-blur-sm border transition-all duration-300 hover:scale-[1.02] ${
@@ -675,7 +676,8 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 </div>
               )}
             </div>
-          )}
+            )}
+          </div>
         </div>
         
         {/* Controls Section */}
