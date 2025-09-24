@@ -225,7 +225,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const glowMaterial1 = new THREE.MeshBasicMaterial({
       color: color,
       transparent: true,
-      opacity: afterglow ? 0.12 : 0.06,
+      opacity: afterglow ? 0.08 : 0.04,
       side: THREE.BackSide
     });
     const glowMesh1 = new THREE.Mesh(glowGeometry, glowMaterial1);
@@ -236,7 +236,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const pulseMaterial = new THREE.MeshBasicMaterial({
       color: color,
       transparent: true,
-      opacity: 0.04,
+      opacity: 0.02,
       side: THREE.BackSide
     });
     const pulseMesh = new THREE.Mesh(pulseGeometry, pulseMaterial);
@@ -349,21 +349,21 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       // Animate glow layers
       const userData = orbMeshRef.current.userData;
       if (userData.glowMesh1) {
-        userData.glowMesh1.scale.setScalar(0.9 + alienState.pulse * 0.2);
+        userData.glowMesh1.scale.setScalar(0.95 + alienState.pulse * 0.05);
         userData.glowMesh1.rotation.x = -alienRotationX * 0.5;
         userData.glowMesh1.rotation.y = -alienRotationY * 0.3;
         
         const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
-        glowMat.opacity = (afterglow ? 0.12 : 0.06) * (1 + alienState.pulse * 0.5);
+        glowMat.opacity = (afterglow ? 0.08 : 0.04) * (1 + alienState.pulse * 0.2);
       }
       
       if (userData.pulseMesh) {
-        const pulseScale = 0.7 + Math.abs(alienState.pulse) * 0.4;
+        const pulseScale = 0.85 + Math.abs(alienState.pulse) * 0.1;
         userData.pulseMesh.scale.setScalar(pulseScale);
         userData.pulseMesh.rotation.z = time * 0.5;
         
         const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
-        pulseMat.opacity = 0.04 + Math.abs(alienState.pulse) * 0.08;
+        pulseMat.opacity = 0.02 + Math.abs(alienState.pulse) * 0.02;
       }
 
       // Speaking indicator - alien excitement
