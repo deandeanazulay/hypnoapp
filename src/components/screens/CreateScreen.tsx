@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Save, Clock, Zap, Target, Sparkles, Edit3, Crown, Infinity, Music, Star, Lock, Play, Eye, Waves, Book, Wind } from 'lucide-react';
-import CSSOrb from '../ui/CSSOrb';
+import Orb from '../Orb';
 import AuthModal from '../auth/AuthModal';
 import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
@@ -669,10 +669,11 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
             <p className="text-white/60 text-sm">Your orb evolves as you create</p>
           </div>
           
-          <CSSOrb
+          <Orb
             onTap={() => {}}
             size={240}
-            state={orbState.color}
+            egoState={orbState.color}
+            variant="webgl"
           />
           
           <div className="mt-4 text-center">
@@ -687,10 +688,11 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
         {/* Mobile Orb - Smaller, Floating */}
         <div className="lg:hidden fixed top-24 right-4 z-20">
-          <CSSOrb
+          <Orb
             onTap={() => {}}
             size={80}
-            state={orbState.color}
+            egoState={orbState.color}
+            variant="webgl"
           />
         </div>
       </div>

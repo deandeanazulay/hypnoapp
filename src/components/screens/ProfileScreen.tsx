@@ -6,7 +6,7 @@ import { useAppStore, getEgoState } from '../../store';
 import { paymentService } from '../../lib/stripe';
 import PageShell from '../layout/PageShell';
 import SettingsModal from '../modals/SettingsModal';
-import CSSOrb from '../ui/CSSOrb';
+import Orb from '../Orb';
 
 interface ProfileScreenProps {
   selectedEgoState: string;
@@ -216,10 +216,12 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               <div className="flex items-center space-x-4">
                 {/* Living Orb */}
                 <div className="flex-shrink-0 hidden sm:block">
-                  <CSSOrb
+                  <Orb
                     onTap={() => {}}
                     size={80}
-                    state={activeEgoState}
+                    egoState={activeEgoState}
+                    egoState={activeEgoState}
+                    variant="webgl"
                     className="cursor-pointer hover:scale-110 transition-transform duration-300"
                   />
                 </div>
