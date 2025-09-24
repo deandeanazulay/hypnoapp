@@ -452,17 +452,31 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 filter: sessionState.depth > 3 ? `drop-shadow(0 0 40px ${egoColor.accent}80)` : 'none'
               }}
             >
-              <Orb
-                ref={orbRef}
-                onTap={togglePause}
-                egoState={activeEgoState}
-                size={280}
-                afterglow={sessionState.depth > 3}
-              />
+              <div className="relative">
+                <Orb
+                  ref={orbRef}
+                  onTap={togglePause}
+                  egoState={activeEgoState}
+                  size={280}
+                  afterglow={sessionState.depth > 3}
+                />
+                
+                {/* Eye Fixation Dot */}
+                <div 
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-white/80 bg-white/60 animate-pulse pointer-events-none"
+                  style={{
+                    boxShadow: `0 0 20px ${egoColor.accent}80, 0 0 40px ${egoColor.accent}40`,
+                    backgroundColor: egoColor.accent
+                  }}
+                />
+              </div>
             </div>
             
             {/* Breathing Counter */}
             <div className="mt-6 text-center">
+              <div className="text-white/80 text-sm mb-3 font-light">
+                Focus softly on the center dot
+              </div>
               <div className="text-white/90 text-xl font-light mb-2">
                 {getBreathingInstruction()}
               </div>
