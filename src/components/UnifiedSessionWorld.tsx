@@ -601,91 +601,87 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             />
           </div>
         </div>
+      </div>
         
-        {/* Premium Chat Interface - Bottom Section */}
-        <div className="flex-shrink-0 relative">
+      {/* Integrated Bottom Dock with Chat */}
+      <div className="flex-shrink-0 bg-black/95 backdrop-blur-xl border-t border-white/20">
+        {/* Chat Messages Section */}
+        <div 
+          ref={chatContainerRef} 
+          className="px-4 py-3 overflow-y-auto scrollbar-hide bg-black/20 backdrop-blur-sm border-b border-white/10"
+          style={{ height: `${chatHeight}px` }}
+        >
           {/* Drag Handle */}
           <div 
-            className={`px-6 py-3 cursor-ns-resize hover:bg-white/5 transition-all duration-200 select-none ${
+            className={`flex justify-center pb-2 cursor-ns-resize hover:bg-white/5 transition-all duration-200 select-none ${
               isDragging ? 'bg-white/10' : ''
             }`}
             onMouseDown={handleDragStart}
             onTouchStart={handleDragStart}
           >
-            <div className="flex flex-col items-center space-y-1">
-              <div className={`w-16 h-1.5 rounded-full transition-all duration-200 ${
-                isDragging ? 'bg-teal-400 shadow-lg shadow-teal-400/50' : 'bg-white/40 hover:bg-white/60'
-              }`} />
-              <span className="text-white/40 text-xs font-medium">
-                {isDragging ? 'Release to set' : 'Drag to resize'}
-              </span>
-            </div>
+            <div className={`w-12 h-1 rounded-full transition-all duration-200 ${
+              isDragging ? 'bg-teal-400 shadow-lg shadow-teal-400/50' : 'bg-white/40 hover:bg-white/60'
+            }`} />
           </div>
           
-          {/* Premium Chat Container */}
-          <div 
-            ref={chatContainerRef} 
-            className="px-6 overflow-y-auto transition-all duration-200 scrollbar-hide bg-black/20 backdrop-blur-sm border-t border-white/10"
-            style={{ height: `${chatHeight}px` }}
-          >
-            {/* Premium Chat Messages */}
-            {conversation.length > 0 && (
-              <div className="space-y-3 mb-4">
-                {conversation.slice(-4).map((msg, i) => (
-                  <div key={i} className={`${msg.role === 'ai' ? 'text-left' : 'text-right'} animate-fade-in`}>
-                    <div className={`inline-block max-w-[85%] p-4 rounded-2xl backdrop-blur-sm border transition-all duration-300 hover:scale-[1.02] ${
-                      msg.role === 'ai' 
-                        ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-500/40 text-teal-100 shadow-lg shadow-teal-500/20' 
-                        : 'bg-gradient-to-br from-white/15 to-white/10 border-white/30 text-white shadow-lg'
-                    }`}>
-                      <div className="flex items-center space-x-2 mb-2">
-                        {msg.role === 'ai' ? (
-                          <div className="w-5 h-5 rounded-full bg-teal-400/20 border border-teal-400/40 flex items-center justify-center">
-                            <Brain size={10} className="text-teal-400" />
-                          </div>
-                        ) : (
-                          <div className="w-5 h-5 rounded-full bg-white/20 border border-white/40 flex items-center justify-center">
-                            <MessageCircle size={10} className="text-white/80" />
-                          </div>
-                        )}
-                        <span className="text-xs font-semibold tracking-wide">
-                          {msg.role === 'ai' ? 'Libero' : 'You'}
-                        </span>
+          {/* Chat Messages */}
+          {conversation.length > 0 && (
+            <div className="space-y-3">
+              {conversation.slice(-4).map((msg, i) => (
+                <div key={i} className={`${msg.role === 'ai' ? 'text-left' : 'text-right'} animate-fade-in`}>
+                  <div className={`inline-block max-w-[85%] p-3 rounded-xl backdrop-blur-sm border transition-all duration-300 hover:scale-[1.02] ${
+                    msg.role === 'ai' 
+                      ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-500/40 text-teal-100 shadow-lg shadow-teal-500/20' 
+                      : 'bg-gradient-to-br from-white/15 to-white/10 border-white/30 text-white shadow-lg'
+                  }`}>
+                    <div className="flex items-center space-x-2 mb-1">
+                      {msg.role === 'ai' ? (
+                        <div className="w-4 h-4 rounded-full bg-teal-400/20 border border-teal-400/40 flex items-center justify-center">
+                          <Brain size={8} className="text-teal-400" />
+                        </div>
+                      ) : (
+                        <div className="w-4 h-4 rounded-full bg-white/20 border border-white/40 flex items-center justify-center">
+                          <MessageCircle size={8} className="text-white/80" />
+                        </div>
+                      )}
+                      <span className="text-xs font-semibold tracking-wide">
+                        {msg.role === 'ai' ? 'Libero' : 'You'}
+                      </span>
+                    </div>
+                    <p className="text-sm leading-relaxed font-medium">{msg.content}</p>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Thinking Indicator */}
+              {isThinking && (
+                <div className="text-left">
+                  <div className="inline-block bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border border-teal-500/40 p-3 rounded-xl backdrop-blur-sm shadow-lg shadow-teal-500/20">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 rounded-full bg-teal-400/20 border border-teal-400/40 flex items-center justify-center">
+                        <Brain size={8} className="text-teal-400" />
                       </div>
-                      <p className="text-sm leading-relaxed font-medium">{msg.content}</p>
+                      <span className="text-xs font-semibold text-teal-100 tracking-wide">Libero</span>
+                    </div>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <div className="flex space-x-1">
+                        <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span className="text-sm text-teal-100 font-medium">Tuning into your energy...</span>
                     </div>
                   </div>
-                ))}
-                
-                {/* Premium Thinking Indicator */}
-                {isThinking && (
-                  <div className="text-left">
-                    <div className="inline-block bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border border-teal-500/40 p-4 rounded-2xl backdrop-blur-sm shadow-lg shadow-teal-500/20">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-5 h-5 rounded-full bg-teal-400/20 border border-teal-400/40 flex items-center justify-center">
-                          <Brain size={10} className="text-teal-400" />
-                        </div>
-                        <span className="text-xs font-semibold text-teal-100 tracking-wide">Libero</span>
-                      </div>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                        </div>
-                        <span className="text-sm text-teal-100 font-medium">Tuning into your energy...</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Premium Two-Row Bottom Dock */}
-          <div className="px-6 py-4 bg-black/95 backdrop-blur-xl border-t border-white/20 space-y-3">
-            {/* Top Row - Session Controls */}
-            <div className="flex items-center justify-center space-x-6">
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        {/* Controls Section */}
+        <div className="px-4 py-3 bg-black/95 backdrop-blur-xl space-y-3">
+          {/* Top Row - Session Controls (Smaller) */}
+          <div className="flex items-center justify-center space-x-4">
               <button
                 onClick={togglePause}
                 className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
@@ -699,65 +695,64 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               
               <button
                 onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-                className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+              className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
                   isVoiceEnabled 
                     ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/30' 
                     : 'bg-white/10 border-white/30 text-white/60'
                 }`}
               >
-                {isVoiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+              {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
               </button>
               
               <button
                 onClick={() => setIsMicEnabled(!isMicEnabled)}
-                className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
-                  isMicEnabled 
+              className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+              className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
                     ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 shadow-blue-500/30' 
                     : 'bg-white/10 border-white/30 text-white/60'
                 }`}
               >
-                {isMicEnabled ? <Mic size={20} /> : <MicOff size={20} />}
-              </button>
-            </div>
-            
-            {/* Bottom Row - Communication */}
-            <form onSubmit={handleSubmit}>
-              <div className="flex items-center space-x-3">
-                {/* Voice Record Button */}
-                <button
-                  type="button"
-                  onClick={toggleListening}
-                  disabled={!isMicEnabled || isThinking}
-                  className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 backdrop-blur-sm border-2 ${
-                    sessionState.isListening 
-                      ? 'bg-red-500/20 border-red-500/60 text-red-400 animate-pulse shadow-lg shadow-red-500/30' 
-                      : 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30'
-                  }`}
-                >
-                  <Mic size={18} />
-                </button>
-                
-                {/* Text Input */}
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    value={textInput}
-                    onChange={(e) => setTextInput(e.target.value)}
-                    placeholder={sessionState.isListening ? "Listening..." : "Share what's happening for you..."}
-                    disabled={sessionState.isListening || isThinking}
-                    className="w-full bg-white/15 border border-white/30 rounded-2xl px-6 py-3 pr-16 text-white placeholder-white/60 focus:outline-none focus:border-teal-500/60 focus:bg-white/20 focus:shadow-lg focus:shadow-teal-500/20 transition-all disabled:opacity-50 backdrop-blur-sm"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!textInput.trim() || isThinking}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-teal-500/30 border border-teal-500/50 text-teal-400 hover:bg-teal-500/40 hover:shadow-lg hover:shadow-teal-500/30 transition-all disabled:opacity-50 hover:scale-110 backdrop-blur-sm"
-                  >
-                    <Send size={16} className="ml-0.5" />
-                  </button>
-                </div>
-              </div>
-            </form>
+              {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+              {sessionState.isPaused ? <Play size={16} className="ml-0.5" /> : <Pause size={16} />}
           </div>
+          
+          {/* Bottom Row - Communication */}
+          <form onSubmit={handleSubmit}>
+            <div className="flex items-center space-x-3">
+              {/* Voice Record Button */}
+              <button
+                type="button"
+                onClick={toggleListening}
+                disabled={!isMicEnabled || isThinking}
+                className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 backdrop-blur-sm border-2 ${
+                  sessionState.isListening 
+                    ? 'bg-red-500/20 border-red-500/60 text-red-400 animate-pulse shadow-lg shadow-red-500/30' 
+                    : 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30'
+                }`}
+              >
+                <Mic size={18} />
+              </button>
+              
+              {/* Text Input */}
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  placeholder={sessionState.isListening ? "Listening..." : "Share what's happening for you..."}
+                  disabled={sessionState.isListening || isThinking}
+                  className="w-full bg-white/15 border border-white/30 rounded-2xl px-6 py-3 pr-16 text-white placeholder-white/60 focus:outline-none focus:border-teal-500/60 focus:bg-white/20 focus:shadow-lg focus:shadow-teal-500/20 transition-all disabled:opacity-50 backdrop-blur-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={!textInput.trim() || isThinking}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-teal-500/30 border border-teal-500/50 text-teal-400 hover:bg-teal-500/40 hover:shadow-lg hover:shadow-teal-500/30 transition-all disabled:opacity-50 hover:scale-110 backdrop-blur-sm"
+                >
+                  <Send size={16} className="ml-0.5" />
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
       
