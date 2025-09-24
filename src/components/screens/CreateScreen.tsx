@@ -85,7 +85,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
         return (
           <div className="">
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-teal-400 flex items-center justify-center mx-auto ">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-teal-400 flex items-center  ">
                 <Wand2 size={24} className="text-black" />
               </div>
               <h2 className="text-white text-xl font-light mb-2">Name Your Journey</h2>
