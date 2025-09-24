@@ -227,105 +227,103 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
   return (
     <PageShell
-      body={
-        <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
-          {/* Background */}
-          <div className="absolute inset-0">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
-          </div>
+    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
+      </div>
 
-          <div className="relative z-10 h-full flex flex-col justify-center p-4 pt-16">
-            {/* Top Progress Indicator */}
-            <div className="flex justify-center mb-8 pt-4">
-              <div className="flex items-center space-x-4">
-                {[1, 2, 3].map((step) => (
-                  <div key={step} className="flex items-center">
-                    <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
-                      step === currentStep
-                        ? 'border-purple-400 bg-purple-400/20 text-purple-400'
-                        : step < currentStep
-                        ? 'border-teal-400 bg-teal-400/20 text-teal-400'
-                        : 'border-white/30 text-white/50'
-                    }`}>
-                      {step}
-                    </div>
-                    {step < 3 && (
-                      <div className={`w-8 h-0.5 mx-2 ${
-                        step < currentStep ? 'bg-teal-400' : 'bg-white/30'
-                      }`} />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Step Content - Centered */}
-            <div className="flex-1 flex items-center justify-center">
-              <GlassCard variant="premium" className="max-w-md w-full mx-4 p-6">
-                {renderStep()}
-              </GlassCard>
-            </div>
-
-            {/* Bottom Navigation Bar */}
-            <div className="absolute bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
-              <div className="px-4 py-4">
-                {/* Step Progress Dots */}
-                <div className="text-center mb-4">
-                  <div className="text-white/60 text-sm mb-3">Step {currentStep} of 3</div>
-                  <div className="flex justify-center space-x-2">
-                    {[1, 2, 3].map((step) => (
-                      <div
-                        key={step}
-                        className={`w-8 h-1 rounded-full transition-all duration-300 ${
-                          step <= currentStep ? 'bg-teal-400' : 'bg-white/20'
-                        }`}
-                      />
-                    ))}
-                  </div>
+      {/* Main Layout */}
+      <div className="relative z-10 h-full flex flex-col" style={{ paddingTop: '60px', paddingBottom: 'calc(var(--total-nav-height, 80px) + 140px)' }}>
+        
+        {/* Top Progress Indicator */}
+        <div className="flex-shrink-0 flex justify-center pt-6 pb-4">
+          <div className="flex items-center space-x-4">
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex items-center">
+                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
+                  step === currentStep
+                    ? 'border-purple-400 bg-purple-400/20 text-purple-400'
+                    : step < currentStep
+                    ? 'border-teal-400 bg-teal-400/20 text-teal-400'
+                    : 'border-white/30 text-white/50'
+                }`}>
+                  {step}
                 </div>
-
-                {/* Navigation Buttons */}
-                <div className="flex justify-between items-center">
-                  <button
-                    onClick={handleBack}
-                    disabled={currentStep === 1}
-                    className={`px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 ${
-                      currentStep === 1 ? 'invisible' : ''
-                    }`}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <ArrowLeft size={16} />
-                      <span>Back</span>
-                    </div>
-                  </button>
-                  {currentStep < 3 ? (
-                    <button
-                      onClick={handleNext}
-                      disabled={!canProceed()}
-                      className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span>Next</span>
-                        <ArrowRight size={16} />
-                      </div>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleComplete}
-                      className="px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <Wand2 size={16} />
-                        <span>Create</span>
-                      </div>
-                    </button>
-                  )}
-                </div>
+                {step < 3 && (
+                  <div className={`w-8 h-0.5 mx-2 ${
+                    step < currentStep ? 'bg-teal-400' : 'bg-white/30'
+                  }`} />
+                )}
               </div>
-            </div>
+            ))}
           </div>
         </div>
-      }
-    />
+
+        {/* Step Content - Centered */}
+        <div className="flex-1 flex items-center justify-center px-4">
+          <GlassCard variant="premium" className="max-w-md w-full p-6">
+            {renderStep()}
+          </GlassCard>
+        </div>
+      </div>
+
+      {/* Fixed Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40" style={{ paddingBottom: 'calc(var(--total-nav-height, 80px) + 8px)' }}>
+        <div className="bg-black/95 backdrop-blur-xl border-t border-white/10 px-4 py-4">
+          {/* Step Indicator */}
+          <div className="text-center mb-4">
+            <div className="text-white/60 text-sm mb-2">Step {currentStep} of 3</div>
+            <div className="flex justify-center space-x-2">
+              {[1, 2, 3].map((step) => (
+                <div
+                  key={step}
+                  className={`w-8 h-1 rounded-full transition-all duration-300 ${
+                    step <= currentStep ? 'bg-teal-400' : 'bg-white/20'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center max-w-md mx-auto">
+            <button
+              onClick={handleBack}
+              disabled={currentStep === 1}
+              className={`px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 ${
+                currentStep === 1 ? 'invisible' : ''
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <ArrowLeft size={16} />
+                <span>Back</span>
+              </div>
+            </button>
+
+            {currentStep < 3 ? (
+              <button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                <div className="flex items-center space-x-2">
+                  <span>Next</span>
+                  <ArrowRight size={16} />
+                </div>
+              </button>
+            ) : (
+              <button
+                onClick={handleComplete}
+                className="px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 flex items-center space-x-2"
+              >
+                <Wand2 size={16} />
+                <span>Create</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
