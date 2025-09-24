@@ -471,9 +471,15 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Status Section - Below Orb */}
+        <div className="flex-shrink-0 px-6 mb-6">
+          <div className="max-w-lg mx-auto">
             
-            {/* Breathing Counter */}
-            <div className="mt-6 text-center">
+            {/* Breathing Instructions - Above Chat */}
+            <div className="text-center mb-6">
               <div className="text-white/80 text-sm mb-3 font-light">
                 Focus softly on the center dot
               </div>
@@ -490,12 +496,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 Cycle {sessionState.breathingCycle}
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Status Section - Below Orb */}
-        <div className="flex-shrink-0 px-6 mb-6">
-          <div className="max-w-lg mx-auto">
 
             {/* Depth Indicator */}
             <div className="bg-white/10 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 text-center">
