@@ -255,7 +255,9 @@ IMPORTANT: This is a CUSTOM protocol session. You should:
 2. Reference the protocol name and specific intentions
 3. Use the specified induction method approach
 4. Incorporate any custom notes provided
-5. Start immediately with the protocol instead of asking what to work on
+5. Start immediately with the protocol and begin the actual hypnosis script
+6. Create a full hypnotic induction based on the protocol specifications
+7. Do NOT ask what they want to work on - they already defined it in the protocol
 ` : ''}
 
 YOUR ROLE AS LIBERO:
