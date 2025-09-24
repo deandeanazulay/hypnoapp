@@ -210,6 +210,17 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     orbMeshRef.current = orbMesh;
     scene.add(orbMesh);
 
+    // Create alien tentacles
+    const tentacles: THREE.Mesh[] = [];
+    const tentacleCount = 8;
+    
+    for (let i = 0; i < tentacleCount; i++) {
+      const angle = (i / tentacleCount) * Math.PI * 2;
+      const tentacle = createTentacle(color, angle);
+      tentacles.push(tentacle);
+      scene.add(tentacle);
+    }
+
     // Add multiple alien glow layers
     const glowGeometry = new THREE.SphereGeometry(9.5, 32, 32);
     const glowMaterial1 = new THREE.MeshBasicMaterial({
@@ -233,8 +244,52 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     scene.add(pulseMesh);
     
     // Store references for animation
-    orbMesh.userData = { glowMesh1, pulseMesh };
+    orbMesh.userData = { glowMesh1, pulseMesh, tentacles };
 
+    // Create tentacle geometry function
+    function createTentacle(color: THREE.Color, baseAngle: number) {
+      const tentacleGroup = new THREE.Group();
+      const segmentCount = 12;
+      const segmentLength = 1.5;
+      
+      for (let j = 0; j < segmentCount; j++) {
+        // Create slimy segment geometry
+        const segmentRadius = 0.4 - (j * 0.02); // Taper toward tip
+        const segmentGeometry = new THREE.SphereGeometry(segmentRadius, 8, 8);
+        
+        // Slimy, wet material
+        const segmentMaterial = new THREE.MeshBasicMaterial({
+          color: color.clone().multiplyScalar(0.7 + Math.random() * 0.3),
+          transparent: true,
+          opacity: 0.6 + Math.random() * 0.3,
+        });
+        
+        const segment = new THREE.Mesh(segmentGeometry, segmentMaterial);
+        
+        // Position segments along tentacle
+        const x = 10 + j * segmentLength * Math.cos(baseAngle);
+        const y = 10 + j * segmentLength * Math.sin(baseAngle);
+        const z = j * segmentLength * 0.3;
+        
+        segment.position.set(
+          x + Math.random() * 0.5 - 0.25,
+          y + Math.random() * 0.5 - 0.25,
+          z + Math.random() * 0.5 - 0.25
+        );
+        
+        // Store segment data for animation
+        segment.userData = {
+          baseAngle,
+          segmentIndex: j,
+          basePosition: { x, y, z },
+          phaseOffset: Math.random() * Math.PI * 2
+        };
+        
+        tentacleGroup.add(segment);
+      }
+      
+      return tentacleGroup;
+    }
     // Start animation loop
     animate();
   };
@@ -286,6 +341,48 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
       const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
       material.opacity = (afterglow ? 0.95 : 0.8) * alienState.intensity;
       
+      // Animate alien tentacles
+      const userData = orbMeshRef.current.userData;
+      if (userData.tentacles) {
+        userData.tentacles.forEach((tentacle: THREE.Group, tentacleIndex: number) => {
+          tentacle.children.forEach((segment: THREE.Mesh, segmentIndex: number) => {
+            const segmentData = segment.userData;
+            const segmentTime = time + segmentData.phaseOffset;
+            
+            // Slimy writhing motion
+            const writhe = Math.sin(segmentTime * 3 + segmentIndex * 0.5) * 0.4;
+            const undulate = Math.cos(segmentTime * 2 + segmentIndex * 0.3) * 0.3;
+            const pulse = Math.sin(segmentTime * 4 + tentacleIndex * 0.7) * 0.2;
+            
+            // Calculate organic tentacle position
+            const baseRadius = 10 + segmentIndex * 1.5;
+            const tentacleAngle = segmentData.baseAngle + writhe * 0.3;
+            
+            segment.position.x = baseRadius * Math.cos(tentacleAngle) + undulate;
+            segment.position.y = baseRadius * Math.sin(tentacleAngle) + pulse;
+            segment.position.z = segmentIndex * 1.2 + Math.sin(segmentTime * 2) * 0.8;
+            
+            // Slimy scale pulsation
+            const slimyScale = 0.8 + 0.4 * Math.sin(segmentTime * 5 + segmentIndex * 0.8);
+            segment.scale.setScalar(slimyScale);
+            
+            // Slimy opacity variation
+            const material = segment.material as THREE.MeshBasicMaterial;
+            material.opacity = 0.4 + 0.4 * Math.sin(segmentTime * 3 + segmentIndex * 0.4);
+            
+            // Slimy rotation
+            segment.rotation.x = Math.sin(segmentTime * 2) * 0.5;
+            segment.rotation.y = Math.cos(segmentTime * 1.5) * 0.3;
+            segment.rotation.z = Math.sin(segmentTime * 4) * 0.2;
+          });
+          
+          // Whole tentacle base movement - like it's rooted to the orb
+          tentacle.rotation.x = Math.sin(time * 0.5 + tentacleIndex) * 0.2;
+          tentacle.rotation.y = Math.cos(time * 0.3 + tentacleIndex) * 0.3;
+          tentacle.rotation.z = Math.sin(time * 0.7 + tentacleIndex) * 0.1;
+        });
+      }
+      
       // Animate glow layers
       const userData = orbMeshRef.current.userData;
       if (userData.glowMesh1) {
@@ -322,6 +419,34 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
         // Listening makes it more erratic
         orbMeshRef.current.position.x += Math.sin(time * 8) * 0.1;
         orbMeshRef.current.position.y += Math.cos(time * 9) * 0.1;
+        
+        // Tentacles get agitated when listening
+        const userData = orbMeshRef.current.userData;
+        if (userData.tentacles) {
+          userData.tentacles.forEach((tentacle: THREE.Group) => {
+            tentacle.children.forEach((segment: THREE.Mesh) => {
+              segment.position.x += Math.sin(time * 12) * 0.2;
+              segment.position.y += Math.cos(time * 15) * 0.2;
+            });
+          });
+        }
+      }
+      
+      // Speaking makes tentacles excited
+      if (isSpeaking) {
+        const userData = orbMeshRef.current.userData;
+        if (userData.tentacles) {
+          userData.tentacles.forEach((tentacle: THREE.Group) => {
+            tentacle.children.forEach((segment: THREE.Mesh, segmentIndex: number) => {
+              const exciteScale = 1 + 0.3 * Math.sin(time * 8 + segmentIndex);
+              segment.scale.setScalar(exciteScale);
+              
+              // More violent writhing when speaking
+              segment.position.x += Math.sin(time * 10 + segmentIndex) * 0.3;
+              segment.position.y += Math.cos(time * 12 + segmentIndex) * 0.3;
+            });
+          });
+        }
       }
     }
 
