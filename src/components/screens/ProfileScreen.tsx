@@ -220,7 +220,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                     <Orb
                       onTap={() => {}}
                       egoState={activeEgoState}
-                     size={200}
+                     size={300}
                      variant="webgl"
                       afterglow={true}
                     />
