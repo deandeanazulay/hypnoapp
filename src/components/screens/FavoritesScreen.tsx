@@ -143,6 +143,13 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [selectedSession, setSelectedSession] = useState<FavoriteSession | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   // Show loading state while user data is being fetched
   if (isLoading || !user) {
@@ -172,14 +179,6 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                 <Heart size={32} className="text-rose-400" />
               </div>
               <h3 className="text-white/80 text-xl font-medium mb-4">Loading Your Mind Vault...</h3>
-              <p className="text-white/50 mb-6 max-w-sm">Preparing your collection of transformative experiences</p>
-            </div>
-          </div>
-        }
-      />
-    );
-  }
-
   // Sort sessions
   const sortedFavorites = [...mockFavorites].sort((a, b) => {
     // Pinned sessions always come first
