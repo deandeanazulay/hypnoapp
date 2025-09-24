@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Pause, Play, Volume2, VolumeX, Mic, MicOff, Send, MessageCircle, Brain, Loader } from 'lucide-react';
+import { X, Pause, Play, Volume2, VolumeX, Mic, MicOff, Send, MessageCircle, Brain, Loader, ChevronUp, ChevronDown } from 'lucide-react';
 import Orb from './Orb';
 import { useGameState } from './GameStateManager';
 import { useAppStore, getEgoState } from '../store';
@@ -50,6 +50,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const [textInput, setTextInput] = useState('');
   const [conversation, setConversation] = useState<Array<{role: 'ai' | 'user', content: string, timestamp: number}>>([]);
   const [isThinking, setIsThinking] = useState(false);
+  const [chatExpanded, setChatExpanded] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
@@ -302,213 +303,255 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10">
-        <div className="flex items-center space-x-3">
-          <div
-            className="w-8 h-8 rounded-full border flex items-center justify-center"
-            style={{ 
-              background: `linear-gradient(135deg, ${egoColor.accent}60, ${egoColor.accent}40)`,
-              borderColor: egoColor.accent + '80'
-            }}
-          >
-            <span className="text-sm">{egoState.icon}</span>
-          </div>
-          <div>
-            <h2 className="text-white font-semibold">
-              {sessionConfig.customProtocol?.name || `${egoState.name} Session`}
-            </h2>
-            <p className="text-white/70 text-sm">Transformation Journey</p>
-          </div>
-        </div>
-        <button onClick={onCancel} className="text-white/60 hover:text-white p-2">
-          <X size={20} />
-        </button>
-      </div>
-
-      {/* Main Session Area */}
-      <div className="flex-1 flex flex-col items-center justify-center relative">
-        {/* Orb */}
-        <div className="mb-8">
-          <Orb
-            ref={orbRef}
-            onTap={togglePause}
-            egoState={activeEgoState}
-            size={300}
-            afterglow={sessionState.depth > 3}
-          />
-        </div>
-
-        {/* Session Status */}
-        <div className="text-center space-y-4 max-w-md">
-          <h3 className="text-white text-2xl font-light">
-            {sessionState.phase === 'preparation' ? 'Getting Comfortable And Centered' :
-             sessionState.phase === 'induction' ? 'Entering The Trance State' :
-             sessionState.phase === 'deepening' ? 'Going Deeper Into Relaxation' :
-             sessionState.phase === 'transformation' ? 'Creating Positive Changes' :
-             sessionState.phase === 'integration' ? 'Integrating New Patterns' :
-             'Completing The Journey'}
-          </h3>
-          
-          <p className="text-white/70">
-            {sessionState.breathing === 'inhale' ? 'Breathe in slowly...' :
-             sessionState.breathing === 'hold-inhale' ? 'Hold gently...' :
-             sessionState.breathing === 'exhale' ? 'Breathe out slowly...' :
-             'Rest naturally...'}
-          </p>
-
-          {/* Depth Indicator */}
-          <div className="flex items-center justify-center space-x-2">
-            <span className="text-white/60 text-sm">Depth:</span>
-            <div className="flex space-x-1">
-              {[1, 2, 3, 4, 5].map((level) => (
-                <div
-                  key={level}
-                  className={`w-3 h-3 rounded-full border ${
-                    level <= sessionState.depth
-                      ? `bg-${egoColor.baseColorName}-400 border-${egoColor.baseColorName}-400`
-                      : 'border-white/20'
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-white font-medium">{sessionState.depth}/5</span>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="absolute bottom-20 left-4 right-4">
-          <div className="flex items-center justify-between text-white/60 text-sm mb-2">
-            <span>{formatTime(sessionState.timeElapsed)}</span>
-            <span>{formatTime(sessionState.totalDuration)}</span>
-          </div>
-          <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r transition-all duration-300"
-              style={{
-                width: `${progress}%`,
-                background: `linear-gradient(90deg, ${egoColor.accent}, ${egoColor.accent}cc)`
+      {/* Header - Clean and Minimal */}
+      <div className="flex-shrink-0 bg-black/95 backdrop-blur-xl border-b border-white/10 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div
+              className="w-10 h-10 rounded-full border-2 flex items-center justify-center"
+              style={{ 
+                background: `linear-gradient(135deg, ${egoColor.accent}60, ${egoColor.accent}40)`,
+                borderColor: egoColor.accent + '80'
               }}
-            />
+            >
+              <span className="text-sm">{egoState.icon}</span>
+            </div>
+            <div>
+              <h2 className="text-white font-semibold text-lg">
+                {sessionConfig.customProtocol?.name || `${egoState.name} Session`}
+              </h2>
+              <p className="text-white/70 text-sm">Transformation Journey</p>
+            </div>
           </div>
-        </div>
-
-        {/* Control Buttons */}
-        <div className="absolute bottom-4 flex items-center space-x-4">
-          <button
-            onClick={togglePause}
-            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+          <button 
+            onClick={onCancel} 
+            className="text-white/60 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10"
           >
-            {sessionState.isPaused ? <Play size={20} className="text-white ml-1" /> : <Pause size={20} className="text-white" />}
-          </button>
-
-          <button
-            onClick={onCancel}
-            className="w-12 h-12 rounded-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 flex items-center justify-center transition-all hover:scale-110"
-          >
-            <X size={20} className="text-red-400" />
+            <X size={20} />
           </button>
         </div>
       </div>
 
-      {/* Permanent Chat Interface at Bottom */}
-      <div className="flex-shrink-0 bg-black/95 backdrop-blur-xl border-t border-white/10 p-4">
-        {/* Recent Conversation (Compact) */}
-        {conversation.length > 0 && (
-          <div className="mb-4 max-h-32 overflow-y-auto space-y-2">
-            {conversation.slice(-2).map((msg, i) => (
-              <div key={i} className={`${msg.role === 'ai' ? 'text-left' : 'text-right'}`}>
-                <div className={`inline-block max-w-[80%] p-2 rounded-lg text-sm ${
-                  msg.role === 'ai' 
-                    ? 'bg-teal-500/20 border border-teal-500/30 text-teal-100' 
-                    : 'bg-white/10 border border-white/20 text-white'
-                }`}>
-                  <div className="flex items-center space-x-1 mb-1">
-                    {msg.role === 'ai' ? <Brain size={10} className="text-teal-400" /> : <MessageCircle size={10} className="text-white/60" />}
-                    <span className="text-xs font-medium opacity-80">
-                      {msg.role === 'ai' ? 'Libero' : 'You'}
-                    </span>
-                  </div>
-                  <p className="text-xs leading-relaxed">{msg.content}</p>
-                </div>
-              </div>
-            ))}
-            
-            {isThinking && (
-              <div className="text-left">
-                <div className="inline-block bg-teal-500/20 border border-teal-500/30 p-2 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Loader size={10} className="text-teal-400 animate-spin" />
-                    <span className="text-xs text-teal-100">Tuning into your energy...</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Chat Input */}
-        <form onSubmit={handleSubmit} className="flex items-center space-x-3">
-          {/* Voice Button */}
-          <button
-            type="button"
-            onClick={toggleListening}
-            disabled={!isMicEnabled || isThinking}
-            className={`p-3 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 ${
-              sessionState.isListening 
-                ? 'bg-red-500/20 border-2 border-red-500/60 text-red-400 animate-pulse' 
-                : 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
-            }`}
-          >
-            <Mic size={16} />
-          </button>
-
-          {/* Text Input with Send Button */}
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              placeholder={sessionState.isListening ? "Listening..." : "Share what's on your mind, or use voice..."}
-              disabled={sessionState.isListening || isThinking}
-              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 pr-12 text-white placeholder-white/50 focus:outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all disabled:opacity-50"
+      {/* Main Content Area - Uses CSS Grid for Perfect Layout */}
+      <div className="flex-1 grid grid-rows-[1fr_auto_auto] gap-6 p-6 overflow-hidden">
+        
+        {/* Top Section: Orb + Status */}
+        <div className="flex flex-col items-center justify-center space-y-8 min-h-0">
+          {/* Orb */}
+          <div className="flex-shrink-0">
+            <Orb
+              ref={orbRef}
+              onTap={togglePause}
+              egoState={activeEgoState}
+              size={280}
+              afterglow={sessionState.depth > 3}
             />
+          </div>
+
+          {/* Session Status - Organized in Cards */}
+          <div className="flex-shrink-0 w-full max-w-md space-y-4">
+            {/* Phase Card */}
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20 text-center">
+              <h3 className="text-white text-xl font-light mb-2">
+                {sessionState.phase === 'preparation' ? 'Getting Comfortable And Centered' :
+                 sessionState.phase === 'induction' ? 'Entering The Trance State' :
+                 sessionState.phase === 'deepening' ? 'Going Deeper Into Relaxation' :
+                 sessionState.phase === 'transformation' ? 'Creating Positive Changes' :
+                 sessionState.phase === 'integration' ? 'Integrating New Patterns' :
+                 'Completing The Journey'}
+              </h3>
+              <p className="text-white/70 text-sm">
+                {sessionState.breathing === 'inhale' ? 'Breathe in slowly...' :
+                 sessionState.breathing === 'hold-inhale' ? 'Hold gently...' :
+                 sessionState.breathing === 'exhale' ? 'Breathe out slowly...' :
+                 'Rest naturally...'}
+              </p>
+            </div>
+
+            {/* Depth Indicator Card */}
+            <div className="bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-white/10">
+              <div className="flex items-center justify-between">
+                <span className="text-white/60 text-sm">Trance Depth</span>
+                <div className="flex items-center space-x-2">
+                  <div className="flex space-x-1">
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <div
+                        key={level}
+                        className={`w-3 h-3 rounded-full border transition-all duration-300 ${
+                          level <= sessionState.depth
+                            ? 'border-transparent'
+                            : 'border-white/20'
+                        }`}
+                        style={{
+                          backgroundColor: level <= sessionState.depth ? egoColor.accent : 'transparent'
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-white font-medium text-sm">{sessionState.depth}/5</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Middle Section: Progress & Controls */}
+        <div className="flex-shrink-0 space-y-4">
+          {/* Progress Bar */}
+          <div className="w-full max-w-md mx-auto">
+            <div className="flex items-center justify-between text-white/60 text-sm mb-2">
+              <span>{formatTime(sessionState.timeElapsed)}</span>
+              <span>{formatTime(sessionState.totalDuration)}</span>
+            </div>
+            <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+              <div 
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${progress}%`,
+                  background: `linear-gradient(90deg, ${egoColor.accent}, ${egoColor.accent}cc)`
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Control Buttons */}
+          <div className="flex items-center justify-center space-x-4">
             <button
-              type="submit"
-              disabled={!textInput.trim() || isThinking}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-400 hover:bg-teal-500/30 transition-all disabled:opacity-50 hover:scale-110"
+              onClick={togglePause}
+              className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
             >
-              <Send size={14} />
+              {sessionState.isPaused ? <Play size={20} className="text-white ml-1" /> : <Pause size={20} className="text-white" />}
+            </button>
+
+            <button
+              onClick={onCancel}
+              className="w-14 h-14 rounded-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 flex items-center justify-center transition-all hover:scale-110"
+            >
+              <X size={20} className="text-red-400" />
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Section: Chat Interface - Collapsible */}
+        <div className="flex-shrink-0">
+          {/* Chat Toggle */}
+          <div className="flex justify-center mb-4">
+            <button
+              onClick={() => setChatExpanded(!chatExpanded)}
+              className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full transition-all hover:scale-105 text-sm"
+            >
+              <MessageCircle size={16} className="text-teal-400" />
+              <span className="text-white/80">
+                {chatExpanded ? 'Hide Chat' : 'Open Chat'}
+              </span>
+              {chatExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
             </button>
           </div>
 
-          {/* Audio Controls */}
-          <div className="flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-              className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
-                isVoiceEnabled 
-                  ? 'bg-green-500/20 border border-green-500/40 text-green-400' 
-                  : 'bg-white/10 border border-white/20 text-white/60'
-              }`}
-            >
-              {isVoiceEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-            </button>
+          {/* Expandable Chat Interface */}
+          {chatExpanded && (
+            <div className="bg-black/95 backdrop-blur-xl rounded-2xl border border-white/20 p-4 max-h-64 flex flex-col">
+              {/* Recent Conversation */}
+              {conversation.length > 0 && (
+                <div className="flex-1 max-h-32 overflow-y-auto space-y-2 mb-4">
+                  {conversation.slice(-2).map((msg, i) => (
+                    <div key={i} className={`${msg.role === 'ai' ? 'text-left' : 'text-right'}`}>
+                      <div className={`inline-block max-w-[80%] p-3 rounded-lg text-sm ${
+                        msg.role === 'ai' 
+                          ? 'bg-teal-500/20 border border-teal-500/30 text-teal-100' 
+                          : 'bg-white/10 border border-white/20 text-white'
+                      }`}>
+                        <div className="flex items-center space-x-2 mb-1">
+                          {msg.role === 'ai' ? <Brain size={10} className="text-teal-400" /> : <MessageCircle size={10} className="text-white/60" />}
+                          <span className="text-xs font-medium opacity-80">
+                            {msg.role === 'ai' ? 'Libero' : 'You'}
+                          </span>
+                        </div>
+                        <p className="text-xs leading-relaxed">{msg.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {isThinking && (
+                    <div className="text-left">
+                      <div className="inline-block bg-teal-500/20 border border-teal-500/30 p-3 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <Loader size={12} className="text-teal-400 animate-spin" />
+                          <span className="text-xs text-teal-100">Tuning into your energy...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
-            <button
-              type="button"
-              onClick={() => setIsMicEnabled(!isMicEnabled)}
-              className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
-                isMicEnabled 
-                  ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400' 
-                  : 'bg-white/10 border border-white/20 text-white/60'
-              }`}
-            >
-              {isMicEnabled ? <Mic size={14} /> : <MicOff size={14} />}
-            </button>
-          </div>
-        </form>
+              {/* Chat Input */}
+              <form onSubmit={handleSubmit} className="flex-shrink-0">
+                <div className="flex items-center space-x-3">
+                  {/* Voice Button */}
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    disabled={!isMicEnabled || isThinking}
+                    className={`p-3 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 ${
+                      sessionState.isListening 
+                        ? 'bg-red-500/20 border-2 border-red-500/60 text-red-400 animate-pulse' 
+                        : 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
+                    }`}
+                  >
+                    <Mic size={16} />
+                  </button>
+
+                  {/* Text Input with Send Button */}
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={textInput}
+                      onChange={(e) => setTextInput(e.target.value)}
+                      placeholder={sessionState.isListening ? "Listening..." : "Share what's on your mind..."}
+                      disabled={sessionState.isListening || isThinking}
+                      className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 pr-12 text-white placeholder-white/50 focus:outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all disabled:opacity-50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!textInput.trim() || isThinking}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-400 hover:bg-teal-500/30 transition-all disabled:opacity-50 hover:scale-110"
+                    >
+                      <Send size={14} />
+                    </button>
+                  </div>
+
+                  {/* Audio Controls */}
+                  <div className="flex items-center space-x-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+                      className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                        isVoiceEnabled 
+                          ? 'bg-green-500/20 border border-green-500/40 text-green-400' 
+                          : 'bg-white/10 border border-white/20 text-white/60'
+                      }`}
+                    >
+                      {isVoiceEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsMicEnabled(!isMicEnabled)}
+                      className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                        isMicEnabled 
+                          ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400' 
+                          : 'bg-white/10 border border-white/20 text-white/60'
+                      }`}
+                    >
+                      {isMicEnabled ? <Mic size={14} /> : <MicOff size={14} />}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
