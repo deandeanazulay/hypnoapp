@@ -56,7 +56,6 @@ export default function App() {
   const { customActions } = useProtocolStore();
   
   // UI States
-  const [selectedAction, setSelectedAction] = useState<any>(null);
   const [showGoalPicker, setShowGoalPicker] = useState(false);
   const [showMethodPicker, setShowMethodPicker] = useState(false);
   const [showModePicker, setShowModePicker] = useState(false);
@@ -111,8 +110,6 @@ export default function App() {
           <HomeScreen
             onOrbTap={handleOrbTap}
             onTabChange={setActiveTab}
-            selectedAction={selectedAction}
-            onActionSelect={handleActionSelect}
             selectedEgoState={activeEgoState}
             onEgoStateChange={setActiveEgoState}
             activeTab={activeTab}
@@ -149,17 +146,8 @@ export default function App() {
   }
 
   function handleOrbTap() {
-    console.log('[APP] Orb tapped, selectedAction:', selectedAction);
-    if (selectedAction) {
-      setShowGoalPicker(true);
-    } else {
-      showToast({ type: 'info', message: 'Select an action from the bar below first' });
-    }
-  }
-
-  function handleActionSelect(action: any) {
-    console.log('[APP] Action selected:', action);
-    setSelectedAction(action);
+    console.log('[APP] Orb tapped, opening goal picker');
+    setShowGoalPicker(true);
   }
 
   function handleGoalSelect(goal: any) {
@@ -181,7 +169,7 @@ export default function App() {
     
     const config = {
       egoState: activeEgoState,
-      action: selectedAction,
+      action: { id: 'custom', name: 'Personal Transformation' }, // Default action since we removed action bar
       goal: selectedGoal,
       method: selectedMethod,
       mode,
@@ -239,7 +227,6 @@ export default function App() {
   function handleSessionComplete() {
     console.log('[APP] Session completed');
     setShowSessionWorld(false);
-    setSelectedAction(null);
     setSelectedGoal(null);
     setSelectedMethod(null);
     setSessionConfig(null);
@@ -249,7 +236,6 @@ export default function App() {
   function handleSessionCancel() {
     console.log('[APP] Session cancelled');
     setShowSessionWorld(false);
-    setSelectedAction(null);
     setSelectedGoal(null);
     setSelectedMethod(null);
     setSessionConfig(null);

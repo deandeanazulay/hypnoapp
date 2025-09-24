@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import ActionsBar from '../ActionsBar';
 import Orb from '../Orb';
 import { EGO_STATES, useAppStore } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
@@ -10,8 +9,6 @@ import { THEME, getEgoColor } from '../../config/theme';
 interface HomeScreenProps {
   onOrbTap: () => void;
   onTabChange: (tabId: TabId) => void;
-  selectedAction: any;
-  onActionSelect: (action: any) => void;
   selectedEgoState?: string;
   onEgoStateChange?: (egoStateId: string) => void;
   activeTab?: TabId;
@@ -21,8 +18,6 @@ interface HomeScreenProps {
 export default function HomeScreen({ 
   onOrbTap, 
   onTabChange,
-  selectedAction,
-  onActionSelect,
   selectedEgoState,
   onEgoStateChange,
   activeTab,
@@ -44,15 +39,6 @@ export default function HomeScreen({
     }
     console.log('[HOME] Authenticated, calling original onOrbTap');
     onOrbTap();
-  };
-
-  // Handle action selection with authentication check
-  const handleActionSelect = (action: any) => {
-    if (!isAuthenticated) {
-      onShowAuth();
-      return;
-    }
-    onActionSelect(action);
   };
 
   return (
@@ -87,7 +73,7 @@ export default function HomeScreen({
 
       {/* 2. Main Orb Section - Takes remaining space and centers orb */}
       <div className="flex-1 min-h-0 flex items-center justify-center relative z-30">
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center space-y-6">
           <Orb
             onTap={handleOrbTap}
             egoState={activeEgoState}
@@ -95,17 +81,22 @@ export default function HomeScreen({
             size={400}
             variant="webgl"
           />
+          
+          {/* Orb Guidance Text */}
+          <div className="text-center max-w-md px-4">
+            <p className="text-white/80 text-lg font-light mb-2">
+              Tap to begin your journey
+            </p>
+            <p className="text-white/60 text-sm">
+              with Libero in <span className="text-white font-medium">{currentState.name}</span> mode
+            </p>
+            {!isAuthenticated && (
+              <p className="text-teal-400/80 text-xs mt-2">
+                Sign in to unlock full transformation experience
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-
-      {/* 3. Actions Bar - Fixed at bottom with proper spacing */}
-      <div className="flex-shrink-0 px-4 pb-40 relative z-40">
-        <ActionsBar 
-          selectedAction={selectedAction}
-          onActionSelect={handleActionSelect}
-          onNavigateToCreate={() => isAuthenticated ? onTabChange('create') : onShowAuth()}
-          customActions={customActions}
-        />
       </div>
     </div>
   );
