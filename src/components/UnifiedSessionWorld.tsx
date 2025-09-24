@@ -64,6 +64,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     if (sessionState.isActive && !sessionState.isPaused) {
       interval = setInterval(() => {
         setSessionState(prev => {
+          const breathingCycle = ['inhale', 'hold-inhale', 'exhale', 'hold-exhale'] as const;
           const newTimeElapsed = prev.timeElapsed + 1;
           
           // Auto-complete when time is up
