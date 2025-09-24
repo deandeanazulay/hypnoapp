@@ -1,384 +1,376 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Volume2, VolumeX, MessageCircle, Brain, Send, Loader } from 'lucide-react';
+import React, { useState } from 'react';
+import { Settings, BarChart3, Award, TrendingUp, Crown, Zap, Target, Heart, Users, Shield, Star, ChevronRight, Sparkles, Brain, Coins } from 'lucide-react';
+import { useGameState } from '../GameStateManager';
+import { useAppStore, getEgoState, EGO_STATES } from '../../store';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
+import PageShell from '../layout/PageShell';
+import { getEgoColor } from '../../config/theme';
 
-interface AIVoiceSystemProps {
-  isActive: boolean;
-  sessionType: 'unified' | 'integration';
-  onStateChange: (state: any) => void;
-  sessionState: any;
-  sessionConfig: any;
+interface ProfileScreenProps {
+  selectedEgoState: string;
+  onEgoStateChange: (egoStateId: string) => void;
 }
 
-interface SessionState {
-  depth: number;
-  breathing: 'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale';
-  phase: string;
-  userResponse: string;
-  aiResponse: string;
-  isListening: boolean;
-  isSpeaking: boolean;
-}
+export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: ProfileScreenProps) {
+  const { user, isLoading } = useGameState();
+  const { activeEgoState, openModal, openEgoModal, showToast } = useAppStore();
+  const { isAuthenticated, signOut } = useAuth();
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
-export default function AIVoiceSystem({ isActive, sessionType, onStateChange, sessionState, sessionConfig }: AIVoiceSystemProps) {
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
-  const [isMicEnabled, setIsMicEnabled] = useState(true);
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isThinking, setIsThinking] = useState(false);
-  const [textInput, setTextInput] = useState('');
-  const [conversation, setConversation] = useState<Array<{role: 'ai' | 'user', content: string, timestamp: number}>>([]);
-  
-  const recognitionRef = useRef<any>(null);
-  const synthRef = useRef<SpeechSynthesis | null>(null);
-  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const currentEgoState = getEgoState(activeEgoState);
+  const egoColor = getEgoColor(activeEgoState);
 
-  // Initialize speech systems
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      synthRef.current = window.speechSynthesis;
-      
-      // Initialize speech recognition
-      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-        recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = false;
-        recognitionRef.current.interimResults = false;
-        recognitionRef.current.lang = 'en-US';
+  // Calculate progress to next level
+  const xpForNextLevel = 100;
+  const currentLevelXP = user?.experience ? user.experience % 100 : 0;
+  const progressToNext = currentLevelXP / xpForNextLevel;
 
-        recognitionRef.current.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          console.log('Speech recognized:', transcript);
-          handleUserInput(transcript);
-          setIsListening(false);
-        };
+  // Get achievements info
+  const achievements = user?.achievements || [];
+  const totalAchievements = 25; // Example total available
 
-        recognitionRef.current.onerror = (event: any) => {
-          console.log('Speech recognition error:', event.error);
-          setIsListening(false);
-        };
+  // Mock recent sessions for display
+  const recentSessions = [
+    { id: 1, name: 'Guardian Stress Relief', ago: '2h ago', xp: 15 },
+    { id: 2, name: 'Healer Recovery', ago: '1d ago', xp: 20 },
+    { id: 3, name: 'Explorer Adventure', ago: '2d ago', xp: 18 }
+  ];
 
-        recognitionRef.current.onend = () => {
-          setIsListening(false);
-        };
-      }
-    }
-  }, []);
-
-  // Auto-start AI guidance
-  useEffect(() => {
-    if (isActive && conversation.length === 0) {
-      setTimeout(() => {
-        const welcomeMessage = `Welcome to your ${sessionConfig.egoState} session. I'm Libero, and I'll be guiding you through this transformation journey. Take a deep breath and let me know - what would you like to work on today?`;
-        
-        const aiMessage = { role: 'ai' as const, content: welcomeMessage, timestamp: Date.now() };
-        setConversation([aiMessage]);
-        
-        if (isVoiceEnabled) {
-          speakText(welcomeMessage);
-        }
-      }, 2000);
-    }
-  }, [isActive, sessionConfig, isVoiceEnabled]);
-
-  // Handle user input (text or voice)
-  const handleUserInput = async (input: string) => {
-    if (!input.trim()) return;
-
-    // Add user message to conversation
-    const userMessage = { role: 'user' as const, content: input, timestamp: Date.now() };
-    setConversation(prev => [...prev, userMessage]);
-    setTextInput('');
-    setIsThinking(true);
-
-    try {
-      // Ensure Supabase URL is properly formatted
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      if (!supabaseUrl) {
-        throw new Error('Supabase URL not configured');
-      }
-      
-      const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
-      
-      // Call AI hypnosis function
-      const response = await fetch(`${baseUrl}/functions/v1/ai-hypnosis`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: input,
-          sessionContext: {
-            egoState: sessionConfig.egoState,
-            phase: sessionState.phase,
-            depth: sessionState.depth,
-            breathing: sessionState.breathing,
-            userProfile: { level: 1 }, // TODO: Get from user state
-            conversationHistory: conversation.map(msg => ({
-              role: msg.role === 'ai' ? 'assistant' : 'user',
-              content: msg.content
-            }))
-          },
-          requestType: 'guidance'
-        })
-      });
-
-      const data = await response.json();
-      
-      if (data.response) {
-        const aiMessage = { role: 'ai' as const, content: data.response, timestamp: Date.now() };
-        setConversation(prev => [...prev, aiMessage]);
-        
-        // Apply any session updates from AI
-        if (data.sessionUpdates && Object.keys(data.sessionUpdates).length > 0) {
-          onStateChange(data.sessionUpdates);
-        }
-        
-        // Speak the response
-        if (isVoiceEnabled) {
-          speakText(data.response);
-        }
-      }
-    } catch (error) {
-      console.error('AI conversation error:', error);
-      const fallbackMessage = error instanceof Error && error.message === 'Supabase URL not configured'
-        ? "Connection not available. Please continue with your breathing practice."
-        : "I'm here with you. Continue breathing and trust the process.";
-      const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
-      setConversation(prev => [...prev, aiMessage]);
-      
-      if (isVoiceEnabled) {
-        speakText(fallbackMessage);
-      }
-    } finally {
-      setIsThinking(false);
-    }
-  };
-
-  // Text-to-speech
-  const speakText = (text: string) => {
-    if (!synthRef.current || !isVoiceEnabled) return;
-
-    // Stop any current speech
-    synthRef.current.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.7; // Slower for hypnosis
-    utterance.pitch = 0.8; // Lower pitch for calming effect
-    utterance.volume = 0.9;
-
-    // Find a calm, soothing voice
-    const voices = synthRef.current.getVoices();
-    const preferredVoice = voices.find(voice => 
-      voice.name.includes('Female') || 
-      voice.name.includes('Samantha') ||
-      voice.name.includes('Karen') ||
-      voice.name.includes('Daniel') ||
-      voice.lang.includes('en')
-    ) || voices[0];
-    
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
-    }
-
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-    };
-
-    utterance.onend = () => {
-      setIsSpeaking(false);
-    };
-
-    currentUtteranceRef.current = utterance;
-    synthRef.current.speak(utterance);
-  };
-
-  // Start/stop listening
-  const toggleListening = () => {
-    if (!recognitionRef.current || !isMicEnabled) return;
-
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      showToast({ type: 'error', message: 'Error signing out' });
     } else {
-      // Stop any current speech before listening
-      if (synthRef.current) {
-        synthRef.current.cancel();
-        setIsSpeaking(false);
-      }
-      
-      recognitionRef.current.start();
-      setIsListening(true);
+      showToast({ type: 'success', message: 'Signed out successfully' });
     }
   };
 
-  // Handle text form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (textInput.trim() && !isThinking) {
-      handleUserInput(textInput.trim());
-    }
+  const handleOpenSettings = () => {
+    openModal('settings');
   };
 
-  if (!isActive) return null;
+  const handleOpenEgoStates = () => {
+    openEgoModal();
+  };
+
+  const handleOpenPlan = () => {
+    openModal('plan');
+  };
+
+  const handleOpenTokens = () => {
+    openModal('tokens');
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <PageShell
+        body={
+          <div className="h-full bg-black flex items-center justify-center p-4">
+            <div className="text-center max-w-sm">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
+                <Users size={32} className="text-purple-400" />
+              </div>
+              <h3 className="text-white text-xl font-light mb-4">Sign in to view your profile</h3>
+              <button
+                onClick={() => openModal('auth')}
+                className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
+              >
+                Sign In
+              </button>
+            </div>
+          </div>
+        }
+      />
+    );
+  }
+
+  if (isLoading || !user) {
+    return (
+      <PageShell
+        body={
+          <div className="h-full bg-black flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-teal-400/20 border-t-teal-400 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-white/60 text-sm">Loading your profile...</p>
+            </div>
+          </div>
+        }
+      />
+    );
+  }
 
   return (
-    <div className="fixed bottom-32 left-4 right-4 z-40">
-      {/* Conversation Display */}
-      {conversation.length > 0 && (
-        <div className="bg-black/95 backdrop-blur-xl rounded-2xl p-4 mb-4 max-h-48 overflow-y-auto border border-white/20 space-y-3">
-          {conversation.slice(-3).map((msg, i) => (
-            <div key={i} className={`${msg.role === 'ai' ? 'text-left' : 'text-right'}`}>
-              <div className={`inline-block max-w-[80%] p-3 rounded-2xl ${
-                msg.role === 'ai' 
-                  ? 'bg-teal-500/20 border border-teal-500/30 text-teal-100' 
-                  : 'bg-white/10 border border-white/20 text-white'
-              }`}>
-                <div className="flex items-center space-x-2 mb-1">
-                  {msg.role === 'ai' ? <Brain size={12} className="text-teal-400" /> : <MessageCircle size={12} className="text-white/60" />}
-                  <span className="text-xs font-medium opacity-80">
-                    {msg.role === 'ai' ? 'Libero' : 'You'}
-                  </span>
+    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0">
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
+      </div>
+
+      <PageShell
+        body={
+          <div className="relative z-10 h-full overflow-y-auto pb-32" style={{ paddingTop: '60px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)' }}>
+            <div className="px-4 space-y-6">
+              
+              {/* Profile Header */}
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                <div className="flex items-center space-x-4 mb-4">
+                  <button
+                    onClick={handleOpenEgoStates}
+                    className="w-16 h-16 rounded-full bg-gradient-to-br border-2 flex items-center justify-center hover:scale-110 transition-all"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${egoColor.accent}60, ${egoColor.accent}40)`,
+                      borderColor: egoColor.accent + '80',
+                      boxShadow: `0 0 20px ${egoColor.accent}40`
+                    }}
+                  >
+                    <span className="text-2xl">{currentEgoState.icon}</span>
+                  </button>
+                  <div className="flex-1">
+                    <button
+                      onClick={handleOpenEgoStates}
+                      className="text-left hover:scale-105 transition-transform"
+                    >
+                      <h2 className="text-white text-2xl font-light mb-1">Level {user.level} {currentEgoState.name}</h2>
+                      <p className="text-white/70">{currentEgoState.description}</p>
+                    </button>
+                  </div>
                 </div>
-                <p className="text-sm leading-relaxed">{msg.content}</p>
+
+                {/* XP Progress */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white/80 text-sm">Progress to Level {user.level + 1}</span>
+                    <span className="text-orange-400 font-medium text-sm">{currentLevelXP}/100 XP</span>
+                  </div>
+                  <div className="w-full h-3 bg-white/20 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-all duration-700"
+                      style={{ width: `${progressToNext * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Key Stats Grid */}
+                <div className="grid grid-cols-4 gap-4 text-center">
+                  <div className="bg-black/20 rounded-lg p-3 border border-white/10">
+                    <div className="text-yellow-400 text-xl font-bold">{user.session_streak}</div>
+                    <div className="text-white/60 text-xs">Day Streak</div>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-3 border border-white/10">
+                    <div className="text-teal-400 text-xl font-bold">{achievements.length}</div>
+                    <div className="text-white/60 text-xs">Badges</div>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-3 border border-white/10">
+                    <div className="text-purple-400 text-xl font-bold">{user.tokens}</div>
+                    <div className="text-white/60 text-xs">Tokens</div>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-3 border border-white/10">
+                    <div className="text-blue-400 text-xl font-bold">{user.daily_sessions_used}</div>
+                    <div className="text-white/60 text-xs">Today</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Ego State Card */}
+              <button
+                onClick={handleOpenEgoStates}
+                className="w-full bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 hover:border-white/30 hover:scale-105 transition-all text-left"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="text-3xl">{currentEgoState.icon}</div>
+                    <div>
+                      <h3 className="text-white font-semibold text-lg">Current Guide: {currentEgoState.name}</h3>
+                      <p className="text-white/70 text-sm">{currentEgoState.role} • Tap to change</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={20} className="text-white/40" />
+                </div>
+              </button>
+
+              {/* Quick Actions Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={handleOpenPlan}
+                  className="bg-gradient-to-br from-yellow-500/10 to-amber-500/10 backdrop-blur-xl rounded-xl p-4 border border-yellow-500/20 hover:border-yellow-500/30 hover:scale-105 transition-all text-left"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <Crown size={20} className="text-yellow-400" />
+                    <ChevronRight size={16} className="text-white/40" />
+                  </div>
+                  <h4 className="text-white font-semibold mb-1">Premium</h4>
+                  <p className="text-white/70 text-sm">Plan: {user.plan}</p>
+                </button>
+
+                <button
+                  onClick={handleOpenTokens}
+                  className="bg-gradient-to-br from-cyan-500/10 to-teal-500/10 backdrop-blur-xl rounded-xl p-4 border border-cyan-500/20 hover:border-cyan-500/30 hover:scale-105 transition-all text-left"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <Coins size={20} className="text-cyan-400" />
+                    <ChevronRight size={16} className="text-white/40" />
+                  </div>
+                  <h4 className="text-white font-semibold mb-1">Tokens</h4>
+                  <p className="text-white/70 text-sm">Balance: {user.tokens}</p>
+                </button>
+
+                <button
+                  onClick={() => setShowAnalytics(true)}
+                  className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 backdrop-blur-xl rounded-xl p-4 border border-purple-500/20 hover:border-purple-500/30 hover:scale-105 transition-all text-left"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <BarChart3 size={20} className="text-purple-400" />
+                    <ChevronRight size={16} className="text-white/40" />
+                  </div>
+                  <h4 className="text-white font-semibold mb-1">Analytics</h4>
+                  <p className="text-white/70 text-sm">View insights</p>
+                </button>
+
+                <button
+                  onClick={handleOpenSettings}
+                  className="bg-gradient-to-br from-gray-500/10 to-slate-500/10 backdrop-blur-xl rounded-xl p-4 border border-gray-500/20 hover:border-gray-500/30 hover:scale-105 transition-all text-left"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <Settings size={20} className="text-gray-400" />
+                    <ChevronRight size={16} className="text-white/40" />
+                  </div>
+                  <h4 className="text-white font-semibold mb-1">Settings</h4>
+                  <p className="text-white/70 text-sm">Preferences</p>
+                </button>
+              </div>
+
+              {/* Recent Sessions */}
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                <h3 className="text-white font-semibold text-lg mb-4 flex items-center space-x-2">
+                  <Brain size={20} className="text-teal-400" />
+                  <span>Recent Sessions</span>
+                </h3>
+                <div className="space-y-3">
+                  {recentSessions.map((session) => (
+                    <div key={session.id} className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
+                      <div>
+                        <div className="text-white font-medium text-sm">{session.name}</div>
+                        <div className="text-white/60 text-xs">{session.ago}</div>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Star size={14} className="text-orange-400" />
+                        <span className="text-orange-400 font-medium text-sm">+{session.xp} XP</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Achievements Preview */}
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white font-semibold text-lg flex items-center space-x-2">
+                    <Award size={20} className="text-yellow-400" />
+                    <span>Achievements</span>
+                  </h3>
+                  <span className="text-white/60 text-sm">{achievements.length}/{totalAchievements}</span>
+                </div>
+                
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="flex -space-x-2">
+                    {achievements.slice(0, 3).map((achievement, i) => (
+                      <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-amber-400 border-2 border-black flex items-center justify-center">
+                        <Award size={14} className="text-black" />
+                      </div>
+                    ))}
+                    {achievements.length > 3 && (
+                      <div className="w-8 h-8 rounded-full bg-black/40 border-2 border-white/20 flex items-center justify-center">
+                        <span className="text-white/70 text-xs">+{achievements.length - 3}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-yellow-400 to-amber-400 rounded-full transition-all duration-700"
+                      style={{ width: `${(achievements.length / totalAchievements) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <p className="text-white/70 text-sm">Complete more sessions to unlock rare badges and titles</p>
+              </div>
+
+              {/* Sign Out */}
+              <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 backdrop-blur-xl rounded-2xl p-6 border border-red-500/20">
+                <h3 className="text-white font-semibold text-lg mb-4">Account</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/70">Email</span>
+                    <span className="text-white font-medium">{user.email}</span>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full px-4 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-xl text-red-400 font-medium transition-all hover:scale-105"
+                  >
+                    Sign Out
+                  </button>
+                </div>
               </div>
             </div>
-          ))}
+          </div>
+        }
+      />
+
+      {/* Analytics Modal */}
+      {showAnalytics && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowAnalytics(false)} />
           
-          {/* Thinking indicator */}
-          {isThinking && (
-            <div className="text-left">
-              <div className="inline-block bg-teal-500/20 border border-teal-500/30 p-3 rounded-2xl">
-                <div className="flex items-center space-x-2">
-                  <Brain size={12} className="text-teal-400" />
-                  <span className="text-xs font-medium text-teal-100">Libero</span>
+          <div className="relative bg-black/95 backdrop-blur-xl rounded-3xl p-6 border border-white/20 max-w-lg w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-white text-xl font-light">Your Analytics</h2>
+              <button onClick={() => setShowAnalytics(false)} className="text-white/60 hover:text-white">
+                <span className="text-2xl">×</span>
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Ego State Usage */}
+              <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-xl p-4 border border-purple-500/20">
+                <h3 className="text-white font-medium mb-3">Ego State Usage</h3>
+                <div className="space-y-2">
+                  {Object.entries(user.ego_state_usage || {}).slice(0, 5).map(([stateId, count]) => {
+                    const state = EGO_STATES.find(s => s.id === stateId);
+                    if (!state || count === 0) return null;
+                    const totalSessions = Object.values(user.ego_state_usage || {}).reduce((sum, c) => sum + c, 0);
+                    const percentage = totalSessions > 0 ? Math.round((count / totalSessions) * 100) : 0;
+                    
+                    return (
+                      <div key={stateId} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg">{state.icon}</span>
+                          <span className="text-white/80 text-sm">{state.name}</span>
+                        </div>
+                        <span className="text-white/60 text-sm">{percentage}%</span>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="flex items-center space-x-2 mt-1">
-                  <Loader size={14} className="text-teal-400 animate-spin" />
-                  <span className="text-sm text-teal-100">Tuning into your energy...</span>
+              </div>
+
+              {/* Weekly Progress */}
+              <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-4 border border-teal-500/20">
+                <h3 className="text-white font-medium mb-3">This Week</h3>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="bg-black/20 rounded-lg p-3">
+                    <div className="text-teal-400 text-lg font-bold">5</div>
+                    <div className="text-white/60 text-xs">Sessions</div>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-3">
+                    <div className="text-orange-400 text-lg font-bold">78</div>
+                    <div className="text-white/60 text-xs">XP Gained</div>
+                  </div>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
-
-      {/* Input Interface */}
-      <div className="bg-black/95 backdrop-blur-xl rounded-2xl border border-white/20 p-4">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="flex items-center space-x-3">
-            {/* Voice Input Button */}
-            <button
-              type="button"
-              onClick={toggleListening}
-              disabled={!isMicEnabled || isThinking}
-              className={`p-3 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 ${
-                isListening 
-                  ? 'bg-red-500/20 border-2 border-red-500/60 text-red-400 animate-pulse' 
-                  : 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
-              }`}
-            >
-              <Mic size={20} />
-            </button>
-
-            {/* Text Input */}
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                placeholder={isListening ? "Listening..." : "Type your message or use voice..."}
-                disabled={isListening || isThinking}
-                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all disabled:opacity-50"
-              />
-              
-              {/* Speaking indicator */}
-              {isSpeaking && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2 text-teal-400">
-                  <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
-                  <span className="text-xs">Libero is speaking</span>
-                </div>
-              )}
-            </div>
-
-            {/* Send Button */}
-            <button
-              type="submit"
-              disabled={!textInput.trim() || isThinking}
-              className="p-3 bg-teal-500/20 border border-teal-500/40 text-teal-400 rounded-full hover:bg-teal-500/30 transition-all hover:scale-110 disabled:opacity-50"
-            >
-              <Send size={20} />
-            </button>
-          </div>
-
-          {/* Status and Controls */}
-          <div className="flex items-center justify-between">
-            {/* Status */}
-            <div className="flex items-center space-x-2 text-xs text-white/60">
-              {isListening && (
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
-                  <span>Listening...</span>
-                </div>
-              )}
-              {isSpeaking && (
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
-                  <span className="text-xs">Libero is speaking</span>
-                </div>
-              )}
-            </div>
-
-            {/* Audio Controls */}
-            <div className="flex items-center space-x-2">
-              <button
-                type="button"
-                onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-                className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
-                  isVoiceEnabled 
-                    ? 'bg-green-500/20 border border-green-500/40 text-green-400' 
-                    : 'bg-white/10 border border-white/20 text-white/60'
-                }`}
-              >
-                {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsMicEnabled(!isMicEnabled)}
-                className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
-                  isMicEnabled 
-                    ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400' 
-                    : 'bg-white/10 border border-white/20 text-white/60'
-                }`}
-              >
-                {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-              </button>
-            </div>
-          </div>
-        </form>
-
-        {/* Quick Suggestions */}
-        {conversation.length <= 1 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {[
-              'I feel stressed',
-              'Help me focus',
-              'I want to relax',
-              'I need confidence'
-            ].map((suggestion) => (
-              <button
-                key={suggestion}
-                onClick={() => handleUserInput(suggestion)}
-                disabled={isThinking}
-                className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-white/70 text-xs transition-all hover:scale-105 disabled:opacity-50"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
