@@ -32,7 +32,7 @@ export const THEME = {
     healer: { bg: 'from-green-600 to-green-800', accent: '#22C55E', baseColorName: 'green' },
     explorer: { bg: 'from-yellow-500 to-yellow-700', accent: '#EAB308', baseColorName: 'yellow' },
     mystic: { bg: 'from-purple-600 to-purple-800', accent: '#A855F7', baseColorName: 'purple' },
-    sage: { bg: 'from-gray-300 to-gray-500', accent: '#9CA3AF', baseColorName: 'gray' },
+    sage: { bg: 'from-gray-300 to-gray-500', accent: '#E5E7EB', baseColorName: 'gray' },
     child: { bg: 'from-orange-500 to-orange-700', accent: '#F97316', baseColorName: 'orange' },
     performer: { bg: 'from-pink-600 to-pink-800', accent: '#EC4899', baseColorName: 'pink' },
     shadow: { bg: 'from-indigo-900 to-black', accent: '#4F46E5', baseColorName: 'indigo' },
