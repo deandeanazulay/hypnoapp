@@ -4,7 +4,8 @@ import { EGO_STATES as egoStates, useAppStore, EgoStateId } from '../../store';
 import { useGameState } from '../GameStateManager';
 
 export default function EgoStatesModal() {
-  const { isEgoModalOpen, closeEgoModal, activeEgoState, setActiveEgoState } = useAppStore();
+  const { modals, closeEgoModal, activeEgoState, setActiveEgoState } = useAppStore();
+  const isEgoModalOpen = modals.egoStates;
   const { user } = useGameState();
   const [tempSelectedEgoState, setTempSelectedEgoState] = React.useState<EgoStateId>(activeEgoState);
 

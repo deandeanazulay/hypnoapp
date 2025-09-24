@@ -83,7 +83,11 @@ export default function HomeScreen({
                 return (
                   <div key={`${state.id}-${index}`} className="flex-shrink-0">
                     <button
-                      onClick={() => useAppStore.getState().setActiveEgoState(state.id)}
+                      onClick={() => {
+                        const { setActiveEgoState, openEgoModal } = useAppStore.getState();
+                        setActiveEgoState(state.id);
+                        openEgoModal();
+                      }}
                       className={`w-9 h-9 rounded-full bg-gradient-to-br ${egoColor.bg} border-2 flex items-center justify-center transition-all duration-300 hover:scale-105 ${
                         isSelected ? 'border-white/60 scale-110 opacity-100' : 'border-white/20 opacity-50'
                       }`}
@@ -108,15 +112,15 @@ export default function HomeScreen({
               <div 
                 className="relative z-30 flex items-center justify-center" 
                 style={{ 
-                  width: window.innerWidth < 768 ? '280px' : '320px',
-                  height: window.innerWidth < 768 ? '280px' : '320px'
+                  width: window.innerWidth < 768 ? '300px' : '400px',
+                  height: window.innerWidth < 768 ? '300px' : '400px'
                 }}
               >
                 <Orb
                   onTap={onOrbTap}
                   afterglow={false}
                   egoState={activeEgoState}
-                  size={window.innerWidth < 768 ? 280 : 320}
+                  size={window.innerWidth < 768 ? 300 : 400}
                   variant="webgl"
                 />
               </div>
