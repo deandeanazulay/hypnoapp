@@ -52,6 +52,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const isActiveRef = useRef(true);
   const [webglSupported, setWebglSupported] = React.useState<boolean | null>(null);
   
+  // Context loss tracking
+  const contextLostRef = useRef(false);
+  
   // Alien state for fractal mathematics
   const alienStateRef = useRef({
     pulse: 0,
@@ -122,10 +125,15 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const canvas = renderer.domElement;
     canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
-      onError?.();
+      contextLostRef.current = true;
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }
+    });
+    
+    canvas.addEventListener('webglcontextrestored', () => {
+      contextLostRef.current = false;
+      initializeOrb();
     });
 
 
@@ -248,6 +256,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
   const animate = () => {
     if (!isActiveRef.current || !rendererRef.current || !cameraRef.current || !sceneRef.current) return;
+    if (contextLostRef.current) return;
     if (contextLost) return;
 
     const time = Date.now() * 0.001;
