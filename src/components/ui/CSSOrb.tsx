@@ -27,6 +27,9 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   const [isHovering, setIsHovering] = React.useState(false);
   const [isSpeaking, setIsSpeaking] = React.useState(false);
   const [isListening, setIsListening] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [dragRotation, setDragRotation] = React.useState(0);
+  const [lastMousePos, setLastMousePos] = React.useState({ x: 0, y: 0 });
 
   useImperativeHandle(ref, () => ({
     updateState: () => {},
@@ -36,17 +39,39 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
 
   const egoColor = getEgoColor(egoState);
   
-  const handlePointerDown = () => setIsPressed(true);
-  const handlePointerUp = () => {
-    setIsPressed(false);
-    console.log('[CSS-ORB] Tap detected, calling onTap');
-    console.log('[CSS-ORB] Tap detected, calling onTap');
-    onTap();
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setIsPressed(true);
+    setIsDragging(true);
+    setLastMousePos({ x: e.clientX, y: e.clientY });
   };
+  
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    
+    const deltaX = e.clientX - lastMousePos.x;
+    const rotationSpeed = 0.5; // Degrees per pixel
+    const newRotation = dragRotation + deltaX * rotationSpeed;
+    
+    setDragRotation(newRotation);
+    setLastMousePos({ x: e.clientX, y: e.clientY });
+  };
+  
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!isDragging) {
+      // This was a tap, not a drag
+      console.log('[CSS-ORB] Tap detected, calling onTap');
+      onTap();
+    }
+    
+    setIsPressed(false);
+    setIsDragging(false);
+  };
+  
   const handlePointerEnter = () => setIsHovering(true);
   const handlePointerLeave = () => {
     setIsHovering(false);
     setIsPressed(false);
+    setIsDragging(false);
   };
 
   // Enhanced tap handling for mobile compatibility
@@ -75,8 +100,14 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
         className={`relative cursor-pointer select-none transition-all duration-300 ${
           isPressed ? 'scale-95' : isHovering ? 'scale-105' : 'scale-100'
         }`}
-        style={{ width: `${orbSize}px`, height: `${orbSize}px` }}
+        style={{ 
+          width: `${orbSize}px`, 
+          height: `${orbSize}px`,
+          transform: `${isPressed ? 'scale(0.95)' : isHovering ? 'scale(1.05)' : 'scale(1.0)'} rotate(${dragRotation}deg)`,
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }}
         onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
