@@ -174,20 +174,27 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     const egoColorInfo = getEgoColor(egoState);
     const color = new THREE.Color(egoColorInfo.accent);
 
-    // Create alien organic sphere geometry with irregularities
+    // Create fractal sphere geometry that can deform mathematically
     const sphereGeometry = new THREE.SphereGeometry(10, 64, 64);
     
-    // Add organic deformation to vertices
+    // Store original vertex positions for fractal deformation
+    const originalPositions = sphereGeometry.attributes.position.array.slice();
+    sphereGeometry.userData = { originalPositions };
+    
+    // Add initial mathematical noise pattern
+    const originalPositions = sphereGeometry.attributes.position.array.slice();
+    sphereGeometry.userData = { originalPositions };
     const positions = sphereGeometry.attributes.position.array;
     for (let i = 0; i < positions.length; i += 3) {
       const x = positions[i];
       const y = positions[i + 1]; 
       const z = positions[i + 2];
       
-      // Add subtle organic noise
-      const noise = Math.sin(x * 0.3) * Math.cos(y * 0.3) * Math.sin(z * 0.3) * 0.3;
+      // Add mathematical fractal pattern
+      const fractalNoise = Math.sin(x * 0.5) * Math.cos(y * 0.3) * Math.sin(z * 0.7) * 0.2;
+      const secondaryNoise = Math.sin(x * 1.2) * Math.cos(y * 0.8) * Math.sin(z * 1.5) * 0.1;
       const length = Math.sqrt(x * x + y * y + z * z);
-      const factor = 1 + noise * 0.1;
+      const factor = 1 + (fractalNoise + secondaryNoise) * 0.15;
       
       positions[i] = x * factor;
       positions[i + 1] = y * factor;
@@ -209,17 +216,6 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     const orbMesh = new THREE.LineSegments(wireframeGeometry, material);
     orbMeshRef.current = orbMesh;
     scene.add(orbMesh);
-
-    // Create alien tentacles
-    const tentacles: THREE.Mesh[] = [];
-    const tentacleCount = 8;
-    
-    for (let i = 0; i < tentacleCount; i++) {
-      const angle = (i / tentacleCount) * Math.PI * 2;
-      const tentacle = createTentacle(color, angle);
-      tentacles.push(tentacle);
-      scene.add(tentacle);
-    }
 
     // Add multiple alien glow layers
     const glowGeometry = new THREE.SphereGeometry(9.5, 32, 32);
@@ -244,52 +240,7 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     scene.add(pulseMesh);
     
     // Store references for animation
-    orbMesh.userData = { glowMesh1, pulseMesh, tentacles };
-
-    // Create tentacle geometry function
-    function createTentacle(color: THREE.Color, baseAngle: number) {
-      const tentacleGroup = new THREE.Group();
-      const segmentCount = 12;
-      const segmentLength = 1.5;
-      
-      for (let j = 0; j < segmentCount; j++) {
-        // Create slimy segment geometry
-        const segmentRadius = 0.4 - (j * 0.02); // Taper toward tip
-        const segmentGeometry = new THREE.SphereGeometry(segmentRadius, 8, 8);
-        
-        // Slimy, wet material
-        const segmentMaterial = new THREE.MeshBasicMaterial({
-          color: color.clone().multiplyScalar(0.7 + Math.random() * 0.3),
-          transparent: true,
-          opacity: 0.6 + Math.random() * 0.3,
-        });
-        
-        const segment = new THREE.Mesh(segmentGeometry, segmentMaterial);
-        
-        // Position segments along tentacle
-        const x = 10 + j * segmentLength * Math.cos(baseAngle);
-        const y = 10 + j * segmentLength * Math.sin(baseAngle);
-        const z = j * segmentLength * 0.3;
-        
-        segment.position.set(
-          x + Math.random() * 0.5 - 0.25,
-          y + Math.random() * 0.5 - 0.25,
-          z + Math.random() * 0.5 - 0.25
-        );
-        
-        // Store segment data for animation
-        segment.userData = {
-          baseAngle,
-          segmentIndex: j,
-          basePosition: { x, y, z },
-          phaseOffset: Math.random() * Math.PI * 2
-        };
-        
-        tentacleGroup.add(segment);
-      }
-      
-      return tentacleGroup;
-    }
+    orbMesh.userData = { glowMesh1, pulseMesh, sphereGeometry };
     // Start animation loop
     animate();
   };
@@ -312,8 +263,57 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     // Organic offset for tentacle-like movement
     alienState.organicOffset = Math.sin(time * 0.5) * 0.02;
     
-    // Tentacle phase for writhing motion
-    alienState.tentaclePhase = time * 0.8;
+    // Fractal deformation phase
+    alienState.fractalPhase = time * 0.6;
+
+    // Apply fractal deformations to the sphere geometry
+    if (orbMeshRef.current && orbMeshRef.current.userData.sphereGeometry) {
+      const geometry = orbMeshRef.current.userData.sphereGeometry;
+      const originalPositions = geometry.userData.originalPositions;
+      const positions = geometry.attributes.position.array;
+      
+      for (let i = 0; i < positions.length; i += 3) {
+        const origX = originalPositions[i];
+        const origY = originalPositions[i + 1];
+        const origZ = originalPositions[i + 2];
+        
+        // Mathematical fractal deformation
+        const phi = Math.atan2(origY, origX);
+        const theta = Math.acos(origZ / Math.sqrt(origX * origX + origY * origY + origZ * origZ));
+        
+        // Multiple fractal layers
+        const fractal1 = Math.sin(phi * 3 + time * 0.8) * Math.cos(theta * 2 + time * 0.5) * 0.4;
+        const fractal2 = Math.sin(phi * 7 + time * 1.2) * Math.cos(theta * 5 + time * 0.9) * 0.2;
+        const fractal3 = Math.sin(phi * 11 + time * 0.6) * Math.cos(theta * 8 + time * 1.1) * 0.15;
+        
+        // Chaotic mathematical noise
+        const chaos = Math.sin(origX * 0.8 + time) * Math.cos(origY * 1.2 + time * 0.7) * Math.sin(origZ * 0.6 + time * 1.3) * 0.3;
+        
+        // Combine all deformations
+        const totalDeformation = fractal1 + fractal2 + fractal3 + chaos + alienState.pulse;
+        const deformationFactor = 1 + totalDeformation * 0.12;
+        
+        // Apply speaking/listening effects
+        let speakingMod = 1;
+        if (isSpeaking) {
+          speakingMod = 1 + 0.4 * Math.sin(time * 8 + phi * 5) * Math.cos(time * 6 + theta * 3);
+        }
+        if (isListening) {
+          speakingMod = 1 + 0.2 * Math.sin(time * 12 + phi * 7) * Math.cos(time * 10 + theta * 4);
+        }
+        
+        positions[i] = origX * deformationFactor * speakingMod;
+        positions[i + 1] = origY * deformationFactor * speakingMod;
+        positions[i + 2] = origZ * deformationFactor * speakingMod;
+      }
+      
+      geometry.attributes.position.needsUpdate = true;
+      
+      // Update wireframe
+      const wireframeGeometry = new THREE.WireframeGeometry(geometry);
+      orbMeshRef.current.geometry.dispose();
+      orbMeshRef.current.geometry = wireframeGeometry;
+    }
 
     // Alien breathing - more dramatic and irregular
     const primaryPulse = 0.85 + 0.15 * Math.sin(time * 0.6);  // Main heartbeat
@@ -405,48 +405,13 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
 
       // Speaking indicator - alien excitement
       if (isSpeaking) {
-        const speakingScale = 0.8 + 0.2 * Math.sin(time * 6) + 0.1 * Math.sin(time * 12);
-        orbMeshRef.current.scale.setScalar(speakingScale);
-        
         // Rapid color shifting when speaking
-        material.opacity = 0.7 + 0.3 * Math.sin(time * 8);
+        material.opacity = 0.8 + 0.2 * Math.sin(time * 8);
       }
 
       // Listening indicator - alien attention mode
       if (isListening) {
-        material.opacity = 0.4 + 0.6 * Math.sin(time * 10);
-        
-        // Listening makes it more erratic
-        orbMeshRef.current.position.x += Math.sin(time * 8) * 0.1;
-        orbMeshRef.current.position.y += Math.cos(time * 9) * 0.1;
-        
-        // Tentacles get agitated when listening
-        const userData = orbMeshRef.current.userData;
-        if (userData.tentacles) {
-          userData.tentacles.forEach((tentacle: THREE.Group) => {
-            tentacle.children.forEach((segment: THREE.Mesh) => {
-              segment.position.x += Math.sin(time * 12) * 0.2;
-              segment.position.y += Math.cos(time * 15) * 0.2;
-            });
-          });
-        }
-      }
-      
-      // Speaking makes tentacles excited
-      if (isSpeaking) {
-        const userData = orbMeshRef.current.userData;
-        if (userData.tentacles) {
-          userData.tentacles.forEach((tentacle: THREE.Group) => {
-            tentacle.children.forEach((segment: THREE.Mesh, segmentIndex: number) => {
-              const exciteScale = 1 + 0.3 * Math.sin(time * 8 + segmentIndex);
-              segment.scale.setScalar(exciteScale);
-              
-              // More violent writhing when speaking
-              segment.position.x += Math.sin(time * 10 + segmentIndex) * 0.3;
-              segment.position.y += Math.cos(time * 12 + segmentIndex) * 0.3;
-            });
-          });
-        }
+        material.opacity = 0.6 + 0.4 * Math.sin(time * 10);
       }
     }
 
