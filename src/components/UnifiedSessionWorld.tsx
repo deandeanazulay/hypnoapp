@@ -529,10 +529,10 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               <div 
                 className="text-sm font-medium px-3 py-1 rounded-full border backdrop-blur-sm transition-all duration-1000"
                 style={{ 
-                  color: egoColor.accent,
-                  borderColor: egoColor.accent + '40',
-                  backgroundColor: egoColor.accent + '20',
-                  boxShadow: `0 0 15px ${egoColor.accent}30`
+                  color: '#22C55E',
+                  borderColor: '#22C55E40',
+                  backgroundColor: '#22C55E20',
+                  boxShadow: `0 0 15px #22C55E30`
                 }}
               >
                 {getBreathingInstruction()}
