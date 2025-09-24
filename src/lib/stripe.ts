@@ -81,13 +81,13 @@ export class PaymentService {
         .maybeSingle();
       
       if (error) {
-        console.error('Error fetching subscription:', error);
+        console.warn('Error fetching subscription:', error);
         return null;
       }
       
       return data;
-    } catch (fetchError) {
-      console.error('Network error fetching subscription:', fetchError);
+    } catch (error) {
+      console.warn('Network error fetching subscription, defaulting to free plan:', error);
       return null;
     }
   }
@@ -112,7 +112,7 @@ export class PaymentService {
           return 'free';
       }
     } catch (error) {
-      console.error('Error getting subscription status:', error);
+      console.warn('Error getting subscription status, defaulting to free:', error);
       return 'free';
     }
   }
