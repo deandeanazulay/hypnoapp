@@ -73,7 +73,7 @@ export default function HomeScreen({
 
       {/* 2. Main Orb Section - Takes remaining space and centers orb */}
       <div className="flex-1 min-h-0 flex items-center justify-center relative z-30">
-        <div className="flex flex-col items-center justify-center space-y-6">
+        <div className="flex flex-col items-center justify-center ">
           <Orb
             onTap={handleOrbTap}
             egoState={activeEgoState}
