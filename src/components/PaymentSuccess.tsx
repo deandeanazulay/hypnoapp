@@ -1,172 +1,312 @@
-import React, { useEffect, useState } from 'react';
-import { CheckCircle, ArrowRight, Crown, Sparkles } from 'lucide-react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { paymentService } from '../lib/stripe';
-import { useGameState } from './GameStateManager';
+import React, { useState, useEffect, useRef } from 'react';
+import { Mic, MicOff, Volume2, VolumeX, MessageCircle, Brain, Send, Loader } from 'lucide-react';
 
-export default function PaymentSuccess() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { updateUserState } = useGameState();
-  const [isProcessing, setIsProcessing] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface AIVoiceSystemProps {
+  isActive: boolean;
+  sessionType: 'unified' | 'integration';
+  onStateChange: (state: any) => void;
+  sessionState: any;
+  sessionConfig: any;
+}
+
+interface SessionState {
+  depth: number;
+  breathing: 'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale';
+  phase: string;
+  userResponse: string;
+  aiResponse: string;
+  isListening: boolean;
+  isSpeaking: boolean;
+}
+
+export default function AIVoiceSystem({ isActive, sessionType, onStateChange, sessionState, sessionConfig }: AIVoiceSystemProps) {
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [textInput, setTextInput] = useState('');
+  const [conversation, setConversation] = useState<Array<{role: 'ai' | 'user', content: string, timestamp: number}>>([]);
   
-  const sessionId = searchParams.get('session_id');
+  const recognitionRef = useRef<any>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  // Initialize speech systems
   useEffect(() => {
-    if (!sessionId) {
-      setError('No session ID found');
-      setIsProcessing(false);
-      return;
-    }
+    if (typeof window !== 'undefined') {
+      synthRef.current = window.speechSynthesis;
+      
+      // Initialize speech recognition
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'en-US';
 
-    // Update user state to reflect premium access
-    const updateSubscriptionStatus = async () => {
-      try {
-        // Wait a moment for webhook to process
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Check subscription status
-        const status = await paymentService.getSubscriptionStatus();
-        updateUserState({ 
-          subscriptionStatus: status,
-          plan: status === 'active' ? 'pro_monthly' : 'free'
-        });
-        
-        setIsProcessing(false);
-      } catch (err) {
-        console.error('Error updating subscription status:', err);
-        setIsProcessing(false);
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          console.log('Speech recognized:', transcript);
+          handleUserInput(transcript);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.log('Speech recognition error:', event.error);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
       }
-    };
+    }
+  }, []);
 
-    updateSubscriptionStatus();
-  }, [sessionId, updateUserState]);
+  // Auto-start AI guidance
+  useEffect(() => {
+    if (isActive && conversation.length === 0) {
+      setTimeout(() => {
+        const welcomeMessage = `Welcome to your ${sessionConfig.egoState} session. I'm Libero, and I'll be guiding you through this transformation journey. Take a deep breath and let me know - what would you like to work on today?`;
+        
+        const aiMessage = { role: 'ai' as const, content: welcomeMessage, timestamp: Date.now() };
+        setConversation([aiMessage]);
+        
+        if (isVoiceEnabled) {
+          speakText(welcomeMessage);
+        }
+      }, 2000);
+    }
+  }, [isActive, sessionConfig, isVoiceEnabled]);
 
-  const handleContinue = () => {
-    navigate('/', { replace: true });
+  // Handle user input (text or voice)
+  const handleUserInput = async (input: string) => {
+    if (!input.trim()) return;
+
+    // Add user message to conversation
+    const userMessage = { role: 'user' as const, content: input, timestamp: Date.now() };
+    setConversation(prev => [...prev, userMessage]);
+    setTextInput('');
+    setIsThinking(true);
+
+    try {
+      // Call AI hypnosis function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-hypnosis`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: input,
+          sessionContext: {
+            egoState: sessionConfig.egoState,
+            phase: sessionState.phase,
+            depth: sessionState.depth,
+            breathing: sessionState.breathing,
+            userProfile: { level: 1 }, // TODO: Get from user state
+            conversationHistory: conversation.map(msg => ({
+              role: msg.role === 'ai' ? 'assistant' : 'user',
+              content: msg.content
+            }))
+          },
+          requestType: 'guidance'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.response) {
+        const aiMessage = { role: 'ai' as const, content: data.response, timestamp: Date.now() };
+        setConversation(prev => [...prev, aiMessage]);
+        
+        // Apply any session updates from AI
+        if (data.sessionUpdates && Object.keys(data.sessionUpdates).length > 0) {
+          onStateChange(data.sessionUpdates);
+        }
+        
+        // Speak the response
+        if (isVoiceEnabled) {
+          speakText(data.response);
+        }
+      }
+    } catch (error) {
+      console.error('AI conversation error:', error);
+      const fallbackMessage = "I'm here with you. Continue breathing and trust the process.";
+      const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
+      setConversation(prev => [...prev, aiMessage]);
+      
+      if (isVoiceEnabled) {
+        speakText(fallbackMessage);
+      }
+    } finally {
+      setIsThinking(false);
+    }
   };
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="max-w-md w-full">
-          <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 backdrop-blur-xl rounded-3xl p-8 border border-red-500/20">
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl">❌</span>
-              </div>
-              <h1 className="text-white text-2xl font-bold mb-4">Payment Error</h1>
-              <p className="text-white/70 mb-8">{error}</p>
-              <button
-                onClick={handleContinue}
-                className="w-full px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
-              >
-                Return to App
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Text-to-speech
+  const speakText = (text: string) => {
+    if (!synthRef.current || !isVoiceEnabled) return;
+
+    // Stop any current speech
+    synthRef.current.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.7; // Slower for hypnosis
+    utterance.pitch = 0.8; // Lower pitch for calming effect
+    utterance.volume = 0.9;
+
+    // Find a calm, soothing voice
+    const voices = synthRef.current.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.includes('Female') || 
+      voice.name.includes('Samantha') ||
+      voice.name.includes('Karen') ||
+      voice.name.includes('Daniel') ||
+      voice.lang.includes('en')
+    ) || voices[0];
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+    };
+
+    currentUtteranceRef.current = utterance;
+    synthRef.current.speak(utterance);
+  };
+
+  // Start/stop listening
+  const toggleListening = () => {
+    if (!recognitionRef.current || !isMicEnabled) return;
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      // Stop any current speech before listening
+      if (synthRef.current) {
+        synthRef.current.cancel();
+        setIsSpeaking(false);
+      }
+      
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  // Handle text form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (textInput.trim() && !isThinking) {
+      handleUserInput(textInput.trim());
+    }
+  };
+
+  if (!isActive) return null;
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-teal-950/30 to-cyan-950/20" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-500/20 to-cyan-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-cyan-500/20 to-teal-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-      </div>
-
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-lg w-full">
-          <div className="bg-gradient-to-br from-teal-500/20 to-cyan-500/20 backdrop-blur-xl rounded-3xl p-8 border border-teal-500/30 shadow-2xl shadow-teal-500/20">
-            <div className="text-center">
-              {/* Success Icon */}
-              <div className="relative mb-8">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-teal-400/50">
-                  <CheckCircle size={40} className="text-black" />
+    <div className="fixed bottom-32 left-4 right-4 z-40">
+      {/* Conversation Display */}
+      {conversation.length > 0 && (
+        <div className="bg-black/95 backdrop-blur-xl rounded-2xl p-4 mb-4 max-h-48 overflow-y-auto border border-white/20 space-y-3">
+          {conversation.slice(-3).map((msg, i) => (
+            <div key={i} className={`${msg.role === 'ai' ? 'text-left' : 'text-right'}`}>
+              <div className={`inline-block max-w-[80%] p-3 rounded-2xl ${
+                msg.role === 'ai' 
+                  ? 'bg-teal-500/20 border border-teal-500/30 text-teal-100' 
+                  : 'bg-white/10 border border-white/20 text-white'
+              }`}>
+                <div className="flex items-center space-x-2 mb-1">
+                  {msg.role === 'ai' ? <Brain size={12} className="text-teal-400" /> : <MessageCircle size={12} className="text-white/60" />}
+                  <span className="text-xs font-medium opacity-80">
+                    {msg.role === 'ai' ? 'Libero' : 'You'}
+                  </span>
                 </div>
-                <div className="absolute inset-0 rounded-full bg-teal-400/30 blur-xl animate-pulse" />
+                <p className="text-sm leading-relaxed">{msg.content}</p>
               </div>
-
-              {/* Title */}
-              <div className="mb-6">
-                <h1 className="text-white text-3xl font-bold mb-2 flex items-center justify-center space-x-2">
-                  <Crown size={28} className="text-teal-400" />
-                  <span>Welcome to Premium!</span>
-                  <Sparkles size={28} className="text-cyan-400" />
-                </h1>
-                <p className="text-teal-400 font-semibold text-lg">
-                  Your Mystic Subscription is now active
-                </p>
-              </div>
-
-              {/* Processing State */}
-              {isProcessing ? (
-                <div className="mb-8">
-                  <div className="flex items-center justify-center space-x-2 mb-4">
-                    <div className="w-4 h-4 border-2 border-teal-400/20 border-t-teal-400 rounded-full animate-spin" />
-                    <span className="text-white/80">Setting up your premium access...</span>
-                  </div>
+            </div>
+          ))}
+          
+          {/* Thinking indicator */}
+          {isThinking && (
+            <div className="text-left">
+              <div className="inline-block bg-teal-500/20 border border-teal-500/30 p-3 rounded-2xl">
+                <div className="flex items-center space-x-2">
+                  <Brain size={12} className="text-teal-400" />
+                  <span className="text-xs font-medium text-teal-100">Libero</span>
                 </div>
-              ) : (
-                <div className="mb-8">
-                  <p className="text-white/80 mb-6">
-                    Your payment was successful! You now have access to all premium features including unlimited sessions, all 15 archetypal guides, and advanced orb experiences.
-                  </p>
-                  
-                  {/* Premium Features List */}
-                  <div className="bg-black/30 backdrop-blur-sm rounded-xl p-4 mb-6 border border-white/10">
-                    <h3 className="text-white font-semibold mb-3 flex items-center justify-center space-x-2">
-                      <Sparkles size={16} className="text-teal-400" />
-                      <span>Now Unlocked</span>
-                    </h3>
-                    <div className="space-y-2 text-sm text-white/80">
-                      <div className="flex items-center space-x-2">
-                        <span className="w-2 h-2 bg-teal-400 rounded-full" />
-                        <span>Unlimited daily sessions</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="w-2 h-2 bg-teal-400 rounded-full" />
-                        <span>All 15 archetypal guides</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="w-2 h-2 bg-teal-400 rounded-full" />
-                        <span>Advanced orb visualizations</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="w-2 h-2 bg-teal-400 rounded-full" />
-                        <span>Custom protocol builder</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="w-2 h-2 bg-teal-400 rounded-full" />
-                        <span>Premium AI voices</span>
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex items-center space-x-2 mt-1">
+                  <Loader size={14} className="text-teal-400 animate-spin" />
+                  <span className="text-sm text-teal-100">Tuning into your energy...</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+                  <span className="text-xs">Libero is speaking</span>
                 </div>
               )}
+            </div>
 
-              {/* Continue Button */}
+            {/* Audio Controls */}
+            <div className="flex items-center space-x-2">
               <button
-                onClick={handleContinue}
-                disabled={isProcessing}
-                className="w-full px-8 py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-bold text-lg hover:scale-105 transition-all duration-200 shadow-2xl shadow-teal-400/30 flex items-center justify-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                type="button"
+                onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+                className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                  isVoiceEnabled 
+                    ? 'bg-green-500/20 border border-green-500/40 text-green-400' 
+                    : 'bg-white/10 border border-white/20 text-white/60'
+                }`}
               >
-                <span>{isProcessing ? 'Setting up...' : 'Begin Your Premium Journey'}</span>
-                {!isProcessing && <ArrowRight size={20} />}
+                {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
               </button>
 
-              {/* Footer */}
-              <p className="text-white/50 text-sm mt-6">
-                Thank you for supporting consciousness technology ✨
-              </p>
+              <button
+                type="button"
+                onClick={() => setIsMicEnabled(!isMicEnabled)}
+                className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                  isMicEnabled 
+                    ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400' 
+                    : 'bg-white/10 border border-white/20 text-white/60'
+                }`}
+              >
+                {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+              </button>
             </div>
           </div>
-        </div>
+        </form>
+
+        {/* Quick Suggestions */}
+        {conversation.length <= 1 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[
+              'I feel stressed',
+              'Help me focus',
+              'I want to relax',
+              'I need confidence'
+            ].map((suggestion) => (
+              <button
+                key={suggestion}
+                onClick={() => handleUserInput(suggestion)}
+                disabled={isThinking}
+                className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-white/70 text-xs transition-all hover:scale-105 disabled:opacity-50"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
