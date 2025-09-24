@@ -14,6 +14,7 @@ interface UnifiedSessionWorldProps {
     protocol?: any;
     type: 'unified' | 'protocol' | 'favorite';
     session?: any;
+    customProtocol?: any;
   };
 }
 

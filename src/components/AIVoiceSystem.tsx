@@ -114,6 +114,7 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
             depth: sessionState.depth,
             breathing: sessionState.breathing,
             userProfile: { level: 1 }, // TODO: Get from user state
+            customProtocol: sessionConfig.customProtocol || null,
             conversationHistory: conversation.map(msg => ({
               role: msg.role === 'ai' ? 'assistant' : 'user',
               content: msg.content

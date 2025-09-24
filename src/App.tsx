@@ -71,7 +71,8 @@ function App() {
     setSessionConfig({
       egoState: activeEgoState,
       action: selectedAction, // Pass the selected action from HomeScreen
-      type: 'unified'
+      type: 'unified',
+      customProtocol: selectedAction?.customProtocol || null
     });
     setShowHypnoPortal(true);
   };
@@ -90,8 +91,9 @@ function App() {
     // Start session with current ego state and any selected action
     setSessionConfig({
       egoState: activeEgoState,
-      protocol: protocol,
-      type: 'protocol'
+      protocol: protocol, 
+      type: 'protocol',
+      customProtocol: protocol
     });
     setShowHypnoPortal(true);
   };
@@ -113,7 +115,8 @@ function App() {
     setSelectedAction({
       id: actionId,
       name: protocol.name,
-      description: `Custom: ${protocol.name}`
+      description: `Custom: ${protocol.name}`,
+      customProtocol: protocol
     });
   };
 

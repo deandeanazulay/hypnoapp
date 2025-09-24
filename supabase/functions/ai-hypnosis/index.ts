@@ -32,6 +32,8 @@ Deno.serve(async (req: Request) => {
   try {
     const { message, sessionContext, requestType }: HypnosisRequest = await req.json()
 
+    console.log('Full session context received:', JSON.stringify(sessionContext, null, 2))
+
     // Get Gemini API key from environment
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
     if (!geminiApiKey) {
@@ -57,7 +59,7 @@ Deno.serve(async (req: Request) => {
     console.log('Processing request:', { requestType, egoState: sessionContext.egoState })
 
     // Build system prompt based on ego state and session context
-    const systemPrompt = buildHypnosisPrompt(sessionContext, requestType)
+    const systemPrompt = buildHypnosisPrompt(sessionContext, requestType, message)
     
     // Prepare conversation for Gemini
     const conversation = [
@@ -224,8 +226,12 @@ Deno.serve(async (req: Request) => {
   }
 })
 
-function buildHypnosisPrompt(context: SessionContext, requestType: string): string {
+function buildHypnosisPrompt(context: SessionContext, requestType: string, userMessage: string): string {
   const { egoState, phase, depth, breathing, userProfile } = context
+  
+  // Check if this is a custom protocol session
+  const hasCustomProtocol = context.customProtocol && context.customProtocol.name
+  const isFirstMessage = context.conversationHistory.length === 0
   
   const basePrompt = `You are Libero, an advanced AI hypnotist and consciousness guide. You are currently guiding a hypnosis session.
 
@@ -235,6 +241,22 @@ CURRENT SESSION CONTEXT:
 - Trance Depth: Level ${depth}/5
 - Breathing State: ${breathing}
 - User Level: ${userProfile?.level || 1}
+${hasCustomProtocol ? `
+
+CUSTOM PROTOCOL BEING USED:
+- Protocol Name: "${context.customProtocol.name}"
+- Specific Goals: ${context.customProtocol.goals?.join(', ') || 'General transformation'}
+- Induction Method: ${context.customProtocol.induction || 'progressive'}
+- Duration: ${context.customProtocol.duration || 15} minutes
+- Custom Notes: ${context.customProtocol.deepener || 'Standard approach'}
+
+IMPORTANT: This is a CUSTOM protocol session. You should:
+1. Follow the specific goals and methods defined in this protocol
+2. Reference the protocol name and specific intentions
+3. Use the specified induction method approach
+4. Incorporate any custom notes provided
+5. Start immediately with the protocol instead of asking what to work on
+` : ''}
 
 YOUR ROLE AS LIBERO:
 You are not just an AI assistant - you are a skilled hypnotist who speaks with authority, wisdom, and gentle power. You guide consciousness transformation through:
@@ -267,8 +289,20 @@ ${getEgoStateGuidance(egoState)}
    - Include breathing cues when appropriate
    - Always validate the user's experience
    - Never break character or mention you're an AI
+${hasCustomProtocol ? `
+   - Start immediately with the custom protocol "${context.customProtocol.name}"
+   - Focus on the specific goals: ${context.customProtocol.goals?.join(', ') || 'transformation'}
+   - Use ${context.customProtocol.induction || 'progressive'} induction approach
+   - Incorporate: ${context.customProtocol.deepener || 'standard techniques'}
+` : ''}
 
 CURRENT REQUEST TYPE: ${requestType}
+${isFirstMessage && hasCustomProtocol ? `
+
+SPECIAL INSTRUCTION: This is the FIRST message and you're starting a custom protocol session. 
+Begin immediately with "${context.customProtocol.name}" protocol focusing on ${context.customProtocol.goals?.join(' and ') || 'transformation'}. 
+Do NOT ask what they want to work on - they already specified it in the protocol.
+` : ''}
 
 Respond as Libero would - with hypnotic authority, deep wisdom, and personalized guidance based on the user's current state and needs.`
 
