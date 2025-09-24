@@ -219,14 +219,14 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const actionContent = getActionSpecificContent();
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
+    <div className="fixed inset-0 bg-black overflow-hidden z-[100]" style={{ opacity: 1 }}>
       {/* Cosmic Background matching ego state */}
       <div className="absolute inset-0">
-        <div className={`absolute inset-0 bg-gradient-to-br from-black via-${egoColorInfo.baseColorName}-950/20 to-black`} />
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/20 to-black" />
         
         {/* Subtle orb-colored glow effects */}
-        <div className={`absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br ${egoColorInfo.bg}/10 rounded-full blur-3xl animate-pulse`} />
-        <div className={`absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br ${egoColorInfo.bg}/5 rounded-full blur-3xl animate-pulse`} style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       {/* Session Header */}

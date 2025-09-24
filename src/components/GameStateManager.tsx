@@ -247,33 +247,38 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const saveUserProfile = async () => {
     if (!authUser) return;
 
-    const profileData: Partial<UserProfile> = {
-      level: user.level,
-      experience: user.experience,
-      current_state: user.currentState,
-      session_streak: user.sessionStreak,
-      last_session_time: user.lastSessionTime?.toISOString() || null,
-      achievements: user.achievements,
-      orb_energy: user.orbEnergy,
-      depth: user.depth,
-      breathing: user.breathing,
-      hp: user.hp,
-      mp: user.mp,
-      tokens: user.tokens,
-      plan: user.plan,
-      daily_sessions_used: user.dailySessionsUsed,
-      last_session_date: user.lastSessionDate,
-      ego_state_usage: user.egoStateUsage,
-      updated_at: new Date().toISOString()
-    };
+    try {
+      const profileData: Partial<UserProfile> = {
+        level: user.level,
+        experience: user.experience,
+        current_state: user.currentState,
+        session_streak: user.sessionStreak,
+        last_session_time: user.lastSessionTime?.toISOString() || null,
+        achievements: user.achievements,
+        orb_energy: user.orbEnergy,
+        depth: user.depth,
+        breathing: user.breathing,
+        hp: user.hp,
+        mp: user.mp,
+        tokens: user.tokens,
+        plan: user.plan,
+        daily_sessions_used: user.dailySessionsUsed,
+        last_session_date: user.lastSessionDate,
+        ego_state_usage: user.egoStateUsage,
+        updated_at: new Date().toISOString()
+      };
 
-    const { error } = await supabase
-      .from('user_profiles')
-      .update(profileData)
-      .eq('id', authUser.id);
+      const { error } = await supabase
+        .from('user_profiles')
+        .update(profileData)
+        .eq('id', authUser.id);
 
-    if (error) {
-      console.error('Error saving user profile:', error);
+      if (error) {
+        console.error('Error saving user profile:', error);
+      }
+    } catch (error) {
+      console.warn('Network error saving user profile, continuing with local state:', error);
+      // Gracefully continue - data is still saved in local state via useEffect
     }
   };
 
