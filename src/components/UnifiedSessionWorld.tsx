@@ -440,79 +440,67 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       </header>
 
       {/* Main Content - 3 Section Layout */}
-      <div className="absolute inset-0 pt-32 pb-60 flex flex-col">
+      <div className="flex flex-col h-full pt-32">
         
-        {/* Orb Section - Centered */}
-        <div className="flex-1 flex items-center justify-center min-h-0 py-8">
-          <div className="text-center">
-            <div 
-              className="transition-transform duration-1000 ease-in-out"
-              style={{ 
-                transform: `scale(${getBreathingScale()})`,
-                filter: sessionState.depth > 3 ? `drop-shadow(0 0 40px ${egoColor.accent}80)` : 'none'
-              }}
-            >
-              <div className="relative">
-                <Orb
-                  ref={orbRef}
-                  onTap={togglePause}
-                  egoState={activeEgoState}
-                  size={280}
-                  afterglow={sessionState.depth > 3}
-                />
-                
-                {/* Eye Fixation Dot */}
-                <div 
-                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-white/80 bg-white/60 animate-pulse pointer-events-none"
-                  style={{
-                    boxShadow: `0 0 20px ${egoColor.accent}80, 0 0 40px ${egoColor.accent}40`,
-                    backgroundColor: egoColor.accent
-                  }}
-                />
-              </div>
+        {/* Orb Section - Centered with proper space */}
+        <div className="flex-1 flex items-center justify-center min-h-0">
+          <div 
+            className="transition-transform duration-1000 ease-in-out"
+            style={{ 
+              transform: `scale(${getBreathingScale()})`,
+              filter: sessionState.depth > 3 ? `drop-shadow(0 0 40px ${egoColor.accent}80)` : 'none'
+            }}
+          >
+            <div className="relative">
+              <Orb
+                ref={orbRef}
+                onTap={togglePause}
+                egoState={activeEgoState}
+                size={280}
+                afterglow={sessionState.depth > 3}
+              />
+              
+              {/* Eye Fixation Dot */}
+              <div 
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-white/80 bg-white/60 animate-pulse pointer-events-none"
+                style={{
+                  boxShadow: `0 0 20px ${egoColor.accent}80, 0 0 40px ${egoColor.accent}40`,
+                  backgroundColor: egoColor.accent
+                }}
+              />
             </div>
           </div>
         </div>
-
-        {/* Status Section - Below Orb */}
-        <div className="flex-shrink-0 pb-4">
-          <div className="max-w-lg mx-auto">
-            
-            {/* Eye Fixation Instruction */}
-            <div className="text-center mb-4">
-              <div className="text-white/80 text-sm font-light">
-                Focus softly on the center dot
-              </div>
+        
+        {/* Breathing Instructions Section - Between orb and chat */}
+        <div className="flex-shrink-0 text-center py-6 space-y-4">
+          {/* Eye Fixation Instruction */}
+          <div className="text-white/80 text-sm font-light">
+            Focus softly on the center dot
+          </div>
+          
+          {/* Breathing Instructions */}
+          <div className="space-y-2">
+            <div className="text-white/90 text-xl font-light">
+              {getBreathingInstruction()}
             </div>
-            
-            {/* Breathing Instructions - Above Chat */}
-            <div className="text-center mb-20">
-              <div className="text-white/90 text-xl font-light mb-2">
-                {getBreathingInstruction()}
-              </div>
-              <div 
-                className="text-4xl font-bold tabular-nums transition-all duration-300"
-                style={{ color: egoColor.accent }}
-              >
-                {sessionState.breathingCount}
-              </div>
-              <div className="text-white/60 text-sm mt-2">
-                Cycle {sessionState.breathingCycle}
-              </div>
+            <div 
+              className="text-5xl font-bold tabular-nums transition-all duration-300"
+              style={{ color: egoColor.accent }}
+            >
+              {sessionState.breathingCount}
             </div>
-
+            <div className="text-white/60 text-sm">
+              Cycle {sessionState.breathingCycle}
+            </div>
+          </div>
+          
+          {/* Status Indicators - Horizontal row */}
+          <div className="flex items-center justify-center space-x-6 pt-4">
             {/* Depth Indicator */}
-            <div className="bg-white/10 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 text-center mb-3">
-              <div className="text-white/60 text-sm mb-1">Depth</div>
-              <div className="flex items-center justify-center space-x-1">
-                <span 
-                  className="font-bold"
-                  style={{ color: egoColor.accent }}
-                >
-                  {sessionState.depth}/5
-                </span>
-              </div>
-              <div className="flex items-center justify-center space-x-1">
+            <div className="flex flex-col items-center space-y-2">
+              <span className="text-white/60 text-xs">Depth</span>
+              <div className="flex items-center space-x-1">
                 {[1, 2, 3, 4, 5].map((level) => (
                   <div
                     key={level}
@@ -525,22 +513,22 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                   />
                 ))}
               </div>
-              <span className="text-white font-medium">{sessionState.depth}/5</span>
             </div>
             
-            {/* Phase Card */}
-            <div className="bg-white/10 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 text-center">
-              <h3 className="text-white font-medium">
-                {getPhaseTitle()}
-              </h3>
+            {/* Phase Indicator */}
+            <div className="flex flex-col items-center space-y-2">
+              <span className="text-white/60 text-xs">Phase</span>
+              <span className="text-white text-sm font-medium">
+                {sessionState.phase.charAt(0).toUpperCase() + sessionState.phase.slice(1)}
+              </span>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Chat Interface - Fixed Bottom */}
+        
+        {/* Chat Interface - Fixed Height at Bottom */}
+        <div className="flex-shrink-0 bg-black/95 backdrop-blur-xl border-t border-white/10">
       <div className="absolute bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 max-h-60">
-        <div className="max-w-4xl mx-auto space-y-4">
+          <div className="px-6 py-4 max-h-48 overflow-y-auto">
           
           {/* Latest AI Message */}
           {conversation.length > 0 && (
@@ -636,6 +624,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               </button>
             </div>
           </form>
+        </div>
         </div>
       </div>
     </div>
