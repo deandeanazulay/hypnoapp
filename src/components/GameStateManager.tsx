@@ -1,445 +1,313 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase, UserProfile } from '../lib/supabase';
-import { useSimpleAuth as useAuth } from '../hooks/useSimpleAuth';
-import { paymentService } from '../lib/stripe';
-import { useAppStore } from '../store';
+import React, { useState, useEffect, useRef } from 'react';
+import { Mic, MicOff, Volume2, VolumeX, MessageCircle, Brain, Send, Loader } from 'lucide-react';
 
-interface UserState {
-  level: number;
-  experience: number;
-  currentState: 'calm' | 'focused' | 'stressed' | 'deep' | 'transcendent';
-  sessionStreak: number;
-  lastSessionTime: Date | null;
-  achievements: string[];
-  orbEnergy: number; // 0-1
-  depth: number; // 1-5
-  breathing: 'inhale' | 'hold' | 'exhale' | 'rest';
-  hp: number; // Homeostasis Points (0-100)
-  mp: number; // Motivation Points (0-100)
-  tokens: number; // In-app credits
-  plan: 'free' | 'pro_monthly' | 'pro_annual';
-  dailySessionsUsed: number;
-  lastSessionDate: string | null;
-  egoStateUsage: { [key: string]: number }; // Session counts per ego state
-  subscriptionStatus: 'free' | 'active' | 'cancelled' | 'past_due';
+interface AIVoiceSystemProps {
+  isActive: boolean;
+  sessionType: 'unified' | 'integration';
+  onStateChange: (state: any) => void;
+  sessionState: any;
+  sessionConfig: any;
 }
 
-interface GameState {
-  user: UserState;
-  updateUserState: (updates: Partial<UserState>) => void;
-  completeSession: (sessionType: string, duration: number) => void;
-  getOrbState: () => any;
-  canAccess: (feature: string) => boolean;
-  spendTokens: (amount: number, feature: string) => boolean;
+interface SessionState {
+  depth: number;
+  breathing: 'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale';
+  phase: string;
+  userResponse: string;
+  aiResponse: string;
+  isListening: boolean;
+  isSpeaking: boolean;
 }
 
-const GameStateContext = createContext<GameState | null>(null);
+export default function AIVoiceSystem({ isActive, sessionType, onStateChange, sessionState, sessionConfig }: AIVoiceSystemProps) {
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [textInput, setTextInput] = useState('');
+  const [conversation, setConversation] = useState<Array<{role: 'ai' | 'user', content: string, timestamp: number}>>([]);
+  
+  const recognitionRef = useRef<any>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-export const useGameState = () => {
-  const context = useContext(GameStateContext);
-  if (!context) {
-    throw new Error('useGameState must be used within GameStateProvider');
-  }
-  return context;
-};
-
-export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user: authUser, isAuthenticated, loading: authLoading } = useAuth();
-  const [user, setUser] = useState<UserState>({
-    level: 1,
-    experience: 0,
-    currentState: 'calm',
-    sessionStreak: 0,
-    lastSessionTime: null,
-    achievements: [],
-    orbEnergy: 0.3,
-    depth: 1,
-    breathing: 'rest',
-    hp: 80,
-    mp: 60,
-    tokens: 50,
-    plan: 'free',
-    dailySessionsUsed: 0,
-    lastSessionDate: null,
-    egoStateUsage: {
-      guardian: 15,
-      rebel: 8,
-      healer: 22,
-      explorer: 12,
-      mystic: 18,
-      sage: 10,
-      child: 14,
-      performer: 9,
-      shadow: 6,
-      builder: 11,
-      seeker: 7,
-      lover: 13,
-      trickster: 4,
-      warrior: 9,
-      visionary: 5
-    },
-    subscriptionStatus: 'free'
-  });
-
-  // Load saved state
+  // Initialize speech systems
   useEffect(() => {
-    if (authLoading) return;
-    
-    if (isAuthenticated && authUser) {
-      // Load from Supabase
-      loadUserProfile();
-    } else {
-      // Load from localStorage for non-authenticated users
-      const saved = localStorage.getItem('gameState');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          setUser(prev => ({
-            ...prev,
-            ...parsed,
-            lastSessionTime: parsed.lastSessionTime ? new Date(parsed.lastSessionTime) : null
-          }));
-        } catch (e) {
-          console.log('Failed to load saved state');
+    if (typeof window !== 'undefined') {
+      synthRef.current = window.speechSynthesis;
+      
+      // Initialize speech recognition
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'en-US';
+
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          console.log('Speech recognized:', transcript);
+          handleUserInput(transcript);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.log('Speech recognition error:', event.error);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+      }
+    }
+  }, []);
+
+  // Auto-start AI guidance
+  useEffect(() => {
+    if (isActive && conversation.length === 0) {
+      setTimeout(() => {
+        const welcomeMessage = `Welcome to your ${sessionConfig.egoState} session. I'm Libero, and I'll be guiding you through this transformation journey. Take a deep breath and let me know - what would you like to work on today?`;
+        
+        const aiMessage = { role: 'ai' as const, content: welcomeMessage, timestamp: Date.now() };
+        setConversation([aiMessage]);
+        
+        if (isVoiceEnabled) {
+          speakText(welcomeMessage);
         }
-      }
+      }, 2000);
     }
-  }, [isAuthenticated, authUser, authLoading]);
+  }, [isActive, sessionConfig, isVoiceEnabled]);
 
-  const loadUserProfile = async () => {
-    if (!authUser) return;
+  // Handle user input (text or voice)
+  const handleUserInput = async (input: string) => {
+    if (!input.trim()) return;
 
-    const { data: profile, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', authUser.id)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // Profile doesn't exist, create it
-        await createUserProfile();
-      } else {
-        console.error('Error loading user profile:', error);
-      }
-      return;
-    }
-
-    if (profile) {
-      setUser({
-        level: profile.level,
-        experience: profile.experience,
-        currentState: profile.current_state,
-        sessionStreak: profile.session_streak,
-        lastSessionTime: profile.last_session_time ? new Date(profile.last_session_time) : null,
-        achievements: profile.achievements,
-        orbEnergy: profile.orb_energy,
-        depth: profile.depth,
-        breathing: profile.breathing,
-        hp: profile.hp,
-        mp: profile.mp,
-        tokens: profile.tokens,
-        plan: profile.plan,
-        dailySessionsUsed: profile.daily_sessions_used,
-        lastSessionDate: profile.last_session_date,
-        egoStateUsage: profile.ego_state_usage,
-        subscriptionStatus: 'free' // Will be updated by subscription status check
-      });
-      
-      // Load subscription status
-      const subscriptionStatus = await paymentService.getSubscriptionStatus();
-      setUser(prev => ({ ...prev, subscriptionStatus }));
-    }
-  };
-
-  const createUserProfile = async () => {
-    if (!authUser) return;
-
-    // First check if profile already exists to avoid conflicts
-    const { data: existingProfile } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('id', authUser.id)
-      .single();
-
-    if (existingProfile) {
-      // Profile already exists, just load it
-      await loadUserProfile();
-      return;
-    }
-
-    const defaultProfile: Partial<UserProfile> = {
-      id: authUser.id,
-      email: authUser.email || authUser.user_metadata?.email || '',
-      level: 1,
-      experience: 0,
-      current_state: 'calm',
-      session_streak: 0,
-      achievements: [],
-      orb_energy: 0.3,
-      depth: 1,
-      breathing: 'rest',
-      hp: 80,
-      mp: 60,
-      tokens: 50,
-      plan: 'free',
-      daily_sessions_used: 0,
-      ego_state_usage: {
-        guardian: 0,
-        rebel: 0,
-        healer: 0,
-        explorer: 0,
-        mystic: 0,
-        sage: 0,
-        child: 0,
-        performer: 0,
-        shadow: 0,
-        builder: 0,
-        seeker: 0,
-        lover: 0,
-        trickster: 0,
-        warrior: 0,
-        visionary: 0
-      },
-      active_ego_state: 'guardian',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .insert([defaultProfile])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating user profile:', error);
-      console.error('Error details:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint
-      });
-      
-      // If it's a unique constraint violation, profile already exists
-      if (error.code === '23505') {
-        await loadUserProfile();
-      } else {
-        // For other errors, still try to load in case profile was created
-        await loadUserProfile();
-      }
-    } else {
-      await loadUserProfile();
-    }
-  };
-
-  // Save state changes
-  useEffect(() => {
-    if (isAuthenticated && authUser) {
-      // Save to Supabase
-      saveUserProfile();
-    } else {
-      // Save to localStorage for non-authenticated users
-      localStorage.setItem('gameState', JSON.stringify(user));
-    }
-  }, [user, isAuthenticated, authUser]);
-
-  const saveUserProfile = async () => {
-    if (!authUser) return;
+    // Add user message to conversation
+    const userMessage = { role: 'user' as const, content: input, timestamp: Date.now() };
+    setConversation(prev => [...prev, userMessage]);
+    setTextInput('');
+    setIsThinking(true);
 
     try {
-      const profileData: Partial<UserProfile> = {
-        level: user.level,
-        experience: user.experience,
-        current_state: user.currentState,
-        session_streak: user.sessionStreak,
-        last_session_time: user.lastSessionTime?.toISOString() || null,
-        achievements: user.achievements,
-        orb_energy: user.orbEnergy,
-        depth: user.depth,
-        breathing: user.breathing,
-        hp: user.hp,
-        mp: user.mp,
-        tokens: user.tokens,
-        plan: user.plan,
-        daily_sessions_used: user.dailySessionsUsed,
-        last_session_date: user.lastSessionDate,
-        ego_state_usage: user.egoStateUsage,
-        updated_at: new Date().toISOString()
-      };
+      // Call AI hypnosis function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-hypnosis`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: input,
+          sessionContext: {
+            egoState: sessionConfig.egoState,
+            phase: sessionState.phase,
+            depth: sessionState.depth,
+            breathing: sessionState.breathing,
+            userProfile: { level: 1 }, // TODO: Get from user state
+            conversationHistory: conversation.map(msg => ({
+              role: msg.role === 'ai' ? 'assistant' : 'user',
+              content: msg.content
+            }))
+          },
+          requestType: 'guidance'
+        })
+      });
 
-      const { error } = await supabase
-        .from('user_profiles')
-        .update(profileData)
-        .eq('id', authUser.id);
-
-      if (error) {
-        // Handle specific error codes gracefully
-        if (error.code === 'OFFLINE') {
-          console.log('App running in offline mode - user profile saved locally');
-          return;
+      const data = await response.json();
+      
+      if (data.response) {
+        const aiMessage = { role: 'ai' as const, content: data.response, timestamp: Date.now() };
+        setConversation(prev => [...prev, aiMessage]);
+        
+        // Apply any session updates from AI
+        if (data.sessionUpdates && Object.keys(data.sessionUpdates).length > 0) {
+          onStateChange(data.sessionUpdates);
         }
-        console.warn('Error saving user profile to Supabase:', error);
+        
+        // Speak the response
+        if (isVoiceEnabled) {
+          speakText(data.response);
+        }
       }
     } catch (error) {
-      // Handle network errors gracefully - don't log as error since app still works
-      console.log('Network error saving user profile, continuing with local state. This is normal if Supabase is not configured.');
-      // Gracefully continue - data is still saved in local state via useEffect
+      console.error('AI conversation error:', error);
+      const fallbackMessage = "I'm here with you. Continue breathing and trust the process.";
+      const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
+      setConversation(prev => [...prev, aiMessage]);
+      
+      if (isVoiceEnabled) {
+        speakText(fallbackMessage);
+      }
+    } finally {
+      setIsThinking(false);
     }
   };
 
-  const updateUserState = (updates: Partial<UserState>) => {
-    setUser(prev => ({ ...prev, ...updates }));
+  // Text-to-speech
+  const speakText = (text: string) => {
+    if (!synthRef.current || !isVoiceEnabled) return;
+
+    // Stop any current speech
+    synthRef.current.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.7; // Slower for hypnosis
+    utterance.pitch = 0.8; // Lower pitch for calming effect
+    utterance.volume = 0.9;
+
+    // Find a calm, soothing voice
+    const voices = synthRef.current.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.includes('Female') || 
+      voice.name.includes('Samantha') ||
+      voice.name.includes('Karen') ||
+      voice.name.includes('Daniel') ||
+      voice.lang.includes('en')
+    ) || voices[0];
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+    };
+
+    currentUtteranceRef.current = utterance;
+    synthRef.current.speak(utterance);
   };
 
-  const completeSession = (sessionType: string, duration: number) => {
-    const { showToast } = useAppStore.getState();
-    // Get current ego state from appStore
-    const currentEgoState = localStorage.getItem('app-store') ? 
-      JSON.parse(localStorage.getItem('app-store') || '{}').state?.activeEgoState || 'guardian' : 'guardian';
+  // Start/stop listening
+  const toggleListening = () => {
+    if (!recognitionRef.current || !isMicEnabled) return;
 
-    // XP calculation: floor(durationSec / 60) * baseMultiplier * depthMultiplier
-    const baseMultiplier = 10;
-    const depthMultiplier = 1 + (user.depth * 0.15);
-    const xpGained = Math.floor(duration / 60) * baseMultiplier * depthMultiplier;
-
-    // Save session to database if authenticated
-    if (isAuthenticated && authUser) {
-      saveSessionToDatabase(currentEgoState, sessionType, duration, xpGained);
-    }
-    
-    const newExperience = user.experience + xpGained;
-    // Level: floor(0.1 * sqrt(totalXP)) + 1 (smooth, slow growth)
-    const newLevel = Math.floor(0.1 * Math.sqrt(newExperience)) + 1;
-    
-    // HP/MP updates
-    const hpDelta = duration >= 300 ? 1 : 0; // +1 HP for sessions ≥5min
-    const mpDelta = duration >= 900 ? 1 : 0; // +1 MP for sessions ≥15min
-    
-    // Streak calculation (calendar-day based)
-    const today = new Date().toDateString();
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
-    const lastSessionDate = user.lastSessionDate;
-    
-    let newStreak = user.sessionStreak;
-    if (!lastSessionDate || lastSessionDate === yesterday) {
-      newStreak = user.sessionStreak + 1;
-    } else if (lastSessionDate !== today) {
-      newStreak = 1; // Reset streak if gap > 1 day
-    }
-    
-    // Token rewards
-    let tokenReward = 0;
-    if (newLevel > user.level) {
-      tokenReward += 10; // Level up bonus
-      // Level up notification
-      showToast({
-        type: 'success',
-        message: `🎉 Level Up! You've reached Level ${newLevel}`,
-        duration: 4000
-      });
-    }
-    if (newStreak > 0 && newStreak % 7 === 0) tokenReward += 25; // Weekly streak bonus
-    
-    setUser(prev => ({
-      ...prev,
-      experience: newExperience,
-      level: newLevel,
-      sessionStreak: newStreak,
-      lastSessionTime: new Date(),
-      lastSessionDate: today,
-      hp: Math.min(prev.hp + hpDelta, 100),
-      mp: Math.min(prev.mp + mpDelta, 100),
-      tokens: prev.tokens + tokenReward,
-      dailySessionsUsed: prev.lastSessionDate === today ? prev.dailySessionsUsed + 1 : 1,
-      orbEnergy: Math.min(prev.orbEnergy + 0.1, 1.0),
-      egoStateUsage: {
-        ...prev.egoStateUsage,
-        [currentEgoState]: (prev.egoStateUsage[currentEgoState] || 0) + 1
-      },
-      achievements: [
-        ...prev.achievements,
-        ...(newLevel > prev.level ? [`Level ${newLevel} Reached`] : [])
-      ]
-    }));
-    
-    // Success notification for session completion
-    showToast({
-      type: 'success', 
-      message: `Session complete! +${Math.floor(xpGained)} XP earned`,
-      duration: 3000
-    });
-  };
-
-  const saveSessionToDatabase = async (egoState: string, sessionType: string, duration: number, xpGained: number) => {
-    if (!authUser) return;
-
-    const { error } = await supabase
-      .from('sessions')
-      .insert([{
-        user_id: authUser.id,
-        ego_state: egoState,
-        action: sessionType,
-        duration: duration,
-        experience_gained: xpGained,
-        completed_at: new Date().toISOString()
-      }]);
-
-    if (error) {
-      console.error('Error saving session:', error);
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      // Stop any current speech before listening
+      if (synthRef.current) {
+        synthRef.current.cancel();
+        setIsSpeaking(false);
+      }
+      
+      recognitionRef.current.start();
+      setIsListening(true);
     }
   };
 
-  const getOrbState = () => ({
-    depth: user.depth,
-    breathing: user.breathing,
-    phase: user.currentState,
-    isListening: false,
-    isSpeaking: false,
-    emotion: user.currentState,
-    energy: user.orbEnergy
-  });
-
-  const canAccess = (feature: string) => {
-    // Check subscription status for premium features
-    if (user.subscriptionStatus === 'active') {
-      return true;
-    }
-    
-    switch (feature) {
-      case 'unlimited_sessions':
-        return user.subscriptionStatus === 'active';
-      case 'hypoxia':
-        return user.subscriptionStatus === 'active';
-      case 'premium_voices':
-        return user.subscriptionStatus === 'active';
-      case 'custom_outlines':
-        return user.subscriptionStatus === 'active';
-      case 'daily_session':
-        return user.subscriptionStatus === 'active' ? true : user.dailySessionsUsed < 1;
-      default:
-        return true;
+  // Handle text form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (textInput.trim() && !isThinking) {
+      handleUserInput(textInput.trim());
     }
   };
 
-  const spendTokens = (amount: number, feature: string) => {
-    if (user.tokens >= amount) {
-      setUser(prev => ({ ...prev, tokens: prev.tokens - amount }));
-      return true;
-    }
-    return false;
-  };
+  if (!isActive) return null;
 
   return (
-    <GameStateContext.Provider value={{
-      user,
-      updateUserState,
-      completeSession,
-      getOrbState,
-      canAccess,
-      spendTokens
-    }}>
-      {children}
-    </GameStateContext.Provider>
+    <div className="fixed bottom-32 left-4 right-4 z-40">
+      {/* Conversation Display */}
+      {conversation.length > 0 && (
+        <div className="bg-black/95 backdrop-blur-xl rounded-2xl p-4 mb-4 max-h-48 overflow-y-auto border border-white/20 space-y-3">
+          {conversation.slice(-3).map((msg, i) => (
+            <div key={i} className={`${msg.role === 'ai' ? 'text-left' : 'text-right'}`}>
+              <div className={`inline-block max-w-[80%] p-3 rounded-2xl ${
+                msg.role === 'ai' 
+                  ? 'bg-teal-500/20 border border-teal-500/30 text-teal-100' 
+                  : 'bg-white/10 border border-white/20 text-white'
+              }`}>
+                <div className="flex items-center space-x-2 mb-1">
+                  {msg.role === 'ai' ? <Brain size={12} className="text-teal-400" /> : <MessageCircle size={12} className="text-white/60" />}
+                  <span className="text-xs font-medium opacity-80">
+                    {msg.role === 'ai' ? 'Libero' : 'You'}
+                  </span>
+                </div>
+                <p className="text-sm leading-relaxed">{msg.content}</p>
+              </div>
+            </div>
+          ))}
+          
+          {/* Thinking indicator */}
+          {isThinking && (
+            <div className="text-left">
+              <div className="inline-block bg-teal-500/20 border border-teal-500/30 p-3 rounded-2xl">
+                <div className="flex items-center space-x-2">
+                  <Brain size={12} className="text-teal-400" />
+                  <span className="text-xs font-medium text-teal-100">Libero</span>
+                </div>
+                <div className="flex items-center space-x-2 mt-1">
+                  <Loader size={14} className="text-teal-400 animate-spin" />
+                  <span className="text-sm text-teal-100">Tuning into your energy...</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+                  <span className="text-xs">Libero is speaking</span>
+                </div>
+              )}
+            </div>
+
+            {/* Audio Controls */}
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+                className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                  isVoiceEnabled 
+                    ? 'bg-green-500/20 border border-green-500/40 text-green-400' 
+                    : 'bg-white/10 border border-white/20 text-white/60'
+                }`}
+              >
+                {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsMicEnabled(!isMicEnabled)}
+                className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                  isMicEnabled 
+                    ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400' 
+                    : 'bg-white/10 border border-white/20 text-white/60'
+                }`}
+              >
+                {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+              </button>
+            </div>
+          </div>
+        </form>
+
+        {/* Quick Suggestions */}
+        {conversation.length <= 1 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[
+              'I feel stressed',
+              'Help me focus',
+              'I want to relax',
+              'I need confidence'
+            ].map((suggestion) => (
+              <button
+                key={suggestion}
+                onClick={() => handleUserInput(suggestion)}
+                disabled={isThinking}
+                className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-white/70 text-xs transition-all hover:scale-105 disabled:opacity-50"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
-};
+}
