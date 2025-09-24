@@ -253,6 +253,48 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
         </div>
       )}
 
+      {/* Input Interface */}
+      <div className="bg-black/95 backdrop-blur-xl rounded-2xl border border-white/20 p-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="flex items-center space-x-3">
+            {/* Voice Input Button */}
+            <button
+              type="button"
+              onClick={toggleListening}
+              disabled={!isMicEnabled || isThinking}
+              className={`p-3 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 ${
+                isListening 
+                  ? 'bg-red-500/20 border-2 border-red-500/60 text-red-400 animate-pulse' 
+                  : 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
+              }`}
+            >
+              <Mic size={20} />
+            </button>
+
+            {/* Text Input */}
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder={isListening ? "Listening..." : "Type your message or use voice..."}
+                disabled={isListening || isThinking}
+                className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={!textInput.trim() || isThinking}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-400 hover:bg-teal-500/30 transition-all disabled:opacity-50 hover:scale-110"
+              >
+                <Send size={16} />
+              </button>
+            </div>
+
+            {/* Speaking Indicator */}
+            <div className="flex items-center space-x-2">
+              {isSpeaking && (
+                <div className="flex items-center space-x-2 text-green-400">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   <span className="text-xs">Libero is speaking</span>
                 </div>
               )}
