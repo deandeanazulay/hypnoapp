@@ -246,7 +246,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         </div>
 
-        <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 text-center justify-center">
           {/* Orb */}
           <div className={`transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-100 opacity-0'}`}>
             <Orb
