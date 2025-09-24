@@ -91,8 +91,16 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
     setIsThinking(true);
 
     try {
+      // Ensure Supabase URL is properly formatted
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) {
+        throw new Error('Supabase URL not configured');
+      }
+      
+      const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
+      
       // Call AI hypnosis function
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-hypnosis`, {
+      const response = await fetch(`${baseUrl}/functions/v1/ai-hypnosis`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -133,7 +141,9 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
       }
     } catch (error) {
       console.error('AI conversation error:', error);
-      const fallbackMessage = "I'm here with you. Continue breathing and trust the process.";
+      const fallbackMessage = error instanceof Error && error.message === 'Supabase URL not configured'
+        ? "Connection not available. Please continue with your breathing practice."
+        : "I'm here with you. Continue breathing and trust the process.";
       const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
       setConversation(prev => [...prev, aiMessage]);
       
