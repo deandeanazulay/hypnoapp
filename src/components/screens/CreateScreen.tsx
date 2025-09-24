@@ -75,7 +75,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
   const canProceed = () => {
     switch (currentStep) {
       case 1: return protocol.name.trim().length > 0;
-      case 2: return protocol.induction.trim().length > 0;
+      case 2: return protocol.induction.length > 0;
       case 3: return true;
       default: return false;
     }
@@ -129,32 +129,50 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center mx-auto mb-4">
                 <Target size={24} className="text-black" />
               </div>
-              <h2 className="text-white text-2xl font-light mb-2">Design the Induction</h2>
-              <p className="text-white/70">How will you guide someone into trance?</p>
+              <h2 className="text-white text-2xl font-light mb-2">Choose Your Method</h2>
+              <p className="text-white/70">How should Libero guide the journey?</p>
             </div>
 
-            <div className="space-y-4">
-              <textarea
-                value={protocol.induction}
-                onChange={(e) => setProtocol(prev => ({ ...prev, induction: e.target.value }))}
-                placeholder="Describe your induction technique... e.g., 'Close your eyes and take three deep breaths...'"
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-6 py-4 text-white placeholder-white/50 focus:outline-none focus:border-teal-400/50 focus:bg-white/15 transition-all h-40 resize-none"
-              />
-
-              <div className="grid grid-cols-3 gap-2">
-                {['Progressive Relaxation', 'Rapid Induction', 'Breath Focus'].map((template) => (
-                  <button
-                    key={template}
-                    onClick={() => setProtocol(prev => ({ 
-                      ...prev, 
-                      induction: `${template} technique: ${prev.induction || 'Begin your session...'}`
-                    }))}
-                    className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-white/70 text-xs transition-all hover:scale-105"
-                  >
-                    {template}
-                  </button>
-                ))}
-              </div>
+            <div className="space-y-3">
+              {[
+                {
+                  id: 'progressive',
+                  name: 'Progressive Relaxation',
+                  description: 'Gentle, body-based induction perfect for beginners',
+                  color: 'from-teal-500/20 to-cyan-500/20'
+                },
+                {
+                  id: 'rapid',
+                  name: 'Rapid (Elman)',
+                  description: 'Quick, direct induction for experienced users',
+                  color: 'from-yellow-500/20 to-orange-500/20'
+                },
+                {
+                  id: 'breath',
+                  name: 'Breath Work',
+                  description: 'Breathing-focused technique for mindfulness',
+                  color: 'from-green-500/20 to-teal-500/20'
+                },
+                {
+                  id: 'visualization',
+                  name: 'Visualization',
+                  description: 'Image-based induction using mental imagery',
+                  color: 'from-purple-500/20 to-blue-500/20'
+                }
+              ].map((method) => (
+                <button
+                  key={method.id}
+                  onClick={() => setProtocol(prev => ({ ...prev, induction: method.id }))}
+                  className={`w-full p-4 rounded-xl bg-gradient-to-br ${method.color} border transition-all duration-200 hover:scale-105 text-left ${
+                    protocol.induction === method.id 
+                      ? 'border-white/40 ring-2 ring-teal-400/30' 
+                      : 'border-white/10 hover:border-white/20'
+                  }`}
+                >
+                  <h4 className="text-white font-semibold text-base mb-1">{method.name}</h4>
+                  <p className="text-white/70 text-sm">{method.description}</p>
+                </button>
+              ))}
             </div>
           </div>
         );
