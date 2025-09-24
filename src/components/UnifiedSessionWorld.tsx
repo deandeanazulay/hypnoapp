@@ -308,66 +308,68 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       </div>
 
       {/* Session Controls */}
-      <div className="relative z-20 p-4 bg-black/80 backdrop-blur-xl border-t border-white/10">
-        <div className="flex items-center justify-center space-x-4">
+      <div className="fixed bottom-4 left-4 right-4 z-40">
+        <div className="bg-black/95 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-2xl shadow-purple-500/20">
+          <div className="flex items-center justify-center space-x-4">
           {!sessionState.isActive ? (
             <button
               onClick={handleStart}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
+              className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-2xl text-black font-bold text-lg hover:scale-105 transition-transform duration-200 shadow-2xl shadow-teal-400/30"
             >
-              <Play size={20} />
-              <span>Begin Session</span>
+              <Play size={24} />
+              <span>Start Hypnosis</span>
             </button>
           ) : (
             <>
               {/* Pause/Resume */}
               <button
                 onClick={handlePause}
-                className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300"
+                className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110"
               >
                 {sessionState.isPaused ? 
-                  <Play size={20} className="text-white ml-0.5" /> : 
-                  <Pause size={20} className="text-white" />
+                  <Play size={24} className="text-white ml-0.5" /> : 
+                  <Pause size={24} className="text-white" />
                 }
               </button>
 
               {/* Skip Phase */}
               <button
                 onClick={handleSkip}
-                className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300"
+                className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110"
               >
-                <SkipForward size={20} className="text-white" />
+                <SkipForward size={24} className="text-white" />
               </button>
 
               {/* Voice Toggle */}
               <button
                 onClick={toggleVoice}
-                className={`w-12 h-12 rounded-full border border-white/20 flex items-center justify-center transition-all duration-300 ${
+                className={`w-14 h-14 rounded-full border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
                   sessionState.voiceEnabled ? 'bg-teal-500/20 text-teal-400' : 'bg-white/10 text-white/60'
                 }`}
               >
-                {sessionState.voiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                {sessionState.voiceEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
               </button>
 
               {/* Mic Toggle */}
               <button
                 onClick={toggleMic}
-                className={`w-12 h-12 rounded-full border border-white/20 flex items-center justify-center transition-all duration-300 ${
+                className={`w-14 h-14 rounded-full border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
                   sessionState.micEnabled ? 'bg-blue-500/20 text-blue-400' : 'bg-white/10 text-white/60'
                 }`}
               >
-                {sessionState.micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
+                {sessionState.micEnabled ? <Mic size={24} /> : <MicOff size={24} />}
               </button>
 
               {/* Complete Session */}
               <button
                 onClick={handleSessionComplete}
-                className="px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-semibold hover:scale-105 transition-transform duration-200"
+                className="px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-bold hover:scale-105 transition-transform duration-200"
               >
                 Complete
               </button>
             </>
           )}
+          </div>
         </div>
       </div>
 
