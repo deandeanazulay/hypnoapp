@@ -209,7 +209,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const material = new THREE.LineBasicMaterial({
       color: color,
       transparent: true,
-      opacity: afterglow ? 0.95 : 0.8,
+      opacity: afterglow ? 0.4 : 0.25,
       linewidth: 2
     });
 
@@ -223,7 +223,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const glowMaterial1 = new THREE.MeshBasicMaterial({
       color: color,
       transparent: true,
-      opacity: afterglow ? 0.3 : 0.15,
+      opacity: afterglow ? 0.12 : 0.06,
       side: THREE.BackSide
     });
     const glowMesh1 = new THREE.Mesh(glowGeometry, glowMaterial1);
@@ -234,7 +234,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const pulseMaterial = new THREE.MeshBasicMaterial({
       color: color,
       transparent: true,
-      opacity: 0.1,
+      opacity: 0.04,
       side: THREE.BackSide
     });
     const pulseMesh = new THREE.Mesh(pulseGeometry, pulseMaterial);
@@ -341,7 +341,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       
       // Update material opacity for alien intensity
       const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
-      material.opacity = (afterglow ? 0.95 : 0.8) * alienState.intensity;
+      material.opacity = (afterglow ? 0.4 : 0.25) * alienState.intensity;
       
       // Animate glow layers
       const userData = orbMeshRef.current.userData;
@@ -351,7 +351,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         userData.glowMesh1.rotation.y = -alienRotationY * 0.3;
         
         const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
-        glowMat.opacity = (afterglow ? 0.3 : 0.15) * (1 + alienState.pulse * 0.5);
+        glowMat.opacity = (afterglow ? 0.12 : 0.06) * (1 + alienState.pulse * 0.5);
       }
       
       if (userData.pulseMesh) {
@@ -360,18 +360,18 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         userData.pulseMesh.rotation.z = time * 0.5;
         
         const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
-        pulseMat.opacity = 0.1 + Math.abs(alienState.pulse) * 0.2;
+        pulseMat.opacity = 0.04 + Math.abs(alienState.pulse) * 0.08;
       }
 
       // Speaking indicator - alien excitement
       if (isSpeaking) {
         // Rapid color shifting when speaking
-        material.opacity = 0.8 + 0.2 * Math.sin(time * 8);
+        material.opacity = 0.3 + 0.15 * Math.sin(time * 8);
       }
 
       // Listening indicator - alien attention mode
       if (isListening) {
-        material.opacity = 0.6 + 0.4 * Math.sin(time * 10);
+        material.opacity = 0.2 + 0.25 * Math.sin(time * 10);
       }
     }
 
