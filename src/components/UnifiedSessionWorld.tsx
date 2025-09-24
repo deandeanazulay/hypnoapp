@@ -467,7 +467,7 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
           </div>
           
           {/* Timer - only show for timed phases */}
-          {true && (
+          {currentPhase !== 'rest' && (
             <>
               <div className="w-px h-4 bg-white/30" />
               <div className="flex items-center space-x-2">
