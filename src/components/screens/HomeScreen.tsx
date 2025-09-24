@@ -61,7 +61,7 @@ export default function HomeScreen({
       </div>
 
       {/* 1. Ego States Carousel - Fixed Height */}
-      <div className="flex-shrink-0 h-12 flex items-center justify-center relative z-40">
+      <div className="flex-shrink-0 h-12 flex items-center justify-center relative z-40 pt-4">
         <EgoStatesCarousel 
           activeEgoState={activeEgoState}
           onEgoStateChange={(egoStateId) => {
