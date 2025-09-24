@@ -2,11 +2,11 @@ import React from 'react';
 import { XCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { paymentService } from '../lib/stripe';
-import { useUIStore } from '../state/uiStore';
+import { useAppStore } from '../store';
 
 export default function PaymentCancelled() {
   const navigate = useNavigate();
-  const { showToast } = useUIStore();
+  const { showToast } = useAppStore();
   const [isRetrying, setIsRetrying] = React.useState(false);
 
   const handleRetry = async () => {

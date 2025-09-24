@@ -16,8 +16,8 @@ import AuthModal from './components/auth/AuthModal';
 import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancelled from './components/PaymentCancelled';
 import { useViewportLayout } from './hooks/useViewportLayout';
-import { useAppStore } from './state/appStore';
-import { useAuth } from './hooks/useAuth';
+import { useAppStore } from './store';
+import { useSimpleAuth as useAuth } from './hooks/useSimpleAuth';
 import { useProtocolStore } from './state/protocolStore';
 import { Target } from 'lucide-react';
 import './styles/glass.css';
@@ -92,7 +92,7 @@ function App() {
     // Add to actions bar
     const actionId = addCustomAction({
       name: protocol.name,
-      icon: <Target size={16} className="text-cyan-400" />,
+      iconData: { type: 'Target', props: { size: 16, className: 'text-cyan-400' } },
       color: 'from-cyan-500/20 to-blue-500/20',
       description: `Custom: ${protocol.name}`,
       induction: protocol.induction,

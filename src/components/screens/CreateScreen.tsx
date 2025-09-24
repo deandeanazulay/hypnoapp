@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Save, Clock, Zap, Target, Sparkles, Edit3, Crown, Infinity, Music, Star, Lock, Play, Eye, Waves, Book, Wind } from 'lucide-react';
-import WebGLOrb from '../WebGLOrb';
+import Orb from '../Orb';
 import AuthModal from '../auth/AuthModal';
-import { useUIStore } from '../../state/uiStore';
+import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
 import { paymentService } from '../../lib/stripe';
-import { useAuth } from '../../hooks/useAuth';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useProtocolStore } from '../../state/protocolStore';
 
 interface CustomProtocol {
@@ -27,7 +27,7 @@ type WizardStep = 'name' | 'duration' | 'induction' | 'deepener' | 'finalize';
 
 export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScreenProps) {
   const { user, canAccess } = useGameState();
-  const { showToast } = useUIStore();
+  const { showToast } = useAppStore();
   const { isAuthenticated } = useAuth();
   const { addCustomAction } = useProtocolStore();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -67,7 +67,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       id: 'progressive-relaxation', 
       name: 'Progressive Relaxation', 
       description: 'Gentle wave of calm flowing through your body',
-      icon: <Waves size={24} className="text-teal-400" />,
+      iconData: { type: 'Waves', props: { size: 24, className: 'text-teal-400' } },
       color: 'from-teal-500/20 to-cyan-500/20',
       preview: 'Starting from the top of your head, feel tension melting away...',
       orbEffect: { color: 'teal', animation: 'wave' }
@@ -76,7 +76,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       id: 'rapid-induction', 
       name: 'Rapid Induction', 
       description: 'Lightning-fast entry into deep trance',
-      icon: <Zap size={24} className="text-yellow-400" />,
+      iconData: { type: 'Zap', props: { size: 24, className: 'text-yellow-400' } },
       color: 'from-yellow-500/20 to-orange-500/20',
       preview: 'Sleep now... and as your eyes close, you drop deep...',
       orbEffect: { color: 'yellow', animation: 'flare' }
@@ -85,7 +85,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       id: 'eye-fixation', 
       name: 'Eye Fixation', 
       description: 'Hypnotic gaze into the orb\'s depths',
-      icon: <Eye size={24} className="text-purple-400" />,
+      iconData: { type: 'Eye', props: { size: 24, className: 'text-purple-400' } },
       color: 'from-purple-500/20 to-indigo-500/20',
       preview: 'Focus on the orb... deeper and deeper... letting go...',
       orbEffect: { color: 'purple', animation: 'spiral' }
@@ -94,7 +94,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       id: 'breath-work', 
       name: 'Breath Work', 
       description: 'Rhythmic breathing into transcendence',
-      icon: <Wind size={24} className="text-green-400" />,
+      iconData: { type: 'Wind', props: { size: 24, className: 'text-green-400' } },
       color: 'from-green-500/20 to-emerald-500/20',
       preview: 'With each breath, you sink deeper into yourself...',
       orbEffect: { color: 'green', animation: 'pulse' }
@@ -147,6 +147,23 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
     }
   ];
 
+  // Helper function to render Lucide icons from serializable data
+  const renderIcon = (iconData: { type: string; props: Record<string, any> }) => {
+    const iconComponents: { [key: string]: React.ComponentType<any> } = {
+      Waves,
+      Zap,
+      Eye,
+      Wind
+    };
+    
+    const IconComponent = iconComponents[iconData.type];
+    if (!IconComponent) {
+      return <Target {...iconData.props} />;
+    }
+    
+    return <IconComponent {...iconData.props} />;
+  };
+
   // Update orb based on current choices
   useEffect(() => {
     let newOrbState = { ...orbState };
@@ -158,7 +175,14 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
     // Induction affects color and animation
     const selectedInduction = inductionOptions.find(opt => opt.id === protocol.induction);
     if (selectedInduction) {
-      newOrbState.color = selectedInduction.orbEffect.color;
+      // Map color names to actual ego state IDs
+      const colorToEgoState: { [key: string]: string } = {
+        'teal': 'guardian',
+        'yellow': 'explorer', 
+        'purple': 'mystic',
+        'green': 'healer'
+      };
+      newOrbState.color = colorToEgoState[selectedInduction.orbEffect.color] || 'guardian';
       newOrbState.animation = selectedInduction.orbEffect.animation;
     }
     
@@ -228,7 +252,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       const selectedInduction = inductionOptions.find(opt => opt.id === protocol.induction);
       addCustomAction({
         name: protocol.name,
-        icon: selectedInduction?.icon || <Target size={16} className="text-cyan-400" />,
+        iconData: selectedInduction?.iconData || { type: 'Target', props: { size: 16, className: 'text-cyan-400' } },
         color: selectedInduction?.color || 'from-cyan-500/20 to-blue-500/20',
         description: `Custom: ${protocol.name}`,
         induction: protocol.induction,
@@ -383,7 +407,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                 >
                   <div className="flex items-start space-x-4">
                     <div className="w-14 h-14 rounded-xl bg-black/30 backdrop-blur-sm border border-white/30 flex items-center justify-center flex-shrink-0">
-                      {option.icon}
+                      {renderIcon(option.iconData)}
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg mb-2">{option.name}</h3>
@@ -646,18 +670,21 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
         </div>
 
         {/* Right Side - Reactive Orb (Desktop) */}
-        <div className="hidden lg:flex lg:w-80 lg:flex-col lg:items-center lg:justify-center lg:px-6">
+        <div className="hidden lg:flex lg:w-80 lg:flex-col lg:items-center lg:justify-center lg:px-6 lg:py-8">
           <div className="text-center mb-6">
             <h3 className="text-white font-medium text-lg mb-2">Live Preview</h3>
             <p className="text-white/60 text-sm">Your orb evolves as you create</p>
           </div>
           
-          <WebGLOrb
-            onTap={() => {}}
-            size={240}
-            egoState={orbState.color}
-            afterglow={!!protocol.induction}
-          />
+          <div className="flex items-center justify-center">
+            <Orb
+              onTap={() => {}}
+              size={240}
+              egoState={orbState.color}
+              variant="auto"
+              afterglow={true}
+            />
+          </div>
           
           <div className="mt-4 text-center">
             <p className="text-white/70 text-sm">
@@ -670,12 +697,13 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
         </div>
 
         {/* Mobile Orb - Smaller, Floating */}
-        <div className="lg:hidden fixed top-24 right-4 z-20">
-          <WebGLOrb
+        <div className="lg:hidden fixed top-32 right-4 z-20 bg-black/50 backdrop-blur-sm rounded-full p-2 border border-white/20">
+          <Orb
             onTap={() => {}}
             size={80}
             egoState={orbState.color}
-            afterglow={!!protocol.induction}
+            variant="auto"
+            afterglow={true}
           />
         </div>
       </div>
@@ -730,7 +758,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                 });
                 setCurrentStep('name');
               }}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-bold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center space-x-2"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-xl text-black font-bold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center space-x-2"
             >
               <Play size={16} />
               <span>Create Journey</span>

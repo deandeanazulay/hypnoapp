@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Pause, SkipForward, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
-import WebGLOrb from './WebGLOrb';
+import Orb from './Orb';
 import AIVoiceSystem from './AIVoiceSystem';
 import { useGameState } from './GameStateManager';
-import { getEgoState } from '../state/appStore';
-import { useUIStore } from '../state/uiStore';
+import { getEgoState } from '../store';
+import { getEgoColor } from '../config/theme';
+import { useAppStore } from '../store';
 
 interface SessionConfig {
   egoState: string;
@@ -35,7 +36,7 @@ interface SessionState {
 
 export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfig }: UnifiedSessionWorldProps) {
   const { completeSession } = useGameState();
-  const { showToast } = useUIStore();
+  const { showToast } = useAppStore();
   const orbRef = useRef<any>(null);
   
   const [sessionState, setSessionState] = useState<SessionState>({
@@ -52,6 +53,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
   // Get ego state info
   const egoState = getEgoState(sessionConfig.egoState as any);
+  const egoColorInfo = getEgoColor(sessionConfig.egoState);
   const selectedAction = sessionConfig.action;
   const selectedGoal = sessionConfig.goal;
 
@@ -220,11 +222,11 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     <div className="fixed inset-0 bg-black overflow-hidden">
       {/* Cosmic Background matching ego state */}
       <div className="absolute inset-0">
-        <div className={`absolute inset-0 bg-gradient-to-br from-black via-${egoState.color.includes('blue') ? 'blue' : egoState.color.includes('red') ? 'red' : egoState.color.includes('green') ? 'green' : egoState.color.includes('yellow') ? 'yellow' : egoState.color.includes('purple') ? 'purple' : egoState.color.includes('orange') ? 'orange' : egoState.color.includes('pink') ? 'pink' : 'indigo'}-950/20 to-black`} />
+        <div className={`absolute inset-0 bg-gradient-to-br from-black via-${egoColorInfo.baseColorName}-950/20 to-black`} />
         
         {/* Subtle orb-colored glow effects */}
-        <div className={`absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br ${egoState.color.replace('from-', 'from-').replace('to-', 'to-')}/10 rounded-full blur-3xl animate-pulse`} />
-        <div className={`absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br ${egoState.color.replace('from-', 'from-').replace('to-', 'to-')}/5 rounded-full blur-3xl animate-pulse`} style={{ animationDelay: '2s' }} />
+        <div className={`absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br ${egoColorInfo.bg}/10 rounded-full blur-3xl animate-pulse`} />
+        <div className={`absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br ${egoColorInfo.bg}/5 rounded-full blur-3xl animate-pulse`} style={{ animationDelay: '2s' }} />
       </div>
 
       {/* Session Header */}
@@ -253,7 +255,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       <div className="relative z-20 px-4 pb-2">
         <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
           <div 
-            className={`h-full bg-gradient-to-r ${egoState.color} rounded-full transition-all duration-300`}
+            className={`h-full bg-gradient-to-r ${egoColorInfo.bg} rounded-full transition-all duration-300`}
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -280,14 +282,13 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
         {/* The Orb - inheriting color from ego state */}
         <div className="mb-6">
-          <WebGLOrb
+          <Orb
             ref={orbRef}
             onTap={() => {}} // Disabled during session
             size={320}
             egoState={sessionConfig.egoState}
+            variant="auto"
             afterglow={sessionState.isActive}
-            breathPhase={sessionState.breathing}
-            selectedGoal={selectedGoal}
           />
         </div>
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Star, Zap, Shield, Crown, ChevronRight, Check, Users, Award, TrendingUp, Sparkles, Eye, Heart, Brain, Menu, X } from 'lucide-react';
-import WebGLOrb from './WebGLOrb';
+import Orb from './Orb';
 import { paymentService, STRIPE_PRODUCTS } from '../lib/stripe';
-import { useUIStore } from '../state/uiStore';
+import { useAppStore } from '../store';
 
 interface LandingPageProps {
   onEnterApp: () => void;
@@ -14,7 +14,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
   const [isLoaded, setIsLoaded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const { showToast } = useUIStore();
+  const { showToast } = useAppStore();
 
   useEffect(() => {
     setIsLoaded(true);
@@ -249,11 +249,11 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
           {/* Orb */}
           <div className={`mb-6 md:mb-12 transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
-            <WebGLOrb
+            <Orb
               onTap={() => {}}
               size={window.innerWidth < 768 ? 200 : 280}
-              afterglow={true}
-              egoState="mystic"
+              variant="webgl"
+              egoState="guardian"
             />
           </div>
 
