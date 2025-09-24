@@ -212,13 +212,8 @@ function App() {
   const MainApp = () => (
     <GameStateProvider>
       <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
-        {/* Global HUD - Fixed at top */}
-        <div className="flex-shrink-0 relative z-50">
-          <GlobalHUD onShowAuth={() => setShowAuthModal(true)} />
-        </div>
-        
         {/* Main Body Content - Flex grow */}
-        <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content" style={{ paddingBottom: 'var(--total-nav-height)' }}>
+        <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content">
           {/* Background Protection */}
           <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900/50 to-black pointer-events-none" />
           
