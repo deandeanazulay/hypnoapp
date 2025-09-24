@@ -679,52 +679,8 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
         
         {/* Controls Section */}
-        <div className="px-4 py-3 bg-black/95 backdrop-blur-xl space-y-3">
-          {/* Top Row - Session Controls (Smaller) */}
-          <div className="flex items-center space-x-4">
-            {/* Left Side - Vertical Controls */}
-            <div className="flex flex-col space-y-2">
-              <button
-                onClick={togglePause}
-                className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
-                  sessionState.isPaused 
-                    ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/30' 
-                    : 'bg-red-500/20 border-red-500/40 text-red-400 shadow-red-500/30'
-                }`}
-              >
-                {sessionState.isPaused ? <Play size={20} className="ml-0.5" /> : <Pause size={20} />}
-              </button>
-              
-              <button
-                onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
-                  isVoiceEnabled 
-                    ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/30' 
-                    : 'bg-white/10 border-white/30 text-white/60'
-                }`}
-              >
-                {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-              </button>
-              
-              <button
-                onClick={() => setIsMicEnabled(!isMicEnabled)}
-                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
-                  isMicEnabled
-                    ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 shadow-blue-500/30' 
-                    : 'bg-white/10 border-white/30 text-white/60'
-                }`}
-              >
-                {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-              </button>
-            </div>
-            
-            {/* Right Side - Phase Info or Additional Space */}
-            <div className="flex-1 text-center">
-              <div className="text-white/60 text-xs">{getPhaseTitle()}</div>
-            </div>
-          </div>
-          
-          {/* Bottom Row - Communication */}
+        <div className="px-4 py-3 bg-black/95 backdrop-blur-xl">
+          {/* Communication Input Row */}
           <form onSubmit={handleSubmit}>
             <div className="flex items-center space-x-3">
               {/* Voice Record Button */}
@@ -780,6 +736,45 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           50% { opacity: 0.8; transform: scale(1.1); }
         }
       `}</style>
+      
+      {/* Floating Control Sidebar */}
+      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 space-y-3">
+        {/* Pause/Play */}
+        <button
+          onClick={togglePause}
+          className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+            sessionState.isPaused 
+              ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/30' 
+              : 'bg-red-500/20 border-red-500/40 text-red-400 shadow-red-500/30'
+          }`}
+        >
+          {sessionState.isPaused ? <Play size={18} className="ml-0.5" /> : <Pause size={18} />}
+        </button>
+        
+        {/* Volume Control */}
+        <button
+          onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+          className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+            isVoiceEnabled 
+              ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/30' 
+              : 'bg-white/10 border-white/30 text-white/60'
+          }`}
+        >
+          {isVoiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+        </button>
+        
+        {/* Mic Control */}
+        <button
+          onClick={() => setIsMicEnabled(!isMicEnabled)}
+          className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+            isMicEnabled
+              ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 shadow-blue-500/30' 
+              : 'bg-white/10 border-white/30 text-white/60'
+          }`}
+        >
+          {isMicEnabled ? <Mic size={18} /> : <MicOff size={18} />}
+        </button>
+      </div>
     </div>
   );
 }
