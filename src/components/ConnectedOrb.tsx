@@ -1,5 +1,5 @@
 import React, { useRef, useImperativeHandle, forwardRef } from 'react';
-import CSSOrb from './ui/CSSOrb';
+import WebGLOrb, { WebGLOrbRef } from './WebGLOrb';
 import { useGameState } from './GameStateManager';
 
 interface ConnectedOrbProps {
@@ -22,16 +22,17 @@ const ConnectedOrb = forwardRef<ConnectedOrbRef, ConnectedOrbProps>(({
   showHint = true 
 }, ref) => {
   const { user, getOrbState } = useGameState();
+  const orbRef = useRef<WebGLOrbRef>(null);
 
   useImperativeHandle(ref, () => ({
     updateState: (state: any) => {
-      // CSS orb doesn't need state updates
+      orbRef.current?.updateState(state);
     },
     setSpeaking: (speaking: boolean) => {
-      // CSS orb doesn't need speaking updates
+      orbRef.current?.setSpeaking(speaking);
     },
     setListening: (listening: boolean) => {
-      // CSS orb doesn't need listening updates
+      orbRef.current?.setListening(listening);
     }
   }));
 
@@ -53,10 +54,10 @@ const ConnectedOrb = forwardRef<ConnectedOrbRef, ConnectedOrbProps>(({
       </div>
 
       {/* The Orb */}
-      <CSSOrb
+      <WebGLOrb
+        ref={orbRef}
         onTap={onTap}
         size={size}
-        egoState={user.activeEgoState}
       />
 
       {/* State display */}
