@@ -452,44 +452,44 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 px-6 py-4">
+      <header className="absolute top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 px-4 py-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button
               onClick={openEgoModal}
-              className="w-12 h-12 rounded-full border-2 flex items-center justify-center"
+              className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
               style={{ 
                 background: `linear-gradient(135deg, ${egoColor.accent}60, ${egoColor.accent}40)`,
                 borderColor: egoColor.accent + '80'
               }}
             >
-              <span className="text-lg">{egoState.icon}</span>
+              <span className="text-sm">{egoState.icon}</span>
             </button>
             <div>
-              <h2 className="text-white font-semibold text-lg">
+              <h2 className="text-white font-semibold text-sm">
                 {sessionConfig.customProtocol?.name || `${egoState.name} Session`}
               </h2>
-              <p className="text-white/70 text-sm">Transformation Journey</p>
+              <p className="text-white/70 text-xs">Transformation Journey</p>
             </div>
           </div>
           
           {/* Time Display */}
           <div className="flex items-center space-x-4">
             <div className="text-right">
-              <div className="text-white font-medium">{formatTime(sessionState.timeElapsed)}</div>
+              <div className="text-white font-medium text-sm">{formatTime(sessionState.timeElapsed)}</div>
               <div className="text-white/60 text-xs">{formatTime(sessionState.totalDuration)}</div>
             </div>
             <button 
               onClick={onCancel} 
-              className="text-white/60 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10"
+              className="text-white/60 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
             >
-              <X size={24} />
+              <X size={20} />
             </button>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="mt-4">
+        <div className="mt-2">
           <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
             <div 
               className="h-full rounded-full transition-all duration-1000"
@@ -497,6 +497,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 width: `${progress}%`,
                 background: `linear-gradient(90deg, ${egoColor.accent}, ${egoColor.accent}cc)`
               }}
+        <div className="py-2">
             />
           </div>
         </div>
@@ -561,9 +562,9 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       <div className="flex-1 flex flex-col pt-28 pb-6 min-h-0">
         
         {/* Orb Section - Takes most space, perfectly centered */}
-        <div className="flex-1 flex items-center justify-center min-h-0 relative pt-16 pb-12">
+        <div className="flex-1 flex items-center justify-center min-h-0 relative">
           {/* Eye Fixation Instruction */}
-          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
             <p className="text-white/80 text-sm font-light text-center tracking-wide">
               Focus softly on the center dot
             </p>
@@ -695,12 +696,12 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                       ? 'bg-red-500/20 border-red-500/60 text-red-400 animate-pulse shadow-lg shadow-red-500/30' 
                       : 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30'
                   }`}
-                >
+              <span className="text-white/60 text-xs uppercase tracking-wide font-medium">DEPTH</span>
                   <Mic size={20} />
                 </button>
                 {/* Text Input */}
                 <div className="flex-1 relative">
-                  <input
+                    className={`w-2 h-2 rounded-full transition-all duration-500 ${
                     type="text"
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
@@ -730,16 +731,94 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                   {isVoiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
                 </button>
 
+              <span className="text-white/60 text-xs uppercase tracking-wide font-medium">BREATHING</span>
+              <span className="text-white/60 text-xs uppercase tracking-wide font-medium">PHASE</span>
+          <div className="px-4 py-3 bg-black/95 backdrop-blur-xl border-t border-white/20">
+            {/* Top Row - Session Controls */}
+            <div className="flex items-center justify-center space-x-6 mb-3">
+              <button
+                type="button"
+                onClick={togglePause}
+                className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-sm border-2 ${
+                  sessionState.isPaused 
+                    ? 'bg-orange-500/20 border-orange-500/40 text-orange-400 hover:bg-orange-500/30' 
+                    : 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30'
+                }`}
+              >
+                {sessionState.isPaused ? <Play size={20} /> : <Pause size={20} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+                className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-sm border-2 ${
+                  isVoiceEnabled 
+                    ? 'bg-green-500/20 border-green-500/40 text-green-400 hover:bg-green-500/30' 
+                    : 'bg-white/10 border-white/30 text-white/60 hover:bg-white/20'
+                }`}
+              >
+                {isVoiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+              <button
+                type="button"
+                onClick={() => setIsMicEnabled(!isMicEnabled)}
+                className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-sm border-2 ${
+                  isMicEnabled 
+                    ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30' 
+                    : 'bg-white/10 border-white/30 text-white/60 hover:bg-white/20'
+                }`}
+              >
+                {isMicEnabled ? <Mic size={20} /> : <MicOff size={20} />}
+              </button>
+            </div>
+
+            {/* Bottom Row - Text Input */}
+            <form onSubmit={handleSubmit}>
+              <div className="flex items-center space-x-3">
+                {/* Voice Record Button */}
                 <button
                   type="button"
-                  onClick={() => setIsMicEnabled(!isMicEnabled)}
-                  className={`p-4 rounded-full transition-all duration-300 hover:scale-110 backdrop-blur-sm border-2 ${
-                    isMicEnabled 
-                      ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30 shadow-lg shadow-blue-500/30' 
-                      : 'bg-white/10 border-white/30 text-white/60 hover:bg-white/20'
+                  onClick={toggleListening}
+                  disabled={!isMicEnabled || isThinking}
+                  className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 backdrop-blur-sm border-2 ${
+                    sessionState.isListening 
+                      ? 'bg-red-500/20 border-red-500/60 text-red-400 animate-pulse' 
+                      : 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30'
                   }`}
                 >
-                  {isMicEnabled ? <Mic size={20} /> : <MicOff size={20} />}
+                  <Mic size={20} />
+                </button>
+
+                {/* Text Input */}
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={textInput}
+                    onChange={(e) => setTextInput(e.target.value)}
+                    placeholder={sessionState.isListening ? "Listening..." : "Share what's happening for you..."}
+                    disabled={sessionState.isListening || isThinking}
+                    className="w-full bg-white/10 border border-white/30 rounded-2xl px-4 py-3 pr-12 text-white placeholder-white/60 focus:outline-none focus:border-teal-500/60 focus:bg-white/15 transition-all disabled:opacity-50 backdrop-blur-sm"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!textInput.trim() || isThinking}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-teal-500/20 border border-teal-500/40 text-teal-400 hover:bg-teal-500/30 transition-all disabled:opacity-50 hover:scale-110"
+                  >
+                    <Send size={16} />
+                  </button>
+                </div>
+              </button>
+                {/* Voice Record Button (duplicate for symmetry) */}
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  disabled={!isMicEnabled || isThinking}
+                  className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 backdrop-blur-sm border-2 ${
+                    sessionState.isListening 
+                      ? 'bg-red-500/20 border-red-500/60 text-red-400 animate-pulse' 
+                      : 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30'
+                  }`}
+                >
+                  <Mic size={20} />
                 </button>
               </div>
             </form>
@@ -748,7 +827,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       </div>
       
       {/* Premium CSS Animations */}
-      <style jsx>{`
+      <div className="flex-1 flex flex-col pt-20 pb-6 min-h-0">
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
