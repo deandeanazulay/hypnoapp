@@ -39,6 +39,7 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   const handlePointerDown = () => setIsPressed(true);
   const handlePointerUp = () => {
     setIsPressed(false);
+    console.log('[CSS-ORB] Tap detected, calling onTap');
     onTap();
   };
   const handlePointerEnter = () => setIsHovering(true);

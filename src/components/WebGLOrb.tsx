@@ -108,10 +108,16 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   // Attach tap handler separately - no scene re-init
   useEffect(() => {
     const canvas = rendererRef.current?.domElement;
-    if (!canvas) return;
+    if (!canvas || !handleTap) return;
     
+    console.log('[ORB] Attaching click handler to canvas');
     canvas.addEventListener('click', handleTap);
-    return () => canvas.removeEventListener('click', handleTap);
+    canvas.addEventListener('touchend', handleTap);
+    
+    return () => {
+      canvas.removeEventListener('click', handleTap);
+      canvas.removeEventListener('touchend', handleTap);
+    };
   }, [handleTap]);
 
   // Handle resize separately - no scene re-init

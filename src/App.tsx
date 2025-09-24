@@ -53,12 +53,15 @@ function App() {
   };
 
   const handleOrbTap = () => {
+    console.log('[APP] handleOrbTap called, isAuthenticated:', isAuthenticated);
     // If not authenticated, show auth modal
     if (!isAuthenticated) {
+      console.log('[APP] Not authenticated, showing auth modal');
       setShowAuthModal(true);
       return;
     }
 
+    console.log('[APP] Starting session with config:', { activeEgoState, selectedAction });
     // Show HypnoPortal with current ego state
     setSessionConfig({
       egoState: activeEgoState,
