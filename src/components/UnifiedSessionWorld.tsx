@@ -44,7 +44,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     timeElapsed: 0,
     totalDuration: sessionConfig.action?.duration || 900, // 15 minutes default
     depth: 1,
-    breathing: 'hold-exhale',
+    breathing: 'rest',
     isActive: false,
     isPaused: false,
     voiceEnabled: true,
