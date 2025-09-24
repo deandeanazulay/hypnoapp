@@ -709,6 +709,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               <button
                 onClick={() => setIsMicEnabled(!isMicEnabled)}
                 className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+                  isMicEnabled
                     ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 shadow-blue-500/30' 
                     : 'bg-white/10 border-white/30 text-white/60'
                 }`}
