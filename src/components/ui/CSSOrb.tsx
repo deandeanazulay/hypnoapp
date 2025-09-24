@@ -178,5 +178,3 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
 
 CSSOrb.displayName = 'CSSOrb';
 export default CSSOrb;
-
-export default CSSOrb
