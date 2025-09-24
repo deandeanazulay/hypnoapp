@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, Star, Zap, Shield, Crown, ChevronRight, Check, Users, Award, TrendingUp, Sparkles, Eye, Heart, Brain, Menu, X } from 'lucide-react';
 import { paymentService, STRIPE_PRODUCTS } from '../lib/stripe';
 import { useAppStore } from '../store';
+import Orb from './Orb';
 
 interface LandingPageProps {
   onEnterApp: () => void;
@@ -248,11 +249,14 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
           {/* Orb */}
           <div className={`mb-6 md:mb-12 transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
-            <div className="w-60 h-60 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border border-teal-500/30 flex items-center justify-center mx-auto animate-pulse shadow-2xl shadow-teal-500/20">
-              <div className="text-center">
-                <div className="text-4xl md:text-6xl mb-2">🛡️</div>
-                <div className="text-teal-400 font-medium text-sm">Guardian</div>
-              </div>
+            <div className="flex justify-center">
+              <Orb
+                onTap={() => {}}
+                egoState="guardian"
+                size={window.innerWidth < 768 ? 240 : 320}
+                variant="webgl"
+                afterglow={true}
+              />
             </div>
           </div>
 
