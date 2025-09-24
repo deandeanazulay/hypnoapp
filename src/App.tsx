@@ -31,7 +31,7 @@ function App() {
   const { addCustomAction } = useProtocolStore();
   useViewportLayout(); // Initialize iOS Safari fixes
   const [showLanding, setShowLanding] = useState(!isAuthenticated);
-  const [currentMode, setCurrentMode] = useState<AppMode>('navigation');
+  const [showHypnoPortal, setShowHypnoPortal] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [selectedAction, setSelectedAction] = useState<any>(null);
   const [sessionConfig, setSessionConfig] = useState<any>(null);
@@ -59,13 +59,13 @@ function App() {
       return;
     }
 
-    // Start session with current ego state
+    // Show HypnoPortal with current ego state
     setSessionConfig({
       egoState: activeEgoState,
       action: selectedAction, // Pass the selected action from HomeScreen
       type: 'unified'
     });
-    setCurrentMode('session');
+    setShowHypnoPortal(true);
   };
 
   const handleActionSelect = (action: any) => {
@@ -85,7 +85,7 @@ function App() {
       protocol: protocol,
       type: 'protocol'
     });
-    setCurrentMode('session');
+    setShowHypnoPortal(true);
   };
 
   const handleCustomProtocolCreate = (protocol: any) => {
@@ -110,12 +110,12 @@ function App() {
   };
 
   const handleSessionComplete = () => {
-    setCurrentMode('navigation');
+    setShowHypnoPortal(false);
     setSessionConfig(null);
   };
 
   const handleCancel = () => {
-    setCurrentMode('navigation');
+    setShowHypnoPortal(false);
     setSessionConfig(null);
   };
 
@@ -133,7 +133,7 @@ function App() {
       type: 'favorite',
       session: session
     });
-    setCurrentMode('session');
+    setShowHypnoPortal(true);
   };
 
   // Show loading screen while auth is loading
@@ -157,19 +157,6 @@ function App() {
           onShowAuth={handleShowAuth}
         />
       </div>
-    );
-  }
-
-  // Session mode - full screen wizard
-  if (currentMode === 'session') {
-    return (
-      <GameStateProvider>
-        <UnifiedSessionWorld 
-          onComplete={handleSessionComplete}
-          onCancel={handleCancel}
-          sessionConfig={sessionConfig}
-        />
-      </GameStateProvider>
     );
   }
 
@@ -253,6 +240,15 @@ function App() {
         {/* Toast Notifications */}
         <ToastManager />
       </>
+      
+      {/* HypnoPortal (UnifiedSessionWorld as Portal) */}
+      {showHypnoPortal && sessionConfig && (
+        <UnifiedSessionWorld 
+          onComplete={handleSessionComplete}
+          onCancel={handleCancel}
+          sessionConfig={sessionConfig}
+        />
+      )}
     </GameStateProvider>
   );
 
