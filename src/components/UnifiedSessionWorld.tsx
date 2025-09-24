@@ -480,6 +480,16 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           </div>
         </div>
         
+        {/* Breathing Instruction - Centered between indicators */}
+        <div className="absolute top-32 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="text-center">
+            <span className="text-white/60 text-xs uppercase tracking-wide mb-2 block">Breathing</span>
+            <div className="text-white/90 text-xl font-light">
+              {getBreathingInstruction()}
+            </div>
+          </div>
+        </div>
+        
         <div className="absolute top-24 right-6 z-20 pt-4">
           <div className="flex flex-col items-end space-y-2">
             <span className="text-white/60 text-xs uppercase tracking-wide">Phase</span>
@@ -533,16 +543,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
         
         {/* 2. Breathing Instructions - Clean centered section */}
-        <div className="flex-shrink-0 text-center py-4 space-y-3">
-          {/* Breathing Instructions */}
-          <div className="space-y-1">
-            <div className="text-white/90 text-xl font-light">
-              {getBreathingInstruction()}
-            </div>
-          </div>
-        </div>
-        
-        {/* 3. Status Indicators - Glass card with proper spacing */}
         {/* 3. Chat Interface - Fixed height, proper container */}
         <div className="flex-shrink-0">
           <div ref={chatContainerRef} className="px-6 max-h-20 overflow-y-auto">
