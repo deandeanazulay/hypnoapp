@@ -286,7 +286,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             onTap={() => {}}
             afterglow={true}
             egoState={sessionConfig.egoState}
-            size={320}
+            size={640}
             variant="webgl"
           />
         </div>

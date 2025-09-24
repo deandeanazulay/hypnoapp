@@ -118,8 +118,8 @@ export default function HomeScreen({
                   afterglow={false}
                   egoState={activeEgoState}
                   size={window.innerWidth < 768 ? 
-                    Math.max(400, Math.min(window.innerWidth * 1.2, 560)) :
-                    Math.max(480, Math.min(window.innerHeight * 0.6, 600))
+                    Math.max(800, Math.min(window.innerWidth * 2.4, 1120)) :
+                    Math.max(960, Math.min(window.innerHeight * 1.2, 1200))
                   }
                   variant="webgl"
                 />

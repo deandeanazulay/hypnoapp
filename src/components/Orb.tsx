@@ -20,7 +20,7 @@ function supportsWebGL(): boolean {
   }
 }
 
-export default function Orb({ variant = 'auto', ...props }: OrbProps) {
+export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps) {
   const [useWebGL, setUseWebGL] = useState<boolean | null>(null);
 
   // Detect WebGL support once and never change
