@@ -64,7 +64,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     if (sessionState.isActive && !sessionState.isPaused) {
       interval = setInterval(() => {
         setSessionState(prev => {
-          const breathingCycle = ['inhale', 'hold-inhale', 'exhale', 'hold-exhale'] as const;
+          const newTimeElapsed = prev.timeElapsed + 1;
           
           // Auto-complete when time is up
           if (newTimeElapsed >= prev.totalDuration) {
@@ -482,7 +482,7 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
         </div>
         
         {/* Progress bar for current breathing phase */}
-        {currentPhase !== 'rest' && (
+        {true && (
           <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden mt-2">
             <div 
               className={`h-full ${breathingColors[currentPhase]} rounded-full transition-all duration-100`}
