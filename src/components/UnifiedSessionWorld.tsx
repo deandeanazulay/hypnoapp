@@ -647,15 +647,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             <div className="text-white/90 text-2xl font-light">
               {getBreathingInstruction()}
             </div>
-            <div 
-              className="text-7xl font-bold tabular-nums transition-all duration-300"
-              style={{ color: egoColor.accent }}
-            >
-              {sessionState.breathingCount}
-            </div>
-            <div className="text-white/60 text-base">
-              Cycle {sessionState.breathingCycle}
-            </div>
           </div>
         </div>
         
