@@ -35,8 +35,26 @@ Deno.serve(async (req: Request) => {
     // Get Gemini API key from environment
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
     if (!geminiApiKey) {
-      throw new Error('Gemini API key not configured')
+      console.error('GEMINI_API_KEY environment variable not set')
+      const fallbackResponse = getFallbackResponse(requestType)
+      return new Response(
+        JSON.stringify({
+          response: fallbackResponse,
+          sessionUpdates: {},
+          error: 'API key not configured - using offline mode',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
     }
+
+    console.log('Processing request:', { requestType, egoState: sessionContext.egoState })
 
     // Build system prompt based on ego state and session context
     const systemPrompt = buildHypnosisPrompt(sessionContext, requestType)
@@ -57,53 +75,113 @@ Deno.serve(async (req: Request) => {
       }
     ]
 
+    console.log('Calling Gemini API...')
+
     // Call Gemini API
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: conversation,
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
+    let response: Response
+    try {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+        body: JSON.stringify({
+          contents: conversation,
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
           },
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-          },
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-          },
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-          }
-        ]
+          safetySettings: [
+            {
+              category: 'HARM_CATEGORY_HARASSMENT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+              category: 'HARM_CATEGORY_HATE_SPEECH',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            }
+          ]
+        })
       })
-    })
+    } catch (fetchError) {
+      console.error('Network error calling Gemini API:', fetchError)
+      console.error('This likely means the Edge Function needs network permissions to access generativelanguage.googleapis.com')
+      
+      // Return a contextual fallback based on the session state
+      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
+      return new Response(
+        JSON.stringify({
+          response: contextualResponse,
+          sessionUpdates: {},
+          error: 'Network access limited - using offline guidance',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
 
     if (!response.ok) {
       const errorData = await response.text()
       console.error('Gemini API error:', errorData)
-      throw new Error(`Gemini API error: ${response.status}`)
+      
+      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
+      return new Response(
+        JSON.stringify({
+          response: contextualResponse,
+          sessionUpdates: {},
+          error: `API error: ${response.status} - using offline guidance`,
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
     }
 
     const data = await response.json()
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text
 
     if (!aiResponse) {
-      throw new Error('No response from Gemini AI')
+      console.error('No response content from Gemini AI')
+      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
+      return new Response(
+        JSON.stringify({
+          response: contextualResponse,
+          sessionUpdates: {},
+          error: 'No AI response - using offline guidance',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
     }
+
+    console.log('Successfully generated AI response')
 
     // Parse any session updates from the AI response
     const sessionUpdates = parseSessionUpdates(aiResponse, sessionContext)
@@ -126,13 +204,13 @@ Deno.serve(async (req: Request) => {
     console.error('AI Hypnosis error:', error)
     
     // Fallback response for errors
-    const fallbackResponse = getFallbackResponse(requestType)
+    const fallbackResponse = getFallbackResponse(requestType || 'guidance')
     
     return new Response(
       JSON.stringify({
         response: fallbackResponse,
         sessionUpdates: {},
-        error: error.message,
+        error: error.message || 'Unknown error - using offline mode',
         timestamp: Date.now()
       }),
       {
@@ -252,4 +330,47 @@ function getFallbackResponse(requestType: string): string {
   }
   
   return fallbacks[requestType] || "Continue breathing and trust the process. You're doing beautifully."
+
+function getContextualFallback(context: SessionContext, userMessage: string, requestType: string): string {
+  const { egoState, phase, depth } = context
+  
+  // Generate context-aware responses based on ego state and session phase
+  const egoResponses: { [key: string]: { [key: string]: string } } = {
+    rebel: {
+      induction: "Feel the revolutionary energy within you. Break free from the limitations that no longer serve you. Each breath is an act of rebellion against what holds you back.",
+      deepening: "Go deeper into your power. Feel the chains of old patterns dissolving. You are breaking through to your authentic self.",
+      response: "I see your strength. Your rebellion against limitation is powerful. Keep pushing through those barriers."
+    },
+    guardian: {
+      induction: "You are safe here. Feel the protective energy surrounding you like a warm shield. Allow yourself to relax completely, knowing you are protected.",
+      deepening: "Sink deeper into this safe space. Feel the ground beneath you solid and supportive. You are protected and can let go completely.",
+      response: "You are secure and protected. Trust in your inner guardian as you continue this journey."
+    },
+    healer: {
+      induction: "Feel the healing light beginning to flow through you. Each breath brings restoration and renewal to every part of your being.",
+      deepening: "The healing energy grows stronger now. Feel it flowing to wherever you need it most, bringing comfort and restoration.",
+      response: "Your healing process is unfolding perfectly. Trust in your body's wisdom to restore and renew itself."
+    },
+    explorer: {
+      induction: "You're beginning an incredible journey of discovery. Feel the excitement of exploring new territories within yourself.",
+      deepening: "Go deeper into this unexplored territory. Each step reveals new insights and possibilities you've never seen before.",
+      response: "What an amazing discovery you're making. Keep exploring - there's so much more to uncover."
+    }
+  }
+  
+  const stateResponses = egoResponses[egoState] || egoResponses.guardian
+  const response = stateResponses[requestType] || stateResponses.response
+  
+  // Add depth-appropriate language
+  const depthModifiers = [
+    "", // depth 1
+    "Feel this even more deeply... ",
+    "Going much deeper now... ",
+    "At this profound level... ",
+    "In this deepest state... "
+  ]
+  
+  const modifier = depthModifiers[Math.min(depth - 1, 4)] || ""
+  
+  return modifier + response
 }
