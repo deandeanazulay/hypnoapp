@@ -708,14 +708,12 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               
               <button
                 onClick={() => setIsMicEnabled(!isMicEnabled)}
-              className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
-              className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
                     ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 shadow-blue-500/30' 
                     : 'bg-white/10 border-white/30 text-white/60'
                 }`}
               >
-              {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-              {sessionState.isPaused ? <Play size={16} className="ml-0.5" /> : <Pause size={16} />}
+                {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
             </div>
             
             {/* Right Side - Phase Info or Additional Space */}
