@@ -67,7 +67,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       id: 'progressive-relaxation', 
       name: 'Progressive Relaxation', 
       description: 'Gentle wave of calm flowing through your body',
-      iconData: { type: 'Waves', props: { size: 24, className: 'text-teal-400' } },
+      icon: <Waves size={24} className="text-teal-400" />,
       color: 'from-teal-500/20 to-cyan-500/20',
       preview: 'Starting from the top of your head, feel tension melting away...',
       orbEffect: { color: 'teal', animation: 'wave' }
@@ -76,7 +76,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       id: 'rapid-induction', 
       name: 'Rapid Induction', 
       description: 'Lightning-fast entry into deep trance',
-      iconData: { type: 'Zap', props: { size: 24, className: 'text-yellow-400' } },
+      icon: <Zap size={24} className="text-yellow-400" />,
       color: 'from-yellow-500/20 to-orange-500/20',
       preview: 'Sleep now... and as your eyes close, you drop deep...',
       orbEffect: { color: 'yellow', animation: 'flare' }
@@ -85,7 +85,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       id: 'eye-fixation', 
       name: 'Eye Fixation', 
       description: 'Hypnotic gaze into the orb\'s depths',
-      iconData: { type: 'Eye', props: { size: 24, className: 'text-purple-400' } },
+      icon: <Eye size={24} className="text-purple-400" />,
       color: 'from-purple-500/20 to-indigo-500/20',
       preview: 'Focus on the orb... deeper and deeper... letting go...',
       orbEffect: { color: 'purple', animation: 'spiral' }
@@ -94,7 +94,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       id: 'breath-work', 
       name: 'Breath Work', 
       description: 'Rhythmic breathing into transcendence',
-      iconData: { type: 'Wind', props: { size: 24, className: 'text-green-400' } },
+      icon: <Wind size={24} className="text-green-400" />,
       color: 'from-green-500/20 to-emerald-500/20',
       preview: 'With each breath, you sink deeper into yourself...',
       orbEffect: { color: 'green', animation: 'pulse' }
@@ -146,23 +146,6 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       premium: true
     }
   ];
-
-  // Helper function to render Lucide icons from serializable data
-  const renderIcon = (iconData: { type: string; props: Record<string, any> }) => {
-    const iconComponents: { [key: string]: React.ComponentType<any> } = {
-      Waves,
-      Zap,
-      Eye,
-      Wind
-    };
-    
-    const IconComponent = iconComponents[iconData.type];
-    if (!IconComponent) {
-      return <Target {...iconData.props} />;
-    }
-    
-    return <IconComponent {...iconData.props} />;
-  };
 
   // Update orb based on current choices
   useEffect(() => {
@@ -245,7 +228,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       const selectedInduction = inductionOptions.find(opt => opt.id === protocol.induction);
       addCustomAction({
         name: protocol.name,
-        iconData: selectedInduction?.iconData || { type: 'Target', props: { size: 16, className: 'text-cyan-400' } },
+        icon: selectedInduction?.icon || <Target size={16} className="text-cyan-400" />,
         color: selectedInduction?.color || 'from-cyan-500/20 to-blue-500/20',
         description: `Custom: ${protocol.name}`,
         induction: protocol.induction,
@@ -400,7 +383,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                 >
                   <div className="flex items-start space-x-4">
                     <div className="w-14 h-14 rounded-xl bg-black/30 backdrop-blur-sm border border-white/30 flex items-center justify-center flex-shrink-0">
-                      {renderIcon(option.iconData)}
+                      {option.icon}
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg mb-2">{option.name}</h3>
@@ -747,7 +730,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                 });
                 setCurrentStep('name');
               }}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-xl text-black font-bold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center space-x-2"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-bold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center space-x-2"
             >
               <Play size={16} />
               <span>Create Journey</span>

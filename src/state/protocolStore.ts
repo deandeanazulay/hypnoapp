@@ -1,15 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export interface SerializableIcon {
-  type: string;
-  props: Record<string, any>;
-}
-
 export interface CustomAction {
   id: string;
   name: string;
-  iconData: SerializableIcon;
+  icon: React.ReactNode;
   color: string;
   description: string;
   isCustom: boolean;
@@ -20,7 +15,7 @@ export interface CustomAction {
 
 interface ProtocolStore {
   customActions: CustomAction[];
-  addCustomAction: (action: Omit<CustomAction, 'id' | 'isCustom'>) => string;
+  addCustomAction: (action: Omit<CustomAction, 'id' | 'isCustom'>) => void;
   removeCustomAction: (id: string) => void;
   updateCustomAction: (id: string, updates: Partial<CustomAction>) => void;
 }

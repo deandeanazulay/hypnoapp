@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Target, Settings, Mic, Plus, X, Edit2, Zap, Eye, Wind, Waves } from 'lucide-react';
+import { Target, Settings, Mic, Plus, X, Edit2 } from 'lucide-react';
 import { useGameState } from './GameStateManager';
-import { useProtocolStore, CustomAction, SerializableIcon } from '../state/protocolStore';
+import { useProtocolStore, CustomAction } from '../state/protocolStore';
 
 interface ActionsBarProps {
   selectedEgoState: string;
@@ -10,26 +10,6 @@ interface ActionsBarProps {
   onActionSelect: (action: any) => void;
   onNavigateToCreate: () => void;
 }
-
-// Helper function to render Lucide icons from serializable data
-const renderIcon = (iconData: SerializableIcon) => {
-  const iconComponents: { [key: string]: React.ComponentType<any> } = {
-    Target,
-    Settings,
-    Mic,
-    Zap,
-    Eye,
-    Wind,
-    Waves
-  };
-  
-  const IconComponent = iconComponents[iconData.type];
-  if (!IconComponent) {
-    return <Target {...iconData.props} />;
-  }
-  
-  return <IconComponent {...iconData.props} />;
-};
 
 export default function ActionsBar({ 
   selectedEgoState,
@@ -46,35 +26,35 @@ export default function ActionsBar({
     {
       id: 'stress-relief',
       name: 'Stress Relief',
-      iconData: { type: 'Target', props: { size: 16, className: 'text-teal-400' } },
+      icon: <Target size={16} className="text-teal-400" />,
       color: 'from-teal-500/20 to-cyan-500/20',
       description: 'Release tension and find calm'
     },
     {
       id: 'focus-boost',
       name: 'Focus Boost',
-      iconData: { type: 'Target', props: { size: 16, className: 'text-purple-400' } },
+      icon: <Target size={16} className="text-purple-400" />,
       color: 'from-purple-500/20 to-blue-500/20',
       description: 'Sharpen concentration'
     },
     {
       id: 'energy-up',
       name: 'Energy Up',
-      iconData: { type: 'Settings', props: { size: 16, className: 'text-orange-400' } },
+      icon: <Settings size={16} className="text-orange-400" />,
       color: 'from-orange-500/20 to-amber-500/20',
       description: 'Boost motivation and energy'
     },
     {
       id: 'confidence',
       name: 'Confidence',
-      iconData: { type: 'Settings', props: { size: 16, className: 'text-yellow-400' } },
+      icon: <Settings size={16} className="text-yellow-400" />,
       color: 'from-yellow-500/20 to-amber-500/20',
       description: 'Build self-assurance'
     },
     {
       id: 'sleep-prep',
       name: 'Sleep Prep',
-      iconData: { type: 'Mic', props: { size: 16, className: 'text-indigo-400' } },
+      icon: <Mic size={16} className="text-indigo-400" />,
       color: 'from-indigo-500/20 to-purple-500/20',
       description: 'Prepare for rest'
     }
@@ -85,6 +65,7 @@ export default function ActionsBar({
   const handleActionClick = (action: any) => {
     onActionSelect(action.id === selectedAction?.id ? null : action);
   };
+
 
   const saveEdit = (actionId: string) => {
     if (editText.trim()) {
@@ -151,7 +132,7 @@ export default function ActionsBar({
               
               <div className="flex flex-col items-center space-y-2">
                 <div className="w-6 h-6 rounded-lg bg-black/30 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-                  {renderIcon(action.iconData)}
+                  {action.icon}
                 </div>
                 <div className="text-center">
                   <div className="text-white font-medium text-xs leading-tight w-full min-h-[32px] flex items-center justify-center">

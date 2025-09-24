@@ -92,7 +92,7 @@ function App() {
     // Add to actions bar
     const actionId = addCustomAction({
       name: protocol.name,
-      iconData: { type: 'Target', props: { size: 16, className: 'text-cyan-400' } },
+      icon: <Target size={16} className="text-cyan-400" />,
       color: 'from-cyan-500/20 to-blue-500/20',
       description: `Custom: ${protocol.name}`,
       induction: protocol.induction,
