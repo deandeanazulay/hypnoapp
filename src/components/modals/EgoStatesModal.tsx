@@ -44,7 +44,7 @@ export default function EgoStatesModal() {
   const unlockedCount = egoStates.filter(state => getUsageCount(state.id) >= 0).length;
 
   // Get other available states (exclude current)
-  const otherStates = egoStates
+  const otherStates = (egoStates || [])
     .filter(state => state.id !== tempSelectedEgoState)
     .slice(0, 6); // Show 6 states in 2x3 grid
 
