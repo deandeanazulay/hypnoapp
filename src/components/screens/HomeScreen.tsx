@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ActionsBar from '../ActionsBar';
+import Orb from '../orb/Orb';
 import { EGO_STATES, useAppStore } from '../../store';
 import { TabId } from '../../types/Navigation';
 import { THEME, getEgoColor } from '../../config/theme';
@@ -98,17 +99,17 @@ export default function HomeScreen({
         </div>
 
         {/* Center Section - Orb Supreme */}
-        {/* Center Section - Action Button */}
         <div className="flex-1 flex items-center justify-center min-h-0 relative z-20 px-4">
           <div className="w-full h-full flex items-center justify-center">
             <div className="flex flex-col items-center justify-center max-w-none">
-              {/* Main Action Button */}
-              <button
-                onClick={onBeginTap}
-                className="relative group cursor-pointer transition-transform duration-300 hover:scale-105 w-64 h-64 rounded-full bg-gradient-to-br from-teal-500/30 to-purple-500/30 border-4 border-white/20 flex items-center justify-center"
-              >
-                <div className="text-white font-bold text-xl">Begin</div>
-              </button>
+              {/* Libero Orb */}
+              <Orb
+                onTap={onBeginTap}
+                size={280}
+                egoState={activeEgoState}
+                afterglow={false}
+                className="animate-float"
+              />
                 
               {/* Session configuration display */}
               <div className="mt-6 text-center relative z-20 bg-black/40 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/10 shadow-lg">
@@ -151,6 +152,14 @@ export default function HomeScreen({
         }
         .animate-scroll-x:hover {
           animation-play-state: paused;
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-8px) rotate(0.5deg); }
+        }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
         }
       `}</style>
     </div>

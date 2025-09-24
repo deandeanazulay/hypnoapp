@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Pause, SkipForward, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
 import AIVoiceSystem from './AIVoiceSystem';
+import Orb from './orb/Orb';
 import { useGameState } from './GameStateManager';
 import { getEgoState } from '../store';
 import { getEgoColor } from '../config/theme';
@@ -266,6 +267,17 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
       {/* Central Orb Area */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-4">
+        {/* Session Orb */}
+        <div className="mb-8">
+          <Orb
+            onTap={() => {}}
+            size={200}
+            egoState={sessionConfig.egoState}
+            afterglow={sessionState.phase === 'transformation' || sessionState.phase === 'integration'}
+            className="pointer-events-none"
+          />
+        </div>
+        
         {/* Session Info */}
         <div className="text-center mb-6 hidden sm:block">
           <h2 className="text-white text-xl font-light mb-2">
