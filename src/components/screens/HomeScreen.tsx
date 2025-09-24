@@ -82,13 +82,23 @@ export default function HomeScreen({
             variant="webgl"
           />
           
-          {/* Orb Guidance Text */}
-          <div className="text-center max-w-md px-4">
+          {/* Orb Guidance Text - Closer to orb */}
+          <div className="text-center max-w-md px-4 -mt-8">
+            {/* Current Ego State in Color */}
+            <div className="mb-3">
+              <span 
+                className="text-2xl font-light"
+                style={{ color: getEgoColor(activeEgoState).accent }}
+              >
+                {currentState.name}
+              </span>
+            </div>
+            
             <p className="text-white/80 text-lg font-light mb-2">
               Tap to begin your journey
             </p>
             <p className="text-white/60 text-sm">
-              with Libero in <span className="text-white font-medium">{currentState.name}</span> mode
+              with Libero in {currentState.role} mode
             </p>
             {!isAuthenticated && (
               <p className="text-teal-400/80 text-xs mt-2">
