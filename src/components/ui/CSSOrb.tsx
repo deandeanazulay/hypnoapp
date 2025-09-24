@@ -49,12 +49,12 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   };
 
   return (
-    <div className={`flex justify-center items-center ${className}`}>
+    <div className={`flex justify-center items-center ${className}`} style={{ width: size, height: size }}>
       <div
         className={`relative cursor-pointer select-none transition-all duration-300 ${
           isPressed ? 'scale-95' : isHovering ? 'scale-105' : 'scale-100'
         }`}
-        style={{ width: size, height: size }}
+        style={{ width: `${size}px`, height: `${size}px` }}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerEnter={handlePointerEnter}
@@ -62,8 +62,11 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
       >
         {/* Main Orb */}
         <div 
-          className={`w-full h-full rounded-full bg-gradient-to-br ${egoColor.bg} border-2 border-white/30 shadow-2xl relative overflow-hidden`}
+          className={`rounded-full border-2 border-white/30 shadow-2xl relative overflow-hidden`}
           style={{
+            width: `${size}px`,
+            height: `${size}px`,
+            background: `linear-gradient(135deg, ${egoColor.accent}40, ${egoColor.accent}80)`,
             boxShadow: afterglow 
               ? `0 0 60px ${egoColor.accent}90, inset 0 0 30px rgba(255,255,255,0.2)`
               : `0 0 30px ${egoColor.accent}70, inset 0 0 15px rgba(255,255,255,0.15)`,
@@ -71,13 +74,33 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
           }}
         >
           {/* Animated Rings */}
-          <div className="absolute inset-4 rounded-full border border-white/20 animate-spin-slow" />
-          <div className="absolute inset-8 rounded-full border border-white/10 animate-spin-slower" />
+          <div 
+            className="absolute rounded-full border border-white/20 animate-spin-slow" 
+            style={{ 
+              top: `${size * 0.1}px`, 
+              left: `${size * 0.1}px`, 
+              right: `${size * 0.1}px`, 
+              bottom: `${size * 0.1}px` 
+            }} 
+          />
+          <div 
+            className="absolute rounded-full border border-white/10 animate-spin-slower" 
+            style={{ 
+              top: `${size * 0.2}px`, 
+              left: `${size * 0.2}px`, 
+              right: `${size * 0.2}px`, 
+              bottom: `${size * 0.2}px` 
+            }} 
+          />
           
           {/* Center Glow */}
           <div 
-            className="absolute inset-1/4 rounded-full"
+            className="absolute rounded-full"
             style={{
+              top: `${size * 0.25}px`,
+              left: `${size * 0.25}px`,
+              right: `${size * 0.25}px`,
+              bottom: `${size * 0.25}px`,
               background: `radial-gradient(circle, ${egoColor.accent}40 0%, transparent 70%)`,
               animation: 'pulse 4s ease-in-out infinite'
             }}
@@ -85,20 +108,40 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
           
           {/* Breathing Effect */}
           <div 
-            className="absolute inset-2 rounded-full border border-white/10"
+            className="absolute rounded-full border border-white/10"
             style={{
+              top: `${size * 0.1}px`,
+              left: `${size * 0.1}px`,
+              right: `${size * 0.1}px`,
+              bottom: `${size * 0.1}px`,
               animation: 'breathe 6s ease-in-out infinite'
             }}
           />
           
           {/* Speaking Indicator */}
           {isSpeaking && (
-            <div className="absolute inset-0 rounded-full border-2 border-teal-400 animate-pulse" />
+            <div 
+              className="absolute rounded-full border-2 border-teal-400 animate-pulse" 
+              style={{
+                top: 0,
+                left: 0,
+                width: `${size}px`,
+                height: `${size}px`
+              }}
+            />
           )}
           
           {/* Listening Indicator */}
           {isListening && (
-            <div className="absolute inset-0 rounded-full border-2 border-red-400 animate-ping" />
+            <div 
+              className="absolute rounded-full border-2 border-red-400 animate-ping" 
+              style={{
+                top: 0,
+                left: 0,
+                width: `${size}px`,
+                height: `${size}px`
+              }}
+            />
           )}
         </div>
       </div>
