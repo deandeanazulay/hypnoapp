@@ -144,6 +144,49 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
+  // Sort sessions (moved before early return)
+  const sortedFavorites = [...mockFavorites].sort((a, b) => {
+    // Pinned sessions always come first
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    
+    switch (sortBy) {
+      case 'recent':
+        return b.lastCompleted.getTime() - a.lastCompleted.getTime();
+      case 'popular':
+        return b.completedCount - a.completedCount;
+      case 'rating':
+        return b.rating - a.rating;
+      case 'state':
+        return a.egoState.localeCompare(b.egoState);
+      default:
+        return 0;
+    }
+  });
+
+  const cardsPerView = window.innerWidth < 768 ? 1 : window.innerWidth < 1024 ? 2 : window.innerWidth < 1280 ? 3 : 4;
+  const totalPages = Math.ceil(sortedFavorites.length / cardsPerView);
+
+  const updateScrollButtons = () => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      setCanScrollLeft(container.scrollLeft > 0);
+      setCanScrollRight(container.scrollLeft < container.scrollWidth - container.clientWidth - 10);
+    }
+  };
+
+  // Update scroll buttons on mount and resize (moved before early return)
+  React.useEffect(() => {
+    updateScrollButtons();
+    
+    const handleResize = () => {
+      updateScrollButtons();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sortedFavorites]);
+
   // Show loading state while user data is being fetched
   if (isLoading || !user) {
     return (
@@ -178,37 +221,6 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
       />
     );
   }
-
-  // Sort sessions
-  const sortedFavorites = [...mockFavorites].sort((a, b) => {
-    // Pinned sessions always come first
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    
-    switch (sortBy) {
-      case 'recent':
-        return b.lastCompleted.getTime() - a.lastCompleted.getTime();
-      case 'popular':
-        return b.completedCount - a.completedCount;
-      case 'rating':
-        return b.rating - a.rating;
-      case 'state':
-        return a.egoState.localeCompare(b.egoState);
-      default:
-        return 0;
-    }
-  });
-
-  const cardsPerView = window.innerWidth < 768 ? 1 : window.innerWidth < 1024 ? 2 : window.innerWidth < 1280 ? 3 : 4;
-  const totalPages = Math.ceil(sortedFavorites.length / cardsPerView);
-
-  const updateScrollButtons = () => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      setCanScrollLeft(container.scrollLeft > 0);
-      setCanScrollRight(container.scrollLeft < container.scrollWidth - container.clientWidth - 10);
-    }
-  };
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -470,18 +482,6 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
 
   const treasuresCount = mockFavorites.length;
   const masteredStates = getMasteredStates();
-
-  // Update scroll buttons on mount and resize
-  React.useEffect(() => {
-    updateScrollButtons();
-    
-    const handleResize = () => {
-      updateScrollButtons();
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [sortedFavorites]);
 
   const header = (
     <div className="bg-black/80 backdrop-blur-xl border-b border-white/10">
