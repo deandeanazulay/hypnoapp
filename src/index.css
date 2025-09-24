@@ -337,24 +337,6 @@ html, body, #root {
   perspective: none !important;
   overflow-x: hidden;
 }
-
-/* WebGL Orb Specific Styles */
-.orb-canvas {
-  position: relative;
-  z-index: 10;
-  pointer-events: auto;
-}
-
-.orb-overlays {
-  pointer-events: none;
-}
-
-.orb-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 0px;

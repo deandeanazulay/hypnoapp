@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
-import { useAppStore } from '../../store';
+import { useToasts } from '../../state/uiStore';
 
 const iconMap = {
   success: CheckCircle,
@@ -17,7 +17,7 @@ const colorMap = {
 };
 
 export default function ToastManager() {
-  const { toasts, removeToast } = useAppStore();
+  const { toasts, removeToast } = useToasts();
 
   return (
     <div className="fixed top-20 right-4 z-[100] space-y-3">

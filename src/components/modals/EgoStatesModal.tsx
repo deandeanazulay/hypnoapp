@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Sparkles } from 'lucide-react';
-import { EGO_STATES as egoStates, useAppStore, EgoStateId } from '../../store';
+import { egoStates, useAppStore, EgoStateId } from '../../state/appStore';
 import { useGameState } from '../GameStateManager';
 
 export default function EgoStatesModal() {

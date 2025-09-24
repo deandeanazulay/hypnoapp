@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Heart, Play, Clock, Trash2, Star, Filter, TrendingUp, Award, Flame, Crown, ChevronDown, Pin, Share2, Target, Sparkles, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
-import { useAppStore, getEgoState } from '../../store';
+import { useAppStore, getEgoState } from '../../state/appStore';
 import PageShell from '../layout/PageShell';
 import ModalShell from '../layout/ModalShell';
 

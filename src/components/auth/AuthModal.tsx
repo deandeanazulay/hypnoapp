@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
-import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth'
+import { useAuth } from '../../hooks/useAuth'
 import ModalShell from '../layout/ModalShell'
 
 interface AuthModalProps {

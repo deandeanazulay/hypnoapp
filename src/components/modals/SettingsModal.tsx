@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Volume2, Palette, Shield, Database, Info, ChevronRight, Sparkles } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
-import { useAppStore } from '../../store';
+import { useAppStore } from '../../state/appStore';
 
 interface SettingsModalProps {
   isOpen: boolean;

@@ -27,21 +27,21 @@ export const THEME = {
 
   // Ego State Colors - Simplified
   egoStates: {
-    guardian: { bg: 'from-blue-600 to-blue-800', accent: '#3B82F6', baseColorName: 'blue' },
-    rebel: { bg: 'from-red-600 to-red-800', accent: '#EF4444', baseColorName: 'red' },
-    healer: { bg: 'from-green-600 to-green-800', accent: '#22C55E', baseColorName: 'green' },
-    explorer: { bg: 'from-yellow-500 to-yellow-700', accent: '#EAB308', baseColorName: 'yellow' },
-    mystic: { bg: 'from-purple-600 to-purple-800', accent: '#A855F7', baseColorName: 'purple' },
-    sage: { bg: 'from-gray-300 to-gray-500', accent: '#9CA3AF', baseColorName: 'gray' },
-    child: { bg: 'from-orange-500 to-orange-700', accent: '#F97316', baseColorName: 'orange' },
-    performer: { bg: 'from-pink-600 to-pink-800', accent: '#EC4899', baseColorName: 'pink' },
-    shadow: { bg: 'from-indigo-900 to-black', accent: '#4F46E5', baseColorName: 'indigo' },
-    builder: { bg: 'from-gray-600 to-orange-600', accent: '#F97316', baseColorName: 'orange' },
-    seeker: { bg: 'from-indigo-600 to-teal-600', accent: '#14B8A6', baseColorName: 'teal' },
-    lover: { bg: 'from-rose-600 to-pink-500', accent: '#F472B6', baseColorName: 'pink' },
-    trickster: { bg: 'from-green-500 to-purple-600', accent: '#A855F7', baseColorName: 'purple' },
-    warrior: { bg: 'from-red-700 to-black', accent: '#B91C1C', baseColorName: 'red' },
-    visionary: { bg: 'from-violet-600 to-blue-400', accent: '#8B5CF6', baseColorName: 'violet' }
+    guardian: { bg: 'from-blue-600 to-blue-800', accent: '#3B82F6' },
+    rebel: { bg: 'from-red-600 to-red-800', accent: '#EF4444' },
+    healer: { bg: 'from-green-600 to-green-800', accent: '#22C55E' },
+    explorer: { bg: 'from-yellow-500 to-yellow-700', accent: '#EAB308' },
+    mystic: { bg: 'from-purple-600 to-purple-800', accent: '#A855F7' },
+    sage: { bg: 'from-gray-300 to-gray-500', accent: '#9CA3AF' },
+    child: { bg: 'from-orange-500 to-orange-700', accent: '#F97316' },
+    performer: { bg: 'from-pink-600 to-pink-800', accent: '#EC4899' },
+    shadow: { bg: 'from-indigo-900 to-black', accent: '#4F46E5' },
+    builder: { bg: 'from-gray-600 to-orange-600', accent: '#F97316' },
+    seeker: { bg: 'from-indigo-600 to-teal-600', accent: '#14B8A6' },
+    lover: { bg: 'from-rose-600 to-pink-500', accent: '#F472B6' },
+    trickster: { bg: 'from-green-500 to-purple-600', accent: '#A855F7' },
+    warrior: { bg: 'from-red-700 to-black', accent: '#B91C1C' },
+    visionary: { bg: 'from-violet-600 to-blue-400', accent: '#8B5CF6' }
   },
 
   // Typography Scale

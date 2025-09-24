@@ -1,10 +1,10 @@
 import React from 'react';
 import { TrendingUp, Calendar, Target, Award, Crown, Zap, Coins } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
+import { useAppStore, getEgoState } from '../../state/appStore';
 import { paymentService, STRIPE_PRODUCTS } from '../../lib/stripe';
-import { useAppStore, getEgoState } from '../../store';
-import { getEgoColor } from '../../config/theme';
-import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
+import { useUIStore } from '../../state/uiStore';
+import { useAuth } from '../../hooks/useAuth';
 
 interface GlobalHUDProps {
   onShowAuth: () => void;
@@ -12,10 +12,10 @@ interface GlobalHUDProps {
 
 export default function GlobalHUD({ onShowAuth }: GlobalHUDProps) {
   const { user } = useGameState();
-  const { activeEgoState, openEgoModal, showToast } = useAppStore();
+  const { activeEgoState, openEgoModal } = useAppStore();
+  const { showToast } = useUIStore();
   const { isAuthenticated } = useAuth();
   const currentState = getEgoState(activeEgoState);
-  const egoColorInfo = getEgoColor(activeEgoState);
   const [subscriptionStatus, setSubscriptionStatus] = React.useState<'free' | 'active' | 'cancelled' | 'past_due'>('free');
   const [showPricingModal, setShowPricingModal] = React.useState(false);
   const [showTokenShop, setShowTokenShop] = React.useState(false);
@@ -68,7 +68,7 @@ export default function GlobalHUD({ onShowAuth }: GlobalHUDProps) {
               onClick={openEgoModal}
               className="flex items-center space-x-2 hover:bg-white/10 rounded-lg px-2 py-1 transition-all duration-300 hover:scale-105 cursor-pointer group"
             >
-              <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${egoColorInfo.bg} flex items-center justify-center border border-white/30 shadow-lg`}>
+              <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${currentState.color} flex items-center justify-center border border-white/30 shadow-lg`}>
                 <span className="text-sm">{currentState.icon}</span>
               </div>
               <div className="hidden sm:block">

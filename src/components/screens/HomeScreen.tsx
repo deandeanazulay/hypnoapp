@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ActionsBar from '../ActionsBar';
-import Orb from '../Orb';
+import CSSOrb from '../ui/CSSOrb';
 import { EGO_STATES, useAppStore } from '../../store';
 import { TabId } from '../../types/Navigation';
 import { THEME, getEgoColor } from '../../config/theme';
@@ -113,7 +113,7 @@ export default function HomeScreen({
                   justifyContent: 'center'
                 }}
               >
-                <Orb
+                <CSSOrb
                   onTap={onOrbTap}
                   afterglow={false}
                   egoState={activeEgoState}
@@ -121,7 +121,6 @@ export default function HomeScreen({
                     Math.max(200, Math.min(window.innerWidth * 0.6, 280)) :
                     Math.max(240, Math.min(window.innerHeight * 0.3, 300))
                   }
-                  variant="webgl"
                 />
               </div>
                 
