@@ -137,7 +137,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 break;
               case 'exhale':
                 newBreathing = 'hold-exhale';
-                newCount = 4; // Hold empty for 2 seconds
+                newCount = 2; // Hold empty for 2 seconds
                 break;
               case 'hold-exhale':
                 newBreathing = 'inhale';
@@ -487,9 +487,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             
             {/* Breathing Instructions - Above Chat */}
             <div className="text-center mb-20">
-              <div className="text-white/80 text-sm mb-3 font-light">
-                Focus softly on the center dot
-            <div className="text-center mb-4">
               <div className="text-white/90 text-xl font-light mb-2">
                 {getBreathingInstruction()}
               </div>
@@ -506,6 +503,8 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
             {/* Depth Indicator */}
             <div className="bg-white/10 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20 text-center mb-3">
+              <div className="text-white/60 text-sm mb-1">Depth</div>
+              <div className="flex items-center justify-center space-x-1">
                 <span 
                   className="font-bold"
                   style={{ color: egoColor.accent }}
@@ -525,6 +524,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                     }}
                   />
                 ))}
+              </div>
               <span className="text-white font-medium">{sessionState.depth}/5</span>
             </div>
             
