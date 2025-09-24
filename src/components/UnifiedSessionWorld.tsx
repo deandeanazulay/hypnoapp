@@ -453,6 +453,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         });
       }
     }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
