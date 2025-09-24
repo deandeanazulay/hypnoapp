@@ -64,8 +64,8 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
           className={`w-full h-full rounded-full bg-gradient-to-br ${egoColor.bg} border-2 border-white/30 shadow-2xl relative overflow-hidden`}
           style={{
             boxShadow: afterglow 
-              ? `0 0 40px ${egoColor.accent}80, inset 0 0 20px rgba(255,255,255,0.1)`
-              : `0 0 20px ${egoColor.accent}60, inset 0 0 10px rgba(255,255,255,0.1)`,
+              ? `0 0 60px ${egoColor.accent}90, inset 0 0 30px rgba(255,255,255,0.2)`
+              : `0 0 30px ${egoColor.accent}70, inset 0 0 15px rgba(255,255,255,0.15)`,
             filter: isHovering ? 'brightness(1.1)' : 'none'
           }}
         >
@@ -122,3 +122,5 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
 
 CSSOrb.displayName = 'CSSOrb';
 export default CSSOrb;
+
+export default CSSOrb

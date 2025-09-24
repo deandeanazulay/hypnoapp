@@ -209,7 +209,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const material = new THREE.LineBasicMaterial({
       color: color,
       transparent: true,
-      opacity: afterglow ? 0.4 : 0.25,
+      opacity: afterglow ? 0.6 : 0.4,
       linewidth: 2
     });
 
