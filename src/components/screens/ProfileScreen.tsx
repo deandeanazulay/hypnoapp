@@ -7,6 +7,7 @@ import { paymentService } from '../../lib/stripe';
 import PageShell from '../layout/PageShell';
 import SettingsModal from '../modals/SettingsModal';
 import Orb from '../Orb';
+import CSSOrb from '../ui/CSSOrb';
 
 interface ProfileScreenProps {
   selectedEgoState: string;
