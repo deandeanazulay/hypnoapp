@@ -651,8 +651,9 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
             <div className="text-teal-400 text-sm font-medium">{getStepTitle()}</div>
           </div>
         </div>
+        </div>
         
-        {/* Progress Bar */}
+        <div className="flex items-center justify-center">
         <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
           <div 
             className="h-full bg-gradient-to-r from-teal-400 to-purple-400 rounded-full transition-all duration-500"
