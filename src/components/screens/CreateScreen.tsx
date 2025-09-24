@@ -349,9 +349,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
               {/* Step Navigation */}
               <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
-                <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
                 <div className="text-center mb-3">
-                    <Brain size={16} className="text-teal-400" />
                   <div className="flex justify-center space-x-2">
                     {[1, 2, 3].map((step) => (
                       <div
@@ -427,7 +425,6 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                       <span className="text-white font-medium">{protocol.goals.length > 0 ? protocol.goals.join(', ') : 'None selected'}</span>
                     </div>
                   </div>
-                  </div>
                 </div>
               )}
 
@@ -451,6 +448,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                     <span>Your protocol will appear in the actions bar after creation</span>
                   </li>
                 </ul>
+              </div>
             </div>
           </div>
         }
