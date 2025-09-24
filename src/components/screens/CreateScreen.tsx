@@ -678,22 +678,13 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
             <p className="text-white/60 text-sm">Your custom transformation</p>
           </div>
           
-          <div className="flex items-center justify-center">
-            <div className="w-60 h-60 rounded-full bg-gradient-to-br from-teal-500/20 to-purple-500/20 border border-teal-500/30 flex items-center justify-center animate-pulse">
-              <div className="text-center">
-                <div className="text-4xl mb-2">✨</div>
-                <div className="text-teal-400 font-medium text-sm">Creating...</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center mb-4">
             <Orb
               onTap={() => {}}
               egoState={orbState.color}
-              size={240}
+              size={200}
               variant="webgl"
-              className="opacity-60"
+              className="opacity-80"
             />
           </div>
           

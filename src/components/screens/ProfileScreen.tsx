@@ -6,6 +6,7 @@ import { useAppStore, getEgoState } from '../../store';
 import { paymentService } from '../../lib/stripe';
 import PageShell from '../layout/PageShell';
 import SettingsModal from '../modals/SettingsModal';
+import Orb from '../Orb';
 
 interface ProfileScreenProps {
   selectedEgoState: string;
