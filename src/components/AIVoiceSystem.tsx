@@ -5,7 +5,6 @@ interface AIVoiceSystemProps {
   isActive: boolean;
   sessionType: 'unified' | 'integration';
   onStateChange: (state: any) => void;
-  orbRef?: React.RefObject<any>;
 }
 
 interface SessionState {
