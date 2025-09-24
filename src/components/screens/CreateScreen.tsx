@@ -79,14 +79,14 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
     }
   };
 
-  const renderStepContent = () => {
+  function renderStepContent() {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="text-center">
 
-              <h2 className="text-white text-xl font-light mb-2">Name Your Journey</h2>
+              <h2 className="text-white text-lg font-light mb-2">Name Your Journey</h2>
               <p className="text-white/70 text-sm">What transformation will this create?</p>
             </div>
 
@@ -141,7 +141,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                   </div>
                   
                   {/* Duration Helper Text */}
-                  <div className="text-center">
+                  <div className="text-center mt-2">
                     <p className="text-white/50 text-xs">
                       {protocol.duration <= 10 ? 'Perfect for quick sessions' :
                        protocol.duration <= 20 ? 'Ideal for deep work' :
@@ -156,16 +156,16 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
       case 2:
         return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center mx-auto mb-4">
-                <Target size={24} className="text-black" />
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 flex items-center justify-center mx-auto mb-3">
+                <Target size={20} className="text-black" />
               </div>
-              <h2 className="text-white text-xl font-light mb-2">Choose Your Method</h2>
+              <h2 className="text-white text-lg font-light mb-2">Choose Your Method</h2>
               <p className="text-white/70 text-sm">How should Libero guide the journey?</p>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {[
                 {
                   id: 'progressive',
@@ -195,7 +195,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                 <button
                   key={method.id}
                   onClick={() => setProtocol(prev => ({ ...prev, induction: method.id }))}
-                  className={`w-full p-4 rounded-xl bg-gradient-to-br ${method.color} border transition-all duration-200 hover:scale-105 text-left ${
+                  className={`w-full p-3 rounded-xl bg-gradient-to-br ${method.color} border transition-all duration-200 hover:scale-105 text-left ${
                     protocol.induction === method.id 
                       ? 'border-white/40 ring-2 ring-teal-400/30' 
                       : 'border-white/10 hover:border-white/20'
@@ -211,19 +211,19 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
       case 3:
         return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-400 to-pink-400 flex items-center justify-center mx-auto mb-4">
-                <Heart size={24} className="text-black" />
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-400 to-pink-400 flex items-center justify-center mx-auto mb-3">
+                <Heart size={20} className="text-black" />
               </div>
-              <h2 className="text-white text-xl font-light mb-2">Set Your Goals</h2>
+              <h2 className="text-white text-lg font-light mb-2">Set Your Goals</h2>
               <p className="text-white/70 text-sm">What specific changes will this create?</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <label className="block text-white/80 text-sm mb-3">Select Goals</label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {['Stress Relief', 'Confidence', 'Focus', 'Creativity', 'Sleep', 'Healing'].map((goal) => (
                     <button
                       key={goal}
@@ -233,7 +233,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                           : [...protocol.goals, goal];
                         setProtocol(prev => ({ ...prev, goals: newGoals }));
                       }}
-                      className={`px-4 py-3 rounded-xl border transition-all hover:scale-105 text-sm font-medium ${
+                      className={`px-3 py-2 rounded-xl border transition-all hover:scale-105 text-sm font-medium ${
                         protocol.goals.includes(goal)
                           ? 'bg-rose-500/20 border-rose-500/40 text-rose-400'
                           : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/20'
@@ -251,7 +251,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                   value={protocol.deepener}
                   onChange={(e) => setProtocol(prev => ({ ...prev, deepener: e.target.value }))}
                   placeholder="Add specific techniques, metaphors, or intentions..."
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-rose-400/50 focus:bg-white/15 transition-all h-24 resize-none text-sm"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-rose-400/50 focus:bg-white/15 transition-all h-20 resize-none text-sm"
                 />
               </div>
             </div>
@@ -261,7 +261,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       default:
         return null;
     }
-  };
+  }
 
   if (!isAuthenticated) {
     return (
@@ -302,37 +302,37 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
       <PageShell
         body={
-          <div className="relative z-10 h-full overflow-y-auto pb-32" style={{ paddingTop: '60px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)' }}>
-            <div className="px-4 space-y-6">
+          <div className="relative z-10 h-full overflow-y-auto pb-32" style={{ paddingTop: '50px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 1rem)' }}>
+            <div className="px-4 space-y-4">
               
               {/* Create Header */}
-              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-purple-500/40 flex items-center justify-center">
-                    <Wand2 size={24} className="text-black" />
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-purple-500/40 flex items-center justify-center">
+                    <Wand2 size={20} className="text-black" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-white text-2xl font-light mb-1">Protocol Builder</h2>
-                    <p className="text-white/70">Create your custom transformation journey</p>
+                    <h2 className="text-white text-xl font-light mb-1">Protocol Builder</h2>
+                    <p className="text-white/70 text-sm">Create your custom transformation journey</p>
                   </div>
                 </div>
 
                 {/* Progress Steps */}
                 <div className="flex justify-center">
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-3">
                     {[1, 2, 3].map((step) => (
                       <div key={step} className="flex items-center">
-                        <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
+                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
                           step === currentStep
                             ? 'border-purple-400 bg-purple-400/20 text-purple-400'
                             : step < currentStep
                             ? 'border-teal-400 bg-teal-400/20 text-teal-400'
                             : 'border-white/30 text-white/50'
                         }`}>
-                          {step}
+                          <span className="text-sm">{step}</span>
                         </div>
                         {step < 3 && (
-                          <div className={`w-8 h-0.5 mx-2 ${
+                          <div className={`w-6 h-0.5 mx-2 ${
                             step < currentStep ? 'bg-teal-400' : 'bg-white/30'
                           }`} />
                         )}
@@ -343,20 +343,20 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
               </div>
 
               {/* Current Step Content */}
-              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
                 {renderStepContent()}
               </div>
 
               {/* Step Navigation */}
-              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
                 {/* Step Indicator */}
-                <div className="text-center mb-4">
+                <div className="text-center mb-3">
                   <div className="text-white/60 text-sm mb-2">Step {currentStep} of 3</div>
                   <div className="flex justify-center space-x-2">
                     {[1, 2, 3].map((step) => (
                       <div
                         key={step}
-                        className={`w-8 h-1 rounded-full transition-all duration-300 ${
+                        className={`w-6 h-1 rounded-full transition-all duration-300 ${
                           step <= currentStep ? 'bg-teal-400' : 'bg-white/20'
                         }`}
                       />
@@ -404,25 +404,25 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
               {/* Protocol Preview */}
               {protocol.name && (
-                <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-                  <h3 className="text-white font-semibold text-lg mb-4 flex items-center space-x-2">
-                    <Brain size={20} className="text-teal-400" />
+                <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
+                  <h3 className="text-white font-semibold mb-3 flex items-center space-x-2">
+                    <Brain size={16} className="text-teal-400" />
                     <span>Protocol Preview</span>
                   </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between bg-black/20 rounded-lg p-2 border border-white/10">
                       <span className="text-white/70">Name</span>
                       <span className="text-white font-medium">{protocol.name || 'Untitled'}</span>
                     </div>
-                    <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
+                    <div className="flex items-center justify-between bg-black/20 rounded-lg p-2 border border-white/10">
                       <span className="text-white/70">Duration</span>
                       <span className="text-white font-medium">{protocol.duration} minutes</span>
                     </div>
-                    <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
+                    <div className="flex items-center justify-between bg-black/20 rounded-lg p-2 border border-white/10">
                       <span className="text-white/70">Method</span>
                       <span className="text-white font-medium capitalize">{protocol.induction || 'Not selected'}</span>
                     </div>
-                    <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
+                    <div className="flex items-center justify-between bg-black/20 rounded-lg p-2 border border-white/10">
                       <span className="text-white/70">Goals</span>
                       <span className="text-white font-medium">{protocol.goals.length > 0 ? protocol.goals.join(', ') : 'None selected'}</span>
                     </div>
@@ -432,11 +432,11 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
               {/* Tips */}
               <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-4 border border-teal-500/20">
-                <h4 className="text-white font-medium mb-3 flex items-center space-x-2">
+                <h4 className="text-white font-medium mb-2 flex items-center space-x-2">
                   <Sparkles size={16} className="text-teal-400" />
                   <span>Pro Tips</span>
                 </h4>
-                <ul className="space-y-2 text-white/80 text-sm">
+                <ul className="space-y-1 text-white/80 text-sm">
                   <li className="flex items-start space-x-2">
                     <span className="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0" />
                     <span>Start with shorter durations (5-10 min) for new protocols</span>
