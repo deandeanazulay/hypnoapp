@@ -1,654 +1,700 @@
-import React, { useState } from 'react';
-import { Play, Clock, Star, Filter, Plus, Zap, Waves, Eye, Wind, Book, ChevronRight, ChevronDown, Search, X, Heart, Users, TrendingUp, Award, Target, HelpCircle, BookOpen, Shield, Sparkles, Brain, Moon, Mic, Volume2 } from 'lucide-react';
-import { DEFAULT_PROTOCOLS, Protocol } from '../../types/Navigation';
-import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
-import { useAppStore } from '../../store';
-import PageShell from '../layout/PageShell';
-import ModalShell from '../layout/ModalShell';
+import React, { useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react';
+import * as THREE from 'three';
+import { getEgoColor } from '../config/theme';
 
-interface ExploreScreenProps {
-  onProtocolSelect: (protocol: Protocol) => void;
+export interface WebGLOrbRef {
+  updateState: (state: any) => void;
+  setSpeaking: (speaking: boolean) => void;
+  setListening: (listening: boolean) => void;
 }
 
-interface FilterState {
-  duration: string[];
-  goal: string[];
-  technique: string[];
-  level: string[];
-  style: string[];
+interface WebGLOrbProps {
+  onTap: () => void;
+  size?: number;
+  egoState?: string;
+  className?: string;
+  afterglow?: boolean;
 }
 
-const quickCollections = [
-  { id: 'quick-wins', name: 'Quick Wins', icon: '⚡', filter: { duration: ['≤5m'] }, color: 'from-yellow-500/20 to-amber-500/20' },
-  { id: 'complete', name: 'Complete Journeys', icon: '🌊', filter: { type: ['complete'] }, color: 'from-teal-500/20 to-cyan-500/20' },
-  { id: 'sleep', name: 'For Sleep', icon: '🌙', filter: { goal: ['sleep'] }, color: 'from-purple-500/20 to-indigo-500/20' },
-  { id: 'focus', name: 'For Focus', icon: '🎯', filter: { goal: ['focus'] }, color: 'from-blue-500/20 to-cyan-500/20' },
-  { id: 'confidence', name: 'Confidence', icon: '⭐', filter: { goal: ['confidence'] }, color: 'from-orange-500/20 to-amber-500/20' },
-  { id: 'stress', name: 'Stress Relief', icon: '🛡️', filter: { goal: ['stress'] }, color: 'from-green-500/20 to-teal-500/20' }
-];
+function supportsWebGL(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+  } catch {
+    return false;
+  }
+}
 
-const filterOptions = {
-  duration: ['≤5m', '5-10m', '10-15m', '15m+'],
-  goal: ['stress', 'sleep', 'focus', 'confidence', 'creativity', 'healing', 'energy'],
-  technique: ['induction', 'deepener', 'complete'],
-  level: ['beginner', 'intermediate', 'advanced'],
-  style: ['body-based', 'visualization', 'fractionation', 'breath-work', 'counting']
-};
+function safeSize(width: number, height: number) {
+  // Stay under common 4096*4096 limits on mobile
+  const MAX = 4096;
+  const scale = Math.min(1, MAX / Math.max(width, height));
+  return { w: Math.floor(width * scale), h: Math.floor(height * scale) };
+}
 
-const sortOptions = [
-  { id: 'effective', name: 'Most Effective for Me', icon: Target },
-  { id: 'trending', name: 'Trending', icon: TrendingUp },
-  { id: 'shortest', name: 'Shortest First', icon: Clock },
-  { id: 'newest', name: 'Newest', icon: Star },
-  { id: 'rating', name: 'Highest Rated', icon: Award }
-];
+const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
+  const {
+    onTap,
+    size = 280,
+    egoState = 'guardian',
+    className = '',
+    afterglow = false
+  } = props;
 
-export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) {
-  const { isAuthenticated } = useAuth();
-  const { openModal, showToast } = useAppStore();
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'induction' | 'deepener' | 'complete'>('all');
-  const [filters, setFilters] = useState<FilterState>({
-    duration: [],
-    goal: [],
-    technique: [],
-    level: [],
-    style: []
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const orbMeshRef = useRef<THREE.LineSegments | null>(null);
+  const animationIdRef = useRef<number | null>(null);
+  const isActiveRef = useRef(true);
+  const initializedRef = useRef(false);
+  const [webglSupported, setWebglSupported] = React.useState<boolean | null>(null);
+  const [contextLost, setContextLost] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [dragRotation, setDragRotation] = React.useState(0);
+  const [lastMousePos, setLastMousePos] = React.useState({ x: 0, y: 0 });
+  const [dragStartTime, setDragStartTime] = React.useState(0);
+  const [dragDistance, setDragDistance] = React.useState(0);
+  
+  // Alien state for fractal mathematics
+  const alienStateRef = useRef({
+    pulse: 0,
+    intensity: 1,
+    colorShift: 0,
+    organicOffset: 0,
+    fractalPhase: 0
   });
-  const [selectedSort, setSelectedSort] = useState('effective');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [showSort, setShowSort] = useState(false);
-  const [showGuide, setShowGuide] = useState(false);
-  const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
-  const [expandedGuideSection, setExpandedGuideSection] = useState<string | null>(null);
 
-  const handleProtocolSelect = (protocol: Protocol) => {
-    if (!isAuthenticated) {
-      openModal('auth');
-      showToast({
-        type: 'warning',
-        message: 'Please sign in to start a session'
-      });
+  // State for animations
+  const [isSpeaking, setIsSpeaking] = React.useState(false);
+  const [isListening, setIsListening] = React.useState(false);
+  const [currentState, setCurrentState] = React.useState<any>({});
+  const draggingRef = useRef(false);
+  const dragRotationRef = useRef(0);
+
+  useImperativeHandle(ref, () => ({
+    updateState: (state: any) => {
+      setCurrentState(state);
+    },
+    setSpeaking: (speaking: boolean) => {
+      setIsSpeaking(speaking);
+    },
+    setListening: (listening: boolean) => {
+      setIsListening(listening);
+    }
+  }));
+
+  // Stable tap handler - no re-init on function change
+  const handleTap = useCallback(() => {
+    console.log('[WEBGL-ORB] Tap detected, calling onTap');
+    onTap?.();
+  }, [onTap]);
+
+  // Check WebGL support once on mount
+  useEffect(() => {
+    console.log('[ORB] Checking WebGL support');
+    setWebglSupported(supportsWebGL());
+  }, []);
+
+  // Initialize once with guard - StrictMode proof
+  useEffect(() => {
+    if (webglSupported === false || !containerRef.current || initializedRef.current || contextLost) {
       return;
     }
-    onProtocolSelect(protocol);
-  };
-
-  const applyQuickCollection = (collection: any) => {
-    // Apply filter based on collection
-    if (collection.filter.duration) {
-      setFilters(prev => ({ ...prev, duration: collection.filter.duration }));
-    }
-    if (collection.filter.goal) {
-      setFilters(prev => ({ ...prev, goal: collection.filter.goal }));
-    }
-    if (collection.filter.type) {
-      setSelectedFilter(collection.filter.type[0] as any);
-    }
-  };
-
-  const clearAllFilters = () => {
-    setFilters({
-      duration: [],
-      goal: [],
-      technique: [],
-      level: [],
-      style: []
-    });
-    setSelectedFilter('all');
-    setSearchQuery('');
-  };
-
-  const filteredProtocols = DEFAULT_PROTOCOLS.filter(protocol => {
-    // Base filter
-    const typeMatch = selectedFilter === 'all' || protocol.type === selectedFilter;
     
-    // Search filter
-    const searchMatch = !searchQuery || 
-      protocol.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      protocol.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      protocol.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    console.log('[ORB] Initializing WebGL scene');
+    initializedRef.current = true;
+    initializeOrb();
     
-    // Advanced filters
-    const durationMatch = filters.duration.length === 0 || filters.duration.some(d => {
-      if (d === '≤5m') return protocol.duration <= 5;
-      if (d === '5-10m') return protocol.duration > 5 && protocol.duration <= 10;
-      if (d === '10-15m') return protocol.duration > 10 && protocol.duration <= 15;
-      if (d === '15m+') return protocol.duration > 15;
-      return false;
-    });
-    
-    const levelMatch = filters.level.length === 0 || filters.level.includes(protocol.difficulty);
-    const techniqueMatch = filters.technique.length === 0 || filters.technique.includes(protocol.type);
-    
-    return typeMatch && searchMatch && durationMatch && levelMatch && techniqueMatch;
-  });
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'beginner': return 'text-green-400 bg-green-500/20 border-green-500/40';
-      case 'intermediate': return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/40';
-      case 'advanced': return 'text-red-400 bg-red-500/20 border-red-500/40';
-      default: return 'text-white/60';
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'induction': return 'from-blue-500/20 to-cyan-500/20 border-blue-500/30';
-      case 'deepener': return 'from-purple-500/20 to-indigo-500/20 border-purple-500/30';
-      case 'complete': return 'from-teal-500/20 to-green-500/20 border-teal-500/30';
-      default: return 'from-white/10 to-gray-500/10';
-    }
-  };
-
-  const getProtocolIcon = (protocolId: string) => {
-    const iconMap: { [key: string]: React.ReactNode } = {
-      'rapid-induction': <Zap size={20} className="text-yellow-400" />,
-      'progressive-relaxation': <Waves size={20} className="text-teal-400" />,
-      'book-balloon': <Book size={20} className="text-purple-400" />,
-      'spiral-staircase': <Eye size={20} className="text-cyan-400" />
+    return () => {
+      console.log('[ORB] Component unmounting - cleaning up');
+      disposeScene();
     };
-    return iconMap[protocolId] || <Star size={20} className="text-white/60" />;
-  };
+  }, [webglSupported]); // Only depend on WebGL support
 
-  const getMockStats = (protocolId: string) => {
-    // Mock stats for demonstration
-    const stats = {
-      'rapid-induction': { rating: 4.2, saves: 2.1, completions: 1.5 },
-      'progressive-relaxation': { rating: 4.8, saves: 5.2, completions: 4.2 },
-      'book-balloon': { rating: 4.5, saves: 3.1, completions: 2.8 },
-      'spiral-staircase': { rating: 4.6, saves: 1.8, completions: 2.1 }
-    };
-    return stats[protocolId as keyof typeof stats] || { rating: 4.0, saves: 1.0, completions: 1.0 };
-  };
-
-  const renderProtocolCard = (protocol: Protocol, isHero = false) => {
-    const stats = getMockStats(protocol.id);
+  // Robust tap handler for mobile + desktop - no scene re-init
+  useEffect(() => {
+    const canvas = rendererRef.current?.domElement;
+    if (!canvas) return;
     
-    return (
-      <button
-        key={protocol.id}
-        onClick={() => setSelectedProtocol(protocol)}
-        className={`group relative bg-gradient-to-br ${getTypeColor(protocol.type)} backdrop-blur-sm border transition-all duration-300 hover:border-white/30 hover:scale-105 hover:shadow-2xl flex flex-col justify-between text-left overflow-hidden w-full ${
-          isHero ? 'rounded-2xl p-4 sm:p-6 min-h-[180px] sm:min-h-[200px]' : 'rounded-xl p-4 min-h-[160px]'
-        }`}
-        style={{ 
-          willChange: 'transform, opacity',
-          backfaceVisibility: 'hidden'
-        }}
-        onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-        onMouseUp={(e) => e.currentTarget.style.transform = ''}
-        onMouseLeave={(e) => e.currentTarget.style.transform = ''}
-      >
-        {/* Parallax effect on hover */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+    console.log('[ORB] Attaching event handlers to canvas, canvas pointer events:', canvas.style.pointerEvents);
+    
+    // Ensure canvas can receive events
+    canvas.style.pointerEvents = 'auto';
+    canvas.style.zIndex = '100';
+    canvas.style.position = 'relative';
+    
+    // Drag handling
+    const handlePointerDown = (e: PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[WEBGL-ORB] Pointer down');
+      setLastMousePos({ x: e.clientX, y: e.clientY });
+      setDragStartTime(Date.now());
+      setDragDistance(0);
+      canvas.style.cursor = 'grabbing';
+    };
+    
+    const handlePointerMove = (e: PointerEvent) => {
+      const currentTime = Date.now();
+      const timeSinceStart = currentTime - dragStartTime;
+      const deltaX = e.clientX - lastMousePos.x;
+      const deltaY = e.clientY - lastMousePos.y;
+      const currentDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      
+      // Update total drag distance
+      setDragDistance(prev => prev + currentDistance);
+      
+      // If we've moved enough distance or held for enough time, consider it a drag
+      if (dragDistance > 10 || timeSinceStart > 200) {
+        if (!isDragging) {
+          console.log('[WEBGL-ORB] Starting drag mode');
+          setIsDragging(true);
+          draggingRef.current = true;
+        }
         
-        <div className="relative z-10">
-          {/* Header */}
-          <div className="flex items-start justify-between space-x-3 mb-3">
-            <div className={`w-12 h-12 rounded-xl bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 ${isHero ? 'shadow-lg' : ''}`}>
-              {getProtocolIcon(protocol.id)}
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <h3 className={`text-white font-semibold mb-1 line-clamp-2 group-hover:text-white/95 transition-colors ${isHero ? 'text-lg' : 'text-base'}`}>
-                {protocol.name}
-              </h3>
-              <div className="flex items-center space-x-2 mb-2">
-                <span className={`text-xs font-bold px-2 py-1 rounded-full border ${getDifficultyColor(protocol.difficulty)} backdrop-blur-sm`}>
-                  {protocol.difficulty}
-                </span>
-                <div className="flex items-center space-x-1 text-white/60 text-xs">
-                  <Clock size={10} />
-                  <span>{protocol.duration}m</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        e.preventDefault();
+        const rotationSpeed = 0.02; // Increased sensitivity
+        const newRotation = dragRotationRef.current + deltaX * rotationSpeed;
+        
+        console.log('[WEBGL-ORB] Dragging, rotation:', newRotation);
+        setDragRotation(newRotation);
+        dragRotationRef.current = newRotation;
+      }
+      
+      setLastMousePos({ x: e.clientX, y: e.clientY });
+    };
+    
+    const handlePointerUp = (e: PointerEvent) => {
+      const currentTime = Date.now();
+      const totalTime = currentTime - dragStartTime;
+      const wasDragging = isDragging || dragDistance > 5 || totalTime > 300;
+      
+      console.log('[WEBGL-ORB] Pointer up, was dragging:', wasDragging, 'distance:', dragDistance, 'time:', totalTime);
+      
+      if (!wasDragging) {
+        // This was a tap
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('[WEBGL-ORB] Tap detected, calling handleTap');
+        handleTap();
+      } else {
+        console.log('[WEBGL-ORB] Drag detected, NOT calling handleTap');
+      }
+      
+      setIsDragging(false);
+      draggingRef.current = false;
+      setDragDistance(0);
+      setDragDistance(0);
+      canvas.style.cursor = 'pointer';
+    };
+    
+    // Add pointer events
+    canvas.addEventListener('pointerdown', handlePointerDown, { passive: false });
+    canvas.addEventListener('pointermove', handlePointerMove, { passive: false });
+    canvas.addEventListener('pointerup', handlePointerUp, { passive: false });
+    canvas.addEventListener('pointerleave', handlePointerUp, { passive: false });
+    
+    return () => {
+      canvas.removeEventListener('pointerdown', handlePointerDown as any);
+      canvas.removeEventListener('pointermove', handlePointerMove as any);
+      canvas.removeEventListener('pointerup', handlePointerUp as any);
+      canvas.removeEventListener('pointerleave', handlePointerUp as any);
+    };
+  }, [handleTap]);
 
-          {/* Description */}
-          <p className={`text-white/70 mb-3 line-clamp-2 leading-relaxed ${isHero ? 'text-sm' : 'text-xs'}`}>
-            {protocol.description}
-          </p>
-        </div>
+  // Handle resize separately - no scene re-init
+  useEffect(() => {
+    const handleResize = () => {
+      if (!rendererRef.current || !cameraRef.current) return;
+      
+      const { w, h } = safeSize(size, size);
+      cameraRef.current.aspect = w / h;
+      cameraRef.current.updateProjectionMatrix();
+      rendererRef.current.setSize(w, h, false);
+      
+      // Update canvas display size
+      const canvas = rendererRef.current.domElement;
+      canvas.style.width = `${size}px`;
+      canvas.style.height = `${size}px`;
+    };
 
-        {/* Bottom Section */}
-        <div className="relative z-10 mt-auto">
-          {/* Micro-stats */}
-          <div className="flex items-center justify-between mb-3 text-xs">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-1">
-                <Star size={12} className="text-yellow-400 fill-current" />
-                <span className="text-white/80 font-medium">{stats.rating}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Heart size={12} className="text-rose-400" />
-                <span className="text-white/80 font-medium">{stats.saves}k</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Users size={12} className="text-teal-400" />
-                <span className="text-white/80 font-medium">{stats.completions}k</span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Play size={12} className="text-white/60" />
-              <span className="text-white/60 uppercase font-medium">{protocol.type}</span>
-            </div>
-          </div>
+    handleResize(); // Apply current size
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [size]);
 
-          {/* Tag Rail */}
-          <div className="flex flex-wrap gap-1">
-            {protocol.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-1 bg-white/10 text-white/70 text-xs rounded-full border border-white/10 group-hover:bg-white/20 group-hover:text-white/90 transition-colors"
-              >
-                {tag}
-              </span>
-            ))}
-            {protocol.tags.length > 3 && (
-              <span className="px-2 py-1 bg-white/5 text-white/50 text-xs rounded-full border border-white/10">
-                +{protocol.tags.length - 3}
-              </span>
-            )}
-          </div>
-        </div>
-      </button>
-    );
+  const initializeOrb = () => {
+    if (!containerRef.current) {
+      console.error('[ORB] No container ref available');
+      return;
+    }
+
+    const container = containerRef.current;
+    
+    // Clear any existing content first
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+    
+    const { w, h } = safeSize(size, size);
+
+    // Scene setup
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
+
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+    camera.position.z = 30;
+    cameraRef.current = camera;
+
+    // Renderer setup with iOS Safari optimizations
+    const MAX_DPR = 1.5; // Avoid huge textures on iOS
+    const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: false
+    });
+    
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(w, h, false);
+    renderer.setClearColor(0x000000, 0); // Transparent background
+    rendererRef.current = renderer;
+
+    // WebGL context loss handling
+    const canvas = renderer.domElement;
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      console.log('[ORB] WebGL context lost');
+      setContextLost(true);
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current);
+        animationIdRef.current = null;
+      }
+    });
+
+    canvas.addEventListener('webglcontextrestored', () => {
+      console.log('[ORB] WebGL context restored');
+      setContextLost(false);
+      // Reinitialize scene
+      setTimeout(() => {
+        if (isActiveRef.current) {
+          initializeGeometry();
+          animate();
+        }
+      }, 100);
+    });
+
+    // Style canvas - predictable stacking
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    canvas.style.cursor = 'pointer';
+    canvas.style.position = 'relative';
+    canvas.style.zIndex = '10';
+    canvas.style.pointerEvents = 'auto';
+    canvas.style.overflow = 'visible';
+    canvas.className = 'orb-canvas';
+
+    try {
+      container.appendChild(canvas);
+      console.log('[ORB] Canvas appended to container');
+    } catch (error) {
+      console.error('[ORB] Error appending canvas:', error);
+      return;
+    }
+
+    // Initialize geometry and start animation
+    initializeGeometry();
+    
+    // Start animation with delay to ensure everything is ready
+    setTimeout(() => {
+      if (isActiveRef.current && !contextLost) {
+        console.log('[ORB] Starting animation loop');
+        animate();
+      }
+    }, 50);
   };
+
+  const initializeGeometry = () => {
+    if (!sceneRef.current || !rendererRef.current || !cameraRef.current || contextLost) {
+      console.error('[ORB] Cannot initialize geometry - missing references');
+      return;
+    }
+
+    const scene = sceneRef.current;
+
+    // Clear existing orb
+    if (orbMeshRef.current) {
+      scene.remove(orbMeshRef.current);
+      if (orbMeshRef.current.userData.glowMesh1) {
+        scene.remove(orbMeshRef.current.userData.glowMesh1);
+      }
+      if (orbMeshRef.current.userData.pulseMesh) {
+        scene.remove(orbMeshRef.current.userData.pulseMesh);
+      }
+    }
+
+    // Get ego state colors
+    const egoColorInfo = getEgoColor(egoState);
+    const color = new THREE.Color(egoColorInfo.accent);
+
+    // Calculate scale based on size prop (base size is 280px)
+    const baseSize = 280;
+    const scaleMultiplier = size / baseSize;
+    const sphereRadius = 10 * scaleMultiplier;
+    // Create fractal sphere geometry - ONCE
+    const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 64, 64);
+    
+    // Store original vertex positions for fractal deformation
+    const originalPositions = sphereGeometry.attributes.position.array.slice();
+    sphereGeometry.userData = { originalPositions };
+    
+    // Create wireframe ONCE - don't recreate every frame
+    const wireframeGeometry = new THREE.WireframeGeometry(sphereGeometry);
+    
+    // Create material with ego state color
+    const material = new THREE.LineBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: afterglow ? 0.9 : 0.7,
+      linewidth: 2
+    });
+
+    // Create mesh
+    const orbMesh = new THREE.LineSegments(wireframeGeometry, material);
+    orbMeshRef.current = orbMesh;
+    scene.add(orbMesh);
+
+    // Add glow layers
+    const glowGeometry = new THREE.SphereGeometry(sphereRadius * 0.95, 32, 32);
+    const glowMaterial1 = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: afterglow ? 0.15 : 0.08,
+      side: THREE.BackSide
+    });
+    const glowMesh1 = new THREE.Mesh(glowGeometry, glowMaterial1);
+    scene.add(glowMesh1);
+    
+    // Second pulsing layer
+    const pulseGeometry = new THREE.SphereGeometry(sphereRadius * 0.8, 32, 32);
+    const pulseMaterial = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 0.05,
+      side: THREE.BackSide
+    });
+    const pulseMesh = new THREE.Mesh(pulseGeometry, pulseMaterial);
+    scene.add(pulseMesh);
+    
+    // Store references for animation
+    orbMesh.userData = { glowMesh1, pulseMesh, sphereGeometry, wireframeGeometry };
+
+    console.log('[ORB] Geometry initialized successfully');
+  };
+
+  const animate = () => {
+    // Guard against inactive state
+    if (!isActiveRef.current) {
+      console.log('[ORB] Animation stopped - component inactive');
+      return;
+    }
+    
+    if (!rendererRef.current || !cameraRef.current || !sceneRef.current || contextLost) {
+      // Retry animation in next frame if components aren't ready
+      animationIdRef.current = requestAnimationFrame(animate);
+      return;
+    }
+
+    const time = Date.now() * 0.001;
+    const alienState = alienStateRef.current;
+    
+    // Alien pulsing pattern - irregular, organic
+    alienState.pulse = Math.sin(time * 1.3) * 0.3 + 
+                      Math.sin(time * 2.7) * 0.2 + 
+                      Math.sin(time * 4.1) * 0.1;
+    
+    // Color intensity shifts
+    alienState.intensity = 1 + Math.sin(time * 0.7) * 0.3;
+    
+    // Organic offset for movement
+    alienState.organicOffset = Math.sin(time * 0.5) * 0.02;
+    
+    // Fractal deformation phase
+    alienState.fractalPhase = time * 0.6;
+
+    // Apply fractal deformations to the sphere geometry - NO WIREFRAME RECREATION
+    if (orbMeshRef.current && orbMeshRef.current.userData.sphereGeometry) {
+      const geometry = orbMeshRef.current.userData.sphereGeometry;
+      const originalPositions = geometry.userData.originalPositions;
+      const positions = geometry.attributes.position.array;
+      
+      for (let i = 0; i < positions.length; i += 3) {
+        const origX = originalPositions[i];
+        const origY = originalPositions[i + 1];
+        const origZ = originalPositions[i + 2];
+        
+        // Mathematical fractal deformation
+        const phi = Math.atan2(origY, origX);
+        const theta = Math.acos(origZ / Math.sqrt(origX * origX + origY * origY + origZ * origZ));
+        
+        // Multiple fractal layers
+        const fractal1 = Math.sin(phi * 3 + time * 0.8) * Math.cos(theta * 2 + time * 0.5) * 0.4;
+        const fractal2 = Math.sin(phi * 7 + time * 1.2) * Math.cos(theta * 5 + time * 0.9) * 0.2;
+        const fractal3 = Math.sin(phi * 11 + time * 0.6) * Math.cos(theta * 8 + time * 1.1) * 0.15;
+        
+        // Chaotic mathematical noise
+        const chaos = Math.sin(origX * 0.8 + time) * Math.cos(origY * 1.2 + time * 0.7) * Math.sin(origZ * 0.6 + time * 1.3) * 0.3;
+        
+        // Combine all deformations
+        const totalDeformation = fractal1 + fractal2 + fractal3 + chaos + alienState.pulse;
+        const deformationFactor = 1 + totalDeformation * 0.12;
+        
+        // Apply speaking/listening effects
+        let speakingMod = 1;
+        if (isSpeaking) {
+          speakingMod = 1 + 0.4 * Math.sin(time * 8 + phi * 5) * Math.cos(time * 6 + theta * 3);
+        }
+        if (isListening) {
+          speakingMod = 1 + 0.2 * Math.sin(time * 12 + phi * 7) * Math.cos(time * 10 + theta * 4);
+        }
+        
+        positions[i] = origX * deformationFactor * speakingMod;
+        positions[i + 1] = origY * deformationFactor * speakingMod;
+        positions[i + 2] = origZ * deformationFactor * speakingMod;
+      }
+      
+      // Only flag positions as dirty - DON'T recreate wireframe
+      geometry.attributes.position.needsUpdate = true;
+      
+      // Update wireframe efficiently
+      const wireframe = orbMeshRef.current.userData.wireframeGeometry;
+      if (wireframe) {
+        // Dispose old wireframe and create new one
+        wireframe.dispose();
+        const newWireframe = new THREE.WireframeGeometry(geometry);
+        orbMeshRef.current.geometry = newWireframe;
+        orbMeshRef.current.userData.wireframeGeometry = newWireframe;
+      }
+    }
+
+    // Alien breathing - more dramatic and irregular
+    const primaryPulse = 0.85 + 0.15 * Math.sin(time * 0.6);  // Main heartbeat
+    const secondaryPulse = 1 + alienState.pulse * 0.08;       // Irregular alien pulse
+    const breathingScale = primaryPulse * secondaryPulse;
+    
+    // Alien rotation - multi-axis, unpredictable
+    const baseRotationSpeed = afterglow ? 0.4 : 0.25;
+    const alienRotationX = time * baseRotationSpeed + Math.sin(time * 0.3) * 0.1 + (isDragging ? 0 : 0);
+    const alienRotationY = (isDragging ? dragRotation : time * baseRotationSpeed * 0.7) + Math.cos(time * 0.4) * 0.15;
+    const alienRotationZ = Math.sin(time * 0.2) * 0.05;
+    
+    if (orbMeshRef.current) {
+      orbMeshRef.current.scale.setScalar(breathingScale);
+      orbMeshRef.current.rotation.x = alienRotationX;
+      orbMeshRef.current.rotation.y = alienRotationY;
+      orbMeshRef.current.rotation.z = alienRotationZ;
+      
+      // Alien organic movement
+      if (!isDragging) {
+        orbMeshRef.current.position.x = Math.sin(time * 0.3) * 0.5;
+        orbMeshRef.current.position.y = Math.cos(time * 0.4) * 0.3;
+        orbMeshRef.current.position.z = Math.sin(time * 0.2) * 0.2;
+      } else {
+        // Keep position stable during drag
+        orbMeshRef.current.position.x = 0;
+        orbMeshRef.current.position.y = 0;
+        orbMeshRef.current.position.z = 0;
+      }
+      
+      // Update material opacity for alien intensity
+      const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
+      material.opacity = (afterglow ? 0.9 : 0.7) * alienState.intensity;
+      
+      // Animate glow layers with more subtlety
+      const userData = orbMeshRef.current.userData;
+      if (userData.glowMesh1) {
+        userData.glowMesh1.scale.setScalar(0.98 + alienState.pulse * 0.02);
+        userData.glowMesh1.rotation.x = -alienRotationX * 0.5;
+        userData.glowMesh1.rotation.y = -alienRotationY * 0.3;
+        
+        const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
+        glowMat.opacity = (afterglow ? 0.15 : 0.08) * (1 + alienState.pulse * 0.05);
+      }
+      
+      if (userData.pulseMesh) {
+        const pulseScale = 0.9 + Math.abs(alienState.pulse) * 0.05;
+        userData.pulseMesh.scale.setScalar(pulseScale);
+        userData.pulseMesh.rotation.z = time * 0.5;
+        
+        const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
+        pulseMat.opacity = 0.03 + Math.abs(alienState.pulse) * 0.02;
+      }
+
+      // Speaking indicator - alien excitement
+      if (isSpeaking) {
+        material.opacity = 0.4 + 0.2 * Math.sin(time * 8);
+      }
+
+      // Listening indicator - alien attention mode
+      if (isListening) {
+        material.opacity = 0.3 + 0.3 * Math.sin(time * 10);
+      }
+    }
+
+    // Dynamic camera movement - alien perspective shifts
+    if (cameraRef.current) {
+      cameraRef.current.position.x = 3 * Math.sin(time * 0.12) + Math.sin(time * 0.8) * 0.5;
+      cameraRef.current.position.y = 2 * Math.cos(time * 0.18) + Math.cos(time * 1.1) * 0.3;
+      cameraRef.current.position.z = 30 + Math.sin(time * 0.05) * 2;
+      cameraRef.current.lookAt(0, 0, 0);
+    }
+
+    try {
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
+      
+      // Only continue animation if still active
+      if (isActiveRef.current) {
+        animationIdRef.current = requestAnimationFrame(animate);
+      }
+    } catch (error) {
+      console.error('[ORB] WebGL render error:', error);
+      // Continue trying unless context is lost
+      if (isActiveRef.current && !contextLost) {
+        animationIdRef.current = requestAnimationFrame(animate);
+      }
+    }
+  };
+
+  // Update orb color when ego state changes
+  useEffect(() => {
+    if (orbMeshRef.current && sceneRef.current) {
+      const egoColorInfo = getEgoColor(egoState);
+      const color = new THREE.Color(egoColorInfo.accent);
+      const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
+      material.color = color;
+      
+      // Update glow layers too
+      const userData = orbMeshRef.current.userData;
+      if (userData.glowMesh1) {
+        const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
+        glowMat.color = color;
+      }
+      if (userData.pulseMesh) {
+        const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
+        pulseMat.color = color;
+      }
+    }
+  }, [egoState]);
+
+  const disposeScene = () => {
+    console.log('[ORB] Disposing scene');
+    
+    // Stop animation
+    isActiveRef.current = false;
+    if (animationIdRef.current) {
+      cancelAnimationFrame(animationIdRef.current);
+      animationIdRef.current = null;
+    }
+
+    // Clean up Three.js objects
+    if (orbMeshRef.current) {
+      const userData = orbMeshRef.current.userData;
+      if (userData.glowMesh1) {
+        userData.glowMesh1.geometry?.dispose();
+        userData.glowMesh1.material?.dispose();
+      }
+      if (userData.pulseMesh) {
+        userData.pulseMesh.geometry?.dispose();
+        userData.pulseMesh.material?.dispose();
+      }
+      if (userData.sphereGeometry) {
+        userData.sphereGeometry.dispose();
+      }
+      if (userData.wireframeGeometry) {
+        userData.wireframeGeometry.dispose();
+      }
+      orbMeshRef.current.geometry?.dispose();
+      orbMeshRef.current.material?.dispose();
+    }
+
+    if (rendererRef.current) {
+      try {
+        rendererRef.current.dispose();
+      } catch (error) {
+        console.error('[ORB] Error disposing renderer:', error);
+      }
+    }
+
+    // Clear references
+    sceneRef.current = null;
+    rendererRef.current = null;
+    cameraRef.current = null;
+    orbMeshRef.current = null;
+    initializedRef.current = false;
+  };
+
+  // Don't render anything if WebGL check is pending
+  if (webglSupported === null) {
+    return (
+      <div 
+        className={`flex items-center justify-center ${className}`}
+        style={{ width: size, height: size, zIndex: 10, pointerEvents: 'auto', overflow: 'visible' }}
+      >
+        <div className="w-8 h-8 border-2 border-teal-400/30 border-t-teal-400 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Show error if WebGL is not supported
+  if (!webglSupported) {
+    return (
+      <div 
+        className={`flex items-center justify-center bg-red-500/20 border border-red-500/40 rounded-full ${className}`}
+        style={{ width: size, height: size, zIndex: 10, pointerEvents: 'auto', overflow: 'visible' }}
+      >
+        <div className="text-center p-4">
+          <div className="text-red-400 text-sm font-medium mb-2">WebGL Required</div>
+          <div className="text-red-300/80 text-xs">Please enable hardware acceleration</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show context lost indicator
+  if (contextLost) {
+    return (
+      <div 
+        className={`flex items-center justify-center bg-yellow-500/20 border border-yellow-500/40 rounded-full ${className}`}
+        style={{ width: size, height: size, zIndex: 10, pointerEvents: 'auto', overflow: 'visible' }}
+      >
+        <div className="text-center p-4">
+          <div className="text-yellow-400 text-sm font-medium mb-2">Reconnecting...</div>
+          <div className="w-6 h-6 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin mx-auto" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full bg-gradient-to-br from-black via-blue-950/20 to-purple-950/20 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <PageShell
-            body={
-                        <h3 className="text-white font-medium flex items-center space-x-2">
-                          <BookOpen size={16} className="text-purple-400" />
-                          <span>Complete Journeys</span>
-                          <span className="text-white/40 text-sm">({filteredProtocols.filter(p => p.type === 'complete').length})</span>
-                        </h3>
-                      </div>
-                      
-                      {filteredProtocols.filter(p => p.type === 'complete').length > 0 ? (
-                        <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                          {filteredProtocols.filter(p => p.type === 'complete').map((protocol) => renderProtocolCard(protocol))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="bg-white/5 rounded-xl p-6 border border-white/20 max-w-md mx-auto">
-                            <BookOpen size={24} className="text-white/40 mx-auto mb-3" />
-                            <p className="text-white/60 text-sm">No complete journeys match your filters</p>
-                          </div>
-                        </div>
-                      )}
-                    </section>
-
-                    {/* All Other Protocols - Organized by Type */}
-                    <section className="mt-8">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-white font-medium flex items-center space-x-2">
-                          <Target size={16} className="text-blue-400" />
-                          <span>Inductions & Deepeners</span>
-                          <span className="text-white/40 text-sm">({filteredProtocols.filter(p => p.type !== 'complete' && p.duration > 5).length})</span>
-                        </h3>
-                      </div>
-                      
-                      {filteredProtocols.filter(p => p.type !== 'complete' && p.duration > 5).length > 0 ? (
-                        <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                          {filteredProtocols.filter(p => p.type !== 'complete' && p.duration > 5).map((protocol) => renderProtocolCard(protocol))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="bg-white/5 rounded-xl p-6 border border-white/20 max-w-md mx-auto">
-                            <Target size={24} className="text-white/40 mx-auto mb-3" />
-                            <p className="text-white/60 text-sm">No inductions or deepeners match your filters</p>
-                          </div>
-                        </div>
-                      )}
-                    </section>
-
-                    {/* New Here? Guide Card */}
-                    <section className="mt-8 mb-8">
-                      <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-6 border border-teal-500/20">
-                        <div className="flex items-center space-x-3 mb-4">
-                          <HelpCircle size={20} className="text-teal-400" />
-                          <h3 className="text-white font-semibold">New to Hypnosis?</h3>
-                        </div>
-                        <p className="text-white/80 text-sm mb-4 leading-relaxed">
-                          Start with <strong>Progressive Relaxation</strong> (98% success rate) or explore our Quick Collections above to find the perfect match for your current need.
-                        </p>
-                        <button
-                          onClick={() => setShowGuide(true)}
-                          className="px-4 py-3 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all hover:scale-105 flex items-center space-x-2 min-h-[44px]"
-                        >
-                          <BookOpen size={16} />
-                          <span>Read the Complete Guide</span>
-                          <ChevronRight size={14} />
-                        </button>
-                      </div>
-                    </section>
-                  </div>
-                </div>
-              </div>
-            }
-          />
-        </div>
-      </div>
-
-      {/* Sort Dropdown Backdrop */}
-      {showSort && (
-        <div className="fixed inset-0 z-40" onClick={() => setShowSort(false)} />
-      )}
-
-      {/* Filters Modal */}
-      <ModalShell
-        isOpen={showFilters}
-        onClose={() => setShowFilters(false)}
-        title="Filter Protocols"
-        className="max-w-lg"
-        footer={
-          <div className="flex space-x-3">
-            <button
-              onClick={clearAllFilters}
-              className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300"
-            >
-              Clear All
-            </button>
-            <button
-              onClick={() => setShowFilters(false)}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
-            >
-              Apply Filters
-            </button>
-          </div>
-        }
-      >
-        <div className="space-y-6 overflow-y-auto">
-          {/* Duration */}
-          <div>
-            <h3 className="text-white font-medium mb-3">Duration</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {filterOptions.duration.map((duration) => (
-                <button
-                  key={duration}
-                  onClick={() => {
-                    setFilters(prev => ({
-                      ...prev,
-                      duration: prev.duration.includes(duration)
-                        ? prev.duration.filter(d => d !== duration)
-                        : [...prev.duration, duration]
-                    }));
-                  }}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    filters.duration.includes(duration)
-                      ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
-                      : 'bg-white/10 text-white/70 border border-white/20 hover:bg-white/20'
-                  }`}
-                >
-                  {duration}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Goal */}
-          <div>
-            <h3 className="text-white font-medium mb-3">Goal</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {filterOptions.goal.map((goal) => (
-                <button
-                  key={goal}
-                  onClick={() => {
-                    setFilters(prev => ({
-                      ...prev,
-                      goal: prev.goal.includes(goal)
-                        ? prev.goal.filter(g => g !== goal)
-                        : [...prev.goal, goal]
-                    }));
-                  }}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 capitalize ${
-                    filters.goal.includes(goal)
-                      ? 'bg-teal-500/20 text-teal-400 border border-teal-500/40'
-                      : 'bg-white/10 text-white/70 border border-white/20 hover:bg-white/20'
-                  }`}
-                >
-                  {goal}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Level */}
-          <div>
-            <h3 className="text-white font-medium mb-3">Experience Level</h3>
-            <div className="grid grid-cols-3 gap-2">
-              {filterOptions.level.map((level) => (
-                <button
-                  key={level}
-                  onClick={() => {
-                    setFilters(prev => ({
-                      ...prev,
-                      level: prev.level.includes(level)
-                        ? prev.level.filter(l => l !== level)
-                        : [...prev.level, level]
-                    }));
-                  }}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 capitalize ${
-                    filters.level.includes(level)
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/40'
-                      : 'bg-white/10 text-white/70 border border-white/20 hover:bg-white/20'
-                  }`}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </ModalShell>
-
-      {/* Explore Guide Modal */}
-      <ModalShell
-        isOpen={showGuide}
-        onClose={() => setShowGuide(false)}
-        title="Hypnosis Protocol Guide"
-        className="max-w-2xl overflow-y-auto"
-      >
-        <div className="space-y-4 overflow-y-auto">
-          {/* How to Pick */}
-          <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-4 border border-teal-500/20">
-            <button
-              onClick={() => setExpandedGuideSection(expandedGuideSection === 'pick' ? null : 'pick')}
-              className="w-full flex items-center justify-between text-left"
-            >
-              <h3 className="text-white font-semibold flex items-center space-x-2">
-                <Target size={16} className="text-teal-400" />
-                <span>How should I pick a protocol?</span>
-              </h3>
-              <ChevronDown size={16} className={`text-white/60 transition-transform ${expandedGuideSection === 'pick' ? 'rotate-180' : ''}`} />
-            </button>
-            {expandedGuideSection === 'pick' && (
-              <div className="mt-3 text-white/80 text-sm leading-relaxed">
-                <p className="mb-3">Start with your <strong>current need</strong> (e.g., 'calm down in 5 min'), choose a protocol that matches your <strong>Ego State</strong>, and aim for the <strong>shortest</strong> option you'll actually complete.</p>
-                <p className="text-teal-400 font-medium">Consistency beats length every time.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Protocol Types */}
-          <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-xl p-4 border border-purple-500/20">
-            <button
-              onClick={() => setExpandedGuideSection(expandedGuideSection === 'types' ? null : 'types')}
-              className="w-full flex items-center justify-between text-left"
-            >
-              <h3 className="text-white font-semibold flex items-center space-x-2">
-                <BookOpen size={16} className="text-purple-400" />
-                <span>What's the difference between types?</span>
-              </h3>
-              <ChevronDown size={16} className={`text-white/60 transition-transform ${expandedGuideSection === 'types' ? 'rotate-180' : ''}`} />
-            </button>
-            {expandedGuideSection === 'types' && (
-              <div className="mt-3 space-y-3">
-                <div className="flex items-start space-x-3">
-                  <Zap size={16} className="text-blue-400 mt-0.5" />
-                  <div>
-                    <div className="text-blue-400 font-medium">Induction</div>
-                    <div className="text-white/70 text-sm">Guides you into trance state</div>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Waves size={16} className="text-purple-400 mt-0.5" />
-                  <div>
-                    <div className="text-purple-400 font-medium">Deepener</div>
-                    <div className="text-white/70 text-sm">Takes you deeper once you're in</div>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Star size={16} className="text-teal-400 mt-0.5" />
-                  <div>
-                    <div className="text-teal-400 font-medium">Complete</div>
-                    <div className="text-white/70 text-sm">Full journey: induction → deepener → change-work → return</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Beginner Safe List */}
-          <div className="bg-gradient-to-br from-green-500/10 to-teal-500/10 rounded-xl p-4 border border-green-500/20">
-            <button
-              onClick={() => setExpandedGuideSection(expandedGuideSection === 'beginner' ? null : 'beginner')}
-              className="w-full flex items-center justify-between text-left"
-            >
-              <h3 className="text-white font-semibold flex items-center space-x-2">
-                <Shield size={16} className="text-green-400" />
-                <span>Beginner safe list</span>
-              </h3>
-              <ChevronDown size={16} className={`text-white/60 transition-transform ${expandedGuideSection === 'beginner' ? 'rotate-180' : ''}`} />
-            </button>
-            {expandedGuideSection === 'beginner' && (
-              <div className="mt-3 space-y-2">
-                {['Progressive Relaxation', 'Book & Balloon', 'Spiral Staircase'].map((name, index) => (
-                  <div key={index} className="bg-white/10 rounded-lg p-3 border border-white/20">
-                    <div className="text-white font-medium text-sm">{name}</div>
-                    <div className="text-white/70 text-xs mt-1">Perfect for first-time users</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Safety */}
-          <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 rounded-xl p-4 border border-red-500/20">
-            <button
-              onClick={() => setExpandedGuideSection(expandedGuideSection === 'safety' ? null : 'safety')}
-              className="w-full flex items-center justify-between text-left"
-            >
-              <h3 className="text-white font-semibold flex items-center space-x-2">
-                <Shield size={16} className="text-red-400" />
-                <span>Safety & best practices</span>
-              </h3>
-              <ChevronDown size={16} className={`text-white/60 transition-transform ${expandedGuideSection === 'safety' ? 'rotate-180' : ''}`} />
-            </button>
-            {expandedGuideSection === 'safety' && (
-              <div className="mt-3 space-y-2 text-white/80 text-sm">
-                <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 bg-red-400 rounded-full" />
-                  <span>Sit or lie in a safe, comfortable place</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 bg-red-400 rounded-full" />
-                  <span>Never use while driving or operating machinery</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 bg-red-400 rounded-full" />
-                  <span>It's normal to be semi-aware during sessions</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </ModalShell>
-
-      {/* Protocol Details Modal */}
-      {selectedProtocol && (
-        <ModalShell
-          isOpen={true}
-          onClose={() => setSelectedProtocol(null)}
-          title={selectedProtocol.name}
-          className="max-w-lg"
-          footer={
-            <button
-              onClick={() => {
-                handleProtocolSelect(selectedProtocol);
-                setSelectedProtocol(null);
-              }}
-              className="w-full px-6 py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-bold text-lg hover:scale-105 transition-transform duration-200 shadow-2xl shadow-teal-400/25"
-            >
-              Begin Journey
-            </button>
-          }
-        >
-          <div className="space-y-6 overflow-y-auto">
-            <div className={`bg-gradient-to-br ${getTypeColor(selectedProtocol.type)} rounded-xl p-6 border border-white/30`}>
-              <div className="flex items-center justify-between mb-4">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(selectedProtocol.difficulty)}`}>
-                  {selectedProtocol.difficulty}
-                </span>
-                <div className="flex items-center space-x-4 text-white/60">
-                  <div className="flex items-center space-x-1">
-                    <Clock size={16} />
-                    <span>{selectedProtocol.duration} min</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Star size={16} />
-                    <span>{selectedProtocol.type}</span>
-                  </div>
-                </div>
-              </div>
-              <p className="text-white/90 leading-relaxed">{selectedProtocol.description}</p>
-            </div>
-            
-            {/* Enhanced Stats */}
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-              <h4 className="text-white font-medium mb-3">Community Stats</h4>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-yellow-400 font-bold text-lg">{getMockStats(selectedProtocol.id).rating}</div>
-                  <div className="text-white/60 text-xs">Avg Rating</div>
-                </div>
-                <div>
-                  <div className="text-rose-400 font-bold text-lg">{getMockStats(selectedProtocol.id).saves}k</div>
-                  <div className="text-white/60 text-xs">Saves</div>
-                </div>
-                <div>
-                  <div className="text-teal-400 font-bold text-lg">{getMockStats(selectedProtocol.id).completions}k</div>
-                  <div className="text-white/60 text-xs">Completed</div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-              <h4 className="text-white font-medium mb-3">Tags</h4>
-              <div className="flex flex-wrap gap-2">
-                {selectedProtocol.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1 bg-white/10 text-white/80 text-sm rounded-full border border-white/20"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </ModalShell>
-      )}
-    </div>
+    <div 
+      ref={containerRef}
+      className={`orb-container relative ${className}`}
+      style={{ 
+        width: size, 
+        height: size, 
+        zIndex: 10, 
+        pointerEvents: 'auto', 
+        overflow: 'visible' 
+      }}
+    />
   );
-}
+});
+
+WebGLOrb.displayName = 'WebGLOrb';
+
+export default WebGLOrb;
