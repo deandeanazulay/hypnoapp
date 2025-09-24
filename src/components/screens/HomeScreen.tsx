@@ -94,7 +94,6 @@ export default function HomeScreen({
             variant="webgl"
           />
         </div>
-        </div>
       </div>
 
       {/* 3. Actions Bar - Fixed at bottom with proper spacing */}
