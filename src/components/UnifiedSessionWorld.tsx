@@ -303,12 +303,11 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               {sessionState.phase === 'integration' && "Integrating this transformation into your being."}
               {sessionState.phase === 'completion' && "Bringing this awareness back with you."}
             </p>
-          </div>
         </div>
       </div>
 
       {/* Session Controls */}
-      <div className="fixed bottom-4 left-4 right-4 z-40">
+      <div className="fixed bottom-4 left-4 right-4 z-30">
         <div className="bg-black/95 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-2xl shadow-purple-500/20">
           <div className="flex items-center justify-center space-x-4">
           {!sessionState.isActive ? (
