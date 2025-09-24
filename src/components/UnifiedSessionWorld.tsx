@@ -479,7 +479,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           <div className="max-w-lg mx-auto">
             
             {/* Breathing Instructions - Above Chat */}
-            <div className="text-center mb-20">
+            <div className="text-center ">
               <div className="text-white/80 text-sm mb-3 font-light">
                 Focus softly on the center dot
               </div>
