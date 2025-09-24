@@ -23,6 +23,12 @@ function supportsWebGL(): boolean {
 export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps) {
   const [useWebGL, setUseWebGL] = useState<boolean | null>(null);
 
+  // Debug wrapper for onTap
+  const debugOnTap = () => {
+    console.log('[ORB-WRAPPER] Orb tapped, calling onTap');
+    props.onTap();
+  };
+
   // Detect WebGL support once and never change
   useEffect(() => {
     console.log('[ORB-WRAPPER] Detecting WebGL support, variant:', variant);
@@ -57,7 +63,7 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
   console.log('[ORB-WRAPPER] Rendering orb, useWebGL:', useWebGL);
 
   // Render the appropriate orb type - NEVER switch after initial render
-  return useWebGL ? <WebGLOrb {...props} size={size} /> : <CSSOrb {...props} size={size} />;
+  return useWebGL ? <WebGLOrb {...props} onTap={debugOnTap} size={size} /> : <CSSOrb {...props} onTap={debugOnTap} size={size} />;
 }
 
 // Re-export the ref type for convenience

@@ -54,6 +54,8 @@ function App() {
 
   const handleOrbTap = () => {
     console.log('Orb tapped, isAuthenticated:', isAuthenticated);
+    console.log('selectedAction:', selectedAction);
+    console.log('activeEgoState:', activeEgoState);
     // If not authenticated, show auth modal
     if (!isAuthenticated) {
       console.log('Not authenticated, showing auth modal');
