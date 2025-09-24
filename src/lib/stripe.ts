@@ -94,7 +94,7 @@ export class PaymentService {
 
   async getSubscriptionStatus(): Promise<'free' | 'active' | 'cancelled' | 'past_due'> {
     try {
-      const subscription = await this.getUserSubscription();
+      const subscription = await this.getUserSubscription().catch(() => null);
       
       if (!subscription) return 'free';
       
