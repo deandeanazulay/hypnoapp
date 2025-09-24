@@ -248,7 +248,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
           {/* Orb */}
-          <div className={`mb-6 md:mb-12 transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
+          <div className={`transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
             <Orb
               onTap={() => {}}
               size={window.innerWidth < 768 ? 200 : 280}
