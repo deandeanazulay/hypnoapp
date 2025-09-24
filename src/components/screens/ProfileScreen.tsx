@@ -215,11 +215,11 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
             <div className="card-premium p-4 animate-stagger-in bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-purple-500/30 flex-shrink-0" style={{ animationDelay: '100ms' }}>
               <div className="flex items-center space-x-4">
                 {/* Living Orb - Desktop */}
-                <div className="flex-shrink-0 hidden sm:flex sm:items-center sm:justify-center w-16 h-16">
+                <div className="flex-shrink-0 hidden sm:flex sm:items-center sm:justify-center w-12 h-12">
                   <Orb
                     onTap={() => {}}
                     egoState={activeEgoState}
-                    size={64}
+                    size={48}
                     variant="webgl"
                   />
                 </div>
@@ -227,11 +227,11 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 {/* Current State Info */}
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex items-center space-x-3 sm:hidden">
-                    <div className="flex-shrink-0 flex items-center justify-center w-12 h-12">
+                    <div className="flex-shrink-0 flex items-center justify-center w-10 h-10">
                       <Orb
                         onTap={() => {}}
                         egoState={activeEgoState}
-                        size={40}
+                        size={32}
                         variant="webgl"
                       />
                     </div>
