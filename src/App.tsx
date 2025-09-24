@@ -9,7 +9,6 @@ import ProfileScreen from './components/screens/ProfileScreen';
 import NavigationTabs from './components/NavigationTabs';
 import UnifiedSessionWorld from './components/UnifiedSessionWorld';
 import { GameStateProvider } from './components/GameStateManager';
-import GlobalHUD from './components/HUD/GlobalHUD';
 import EgoStatesModal from './components/modals/EgoStatesModal';
 import ToastManager from './components/layout/ToastManager';
 import AuthModal from './components/auth/AuthModal';
@@ -211,6 +210,7 @@ function App() {
 
   const MainApp = () => (
     <GameStateProvider>
+      <GlobalHUD />
       <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
         {/* Main Body Content - Flex grow */}
         <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content">
@@ -237,9 +237,6 @@ function App() {
         <EgoStatesModal />
         <AuthModal 
           isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-        />
-        
         {/* Toast Notifications */}
         <ToastManager />
       </>
