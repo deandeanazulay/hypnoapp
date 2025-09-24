@@ -123,9 +123,12 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
   // Breathing cycle management
   useEffect(() => {
-    if (!sessionState.isPaused) {
+    const startBreathingTimer = () => {
       breathingTimerRef.current = setInterval(() => {
         setSessionState(prev => {
+          // Don't update if paused
+          if (prev.isPaused) return prev;
+          
           let newCount = prev.breathingCount - 1;
           let newBreathing = prev.breathing;
           let newCycle = prev.breathingCycle;
@@ -150,6 +153,11 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 newCount = 4; // Inhale for 4 seconds
                 newCycle = prev.breathingCycle + 1;
                 break;
+              default:
+                // Reset to inhale if somehow in invalid state
+                newBreathing = 'inhale';
+                newCount = 4;
+                break;
             }
           }
 
@@ -161,11 +169,23 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           };
         });
       }, 1000);
+    };
+
+    // Clear any existing timer first
+    if (breathingTimerRef.current) {
+      clearInterval(breathingTimerRef.current);
+      breathingTimerRef.current = null;
+    }
+
+    // Start timer if not paused
+    if (!sessionState.isPaused) {
+      startBreathingTimer();
     }
 
     return () => {
       if (breathingTimerRef.current) {
         clearInterval(breathingTimerRef.current);
+        breathingTimerRef.current = null;
       }
     };
   }, [sessionState.isPaused]);
