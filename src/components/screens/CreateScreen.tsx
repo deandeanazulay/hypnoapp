@@ -6,6 +6,7 @@ import { useGameState } from '../GameStateManager';
 import { paymentService } from '../../lib/stripe';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useProtocolStore } from '../../state/protocolStore';
+import Orb from '../Orb';
 
 interface CustomProtocol {
   id: string;
@@ -683,6 +684,14 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                 <div className="text-teal-400 font-medium text-sm">Creating...</div>
               </div>
             </div>
+          <div className="flex items-center justify-center">
+            <Orb
+              onTap={() => {}}
+              egoState={orbState.color}
+              size={240}
+              variant="webgl"
+              className="opacity-60"
+            />
           </div>
           
           <div className="mt-4 text-center">
