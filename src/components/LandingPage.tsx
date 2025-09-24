@@ -247,11 +247,6 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
           {/* Orb */}
-          <div className={`mb-6 md:mb-12 transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
-            <div className="w-64 h-64 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-teal-500/30 to-purple-500/30 border-4 border-white/20 flex items-center justify-center mx-auto animate-pulse">
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-teal-400/40 to-cyan-400/40 animate-spin-slow" />
-            </div>
-          </div>
 
           {/* Hero Text */}
           <div className={`transition-all duration-1000 delay-300 mb-6 md:mb-0 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>

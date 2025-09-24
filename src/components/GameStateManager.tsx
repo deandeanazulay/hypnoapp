@@ -379,15 +379,6 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const getOrbState = () => ({
-    depth: user.depth,
-    breathing: user.breathing,
-    phase: user.currentState,
-    isListening: false,
-    isSpeaking: false,
-    emotion: user.currentState,
-    energy: user.orbEnergy
-  });
 
   const canAccess = (feature: string) => {
     // Check subscription status for premium features

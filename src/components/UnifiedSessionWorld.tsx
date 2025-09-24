@@ -36,7 +36,6 @@ interface SessionState {
 export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfig }: UnifiedSessionWorldProps) {
   const { completeSession } = useGameState();
   const { showToast } = useAppStore();
-  const orbRef = useRef<any>(null);
   
   const [sessionState, setSessionState] = useState<SessionState>({
     phase: 'preparation',
@@ -280,11 +279,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
 
         {/* The Orb - inheriting color from ego state */}
-        <div className="mb-6">
-          <div className="w-80 h-80 rounded-full bg-gradient-to-br from-teal-500/30 to-purple-500/30 border-4 border-white/20 flex items-center justify-center mx-auto">
-            <div className={`w-40 h-40 rounded-full bg-gradient-to-br from-teal-400/40 to-cyan-400/40 ${sessionState.isActive ? 'animate-pulse animate-spin-slow' : 'animate-spin-slow'}`} />
-          </div>
-        </div>
 
         {/* Session Guidance */}
         <div className="text-center max-w-md">
@@ -377,13 +371,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               breathing: state.breathing || prev.breathing,
               depth: state.depth || prev.depth
             }));
-            
-            // Update orb if available
-            if (orbRef.current) {
-              orbRef.current.updateState(state);
-            }
           }}
-          orbRef={orbRef}
         />
       )}
 

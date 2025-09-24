@@ -668,35 +668,6 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
           {renderStepContent()}
         </div>
 
-        {/* Right Side - Reactive Orb (Desktop) */}
-        <div className="hidden lg:flex lg:w-80 lg:flex-col lg:items-center lg:justify-center lg:px-6 lg:py-8">
-          <div className="text-center mb-6">
-            <h3 className="text-white font-medium text-lg mb-2">Live Preview</h3>
-            <p className="text-white/60 text-sm">Your journey visualization</p>
-          </div>
-          
-          <div className="flex items-center justify-center">
-            <div className="w-60 h-60 rounded-full bg-gradient-to-br from-purple-500/20 to-teal-500/20 border-2 border-white/20 flex items-center justify-center animate-pulse">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-teal-400/30 to-purple-400/30 animate-spin-slow" />
-            </div>
-          </div>
-          
-          <div className="mt-4 text-center">
-            <p className="text-white/70 text-sm">
-              {protocol.name || 'Unnamed Journey'}
-            </p>
-            <p className="text-white/50 text-xs">
-              {protocol.duration}m • {protocol.induction ? inductionOptions.find(opt => opt.id === protocol.induction)?.name : 'No gateway selected'}
-            </p>
-          </div>
-        </div>
-
-        {/* Mobile Preview - Smaller, Floating */}
-        <div className="lg:hidden fixed top-32 right-4 z-20 bg-black/50 backdrop-blur-sm rounded-full p-2 border border-white/20">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/30 to-teal-500/30 border border-white/20 flex items-center justify-center animate-pulse">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400/40 to-purple-400/40 animate-spin-slow" />
-          </div>
-        </div>
       </div>
 
       {/* Navigation Footer */}
