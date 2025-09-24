@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Save, Clock, Zap, Target, Sparkles, Edit3, Crown, Infinity, Music, Star, Lock, Play, Eye, Waves, Book, Wind } from 'lucide-react';
 import AuthModal from '../auth/AuthModal';
+import Orb from '../orb/Orb';
 import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
 import { paymentService } from '../../lib/stripe';
@@ -161,7 +162,14 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
   // Update orb based on current choices
   useEffect(() => {
-    // Orb state updates removed - no orb to update
+    setOrbState({
+      energy: Math.min(0.3 + (protocol.duration || 5) * 0.02, 1.0),
+      color: protocol.induction === 'rapid' ? 'yellow' : 
+             protocol.induction === 'eye-fixation' ? 'purple' :
+             protocol.induction === 'breath-work' ? 'green' : 'teal',
+      animation: protocol.induction ? 'active' : 'pulse',
+      intensity: protocol.deepener ? 1.2 : 1.0
+    });
   }, [protocol.duration, protocol.induction, protocol.deepener]);
 
   const canCreateCustom = canAccess('custom_outlines');
@@ -638,6 +646,17 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
       {/* Main Content with Orb */}
       <div className="flex-1 min-h-0 relative z-10 flex flex-col">
+        
+        {/* Right Side - Orb Preview */}
+        <div className="absolute top-4 right-4 z-20">
+          <Orb
+            onTap={() => {}}
+            size={120}
+            egoState={orbState.color}
+            afterglow={orbState.intensity > 1.0}
+            className="opacity-60"
+          />
+        </div>
         
         {/* Left Side - Form Content */}
         <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-24">
