@@ -1,169 +1,312 @@
-import React from 'react';
-import { X, Sparkles } from 'lucide-react';
-import { EGO_STATES as egoStates, useAppStore, EgoStateId } from '../../store';
-import { useGameState } from '../GameStateManager';
+import React, { useState, useEffect, useRef } from 'react';
+import { Mic, MicOff, Volume2, VolumeX, MessageCircle, Brain, Send, Loader } from 'lucide-react';
 
-export default function EgoStatesModal() {
-  const { modals, closeEgoModal, activeEgoState, setActiveEgoState } = useAppStore();
-  const isEgoModalOpen = modals.egoStates;
-  const { user } = useGameState();
-  const [tempSelectedEgoState, setTempSelectedEgoState] = React.useState<EgoStateId>(activeEgoState);
+interface AIVoiceSystemProps {
+  isActive: boolean;
+  sessionType: 'unified' | 'integration';
+  onStateChange: (state: any) => void;
+  sessionState: any;
+  sessionConfig: any;
+}
 
-  // Use real usage data from GameStateManager
-  const egoStateUsage = user.egoStateUsage;
-  const totalSessions = Object.values(egoStateUsage).reduce((sum, count) => sum + count, 0);
+interface SessionState {
+  depth: number;
+  breathing: 'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale';
+  phase: string;
+  userResponse: string;
+  aiResponse: string;
+  isListening: boolean;
+  isSpeaking: boolean;
+}
 
-  const getUsageCount = (stateId: EgoStateId) => {
-    return egoStateUsage[stateId] || 0;
-  };
-
-  const getUsagePercentage = (stateId: EgoStateId) => {
-    const count = egoStateUsage[stateId] || 0;
-    return totalSessions > 0 ? Math.round((count / totalSessions) * 100) : 0;
-  };
-
-  const handleChannelState = () => {
-    setActiveEgoState(tempSelectedEgoState);
-    closeEgoModal();
-  };
-
-  const handleCancel = () => {
-    setTempSelectedEgoState(activeEgoState);
-    closeEgoModal();
-  };
-
-  // Get the currently selected state
-  const currentState = egoStates.find(state => state.id === tempSelectedEgoState);
+export default function AIVoiceSystem({ isActive, sessionType, onStateChange, sessionState, sessionConfig }: AIVoiceSystemProps) {
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [textInput, setTextInput] = useState('');
+  const [conversation, setConversation] = useState<Array<{role: 'ai' | 'user', content: string, timestamp: number}>>([]);
   
-  // Get most used state for analytics
-  const maxUsage = Math.max(...Object.values(egoStateUsage));
-  const mostUsedId = Object.entries(egoStateUsage).find(([_, count]) => count === maxUsage)?.[0];
-  const mostUsedState = mostUsedId ? egoStates.find(s => s.id === mostUsedId) : null;
-  
-  // Calculate exploration progress
-  const unlockedCount = egoStates.filter(state => getUsageCount(state.id) >= 0).length;
+  const recognitionRef = useRef<any>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Get other available states (exclude current)
-  const otherStates = (egoStates || [])
-    .filter(state => state.id !== tempSelectedEgoState)
-    .slice(0, 6); // Show 6 states in 2x3 grid
+  // Initialize speech systems
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      synthRef.current = window.speechSynthesis;
+      
+      // Initialize speech recognition
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'en-US';
 
-  // Update temp selection when modal opens
-  React.useEffect(() => {
-    if (isEgoModalOpen) {
-      setTempSelectedEgoState(activeEgoState);
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          console.log('Speech recognized:', transcript);
+          handleUserInput(transcript);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.log('Speech recognition error:', event.error);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+      }
     }
-  }, [isEgoModalOpen, activeEgoState]);
+  }, []);
 
-  if (!isEgoModalOpen) return null;
+  // Auto-start AI guidance
+  useEffect(() => {
+    if (isActive && conversation.length === 0) {
+      setTimeout(() => {
+        const welcomeMessage = `Welcome to your ${sessionConfig.egoState} session. I'm Libero, and I'll be guiding you through this transformation journey. Take a deep breath and let me know - what would you like to work on today?`;
+        
+        const aiMessage = { role: 'ai' as const, content: welcomeMessage, timestamp: Date.now() };
+        setConversation([aiMessage]);
+        
+        if (isVoiceEnabled) {
+          speakText(welcomeMessage);
+        }
+      }, 2000);
+    }
+  }, [isActive, sessionConfig, isVoiceEnabled]);
+
+  // Handle user input (text or voice)
+  const handleUserInput = async (input: string) => {
+    if (!input.trim()) return;
+
+    // Add user message to conversation
+    const userMessage = { role: 'user' as const, content: input, timestamp: Date.now() };
+    setConversation(prev => [...prev, userMessage]);
+    setTextInput('');
+    setIsThinking(true);
+
+    try {
+      // Call AI hypnosis function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-hypnosis`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: input,
+          sessionContext: {
+            egoState: sessionConfig.egoState,
+            phase: sessionState.phase,
+            depth: sessionState.depth,
+            breathing: sessionState.breathing,
+            userProfile: { level: 1 }, // TODO: Get from user state
+            conversationHistory: conversation.map(msg => ({
+              role: msg.role === 'ai' ? 'assistant' : 'user',
+              content: msg.content
+            }))
+          },
+          requestType: 'guidance'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.response) {
+        const aiMessage = { role: 'ai' as const, content: data.response, timestamp: Date.now() };
+        setConversation(prev => [...prev, aiMessage]);
+        
+        // Apply any session updates from AI
+        if (data.sessionUpdates && Object.keys(data.sessionUpdates).length > 0) {
+          onStateChange(data.sessionUpdates);
+        }
+        
+        // Speak the response
+        if (isVoiceEnabled) {
+          speakText(data.response);
+        }
+      }
+    } catch (error) {
+      console.error('AI conversation error:', error);
+      const fallbackMessage = "I'm here with you. Continue breathing and trust the process.";
+      const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
+      setConversation(prev => [...prev, aiMessage]);
+      
+      if (isVoiceEnabled) {
+        speakText(fallbackMessage);
+      }
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
+  // Text-to-speech
+  const speakText = (text: string) => {
+    if (!synthRef.current || !isVoiceEnabled) return;
+
+    // Stop any current speech
+    synthRef.current.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.7; // Slower for hypnosis
+    utterance.pitch = 0.8; // Lower pitch for calming effect
+    utterance.volume = 0.9;
+
+    // Find a calm, soothing voice
+    const voices = synthRef.current.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.includes('Female') || 
+      voice.name.includes('Samantha') ||
+      voice.name.includes('Karen') ||
+      voice.name.includes('Daniel') ||
+      voice.lang.includes('en')
+    ) || voices[0];
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+    };
+
+    currentUtteranceRef.current = utterance;
+    synthRef.current.speak(utterance);
+  };
+
+  // Start/stop listening
+  const toggleListening = () => {
+    if (!recognitionRef.current || !isMicEnabled) return;
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      // Stop any current speech before listening
+      if (synthRef.current) {
+        synthRef.current.cancel();
+        setIsSpeaking(false);
+      }
+      
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  // Handle text form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (textInput.trim() && !isThinking) {
+      handleUserInput(textInput.trim());
+    }
+  };
+
+  if (!isActive) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ maxHeight: '100dvh' }}>
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/90 backdrop-blur-xl"
-        onClick={handleCancel} 
-      />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-sm bg-black/95 backdrop-blur-xl border border-white/20 rounded-3xl overflow-hidden shadow-2xl max-h-[85vh] overflow-y-auto">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h2 className="text-white text-lg font-semibold">Choose Your Guide</h2>
-          <button 
-            className="p-2 rounded-xl hover:bg-white/10 transition-colors"
-            onClick={handleCancel}
-            aria-label="Close modal"
-          >
-            <X size={20} className="text-white/60 hover:text-white" />
-          </button>
-        </div>
-
-        <div className="p-4 space-y-6">
-          {/* Current Selected State - Hero Card */}
-          {currentState && (
-            <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${currentState.color} p-6 border border-white/30 text-center`}>
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
-              
-              <div className="relative z-10">
-                <div className="text-4xl mb-3">{currentState.icon}</div>
-                <h3 className="text-white font-bold text-xl mb-2">{currentState.name}</h3>
-                <p className="text-white/90 text-sm mb-4">{currentState.role}</p>
-                
-                {/* Trait Pills */}
-                <div className="flex items-center justify-center flex-wrap gap-2">
-                  {(currentState.usedFor || []).slice(0, 3).map((keyword, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-black/20 backdrop-blur-sm border border-white/20 text-white/90 rounded-full text-xs font-medium"
-                    >
-                      {keyword}
-                    </span>
-                  ))}
+    <div className="fixed bottom-32 left-4 right-4 z-40">
+      {/* Conversation Display */}
+      {conversation.length > 0 && (
+        <div className="bg-black/95 backdrop-blur-xl rounded-2xl p-4 mb-4 max-h-48 overflow-y-auto border border-white/20 space-y-3">
+          {conversation.slice(-3).map((msg, i) => (
+            <div key={i} className={`${msg.role === 'ai' ? 'text-left' : 'text-right'}`}>
+              <div className={`inline-block max-w-[80%] p-3 rounded-2xl ${
+                msg.role === 'ai' 
+                  ? 'bg-teal-500/20 border border-teal-500/30 text-teal-100' 
+                  : 'bg-white/10 border border-white/20 text-white'
+              }`}>
+                <div className="flex items-center space-x-2 mb-1">
+                  {msg.role === 'ai' ? <Brain size={12} className="text-teal-400" /> : <MessageCircle size={12} className="text-white/60" />}
+                  <span className="text-xs font-medium opacity-80">
+                    {msg.role === 'ai' ? 'Libero' : 'You'}
+                  </span>
+                </div>
+                <p className="text-sm leading-relaxed">{msg.content}</p>
+              </div>
+            </div>
+          ))}
+          
+          {/* Thinking indicator */}
+          {isThinking && (
+            <div className="text-left">
+              <div className="inline-block bg-teal-500/20 border border-teal-500/30 p-3 rounded-2xl">
+                <div className="flex items-center space-x-2">
+                  <Brain size={12} className="text-teal-400" />
+                  <span className="text-xs font-medium text-teal-100">Libero</span>
+                </div>
+                <div className="flex items-center space-x-2 mt-1">
+                  <Loader size={14} className="text-teal-400 animate-spin" />
+                  <span className="text-sm text-teal-100">Tuning into your energy...</span>
                 </div>
               </div>
             </div>
           )}
+        </div>
+      )}
 
-          {/* Explore Other States */}
-          <div>
-            <h3 className="text-white text-base font-semibold mb-3">Explore Other States</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {otherStates.map((state) => (
-                <button
-                  key={state.id}
-                  onClick={() => setTempSelectedEgoState(state.id)}
-                  className={`relative p-4 rounded-xl border transition-all duration-300 text-left group hover:scale-105 bg-gradient-to-br ${state.color} border-white/20 hover:border-white/40 min-h-[100px]`}
-                >
-                  <div className="flex flex-col justify-between h-full">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <span className="text-2xl">{state.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-white font-semibold text-sm">{state.name}</h4>
-                        <p className="text-white/70 text-xs">{state.role.split(',')[0]}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="text-xs text-white/60">
-                      {getUsageCount(state.id)} sessions
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Patterns in Your Transformation */}
-          <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-xl p-4 border border-purple-500/20">
-            <h3 className="text-white font-semibold mb-3 flex items-center text-sm">
-              <Sparkles size={16} className="mr-2 text-purple-400" />
-              Patterns in Your Transformation
-            </h3>
-            
-            <div className="space-y-2 text-xs text-white/80">
-              {mostUsedState && (
-                <div>
-                  <span className="text-purple-300">Your subconscious returns most often to: </span>
-                  <span className="text-white font-medium">{mostUsedState.name} ({getUsagePercentage(mostUsedState.id as EgoStateId)}%)</span>
+                  <span className="text-xs">Libero is speaking</span>
                 </div>
               )}
-              
-              <div>
-                <span className="text-purple-300">You've unlocked </span>
-                <span className="text-white font-medium">{unlockedCount} of {egoStates.length} archetypes</span>
-              </div>
+            </div>
+
+            {/* Audio Controls */}
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+                className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                  isVoiceEnabled 
+                    ? 'bg-green-500/20 border border-green-500/40 text-green-400' 
+                    : 'bg-white/10 border border-white/20 text-white/60'
+                }`}
+              >
+                {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsMicEnabled(!isMicEnabled)}
+                className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                  isMicEnabled 
+                    ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400' 
+                    : 'bg-white/10 border border-white/20 text-white/60'
+                }`}
+              >
+                {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+              </button>
             </div>
           </div>
+        </form>
 
-          {/* Action Button */}
-          <button
-            onClick={handleChannelState}
-            className="w-full py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-all duration-300 shadow-lg"
-          >
-            Channel This State
-          </button>
-        </div>
+        {/* Quick Suggestions */}
+        {conversation.length <= 1 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[
+              'I feel stressed',
+              'Help me focus',
+              'I want to relax',
+              'I need confidence'
+            ].map((suggestion) => (
+              <button
+                key={suggestion}
+                onClick={() => handleUserInput(suggestion)}
+                disabled={isThinking}
+                className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-white/70 text-xs transition-all hover:scale-105 disabled:opacity-50"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
