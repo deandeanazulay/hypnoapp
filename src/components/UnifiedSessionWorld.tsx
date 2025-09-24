@@ -64,7 +64,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     if (sessionState.isActive && !sessionState.isPaused) {
       interval = setInterval(() => {
         setSessionState(prev => {
-          const breathingCycle = ['inhale', 'hold-inhale', 'exhale', 'hold-exhale'] as const;
           const newTimeElapsed = prev.timeElapsed + 1;
           
           // Auto-complete when time is up
@@ -468,7 +467,7 @@ function BreathingIndicator({ currentPhase, isActive }: BreathingIndicatorProps)
           </div>
           
           {/* Timer - only show for timed phases */}
-          {currentPhase !== 'rest' && (
+          {true && (
             <>
               <div className="w-px h-4 bg-white/30" />
               <div className="flex items-center space-x-2">
