@@ -235,8 +235,8 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
           </div>
 
           <div className="relative z-10 h-full flex flex-col justify-center p-4 pt-16">
-            {/* Progress Indicator */}
-            <div className="flex justify-center mb-6">
+            {/* Top Progress Indicator */}
+            <div className="flex justify-center mb-8 pt-4">
               <div className="flex items-center space-x-4">
                 {[1, 2, 3].map((step) => (
                   <div key={step} className="flex items-center">
@@ -259,18 +259,19 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
               </div>
             </div>
 
-            {/* Step Content */}
-            <GlassCard variant="premium" className="max-w-md mx-auto p-6 flex-shrink-0">
-              {renderStep()}
-            </GlassCard>
+            {/* Step Content - Centered */}
+            <div className="flex-1 flex items-center justify-center">
+              <GlassCard variant="premium" className="max-w-md w-full mx-4 p-6">
+                {renderStep()}
+              </GlassCard>
+            </div>
 
-            {/* Navigation */}
-            {/* Fixed Bottom Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 pb-20">
-              <div className="bg-black/95 backdrop-blur-xl border-t border-white/10 px-4 py-4">
-                {/* Step Indicator */}
+            {/* Bottom Navigation Bar */}
+            <div className="absolute bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+              <div className="px-4 py-4">
+                {/* Step Progress Dots */}
                 <div className="text-center mb-4">
-                  <div className="text-white/60 text-sm mb-2">Step {currentStep} of 3</div>
+                  <div className="text-white/60 text-sm mb-3">Step {currentStep} of 3</div>
                   <div className="flex justify-center space-x-2">
                     {[1, 2, 3].map((step) => (
                       <div
@@ -284,11 +285,11 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                 </div>
 
                 {/* Navigation Buttons */}
-                <div className="flex justify-between items-center max-w-md mx-auto">
+                <div className="flex justify-between items-center">
                   <button
                     onClick={handleBack}
                     disabled={currentStep === 1}
-                    className={`px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 ${
+                    className={`px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 ${
                       currentStep === 1 ? 'invisible' : ''
                     }`}
                   >
@@ -311,10 +312,12 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                   ) : (
                     <button
                       onClick={handleComplete}
-                      className="px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 flex items-center space-x-2"
+                      className="px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
                     >
-                      <Wand2 size={16} />
-                      <span>Create</span>
+                      <div className="flex items-center space-x-2">
+                        <Wand2 size={16} />
+                        <span>Create</span>
+                      </div>
                     </button>
                   )}
                 </div>
