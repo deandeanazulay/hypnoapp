@@ -248,7 +248,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center items-center">
           {/* Orb */}
-          <div className={`items-center transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-100 opacity-0'}`}>
+          <div className={`transition-all duration-1000 ${isLoaded ? 'scale-100 opacity-100' : 'scale-100 opacity-0'}`}>
             <Orb
               onTap={() => {}}
               size={window.innerWidth < 768 ? 280 : 350}
@@ -269,9 +269,10 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
               Transform limiting beliefs through archetypal hypnosis. Channel ancient wisdom. Unlock your authentic power.
             </p>
           </div>
-
+<div>
           {/* Hero CTAs - More Prominent */}
           <div className={`flex flex-col sm:flex-row gap-4 md:gap-6 justify-center mb-8 md:mb-16 transition-all duration-1000 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+            </div>
             <button
               onClick={onEnterApp}
               className="group px-8 md:px-10 py-3 md:py-4 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-2xl text-black font-bold text-base md:text-lg hover:scale-105 transition-all duration-300 shadow-2xl shadow-teal-400/25 flex items-center justify-center space-x-3"
