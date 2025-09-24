@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ActionsBar from '../ActionsBar';
 import Orb from '../Orb';
 import { EGO_STATES, useAppStore } from '../../store';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { TabId } from '../../types/Navigation';
 import { THEME, getEgoColor } from '../../config/theme';
 
@@ -13,6 +14,7 @@ interface HomeScreenProps {
   selectedEgoState?: string;
   onEgoStateChange?: (egoStateId: string) => void;
   activeTab?: TabId;
+  onShowAuth: () => void;
 }
 
 export default function HomeScreen({ 
@@ -22,11 +24,34 @@ export default function HomeScreen({
   onActionSelect,
   selectedEgoState,
   onEgoStateChange,
-  activeTab
+  activeTab,
+  onShowAuth
 }: HomeScreenProps) {
   const { activeEgoState } = useAppStore();
+  const { isAuthenticated } = useAuth();
   
   const currentState = EGO_STATES.find(s => s.id === activeEgoState) || EGO_STATES[0];
+
+  // Handle orb tap with authentication check
+  const handleOrbTap = () => {
+    console.log('[HOME] Orb tapped, isAuthenticated:', isAuthenticated);
+    if (!isAuthenticated) {
+      console.log('[HOME] Not authenticated, showing auth modal');
+      onShowAuth();
+      return;
+    }
+    console.log('[HOME] Authenticated, calling original onOrbTap');
+    onOrbTap();
+  };
+
+  // Handle action selection with authentication check
+  const handleActionSelect = (action: any) => {
+    if (!isAuthenticated) {
+      onShowAuth();
+      return;
+    }
+    onActionSelect(action);
+  };
 
   return (
     <div className="h-full bg-black flex flex-col overflow-hidden">
@@ -62,7 +87,7 @@ export default function HomeScreen({
       <div className="flex-1 min-h-0 flex items-center justify-center relative z-30">
         <div className="flex items-center justify-center">
           <Orb
-          onTap={onOrbTap}
+          onTap={handleOrbTap}
           afterglow={false}
           size={400}
           variant="webgl"
@@ -74,8 +99,8 @@ export default function HomeScreen({
       <div className="flex-shrink-0 px-4 pb-40 relative z-40">
         <ActionsBar 
           selectedAction={selectedAction}
-          onActionSelect={onActionSelect}
-          onNavigateToCreate={() => onTabChange('create')}
+          onActionSelect={handleActionSelect}
+          onNavigateToCreate={() => isAuthenticated ? onTabChange('create') : onShowAuth()}
         />
       </div>
     </div>

@@ -178,6 +178,7 @@ function App() {
             selectedEgoState={activeEgoState}
             onEgoStateChange={setActiveEgoState}
             activeTab={activeTab}
+            onShowAuth={() => setShowAuthModal(true)}
           />
         );
       case 'explore':
