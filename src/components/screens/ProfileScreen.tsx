@@ -216,17 +216,23 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
               <div className="flex items-center space-x-4">
                 {/* Living Orb */}
                 <div className="flex-shrink-0 hidden sm:flex sm:items-center sm:justify-center">
-                  <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${currentState.color} border border-white/30 flex items-center justify-center animate-pulse`}>
-                    <span className="text-2xl">{currentState.icon}</span>
-                  </div>
+                  <Orb
+                    onTap={() => {}}
+                    egoState={activeEgoState}
+                    size={80}
+                    variant="webgl"
+                  />
                 </div>
                 
                 {/* Current State Info */}
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex items-center space-x-3 sm:hidden">
-                    <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${currentState.color} border border-white/30 flex items-center justify-center animate-pulse`}>
-                      <span className="text-lg">{currentState.icon}</span>
-                    </div>
+                    <Orb
+                      onTap={() => {}}
+                      egoState={activeEgoState}
+                      size={48}
+                      variant="webgl"
+                    />
                     <div>
                       <h2 className="text-white font-bold text-base">Current Archetype</h2>
                       <h3 className="text-purple-300 font-semibold text-lg">{currentState.name}</h3>

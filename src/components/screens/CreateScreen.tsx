@@ -684,7 +684,6 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
               egoState={orbState.color}
               size={200}
               variant="webgl"
-              className="opacity-80"
             />
           </div>
           
