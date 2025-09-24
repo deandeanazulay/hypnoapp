@@ -48,6 +48,13 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
   const isActiveRef = useRef(true);
   const [webglSupported, setWebglSupported] = React.useState<boolean | null>(null);
   const [contextLost, setContextLost] = React.useState(false);
+  const alienStateRef = useRef({
+    pulse: 0,
+    intensity: 1,
+    colorShift: 0,
+    organicOffset: 0,
+    tentaclePhase: 0
+  });
 
   // State for animations
   const [isSpeaking, setIsSpeaking] = React.useState(false);
@@ -167,15 +174,35 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     const egoColorInfo = getEgoColor(egoState);
     const color = new THREE.Color(egoColorInfo.accent);
 
-    // Create wireframe sphere geometry
+    // Create alien organic sphere geometry with irregularities
     const sphereGeometry = new THREE.SphereGeometry(10, 64, 64);
+    
+    // Add organic deformation to vertices
+    const positions = sphereGeometry.attributes.position.array;
+    for (let i = 0; i < positions.length; i += 3) {
+      const x = positions[i];
+      const y = positions[i + 1]; 
+      const z = positions[i + 2];
+      
+      // Add subtle organic noise
+      const noise = Math.sin(x * 0.3) * Math.cos(y * 0.3) * Math.sin(z * 0.3) * 0.3;
+      const length = Math.sqrt(x * x + y * y + z * z);
+      const factor = 1 + noise * 0.1;
+      
+      positions[i] = x * factor;
+      positions[i + 1] = y * factor;
+      positions[i + 2] = z * factor;
+    }
+    sphereGeometry.attributes.position.needsUpdate = true;
+    
     const wireframeGeometry = new THREE.WireframeGeometry(sphereGeometry);
     
     // Create material with ego state color
     const material = new THREE.LineBasicMaterial({
       color: color,
       transparent: true,
-      opacity: afterglow ? 0.95 : 0.8
+      opacity: afterglow ? 0.95 : 0.8,
+      linewidth: 2
     });
 
     // Create mesh
@@ -183,16 +210,30 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     orbMeshRef.current = orbMesh;
     scene.add(orbMesh);
 
-    // Add inner glow sphere
+    // Add multiple alien glow layers
     const glowGeometry = new THREE.SphereGeometry(9.5, 32, 32);
-    const glowMaterial = new THREE.MeshBasicMaterial({
+    const glowMaterial1 = new THREE.MeshBasicMaterial({
       color: color,
       transparent: true,
-      opacity: afterglow ? 0.2 : 0.1,
+      opacity: afterglow ? 0.3 : 0.15,
       side: THREE.BackSide
     });
-    const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
-    scene.add(glowMesh);
+    const glowMesh1 = new THREE.Mesh(glowGeometry, glowMaterial1);
+    scene.add(glowMesh1);
+    
+    // Second pulsing layer
+    const pulseGeometry = new THREE.SphereGeometry(8, 32, 32);
+    const pulseMaterial = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 0.1,
+      side: THREE.BackSide
+    });
+    const pulseMesh = new THREE.Mesh(pulseGeometry, pulseMaterial);
+    scene.add(pulseMesh);
+    
+    // Store references for animation
+    orbMesh.userData = { glowMesh1, pulseMesh };
 
     // Start animation loop
     animate();
@@ -203,35 +244,92 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     if (contextLost) return;
 
     const time = Date.now() * 0.001;
-
-    // Breathing animation
-    const breathingScale = 0.95 + 0.05 * Math.sin(time * 0.8);
+    const alienState = alienStateRef.current;
     
-    // Rotation based on ego state
-    const rotationSpeed = afterglow ? 0.3 : 0.2;
+    // Alien pulsing pattern - irregular, organic
+    alienState.pulse = Math.sin(time * 1.3) * 0.3 + 
+                      Math.sin(time * 2.7) * 0.2 + 
+                      Math.sin(time * 4.1) * 0.1;
+    
+    // Color intensity shifts
+    alienState.intensity = 1 + Math.sin(time * 0.7) * 0.3;
+    
+    // Organic offset for tentacle-like movement
+    alienState.organicOffset = Math.sin(time * 0.5) * 0.02;
+    
+    // Tentacle phase for writhing motion
+    alienState.tentaclePhase = time * 0.8;
+
+    // Alien breathing - more dramatic and irregular
+    const primaryPulse = 0.85 + 0.15 * Math.sin(time * 0.6);  // Main heartbeat
+    const secondaryPulse = 1 + alienState.pulse * 0.08;       // Irregular alien pulse
+    const breathingScale = primaryPulse * secondaryPulse;
+    
+    // Alien rotation - multi-axis, unpredictable
+    const baseRotationSpeed = afterglow ? 0.4 : 0.25;
+    const alienRotationX = time * baseRotationSpeed + Math.sin(time * 0.3) * 0.1;
+    const alienRotationY = time * baseRotationSpeed * 0.7 + Math.cos(time * 0.4) * 0.15;
+    const alienRotationZ = Math.sin(time * 0.2) * 0.05;
     
     if (orbMeshRef.current) {
       orbMeshRef.current.scale.setScalar(breathingScale);
-      orbMeshRef.current.rotation.y = time * rotationSpeed;
-      orbMeshRef.current.rotation.x = time * rotationSpeed * 0.5;
-
-      // Speaking indicator - faster breathing
-      if (isSpeaking) {
-        const speakingScale = 0.9 + 0.1 * Math.sin(time * 3);
-        orbMeshRef.current.scale.setScalar(speakingScale);
+      orbMeshRef.current.rotation.x = alienRotationX;
+      orbMeshRef.current.rotation.y = alienRotationY; 
+      orbMeshRef.current.rotation.z = alienRotationZ;
+      
+      // Alien organic movement
+      orbMeshRef.current.position.x = Math.sin(time * 0.3) * 0.5;
+      orbMeshRef.current.position.y = Math.cos(time * 0.4) * 0.3;
+      orbMeshRef.current.position.z = Math.sin(time * 0.2) * 0.2;
+      
+      // Update material opacity for alien intensity
+      const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
+      material.opacity = (afterglow ? 0.95 : 0.8) * alienState.intensity;
+      
+      // Animate glow layers
+      const userData = orbMeshRef.current.userData;
+      if (userData.glowMesh1) {
+        userData.glowMesh1.scale.setScalar(0.9 + alienState.pulse * 0.2);
+        userData.glowMesh1.rotation.x = -alienRotationX * 0.5;
+        userData.glowMesh1.rotation.y = -alienRotationY * 0.3;
+        
+        const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
+        glowMat.opacity = (afterglow ? 0.3 : 0.15) * (1 + alienState.pulse * 0.5);
+      }
+      
+      if (userData.pulseMesh) {
+        const pulseScale = 0.7 + Math.abs(alienState.pulse) * 0.4;
+        userData.pulseMesh.scale.setScalar(pulseScale);
+        userData.pulseMesh.rotation.z = time * 0.5;
+        
+        const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
+        pulseMat.opacity = 0.1 + Math.abs(alienState.pulse) * 0.2;
       }
 
-      // Listening indicator - pulsing color
+      // Speaking indicator - alien excitement
+      if (isSpeaking) {
+        const speakingScale = 0.8 + 0.2 * Math.sin(time * 6) + 0.1 * Math.sin(time * 12);
+        orbMeshRef.current.scale.setScalar(speakingScale);
+        
+        // Rapid color shifting when speaking
+        material.opacity = 0.7 + 0.3 * Math.sin(time * 8);
+      }
+
+      // Listening indicator - alien attention mode
       if (isListening) {
-        const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
-        material.opacity = 0.6 + 0.4 * Math.sin(time * 4);
+        material.opacity = 0.4 + 0.6 * Math.sin(time * 10);
+        
+        // Listening makes it more erratic
+        orbMeshRef.current.position.x += Math.sin(time * 8) * 0.1;
+        orbMeshRef.current.position.y += Math.cos(time * 9) * 0.1;
       }
     }
 
-    // Gentle camera movement
+    // Dynamic camera movement - alien perspective shifts
     if (cameraRef.current) {
-      cameraRef.current.position.x = 2 * Math.sin(time * 0.1);
-      cameraRef.current.position.y = 1 * Math.cos(time * 0.15);
+      cameraRef.current.position.x = 3 * Math.sin(time * 0.12) + Math.sin(time * 0.8) * 0.5;
+      cameraRef.current.position.y = 2 * Math.cos(time * 0.18) + Math.cos(time * 1.1) * 0.3;
+      cameraRef.current.position.z = 30 + Math.sin(time * 0.05) * 2;
       cameraRef.current.lookAt(0, 0, 0);
     }
 
@@ -239,13 +337,24 @@ const WebGLOrb = forwardRef<WebGLOrbRef, WebGLOrbProps>(({
     animationIdRef.current = requestAnimationFrame(animate);
   };
 
-  // Update orb color when ego state changes
+  // Update alien orb color when ego state changes
   useEffect(() => {
     if (orbMeshRef.current && sceneRef.current) {
       const egoColorInfo = getEgoColor(egoState);
       const color = new THREE.Color(egoColorInfo.accent);
       const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
       material.color = color;
+      
+      // Update glow layers too
+      const userData = orbMeshRef.current.userData;
+      if (userData.glowMesh1) {
+        const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
+        glowMat.color = color;
+      }
+      if (userData.pulseMesh) {
+        const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
+        pulseMat.color = color;
+      }
     }
   }, [egoState]);
 
