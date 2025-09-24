@@ -80,6 +80,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
   // Stable tap handler - no re-init on function change
   const handleTap = useCallback(() => {
+    console.log('[WEBGL-ORB] Tap detected, calling onTap');
     onTap?.();
   }, [onTap]);
 
@@ -105,18 +106,35 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     };
   }, [webglSupported]); // Only depend on WebGL support
 
-  // Attach tap handler separately - no scene re-init
+  // Robust tap handler for mobile + desktop - no scene re-init
   useEffect(() => {
     const canvas = rendererRef.current?.domElement;
-    if (!canvas || !handleTap) return;
+    if (!canvas) return;
     
-    console.log('[ORB] Attaching click handler to canvas');
-    canvas.addEventListener('click', handleTap);
-    canvas.addEventListener('touchend', handleTap);
+    console.log('[ORB] Attaching robust event handlers to canvas');
+    
+    // Ensure canvas can receive events
+    canvas.style.pointerEvents = 'auto';
+    canvas.style.zIndex = '50';
+    canvas.style.position = 'relative';
+    
+    // Robust event handling for mobile + desktop
+    const handleEvent = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[WEBGL-ORB] Event triggered:', e.type);
+      handleTap();
+    };
+    
+    // Multiple event types for maximum compatibility
+    canvas.addEventListener('pointerup', handleEvent, { passive: false });
+    canvas.addEventListener('touchend', handleEvent, { passive: false });
+    canvas.addEventListener('click', handleEvent, { passive: false });
     
     return () => {
-      canvas.removeEventListener('click', handleTap);
-      canvas.removeEventListener('touchend', handleTap);
+      canvas.removeEventListener('pointerup', handleEvent as any);
+      canvas.removeEventListener('touchend', handleEvent as any);
+      canvas.removeEventListener('click', handleEvent as any);
     };
   }, [handleTap]);
 

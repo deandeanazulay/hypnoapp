@@ -67,6 +67,7 @@ export default function GlobalHUD({ onShowAuth }: GlobalHUDProps) {
             <button 
               onClick={() => {
                 console.log('Ego state button clicked - opening modal');
+                console.log('Ego state button clicked - opening modal');
                 openEgoModal();
               }}
               className="flex items-center space-x-2 hover:bg-white/10 rounded-lg px-2 py-1 transition-all duration-300 hover:scale-105 cursor-pointer group"

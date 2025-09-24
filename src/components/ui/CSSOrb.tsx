@@ -40,6 +40,7 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   const handlePointerUp = () => {
     setIsPressed(false);
     console.log('[CSS-ORB] Tap detected, calling onTap');
+    console.log('[CSS-ORB] Tap detected, calling onTap');
     onTap();
   };
   const handlePointerEnter = () => setIsHovering(true);
@@ -48,6 +49,20 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
     setIsPressed(false);
   };
 
+  // Enhanced tap handling for mobile compatibility
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[CSS-ORB] Click event triggered');
+    onTap();
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[CSS-ORB] Touch end event triggered');
+    onTap();
+  };
   // Calculate responsive sizing
   const orbSize = Math.min(size, 400);
   const ringSize1 = orbSize * 0.8;
@@ -65,6 +80,8 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
         onPointerUp={handlePointerUp}
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
+        onClick={handleClick}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Main Orb Core */}
         <div 
@@ -161,3 +178,5 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
 
 CSSOrb.displayName = 'CSSOrb';
 export default CSSOrb;
+
+export default CSSOrb
