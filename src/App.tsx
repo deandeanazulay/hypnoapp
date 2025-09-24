@@ -14,6 +14,8 @@ import ToastManager from './components/layout/ToastManager';
 import AuthModal from './components/auth/AuthModal';
 import GlobalHUD from './components/HUD/GlobalHUD';
 import SettingsModal from './components/modals/SettingsModal';
+import PlanModal from './components/modals/PlanModal';
+import TokensModal from './components/modals/TokensModal';
 import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancelled from './components/PaymentCancelled';
 import { useViewportLayout } from './hooks/useViewportLayout';
@@ -251,6 +253,8 @@ function App() {
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
         />
+        <PlanModal />
+        <TokensModal />
         {/* Toast Notifications */}
         <ToastManager />
       </>

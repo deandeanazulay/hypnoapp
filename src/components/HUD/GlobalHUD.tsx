@@ -51,24 +51,11 @@ export default function GlobalHUD() {
   };
 
   const handlePlanClick = () => {
-    if (user.plan === 'free') {
-      showToast({
-        type: 'info',
-        message: 'Upgrade to Premium for unlimited sessions, exclusive ego states, and AI voice guidance!'
-      });
-    } else {
-      showToast({
-        type: 'success',
-        message: 'You have Premium access! Enjoy unlimited sessions.'
-      });
-    }
+    openModal('plan');
   };
 
   const handleTokensClick = () => {
-    showToast({
-      type: 'info',
-      message: `You have ${user.tokens} tokens. Use them for custom protocols and premium features.`
-    });
+    openModal('tokens');
   };
 
   const handleLevelClick = () => {

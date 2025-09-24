@@ -26,6 +26,8 @@ interface AppState {
     egoStates: boolean;
     settings: boolean;
     auth: boolean;
+    plan: boolean;
+    tokens: boolean;
   };
   
   // Toasts
@@ -54,7 +56,9 @@ export const useAppStore = create<AppState>()(
       modals: {
         egoStates: false,
         settings: false,
-        auth: false
+        auth: false,
+        plan: false,
+        tokens: false
       },
       toasts: [],
 
