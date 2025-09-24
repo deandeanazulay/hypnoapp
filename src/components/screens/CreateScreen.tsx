@@ -210,15 +210,15 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
   return (
     <PageShell
       body={
-        <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative">
+        <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
           {/* Background */}
           <div className="absolute inset-0">
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
           </div>
 
-          <div className="relative z-10 h-full flex flex-col justify-center p-6">
+          <div className="relative z-10 h-full flex flex-col justify-center p-4 pt-16">
             {/* Progress Indicator */}
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-6">
               <div className="flex items-center space-x-4">
                 {[1, 2, 3].map((step) => (
                   <div key={step} className="flex items-center">
@@ -242,12 +242,12 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
             </div>
 
             {/* Step Content */}
-            <GlassCard variant="premium" className="max-w-2xl mx-auto p-8">
+            <GlassCard variant="premium" className="max-w-md mx-auto p-6 flex-shrink-0">
               {renderStep()}
             </GlassCard>
 
             {/* Navigation */}
-            <div className="flex justify-between items-center max-w-2xl mx-auto mt-8">
+            <div className="flex justify-between items-center max-w-md mx-auto mt-6 mb-20">
               <GlassButton
                 onClick={handleBack}
                 variant="secondary"
