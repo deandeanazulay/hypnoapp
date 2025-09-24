@@ -39,7 +39,7 @@ export default function ActionsBar({
   const allActions = [...QUICK_ACTIONS, ...convertedCustomActions];
 
   const handleActionClick = (action: any) => {
-    onActionSelect(action.id === selectedAction?.id ? null : action);
+    onActionSelect(action);
   };
 
   const portal = document.getElementById('ui-portal');
