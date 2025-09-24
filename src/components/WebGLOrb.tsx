@@ -479,3 +479,5 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 WebGLOrb.displayName = 'WebGLOrb';
 
 export default WebGLOrb;
+
+export default WebGLOrb
