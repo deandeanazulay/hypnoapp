@@ -269,7 +269,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
               Transform limiting beliefs through archetypal hypnosis. Channel ancient wisdom. Unlock your authentic power.
             </p>
           </div>
-<div>
+<div className="items-center">
           {/* Hero CTAs - More Prominent */}
           <div className={`flex flex-col sm:flex-row gap-4 md:gap-6 justify-center mb-8 md:mb-16 transition-all duration-1000 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
             </div>
