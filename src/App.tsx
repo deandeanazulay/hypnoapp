@@ -1,14 +1,339 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter } from 'react-router-dom';
+import { GameStateProvider } from './components/GameStateManager';
+import { useAppStore } from './store';
+import { useSimpleAuth } from './hooks/useSimpleAuth';
+import { useViewportLayout } from './hooks/useViewportLayout';
 
-function App() {
-  return (
-    <div className="h-screen w-screen bg-black flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-white text-2xl mb-4">Libero</h1>
-        <p className="text-white/60">Loading...</p>
+// Screens
+import HomeScreen from './components/screens/HomeScreen';
+import ExploreScreen from './components/screens/ExploreScreen';
+import CreateScreen from './components/screens/CreateScreen';
+import FavoritesScreen from './components/screens/FavoritesScreen';
+import ProfileScreen from './components/screens/ProfileScreen';
+
+// Layout Components
+import NavigationTabs from './components/NavigationTabs';
+import GlobalHUD from './components/HUD/GlobalHUD';
+import ToastManager from './components/layout/ToastManager';
+
+// Modals
+import AuthModal from './components/auth/AuthModal';
+import EgoStatesModal from './components/modals/EgoStatesModal';
+import SettingsModal from './components/modals/SettingsModal';
+import PlanModal from './components/modals/PlanModal';
+import TokensModal from './components/modals/TokensModal';
+
+// Session Components
+import UnifiedSessionWorld from './components/UnifiedSessionWorld';
+
+// Pickers
+import GoalPicker from './components/GoalPicker';
+import MethodPicker from './components/MethodPicker';
+import ModePicker from './components/ModePicker';
+
+// Landing Page
+import LandingPage from './components/LandingPage';
+
+import { QUICK_ACTIONS } from './utils/actions';
+import { useProtocolStore } from './state/protocolStore';
+
+export default function App() {
+  useViewportLayout();
+  
+  const { 
+    activeTab, 
+    setActiveTab, 
+    modals, 
+    openModal, 
+    closeModal,
+    activeEgoState, 
+    setActiveEgoState,
+    showToast 
+  } = useAppStore();
+  
+  const { isAuthenticated, loading: authLoading } = useSimpleAuth();
+  const { customActions } = useProtocolStore();
+  
+  // UI States
+  const [selectedAction, setSelectedAction] = useState<any>(null);
+  const [showGoalPicker, setShowGoalPicker] = useState(false);
+  const [showMethodPicker, setShowMethodPicker] = useState(false);
+  const [showModePicker, setShowModePicker] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<any>(null);
+  const [selectedMethod, setSelectedMethod] = useState<any>(null);
+  const [showSessionWorld, setShowSessionWorld] = useState(false);
+  const [sessionConfig, setSessionConfig] = useState<any>(null);
+  const [showLanding, setShowLanding] = useState(true);
+
+  // Update landing page visibility when auth state changes
+  useEffect(() => {
+    console.log('[APP] Auth effect triggered:', { authLoading, isAuthenticated });
+    if (!authLoading) {
+      console.log('[APP] Setting showLanding to:', !isAuthenticated);
+      setShowLanding(!isAuthenticated);
+    }
+  }, [isAuthenticated, authLoading]);
+
+  // Show loading screen while auth is loading
+  if (authLoading) {
+    console.log('[APP] Auth loading state - showing spinner');
+    return (
+      <div className="h-screen w-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-teal-400/20 border-t-teal-400 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white/60 text-sm">Loading Libero...</p>
+        </div>
       </div>
-    </div>
+    );
+  }
+
+  // Show landing page first
+  if (showLanding) {
+    console.log('[APP] Showing landing page');
+    return (
+      <div style={{ height: '100vh', overflow: 'hidden' }}>
+        <LandingPage
+          onEnterApp={handleEnterApp}
+          onShowAuth={handleShowAuth}
+        />
+      </div>
+    );
+  }
+
+  console.log('[APP] Showing main app');
+
+  // Render current tab content
+  const renderCurrentTab = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <HomeScreen
+            onOrbTap={handleOrbTap}
+            onTabChange={setActiveTab}
+            selectedAction={selectedAction}
+            onActionSelect={handleActionSelect}
+            selectedEgoState={activeEgoState}
+            onEgoStateChange={setActiveEgoState}
+            activeTab={activeTab}
+            onShowAuth={handleShowAuth}
+          />
+        );
+      case 'explore':
+        return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
+      case 'create':
+        return <CreateScreen onProtocolCreate={handleProtocolCreate} onShowAuth={handleShowAuth} />;
+      case 'favorites':
+        return <FavoritesScreen onSessionSelect={handleFavoriteSelect} />;
+      case 'profile':
+        return (
+          <ProfileScreen
+            selectedEgoState={activeEgoState}
+            onEgoStateChange={setActiveEgoState}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Event Handlers
+  function handleEnterApp() {
+    console.log('[APP] handleEnterApp called');
+    setShowLanding(false);
+  }
+
+  function handleShowAuth() {
+    console.log('[APP] handleShowAuth called');
+    openModal('auth');
+  }
+
+  function handleOrbTap() {
+    console.log('[APP] Orb tapped, selectedAction:', selectedAction);
+    if (selectedAction) {
+      setShowGoalPicker(true);
+    } else {
+      showToast({ type: 'info', message: 'Select an action from the bar below first' });
+    }
+  }
+
+  function handleActionSelect(action: any) {
+    console.log('[APP] Action selected:', action);
+    setSelectedAction(action);
+  }
+
+  function handleGoalSelect(goal: any) {
+    console.log('[APP] Goal selected:', goal);
+    setSelectedGoal(goal);
+    setShowGoalPicker(false);
+    setShowMethodPicker(true);
+  }
+
+  function handleMethodSelect(method: any) {
+    console.log('[APP] Method selected:', method);
+    setSelectedMethod(method);
+    setShowMethodPicker(false);
+    setShowModePicker(true);
+  }
+
+  function handleModeSelect({ mode, duration }: any) {
+    console.log('[APP] Mode selected:', { mode, duration });
+    
+    const config = {
+      egoState: activeEgoState,
+      action: selectedAction,
+      goal: selectedGoal,
+      method: selectedMethod,
+      mode,
+      duration: parseInt(duration),
+      type: 'unified' as const
+    };
+    
+    setSessionConfig(config);
+    setShowModePicker(false);
+    setShowSessionWorld(true);
+  }
+
+  function handleProtocolSelect(protocol: any) {
+    console.log('[APP] Protocol selected:', protocol);
+    
+    const config = {
+      egoState: activeEgoState,
+      protocol,
+      type: 'protocol' as const,
+      duration: protocol.duration
+    };
+    
+    setSessionConfig(config);
+    setShowSessionWorld(true);
+  }
+
+  function handleProtocolCreate(protocol: any) {
+    console.log('[APP] Protocol created:', protocol);
+    
+    const config = {
+      egoState: activeEgoState,
+      customProtocol: protocol,
+      type: 'protocol' as const,
+      duration: protocol.duration
+    };
+    
+    setSessionConfig(config);
+    setShowSessionWorld(true);
+  }
+
+  function handleFavoriteSelect(session: any) {
+    console.log('[APP] Favorite selected:', session);
+    
+    const config = {
+      egoState: session.egoState,
+      session,
+      type: 'favorite' as const,
+      duration: session.duration
+    };
+    
+    setSessionConfig(config);
+    setShowSessionWorld(true);
+  }
+
+  function handleSessionComplete() {
+    console.log('[APP] Session completed');
+    setShowSessionWorld(false);
+    setSelectedAction(null);
+    setSelectedGoal(null);
+    setSelectedMethod(null);
+    setSessionConfig(null);
+    setActiveTab('home');
+  }
+
+  function handleSessionCancel() {
+    console.log('[APP] Session cancelled');
+    setShowSessionWorld(false);
+    setSelectedAction(null);
+    setSelectedGoal(null);
+    setSelectedMethod(null);
+    setSessionConfig(null);
+  }
+
+  // Show session world if active
+  if (showSessionWorld && sessionConfig) {
+    return (
+      <GameStateProvider>
+        <UnifiedSessionWorld
+          onComplete={handleSessionComplete}
+          onCancel={handleSessionCancel}
+          sessionConfig={sessionConfig}
+        />
+      </GameStateProvider>
+    );
+  }
+
+  return (
+    <BrowserRouter>
+      <GameStateProvider>
+        <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
+          {/* Global Header HUD */}
+          <GlobalHUD />
+          
+          {/* Main Body Content - Flex grow */}
+          <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content" style={{ paddingTop: '48px' }}>
+            {/* Current Tab Content */}
+            <div className="relative z-10 h-full">
+              {renderCurrentTab()}
+            </div>
+          </div>
+
+          {/* Bottom Navigation */}
+          <NavigationTabs 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab} 
+          />
+
+          {/* Pickers */}
+          {showGoalPicker && (
+            <GoalPicker
+              onSelect={handleGoalSelect}
+              onClose={() => setShowGoalPicker(false)}
+            />
+          )}
+
+          {showMethodPicker && selectedGoal && (
+            <MethodPicker
+              selectedGoal={selectedGoal}
+              onSelect={handleMethodSelect}
+              onClose={() => setShowMethodPicker(false)}
+            />
+          )}
+
+          {showModePicker && (
+            <ModePicker
+              onSelect={handleModeSelect}
+              onClose={() => setShowModePicker(false)}
+            />
+          )}
+
+          {/* Global Modals */}
+          <AuthModal 
+            isOpen={modals.auth} 
+            onClose={() => closeModal('auth')} 
+          />
+          
+          <EgoStatesModal />
+          
+          <SettingsModal 
+            isOpen={modals.settings} 
+            onClose={() => closeModal('settings')}
+            selectedEgoState={activeEgoState}
+            onEgoStateChange={setActiveEgoState}
+          />
+          
+          <PlanModal />
+          <TokensModal />
+
+          {/* Toast Manager */}
+          <ToastManager />
+        </div>
+      </GameStateProvider>
+    </BrowserRouter>
   );
 }
-
-export default App;
