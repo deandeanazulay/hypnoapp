@@ -106,15 +106,15 @@ export default function HomeScreen({
               <div 
                 className="relative z-30 flex items-center justify-center" 
                 style={{ 
-                  width: window.innerWidth < 768 ? '240px' : '320px',
-                  height: window.innerWidth < 768 ? '240px' : '320px'
+                  width: window.innerWidth < 768 ? '200px' : '240px',
+                  height: window.innerWidth < 768 ? '200px' : '240px'
                 }}
               >
                 <Orb
                   onTap={onOrbTap}
                   afterglow={false}
                   egoState={activeEgoState}
-                  size={window.innerWidth < 768 ? 240 : 320}
+                  size={window.innerWidth < 768 ? 200 : 240}
                   variant="webgl"
                 />
               </div>

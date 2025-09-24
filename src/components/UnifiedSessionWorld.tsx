@@ -281,12 +281,12 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
 
         {/* The Orb - inheriting color from ego state */}
-        <div className="mb-6 flex items-center justify-center w-80 h-80 flex-shrink-0">
+        <div className="mb-6 flex items-center justify-center w-40 h-40 flex-shrink-0">
           <Orb
             onTap={() => {}}
             afterglow={true}
             egoState={sessionConfig.egoState}
-            size={320}
+            size={160}
             variant="webgl"
           />
         </div>
