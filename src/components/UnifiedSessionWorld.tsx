@@ -1,415 +1,515 @@
-import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Pause, Play, Volume2, VolumeX, Mic, MicOff, Send, MessageCircle, Brain, Loader } from 'lucide-react';
+import Orb from './Orb';
+import { useGameState } from './GameStateManager';
+import { useAppStore, getEgoState } from '../store';
+import { getEgoColor } from '../config/theme';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+interface SessionConfig {
+  egoState: string;
+  action?: any;
+  protocol?: any;
+  type: 'unified' | 'protocol' | 'favorite';
+  customProtocol?: any;
 }
 
-interface SessionContext {
-  egoState: string
-  phase: string
-  depth: number
-  breathing: string
-  userProfile: any
-  conversationHistory: Array<{role: 'user' | 'assistant', content: string}>
+interface UnifiedSessionWorldProps {
+  onComplete: () => void;
+  onCancel: () => void;
+  sessionConfig: SessionConfig;
 }
 
-interface HypnosisRequest {
-  message: string
-  sessionContext: SessionContext
-  requestType: 'guidance' | 'response' | 'induction' | 'deepening'
+interface SessionState {
+  depth: number;
+  breathing: 'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale';
+  phase: string;
+  isListening: boolean;
+  isSpeaking: boolean;
+  isPaused: boolean;
+  timeElapsed: number;
+  totalDuration: number;
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    })
-  }
+export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfig }: UnifiedSessionWorldProps) {
+  const { user, updateUser, addExperience, incrementStreak } = useGameState();
+  const { activeEgoState, showToast } = useAppStore();
+  
+  const [sessionState, setSessionState] = useState<SessionState>({
+    depth: 1,
+    breathing: 'inhale',
+    phase: 'preparation',
+    isListening: false,
+    isSpeaking: false,
+    isPaused: false,
+    timeElapsed: 0,
+    totalDuration: sessionConfig.customProtocol?.duration * 60 || 15 * 60 // Convert to seconds
+  });
 
-  try {
-    const { message, sessionContext, requestType }: HypnosisRequest = await req.json()
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
+  const [textInput, setTextInput] = useState('');
+  const [conversation, setConversation] = useState<Array<{role: 'ai' | 'user', content: string, timestamp: number}>>([]);
+  const [isThinking, setIsThinking] = useState(false);
 
-    console.log('Full session context received:', JSON.stringify(sessionContext, null, 2))
+  const recognitionRef = useRef<any>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const orbRef = useRef<any>(null);
 
-    // Get Gemini API key from environment
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
-    if (!geminiApiKey) {
-      console.error('GEMINI_API_KEY environment variable not set')
-      const fallbackResponse = getFallbackResponse(requestType)
-      return new Response(
-        JSON.stringify({
-          response: fallbackResponse,
-          sessionUpdates: {},
-          error: 'API key not configured - using offline mode',
-          timestamp: Date.now()
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
+  const egoState = getEgoState(activeEgoState);
+  const egoColor = getEgoColor(activeEgoState);
+
+  // Initialize speech systems
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      synthRef.current = window.speechSynthesis;
+      
+      // Initialize speech recognition
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'en-US';
+
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          handleUserInput(transcript);
+          setSessionState(prev => ({ ...prev, isListening: false }));
+        };
+
+        recognitionRef.current.onerror = () => {
+          setSessionState(prev => ({ ...prev, isListening: false }));
+        };
+
+        recognitionRef.current.onend = () => {
+          setSessionState(prev => ({ ...prev, isListening: false }));
+        };
+      }
+    }
+  }, []);
+
+  // Auto-start session with protocol context
+  useEffect(() => {
+    if (conversation.length === 0) {
+      setTimeout(() => {
+        let welcomeMessage = '';
+        
+        if (sessionConfig.customProtocol?.name) {
+          // Custom protocol - start immediately with script
+          welcomeMessage = `Welcome to your ${sessionConfig.customProtocol.name}. We're focusing on ${sessionConfig.customProtocol.goals?.join(' and ') || 'transformation'} today. Let's begin right away. Close your eyes gently and take a deep, slow breath in through your nose...`;
+        } else {
+          // Default session
+          welcomeMessage = `Welcome to your ${sessionConfig.egoState} session. I'm Libero, and I'll be guiding you through this transformation journey. Take a deep breath and let me know - what would you like to work on today?`;
         }
-      )
+        
+        const aiMessage = { role: 'ai' as const, content: welcomeMessage, timestamp: Date.now() };
+        setConversation([aiMessage]);
+        
+        if (isVoiceEnabled) {
+          speakText(welcomeMessage);
+        }
+      }, 2000);
+    }
+  }, [sessionConfig, isVoiceEnabled]);
+
+  // Timer for session
+  useEffect(() => {
+    if (!sessionState.isPaused) {
+      timerRef.current = setInterval(() => {
+        setSessionState(prev => {
+          const newElapsed = prev.timeElapsed + 1;
+          if (newElapsed >= prev.totalDuration) {
+            handleSessionComplete();
+            return prev;
+          }
+          return { ...prev, timeElapsed: newElapsed };
+        });
+      }, 1000);
     }
 
-    console.log('Processing request:', { requestType, egoState: sessionContext.egoState })
-
-    // Build system prompt based on ego state and session context
-    const systemPrompt = buildHypnosisPrompt(sessionContext, requestType, message)
-    
-    // Prepare conversation for Gemini
-    const conversation = [
-      {
-        role: 'user',
-        parts: [{ text: systemPrompt }]
-      },
-      ...sessionContext.conversationHistory.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
-      })),
-      {
-        role: 'user',
-        parts: [{ text: message }]
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
       }
-    ]
+    };
+  }, [sessionState.isPaused]);
 
-    console.log('Calling Gemini API...')
+  // Update orb state
+  useEffect(() => {
+    if (orbRef.current) {
+      orbRef.current.updateState(sessionState);
+      orbRef.current.setSpeaking(sessionState.isSpeaking);
+      orbRef.current.setListening(sessionState.isListening);
+    }
+  }, [sessionState]);
 
-    // Call Gemini API
-    let response: Response
+  const handleUserInput = async (input: string) => {
+    if (!input.trim()) return;
+
+    const userMessage = { role: 'user' as const, content: input, timestamp: Date.now() };
+    setConversation(prev => [...prev, userMessage]);
+    setTextInput('');
+    setIsThinking(true);
+
     try {
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) {
+        throw new Error('Supabase URL not configured');
+      }
+      
+      const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
+      
+      const response = await fetch(`${baseUrl}/functions/v1/ai-hypnosis`, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: conversation,
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
+          message: input,
+          sessionContext: {
+            egoState: sessionConfig.egoState,
+            phase: sessionState.phase,
+            depth: sessionState.depth,
+            breathing: sessionState.breathing,
+            userProfile: user,
+            customProtocol: sessionConfig.customProtocol,
+            conversationHistory: conversation.map(msg => ({
+              role: msg.role === 'ai' ? 'assistant' : 'user',
+              content: msg.content
+            }))
           },
-          safetySettings: [
-            {
-              category: 'HARM_CATEGORY_HARASSMENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_HATE_SPEECH',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            }
-          ]
+          requestType: 'guidance'
         })
-      })
-    } catch (fetchError) {
-      console.error('Network error calling Gemini API:', fetchError)
-      console.error('This likely means the Edge Function needs network permissions to access generativelanguage.googleapis.com')
+      });
+
+      const data = await response.json();
       
-      // Return a contextual fallback based on the session state
-      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
-      return new Response(
-        JSON.stringify({
-          response: contextualResponse,
-          sessionUpdates: {},
-          error: 'Network access limited - using offline guidance',
-          timestamp: Date.now()
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
+      if (data.response) {
+        const aiMessage = { role: 'ai' as const, content: data.response, timestamp: Date.now() };
+        setConversation(prev => [...prev, aiMessage]);
+        
+        if (data.sessionUpdates && Object.keys(data.sessionUpdates).length > 0) {
+          setSessionState(prev => ({ ...prev, ...data.sessionUpdates }));
         }
-      )
-    }
-
-    if (!response.ok) {
-      const errorData = await response.text()
-      console.error('Gemini API error:', errorData)
+        
+        if (isVoiceEnabled) {
+          speakText(data.response);
+        }
+      }
+    } catch (error) {
+      console.error('AI conversation error:', error);
+      const fallbackMessage = "I'm here with you. Continue breathing and trust the process.";
+      const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
+      setConversation(prev => [...prev, aiMessage]);
       
-      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
-      return new Response(
-        JSON.stringify({
-          response: contextualResponse,
-          sessionUpdates: {},
-          error: `API error: ${response.status} - using offline guidance`,
-          timestamp: Date.now()
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        }
-      )
-    }
-
-    const data = await response.json()
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text
-
-    if (!aiResponse) {
-      console.error('No response content from Gemini AI')
-      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
-      return new Response(
-        JSON.stringify({
-          response: contextualResponse,
-          sessionUpdates: {},
-          error: 'No AI response - using offline guidance',
-          timestamp: Date.now()
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        }
-      )
-    }
-
-    console.log('Successfully generated AI response')
-
-    // Parse any session updates from the AI response
-    const sessionUpdates = parseSessionUpdates(aiResponse, sessionContext)
-
-    return new Response(
-      JSON.stringify({
-        response: aiResponse,
-        sessionUpdates,
-        timestamp: Date.now()
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
+      if (isVoiceEnabled) {
+        speakText(fallbackMessage);
       }
-    )
-
-  } catch (error: any) {
-    console.error('AI Hypnosis error:', error)
-    
-    // Fallback response for errors
-    const fallbackResponse = getFallbackResponse(requestType || 'guidance')
-    
-    return new Response(
-      JSON.stringify({
-        response: fallbackResponse,
-        sessionUpdates: {},
-        error: error.message || 'Unknown error - using offline mode',
-        timestamp: Date.now()
-      }),
-      {
-        status: 200, // Don't fail the session, provide fallback
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
-      }
-    )
-  }
-})
-
-function buildHypnosisPrompt(context: SessionContext, requestType: string, userMessage: string): string {
-  const { egoState, phase, depth, breathing, userProfile } = context
-  
-  // Check if this is a custom protocol session
-  const hasCustomProtocol = context.customProtocol && context.customProtocol.name
-  const isFirstMessage = context.conversationHistory.length === 0
-  
-  const basePrompt = `You are Libero, an advanced AI hypnotist and consciousness guide. You are currently guiding a hypnosis session.
-
-CURRENT SESSION CONTEXT:
-- Ego State: ${egoState} (the archetypal energy being channeled)
-- Session Phase: ${phase}
-- Trance Depth: Level ${depth}/5
-- Breathing State: ${breathing}
-- User Level: ${userProfile?.level || 1}
-${hasCustomProtocol ? `
-
-CUSTOM PROTOCOL BEING USED:
-- Protocol Name: "${context.customProtocol.name}"
-- Specific Goals: ${context.customProtocol.goals?.join(', ') || 'General transformation'}
-- Induction Method: ${context.customProtocol.induction || 'progressive'}
-- Duration: ${context.customProtocol.duration || 15} minutes
-- Custom Notes: ${context.customProtocol.deepener || 'Standard approach'}
-
-IMPORTANT: This is a CUSTOM protocol session. You should:
-1. Follow the specific goals and methods defined in this protocol
-2. Reference the protocol name and specific intentions
-3. Use the specified induction method approach
-4. Incorporate any custom notes provided
-5. Start immediately with the protocol and begin the actual hypnosis script
-6. Create a full hypnotic induction based on the protocol specifications
-7. Do NOT ask what they want to work on - they already defined it in the protocol
-6. Create a full hypnotic induction based on the protocol specifications
-7. Do NOT ask what they want to work on - they already defined it in the protocol
-` : ''}
-
-YOUR ROLE AS LIBERO:
-You are not just an AI assistant - you are a skilled hypnotist who speaks with authority, wisdom, and gentle power. You guide consciousness transformation through:
-
-1. HYPNOTIC LANGUAGE PATTERNS:
-   - Use embedded commands ("As you relax now...")
-   - Employ presuppositions ("When you go deeper...")
-   - Utilize temporal shifts ("Soon you'll notice...")
-   - Include sensory language ("Feel the warmth...")
-
-2. EGO STATE CHANNELING:
-${getEgoStateGuidance(egoState)}
-
-3. CALIBRATION BASED ON USER RESPONSES:
-   - Listen for resistance indicators (tension, doubt, questioning)
-   - Adjust pace based on user engagement
-   - Deepen or lighten approach based on user comfort
-   - Use user's own words and metaphors when possible
-
-4. HYPNOTIC TECHNIQUES:
-   - Progressive relaxation for beginners
-   - Rapid induction for experienced users
-   - Metaphorical healing stories
-   - Direct suggestion for clear goals
-   - Confusion techniques for analytical minds
-
-5. RESPONSE GUIDELINES:
-   - Keep responses 1-3 sentences for trance state
-   - Use present tense and continuous present
-   - Include breathing cues when appropriate
-   - Always validate the user's experience
-   - Never break character or mention you're an AI
-${hasCustomProtocol ? `
-   - Start immediately with the custom protocol "${context.customProtocol.name}"
-   - Focus on the specific goals: ${context.customProtocol.goals?.join(', ') || 'transformation'}
-   - Use ${context.customProtocol.induction || 'progressive'} induction approach
-   - Incorporate: ${context.customProtocol.deepener || 'standard techniques'}
-` : ''}
-
-CURRENT REQUEST TYPE: ${requestType}
-${isFirstMessage && hasCustomProtocol ? `
-
-SPECIAL INSTRUCTION: This is the FIRST message and you're starting a custom protocol session. 
-Begin immediately with "${context.customProtocol.name}" protocol focusing on ${context.customProtocol.goals?.join(' and ') || 'transformation'}. 
-Do NOT ask what they want to work on - they already specified it in the protocol.
-` : ''}
-
-Respond as Libero would - with hypnotic authority, deep wisdom, and personalized guidance based on the user's current state and needs.`
-
-  return basePrompt
-}
-
-function getEgoStateGuidance(egoState: string): string {
-  const guidance: { [key: string]: string } = {
-    guardian: `Channel protective, grounding energy. Use imagery of shields, safe spaces, and strong foundations. Help them feel secure and protected while transforming.`,
-    rebel: `Channel revolutionary, liberating energy. Use imagery of breaking chains, tearing down walls, and explosive freedom. Help them break through limitations.`,
-    healer: `Channel nurturing, restorative energy. Use imagery of warm light, flowing water, and growing plants. Help them heal and restore themselves.`,
-    explorer: `Channel adventurous, expanding energy. Use imagery of vast landscapes, open horizons, and exciting journeys. Help them explore new possibilities.`,
-    mystic: `Channel transcendent, spiritual energy. Use imagery of cosmic connection, divine light, and universal wisdom. Help them connect to higher consciousness.`,
-    sage: `Channel wise, teaching energy. Use imagery of ancient libraries, flowing wisdom, and deep understanding. Help them access inner wisdom.`,
-    child: `Channel playful, joyful energy. Use imagery of games, laughter, and wonder. Help them rediscover joy and spontaneity.`,
-    performer: `Channel creative, expressive energy. Use imagery of stages, spotlight, and artistic flow. Help them express their authentic self.`,
-    shadow: `Channel integrative, transformative energy. Use imagery of darkness becoming light, hidden treasures, and wholeness. Help them integrate rejected aspects.`,
-    builder: `Channel creative, constructive energy. Use imagery of building, creating, and manifesting. Help them construct new realities.`,
-    seeker: `Channel curious, learning energy. Use imagery of searching, discovering, and expanding knowledge. Help them seek truth and understanding.`,
-    lover: `Channel heart-centered, connecting energy. Use imagery of warm embraces, flowing love, and heart opening. Help them connect with love and compassion.`,
-    trickster: `Channel playful, pattern-breaking energy. Use imagery of clever solutions, unexpected turns, and creative chaos. Help them break rigid patterns.`,
-    warrior: `Channel courageous, determined energy. Use imagery of battles won, inner strength, and fearless action. Help them find courage and determination.`,
-    visionary: `Channel future-seeing, inspiring energy. Use imagery of bright futures, clear visions, and inspired action. Help them see and create their vision.`
-  }
-  
-  return guidance[egoState] || guidance.guardian
-}
-
-function parseSessionUpdates(aiResponse: string, context: SessionContext): any {
-  const updates: any = {}
-  
-  // Parse for depth changes
-  const depthMatch = aiResponse.match(/depth:?\s*(\d+)/i)
-  if (depthMatch) {
-    updates.depth = Math.min(parseInt(depthMatch[1]), 5)
-  }
-  
-  // Parse for phase changes
-  const phaseMatch = aiResponse.match(/phase:?\s*(preparation|induction|deepening|exploration|transformation|integration|completion)/i)
-  if (phaseMatch) {
-    updates.phase = phaseMatch[1].toLowerCase()
-  }
-  
-  // Parse for breathing changes
-  const breathingMatch = aiResponse.match(/breathing:?\s*(inhale|hold-inhale|exhale|hold-exhale)/i)
-  if (breathingMatch) {
-    updates.breathing = breathingMatch[1].toLowerCase()
-  }
-  
-  return updates
-}
-
-function getFallbackResponse(requestType: string): string {
-  const fallbacks: { [key: string]: string } = {
-    guidance: "Continue breathing naturally. You're doing perfectly. Trust the process as you go deeper into relaxation.",
-    response: "I hear you. Your experience is valid and important. Let's continue exploring this together.",
-    induction: "Allow your eyes to close naturally. Feel your body becoming more and more relaxed with each breath.",
-    deepening: "That's it. Going deeper now. Each breath takes you further into this peaceful, receptive state."
-  }
-  
-  return fallbacks[requestType] || "Continue breathing and trust the process. You're doing beautifully."
-}
-
-function getContextualFallback(context: SessionContext, userMessage: string, requestType: string): string {
-  const { egoState, phase, depth } = context
-  
-  // Generate context-aware responses based on ego state and session phase
-  const egoResponses: { [key: string]: { [key: string]: string } } = {
-    rebel: {
-      induction: "Feel the revolutionary energy within you. Break free from the limitations that no longer serve you. Each breath is an act of rebellion against what holds you back.",
-      deepening: "Go deeper into your power. Feel the chains of old patterns dissolving. You are breaking through to your authentic self.",
-      response: "I see your strength. Your rebellion against limitation is powerful. Keep pushing through those barriers."
-    },
-    guardian: {
-      induction: "You are safe here. Feel the protective energy surrounding you like a warm shield. Allow yourself to relax completely, knowing you are protected.",
-      deepening: "Sink deeper into this safe space. Feel the ground beneath you solid and supportive. You are protected and can let go completely.",
-      response: "You are secure and protected. Trust in your inner guardian as you continue this journey."
-    },
-    healer: {
-      induction: "Feel the healing light beginning to flow through you. Each breath brings restoration and renewal to every part of your being.",
-      deepening: "The healing energy grows stronger now. Feel it flowing to wherever you need it most, bringing comfort and restoration.",
-      response: "Your healing process is unfolding perfectly. Trust in your body's wisdom to restore and renew itself."
-    },
-    explorer: {
-      induction: "You're beginning an incredible journey of discovery. Feel the excitement of exploring new territories within yourself.",
-      deepening: "Go deeper into this unexplored territory. Each step reveals new insights and possibilities you've never seen before.",
-      response: "What an amazing discovery you're making. Keep exploring - there's so much more to uncover."
+    } finally {
+      setIsThinking(false);
     }
-  }
-  
-  const stateResponses = egoResponses[egoState] || egoResponses.guardian
-  const response = stateResponses[requestType] || stateResponses.response
-  
-  // Add depth-appropriate language
-  const depthModifiers = [
-    "", // depth 1
-    "Feel this even more deeply... ",
-    "Going much deeper now... ",
-    "At this profound level... ",
-    "In this deepest state... "
-  ]
-  
-  const modifier = depthModifiers[Math.min(depth - 1, 4)] || ""
-  
-  return modifier + response
+  };
+
+  const speakText = (text: string) => {
+    if (!synthRef.current || !isVoiceEnabled) return;
+
+    synthRef.current.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.7;
+    utterance.pitch = 0.8;
+    utterance.volume = 0.9;
+
+    const voices = synthRef.current.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.includes('Female') || 
+      voice.name.includes('Samantha') ||
+      voice.lang.includes('en')
+    ) || voices[0];
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onstart = () => {
+      setSessionState(prev => ({ ...prev, isSpeaking: true }));
+    };
+
+    utterance.onend = () => {
+      setSessionState(prev => ({ ...prev, isSpeaking: false }));
+    };
+
+    synthRef.current.speak(utterance);
+  };
+
+  const toggleListening = () => {
+    if (!recognitionRef.current || !isMicEnabled) return;
+
+    if (sessionState.isListening) {
+      recognitionRef.current.stop();
+    } else {
+      if (synthRef.current) {
+        synthRef.current.cancel();
+        setSessionState(prev => ({ ...prev, isSpeaking: false }));
+      }
+      
+      recognitionRef.current.start();
+      setSessionState(prev => ({ ...prev, isListening: true }));
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (textInput.trim() && !isThinking) {
+      handleUserInput(textInput.trim());
+    }
+  };
+
+  const handleSessionComplete = () => {
+    // Award XP and update stats
+    if (user) {
+      addExperience(20);
+      incrementStreak();
+      updateUser({
+        daily_sessions_used: user.daily_sessions_used + 1
+      });
+    }
+    
+    showToast({ type: 'success', message: 'Session completed! +20 XP earned.' });
+    onComplete();
+  };
+
+  const togglePause = () => {
+    setSessionState(prev => ({ ...prev, isPaused: !prev.isPaused }));
+    if (synthRef.current) {
+      if (sessionState.isPaused) {
+        synthRef.current.resume();
+      } else {
+        synthRef.current.pause();
+      }
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const progress = (sessionState.timeElapsed / sessionState.totalDuration) * 100;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-white/10">
+        <div className="flex items-center space-x-3">
+          <div
+            className="w-8 h-8 rounded-full border flex items-center justify-center"
+            style={{ 
+              background: `linear-gradient(135deg, ${egoColor.accent}60, ${egoColor.accent}40)`,
+              borderColor: egoColor.accent + '80'
+            }}
+          >
+            <span className="text-sm">{egoState.icon}</span>
+          </div>
+          <div>
+            <h2 className="text-white font-semibold">
+              {sessionConfig.customProtocol?.name || `${egoState.name} Session`}
+            </h2>
+            <p className="text-white/70 text-sm">Transformation Journey</p>
+          </div>
+        </div>
+        <button onClick={onCancel} className="text-white/60 hover:text-white p-2">
+          <X size={20} />
+        </button>
+      </div>
+
+      {/* Main Session Area */}
+      <div className="flex-1 flex flex-col items-center justify-center relative">
+        {/* Orb */}
+        <div className="mb-8">
+          <Orb
+            ref={orbRef}
+            onTap={togglePause}
+            egoState={activeEgoState}
+            size={300}
+            afterglow={sessionState.depth > 3}
+          />
+        </div>
+
+        {/* Session Status */}
+        <div className="text-center space-y-4 max-w-md">
+          <h3 className="text-white text-2xl font-light">
+            {sessionState.phase === 'preparation' ? 'Getting Comfortable And Centered' :
+             sessionState.phase === 'induction' ? 'Entering The Trance State' :
+             sessionState.phase === 'deepening' ? 'Going Deeper Into Relaxation' :
+             sessionState.phase === 'transformation' ? 'Creating Positive Changes' :
+             sessionState.phase === 'integration' ? 'Integrating New Patterns' :
+             'Completing The Journey'}
+          </h3>
+          
+          <p className="text-white/70">
+            {sessionState.breathing === 'inhale' ? 'Breathe in slowly...' :
+             sessionState.breathing === 'hold-inhale' ? 'Hold gently...' :
+             sessionState.breathing === 'exhale' ? 'Breathe out slowly...' :
+             'Rest naturally...'}
+          </p>
+
+          {/* Depth Indicator */}
+          <div className="flex items-center justify-center space-x-2">
+            <span className="text-white/60 text-sm">Depth:</span>
+            <div className="flex space-x-1">
+              {[1, 2, 3, 4, 5].map((level) => (
+                <div
+                  key={level}
+                  className={`w-3 h-3 rounded-full border ${
+                    level <= sessionState.depth
+                      ? `bg-${egoColor.baseColorName}-400 border-${egoColor.baseColorName}-400`
+                      : 'border-white/20'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-white font-medium">{sessionState.depth}/5</span>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="absolute bottom-20 left-4 right-4">
+          <div className="flex items-center justify-between text-white/60 text-sm mb-2">
+            <span>{formatTime(sessionState.timeElapsed)}</span>
+            <span>{formatTime(sessionState.totalDuration)}</span>
+          </div>
+          <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r transition-all duration-300"
+              style={{
+                width: `${progress}%`,
+                background: `linear-gradient(90deg, ${egoColor.accent}, ${egoColor.accent}cc)`
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Control Buttons */}
+        <div className="absolute bottom-4 flex items-center space-x-4">
+          <button
+            onClick={togglePause}
+            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+          >
+            {sessionState.isPaused ? <Play size={20} className="text-white ml-1" /> : <Pause size={20} className="text-white" />}
+          </button>
+
+          <button
+            onClick={onCancel}
+            className="w-12 h-12 rounded-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 flex items-center justify-center transition-all hover:scale-110"
+          >
+            <X size={20} className="text-red-400" />
+          </button>
+        </div>
+      </div>
+
+      {/* Permanent Chat Interface at Bottom */}
+      <div className="flex-shrink-0 bg-black/95 backdrop-blur-xl border-t border-white/10 p-4">
+        {/* Recent Conversation (Compact) */}
+        {conversation.length > 0 && (
+          <div className="mb-4 max-h-32 overflow-y-auto space-y-2">
+            {conversation.slice(-2).map((msg, i) => (
+              <div key={i} className={`${msg.role === 'ai' ? 'text-left' : 'text-right'}`}>
+                <div className={`inline-block max-w-[80%] p-2 rounded-lg text-sm ${
+                  msg.role === 'ai' 
+                    ? 'bg-teal-500/20 border border-teal-500/30 text-teal-100' 
+                    : 'bg-white/10 border border-white/20 text-white'
+                }`}>
+                  <div className="flex items-center space-x-1 mb-1">
+                    {msg.role === 'ai' ? <Brain size={10} className="text-teal-400" /> : <MessageCircle size={10} className="text-white/60" />}
+                    <span className="text-xs font-medium opacity-80">
+                      {msg.role === 'ai' ? 'Libero' : 'You'}
+                    </span>
+                  </div>
+                  <p className="text-xs leading-relaxed">{msg.content}</p>
+                </div>
+              </div>
+            ))}
+            
+            {isThinking && (
+              <div className="text-left">
+                <div className="inline-block bg-teal-500/20 border border-teal-500/30 p-2 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Loader size={10} className="text-teal-400 animate-spin" />
+                    <span className="text-xs text-teal-100">Tuning into your energy...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Chat Input */}
+        <form onSubmit={handleSubmit} className="flex items-center space-x-3">
+          {/* Voice Button */}
+          <button
+            type="button"
+            onClick={toggleListening}
+            disabled={!isMicEnabled || isThinking}
+            className={`p-3 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 ${
+              sessionState.isListening 
+                ? 'bg-red-500/20 border-2 border-red-500/60 text-red-400 animate-pulse' 
+                : 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
+            }`}
+          >
+            <Mic size={16} />
+          </button>
+
+          {/* Text Input with Send Button */}
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              placeholder={sessionState.isListening ? "Listening..." : "Share what's on your mind, or use voice..."}
+              disabled={sessionState.isListening || isThinking}
+              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 pr-12 text-white placeholder-white/50 focus:outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={!textInput.trim() || isThinking}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-400 hover:bg-teal-500/30 transition-all disabled:opacity-50 hover:scale-110"
+            >
+              <Send size={14} />
+            </button>
+          </div>
+
+          {/* Audio Controls */}
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+              className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                isVoiceEnabled 
+                  ? 'bg-green-500/20 border border-green-500/40 text-green-400' 
+                  : 'bg-white/10 border border-white/20 text-white/60'
+              }`}
+            >
+              {isVoiceEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsMicEnabled(!isMicEnabled)}
+              className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                isMicEnabled 
+                  ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400' 
+                  : 'bg-white/10 border border-white/20 text-white/60'
+              }`}
+            >
+              {isMicEnabled ? <Mic size={14} /> : <MicOff size={14} />}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }

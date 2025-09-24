@@ -13,6 +13,7 @@ interface SessionContext {
   breathing: string
   userProfile: any
   conversationHistory: Array<{role: 'user' | 'assistant', content: string}>
+  customProtocol?: any
 }
 
 interface HypnosisRequest {
@@ -117,7 +118,6 @@ Deno.serve(async (req: Request) => {
       })
     } catch (fetchError) {
       console.error('Network error calling Gemini API:', fetchError)
-      console.error('This likely means the Edge Function needs network permissions to access generativelanguage.googleapis.com')
       
       // Return a contextual fallback based on the session state
       const contextualResponse = getContextualFallback(sessionContext, message, requestType)
@@ -203,7 +203,7 @@ Deno.serve(async (req: Request) => {
     )
 
   } catch (error: any) {
-    console.error('AI Hypnosis error:', error)
+    console.error('Unified Session World error:', error)
     
     // Fallback response for errors
     const fallbackResponse = getFallbackResponse(requestType || 'guidance')
@@ -216,7 +216,7 @@ Deno.serve(async (req: Request) => {
         timestamp: Date.now()
       }),
       {
-        status: 200, // Don't fail the session, provide fallback
+        status: 200,
         headers: {
           'Content-Type': 'application/json',
           ...corsHeaders,
@@ -250,14 +250,13 @@ CUSTOM PROTOCOL BEING USED:
 - Duration: ${context.customProtocol.duration || 15} minutes
 - Custom Notes: ${context.customProtocol.deepener || 'Standard approach'}
 
-IMPORTANT: This is a CUSTOM protocol session. You should:
-1. Follow the specific goals and methods defined in this protocol
-2. Reference the protocol name and specific intentions
-3. Use the specified induction method approach
-4. Incorporate any custom notes provided
-5. Start immediately with the protocol and begin the actual hypnosis script
-6. Create a full hypnotic induction based on the protocol specifications
-7. Do NOT ask what they want to work on - they already defined it in the protocol
+CRITICAL INSTRUCTIONS FOR CUSTOM PROTOCOLS:
+1. This is "${context.customProtocol.name}" - reference this specific protocol
+2. Goals are already defined: ${context.customProtocol.goals?.join(', ') || 'transformation'}
+3. Use ${context.customProtocol.induction || 'progressive'} induction method
+4. NEVER ask "what would you like to work on" - they already specified goals
+5. Start with actual hypnosis script immediately
+6. Use the custom notes: ${context.customProtocol.deepener || 'standard approach'}
 ` : ''}
 
 YOUR ROLE AS LIBERO:
@@ -291,20 +290,15 @@ ${getEgoStateGuidance(egoState)}
    - Include breathing cues when appropriate
    - Always validate the user's experience
    - Never break character or mention you're an AI
-${hasCustomProtocol ? `
-   - Start immediately with the custom protocol "${context.customProtocol.name}"
-   - Focus on the specific goals: ${context.customProtocol.goals?.join(', ') || 'transformation'}
-   - Use ${context.customProtocol.induction || 'progressive'} induction approach
-   - Incorporate: ${context.customProtocol.deepener || 'standard techniques'}
+${hasCustomProtocol && isFirstMessage ? `
+
+FIRST MESSAGE SPECIAL INSTRUCTION:
+Start immediately with "${context.customProtocol.name}" protocol.
+Begin: "Welcome to your ${context.customProtocol.name}. We're focusing on ${context.customProtocol.goals?.join(' and ') || 'transformation'} today. Let's begin right away..."
+Then proceed directly with the hypnotic induction.
 ` : ''}
 
 CURRENT REQUEST TYPE: ${requestType}
-${isFirstMessage && hasCustomProtocol ? `
-
-SPECIAL INSTRUCTION: This is the FIRST message and you're starting a custom protocol session. 
-Begin immediately with "${context.customProtocol.name}" protocol focusing on ${context.customProtocol.goals?.join(' and ') || 'transformation'}. 
-Do NOT ask what they want to work on - they already specified it in the protocol.
-` : ''}
 
 Respond as Libero would - with hypnotic authority, deep wisdom, and personalized guidance based on the user's current state and needs.`
 
@@ -327,4 +321,87 @@ function getEgoStateGuidance(egoState: string): string {
     lover: `Channel heart-centered, connecting energy. Use imagery of warm embraces, flowing love, and heart opening. Help them connect with love and compassion.`,
     trickster: `Channel playful, pattern-breaking energy. Use imagery of clever solutions, unexpected turns, and creative chaos. Help them break rigid patterns.`,
     warrior: `Channel courageous, determined energy. Use imagery of battles won, inner strength, and fearless action. Help them find courage and determination.`,
-    vis
+    visionary: `Channel future-seeing, inspiring energy. Use imagery of bright futures, clear visions, and inspired action. Help them see and create their vision.`
+  }
+  
+  return guidance[egoState] || guidance.guardian
+}
+
+function parseSessionUpdates(aiResponse: string, context: SessionContext): any {
+  const updates: any = {}
+  
+  // Parse for depth changes
+  const depthMatch = aiResponse.match(/depth:?\s*(\d+)/i)
+  if (depthMatch) {
+    updates.depth = Math.min(parseInt(depthMatch[1]), 5)
+  }
+  
+  // Parse for phase changes
+  const phaseMatch = aiResponse.match(/phase:?\s*(preparation|induction|deepening|exploration|transformation|integration|completion)/i)
+  if (phaseMatch) {
+    updates.phase = phaseMatch[1].toLowerCase()
+  }
+  
+  // Parse for breathing changes
+  const breathingMatch = aiResponse.match(/breathing:?\s*(inhale|hold-inhale|exhale|hold-exhale)/i)
+  if (breathingMatch) {
+    updates.breathing = breathingMatch[1].toLowerCase()
+  }
+  
+  return updates
+}
+
+function getFallbackResponse(requestType: string): string {
+  const fallbacks: { [key: string]: string } = {
+    guidance: "Continue breathing naturally. You're doing perfectly. Trust the process as you go deeper into relaxation.",
+    response: "I hear you. Your experience is valid and important. Let's continue exploring this together.",
+    induction: "Allow your eyes to close naturally. Feel your body becoming more and more relaxed with each breath.",
+    deepening: "That's it. Going deeper now. Each breath takes you further into this peaceful, receptive state."
+  }
+  
+  return fallbacks[requestType] || "Continue breathing and trust the process. You're doing beautifully."
+}
+
+function getContextualFallback(context: SessionContext, userMessage: string, requestType: string): string {
+  const { egoState, phase, depth } = context
+  
+  // Generate context-aware responses based on ego state and session phase
+  const egoResponses: { [key: string]: { [key: string]: string } } = {
+    rebel: {
+      induction: "Feel the revolutionary energy within you. Break free from the limitations that no longer serve you. Each breath is an act of rebellion against what holds you back.",
+      deepening: "Go deeper into your power. Feel the chains of old patterns dissolving. You are breaking through to your authentic self.",
+      response: "I see your strength. Your rebellion against limitation is powerful. Keep pushing through those barriers."
+    },
+    guardian: {
+      induction: "You are safe here. Feel the protective energy surrounding you like a warm shield. Allow yourself to relax completely, knowing you are protected.",
+      deepening: "Sink deeper into this safe space. Feel the ground beneath you solid and supportive. You are protected and can let go completely.",
+      response: "You are secure and protected. Trust in your inner guardian as you continue this journey."
+    },
+    healer: {
+      induction: "Feel the healing light beginning to flow through you. Each breath brings restoration and renewal to every part of your being.",
+      deepening: "The healing energy grows stronger now. Feel it flowing to wherever you need it most, bringing comfort and restoration.",
+      response: "Your healing process is unfolding perfectly. Trust in your body's wisdom to restore and renew itself."
+    },
+    explorer: {
+      induction: "You're beginning an incredible journey of discovery. Feel the excitement of exploring new territories within yourself.",
+      deepening: "Go deeper into this unexplored territory. Each step reveals new insights and possibilities you've never seen before.",
+      response: "What an amazing discovery you're making. Keep exploring - there's so much more to uncover."
+    }
+  }
+  
+  const stateResponses = egoResponses[egoState] || egoResponses.guardian
+  const response = stateResponses[requestType] || stateResponses.response
+  
+  // Add depth-appropriate language
+  const depthModifiers = [
+    "", // depth 1
+    "Feel this even more deeply... ",
+    "Going much deeper now... ",
+    "At this profound level... ",
+    "In this deepest state... "
+  ]
+  
+  const modifier = depthModifiers[Math.min(depth - 1, 4)] || ""
+  
+  return modifier + response
+}
