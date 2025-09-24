@@ -83,7 +83,7 @@ export default function HomeScreen({
           />
           
           {/* Orb Guidance Text - Closer to orb */}
-          <div className="text-center max-w-md px-4 ">
+          <div className="text-center max-w-md ">
             {/* Current Ego State in Color */}
             <div className="mb-3">
               <span 
