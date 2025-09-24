@@ -579,16 +579,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         </div>
         
         {/* 2. Breathing Instructions - Clean centered section */}
-        <div className="flex-shrink-0 text-center py-4 space-y-3">
-          {/* Breathing Instructions */}
-          <div className="space-y-1">
-            <div className="text-white/90 text-xl font-light">
-              {getBreathingInstruction()}
-            </div>
-          </div>
-        </div>
-        
-        {/* 3. Status Indicators - Glass card with proper spacing */}
         {/* 3. Chat Interface - Fixed height, proper container */}
         <div className="flex-shrink-0">
           {/* Drag Handle */}
