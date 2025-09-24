@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Pause, SkipForward, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import Orb from './Orb';
 import AIVoiceSystem from './AIVoiceSystem';
-import Orb from './orb/Orb';
 import { useGameState } from './GameStateManager';
 import { getEgoState } from '../store';
 import { getEgoColor } from '../config/theme';
@@ -37,6 +37,7 @@ interface SessionState {
 export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfig }: UnifiedSessionWorldProps) {
   const { completeSession } = useGameState();
   const { showToast } = useAppStore();
+  const orbRef = useRef<any>(null);
   
   const [sessionState, setSessionState] = useState<SessionState>({
     phase: 'preparation',
@@ -267,17 +268,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
       {/* Central Orb Area */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-4">
-        {/* Session Orb */}
-        <div className="mb-8">
-          <Orb
-            onTap={() => {}}
-            size={200}
-            egoState={sessionConfig.egoState}
-            afterglow={sessionState.phase === 'transformation' || sessionState.phase === 'integration'}
-            className="pointer-events-none"
-          />
-        </div>
-        
         {/* Session Info */}
         <div className="text-center mb-6 hidden sm:block">
           <h2 className="text-white text-xl font-light mb-2">
@@ -288,6 +278,18 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               {actionContent.suggestion}
             </p>
           )}
+        </div>
+
+        {/* The Orb - inheriting color from ego state */}
+        <div className="mb-6">
+          <Orb
+            ref={orbRef}
+            onTap={() => {}} // Disabled during session
+            size={320}
+            egoState={sessionConfig.egoState}
+            variant="auto"
+            afterglow={sessionState.isActive}
+          />
         </div>
 
         {/* Session Guidance */}
@@ -381,7 +383,13 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               breathing: state.breathing || prev.breathing,
               depth: state.depth || prev.depth
             }));
+            
+            // Update orb if available
+            if (orbRef.current) {
+              orbRef.current.updateState(state);
+            }
           }}
+          orbRef={orbRef}
         />
       )}
 

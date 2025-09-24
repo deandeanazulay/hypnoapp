@@ -53,8 +53,6 @@ function App() {
   };
 
   const handleOrbTap = () => {
-  }
-  const handleBeginTap = () => {
     // If not authenticated, show auth modal
     if (!isAuthenticated) {
       setShowAuthModal(true);
@@ -183,7 +181,7 @@ function App() {
           <HomeScreen
             selectedEgoState={activeEgoState}
             onEgoStateChange={setActiveEgoState}
-            onBeginTap={handleBeginTap}
+            onOrbTap={handleOrbTap}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             selectedAction={selectedAction}
@@ -208,7 +206,7 @@ function App() {
           <HomeScreen
             selectedEgoState={activeEgoState}
             onEgoStateChange={setActiveEgoState}
-            onBeginTap={handleBeginTap}
+            onOrbTap={handleOrbTap}
             selectedAction={selectedAction}
             onActionSelect={handleActionSelect}
             activeTab={activeTab}
