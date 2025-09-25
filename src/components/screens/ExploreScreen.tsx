@@ -202,3 +202,7 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
             <h3 className="text-white font-semibold mb-3">Hypnosis Protocol Guide</h3>
           </div>
         </div>
+      </ModalShell>
+    </div>
+  );
+}
