@@ -179,7 +179,9 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
   // Auto-progression for hypnotherapy protocols
   useEffect(() => {
-    if (autoProgressEnabled && sessionConfig.protocol && conversation.length > 0) {
+    const hasProtocol = sessionConfig.protocol || sessionConfig.customProtocol || sessionConfig.method?.protocol;
+    if (autoProgressEnabled && hasProtocol && conversation.length > 0) {
+      console.log('[SESSION] Starting auto-guided progression');
       startScriptProgression();
     }
     
@@ -188,7 +190,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         clearTimeout(scriptProgressRef.current);
       }
     };
-  }, [autoProgressEnabled, sessionConfig.protocol, conversation.length]);
+  }, [autoProgressEnabled, sessionConfig.protocol, sessionConfig.customProtocol, sessionConfig.method?.protocol, conversation.length]);
 
   const startHypnotherapySession = () => {
     let welcomeMessage = '';
@@ -248,7 +250,12 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
   const startScriptProgression = () => {
     const protocol = sessionConfig.protocol || sessionConfig.customProtocol || sessionConfig.method?.protocol;
-    if (!protocol) return;
+    if (!protocol) {
+      console.log('[SESSION] No protocol found for auto-progression');
+      return;
+    }
+
+    console.log('[SESSION] Starting script progression for protocol:', protocol.name);
 
     const sessionContext = {
       egoState: sessionConfig.egoState,
@@ -265,36 +272,38 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       { 
         name: 'induction', 
         content: personalizedProtocol.script.induction, 
-        duration: Math.floor(protocol.duration * 0.25) * 60,
+        duration: Math.floor(protocol.duration * 0.25),
         phase: 'induction'
       },
       { 
         name: 'deepening', 
         content: personalizedProtocol.script.deepening, 
-        duration: Math.floor(protocol.duration * 0.3) * 60,
+        duration: Math.floor(protocol.duration * 0.3),
         phase: 'deepening'
       },
       { 
         name: 'suggestions', 
         content: personalizedProtocol.script.suggestions, 
-        duration: Math.floor(protocol.duration * 0.35) * 60,
+        duration: Math.floor(protocol.duration * 0.35),
         phase: 'transformation'
       },
       { 
         name: 'emergence', 
         content: personalizedProtocol.script.emergence, 
-        duration: Math.floor(protocol.duration * 0.1) * 60,
+        duration: Math.floor(protocol.duration * 0.1),
         phase: 'completion'
       }
     ];
 
     const progressToNextPhase = (phaseIndex: number) => {
       if (phaseIndex >= scriptPhases.length) {
+        console.log('[SESSION] All phases completed, ending session');
         handleSessionComplete();
         return;
       }
 
       const currentPhase = scriptPhases[phaseIndex];
+      console.log('[SESSION] Progressing to phase:', currentPhase.name, 'duration:', currentPhase.duration, 'minutes');
       
       // Update session state
       setSessionState(prev => ({ 
@@ -318,11 +327,13 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       
       // Schedule next phase
       scriptProgressRef.current = setTimeout(() => {
+        console.log('[SESSION] Timer fired for phase:', currentPhase.name);
         progressToNextPhase(phaseIndex + 1);
-      }, currentPhase.duration * 1000);
+      }, currentPhase.duration * 60 * 1000); // Convert minutes to milliseconds
     };
 
     // Start the progression after initial welcome
+    console.log('[SESSION] Starting phase progression in 5 seconds');
     setTimeout(() => {
       progressToNextPhase(0);
     }, 5000); // Give 5 seconds after welcome message
