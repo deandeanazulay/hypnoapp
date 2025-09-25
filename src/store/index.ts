@@ -244,4 +244,5 @@ export const getEgoState = (id: EgoStateId) => {
 };
 
 // Export session store
-export { useSessionStore } from './sessionStore';
+import useSessionStoreDefault from './sessionStore';
+export const useSessionStore = useSessionStoreDefault;

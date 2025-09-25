@@ -23,7 +23,7 @@ const initialState: SessionState = {
   scriptPlan: null,
 };
 
-export const useSessionStore = create<SessionStore>((set, get) => ({
+const useSessionStore = create<SessionStore>((set, get) => ({
   sessionHandle: null,
   sessionState: initialState,
 
@@ -69,5 +69,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     });
   },
 }));
+
+export default useSessionStore;
 
 ```
