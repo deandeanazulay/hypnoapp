@@ -17,6 +17,20 @@ interface Session {
   completed_at: string;
 }
 
+interface FavoriteSession {
+  id: string;
+  name: string;
+  egoState: string;
+  action: string;
+  duration: number;
+  rating: number;
+  completedCount: number;
+  lastCompleted: Date;
+  streak: number;
+  badges: string[];
+  isPinned: boolean;
+}
+
 interface FavoritesScreenProps {
   onSessionSelect: (session: FavoriteSession) => void;
 }
@@ -69,10 +83,10 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   };
 
   // Calculate stats
-  const totalSessions = mockFavorites.reduce((sum, s) => sum + s.completedCount, 0);
-  const avgRating = mockFavorites.reduce((sum, s) => sum + s.rating, 0) / mockFavorites.length;
-  const treasuresCount = mockFavorites.length;
-  const pinnedCount = mockFavorites.filter(s => s.isPinned).length;
+  const totalSessions = sessions.length;
+  const avgRating = sessions.length > 0 ? sessions.reduce((sum, s) => sum + (s.experience_gained / 10), 0) / sessions.length : 0;
+  const treasuresCount = sessions.length;
+  const pinnedCount = 0; // Will be implemented when we add pinning functionality
 
   if (!isAuthenticated) {
     return (
@@ -189,14 +203,14 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
               </div>
 
               {/* Favorite Sessions */}
-              {mockFavorites.length > 0 ? (
+              {sessions.length > 0 ? (
                 <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
                   <h3 className="text-white font-semibold text-lg mb-4 flex items-center space-x-2">
                     <Heart size={20} className="text-rose-400" />
                     <span>Your Treasures</span>
                   </h3>
                   <div className="space-y-3">
-                    {mockFavorites.map((session) => (
+                    {sessions.map((session) => (
                       <div key={session.id} className="bg-black/20 rounded-lg p-4 border border-white/10 hover:border-white/20 hover:bg-black/30 transition-all">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
@@ -205,21 +219,32 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                             </div>
                             <div>
                               <div className="text-white font-medium text-sm flex items-center space-x-2">
-                                <span>{session.name}</span>
-                                {session.isPinned && <Pin size={12} className="text-yellow-400" />}
+                                <span>{session.action}</span>
                               </div>
                               <div className="text-white/60 text-xs">
-                                {session.duration}m • {formatLastCompleted(session.lastCompleted)}
+                                {session.duration}m • {formatLastCompleted(new Date(session.completed_at))}
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
                             <div className="flex items-center space-x-1">
                               <Star size={12} className="text-yellow-400 fill-current" />
-                              <span className="text-white/70 text-xs">{session.rating}</span>
+                              <span className="text-white/70 text-xs">{(session.experience_gained / 10).toFixed(1)}</span>
                             </div>
                             <button
-                              onClick={() => onSessionSelect(session)}
+                              onClick={() => onSessionSelect({
+                                id: session.id,
+                                name: session.action,
+                                egoState: session.ego_state,
+                                action: session.action,
+                                duration: session.duration,
+                                rating: session.experience_gained / 10,
+                                completedCount: 1,
+                                lastCompleted: new Date(session.completed_at),
+                                streak: 1,
+                                badges: [],
+                                isPinned: false
+                              })}
                               className="w-8 h-8 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center hover:bg-teal-500/30 hover:scale-110 transition-all"
                             >
                               <Play size={12} className="text-teal-400 ml-0.5" />
@@ -252,15 +277,15 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                 <div className="space-y-3">
                   <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
                     <span className="text-white/70">Most Completed</span>
-                    <span className="text-white font-medium">Healer Recovery (22x)</span>
+                    <span className="text-white font-medium">{sessions.length > 0 ? `${sessions[0].action} (${sessions.length}x)` : 'No sessions yet'}</span>
                   </div>
                   <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
                     <span className="text-white/70">Longest Streak</span>
-                    <span className="text-white font-medium">Child Joy (5 days)</span>
+                    <span className="text-white font-medium">{user?.session_streak || 0} days</span>
                   </div>
                   <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
                     <span className="text-white/70">Favorite Ego State</span>
-                    <span className="text-white font-medium">Healer 🌿</span>
+                    <span className="text-white font-medium">{user?.active_ego_state ? `${user.active_ego_state} ${getEgoStateIcon(user.active_ego_state)}` : 'Guardian 🛡️'}</span>
                   </div>
                 </div>
               </div>
@@ -287,7 +312,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                   })}
                 </div>
                 
-                <p className="text-white/70 text-sm mt-4">Complete more sessions to unlock rare badges and titles</p>
+                <p className="text-white/70 text-sm mt-4">Complete more sessions to unlock rare badges and titles ({user?.achievements?.length || 0} earned)</p>
               </div>
             </div>
           </div>
@@ -307,15 +332,20 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
             <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-4 border border-teal-500/20">
               <h3 className="text-white font-medium mb-3">Top Performers</h3>
               <div className="space-y-2">
-                {mockFavorites.slice(0, 3).map((session, index) => (
+                {sessions.slice(0, 3).map((session, index) => (
                   <div key={session.id} className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <span className="text-teal-400 font-bold text-sm">#{index + 1}</span>
-                      <span className="text-white/80 text-sm">{session.name}</span>
+                      <span className="text-white/80 text-sm">{session.action}</span>
                     </div>
-                    <span className="text-white/60 text-sm">{session.completedCount} sessions</span>
+                    <span className="text-white/60 text-sm">1 session</span>
                   </div>
                 ))}
+                {sessions.length === 0 && (
+                  <div className="text-white/60 text-sm text-center py-4">
+                    Complete sessions to see top performers
+                  </div>
+                )}
               </div>
             </div>
 
@@ -324,10 +354,10 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
               <h3 className="text-white font-medium mb-3">Ego State Breakdown</h3>
               <div className="space-y-2">
                 {['healer', 'guardian', 'child', 'explorer'].map((state, index) => {
-                  const count = favoritesSessions.filter(s => s.egoState === state).length;
-                  const percentage = favoritesSessions.length > 0 ? Math.round((count / favoritesSessions.length) * 100) : 0;
+                  const count = sessions.filter(s => s.ego_state === state).length;
+                  const percentage = sessions.length > 0 ? Math.round((count / sessions.length) * 100) : 0;
                   
-                  if (count === 0 && favoritesSessions.length > 0) return null;
+                  if (count === 0 && sessions.length > 0) return null;
                   
                   return (
                     <div key={state} className="flex items-center justify-between">
@@ -339,7 +369,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                     </div>
                   );
                 })}
-                {favoritesSessions.length === 0 && (
+                {sessions.length === 0 && (
                   <div className="text-white/60 text-sm text-center py-4">
                     Complete sessions to see breakdown
                   </div>
