@@ -143,12 +143,13 @@ async function enforceCacheLimits(): Promise<void> {
           await deleteMetadata(entry.key);
           removedSize += entry.size / (1024 * 1024);
           console.log(\`Cache: Evicted ${entry.key}, freed ${(entry.size / (1024 * 1024)).toFixed(2)}MB`);
+          console.log('Cache: Evicted ' + entry.key + ', freed ' + (entry.size / (1024 * 1024)).toFixed(2) + 'MB');
         } catch (error) {
-          console.error(\`Cache: Failed to evict ${entry.key}:`, error);
+          console.error('Cache: Failed to evict ' + entry.key + ':', error);
         }
       }
       
-      console.log(\`Cache: Eviction complete. Freed ${removedSize.toFixed(2)}MB`);
+      console.log('Cache: Eviction complete. Freed ' + removedSize.toFixed(2) + 'MB');
     }
   } catch (error) {
     console.error('Cache: Error enforcing limits:', error);
