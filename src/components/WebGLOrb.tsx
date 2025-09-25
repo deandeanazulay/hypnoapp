@@ -80,7 +80,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
   // Stable tap handler - no re-init on function change
   const handleTap = useCallback(() => {
-    console.log('[WEBGL-ORB] Tap detected, calling onTap');
+    if (import.meta.env.DEV) {
+      console.log('[WEBGL-ORB] Tap detected, calling onTap');
+    }
     onTap?.();
   }, [onTap]);
 
@@ -520,9 +522,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   }, [egoState]);
 
   const disposeScene = () => {
-    if (import.meta.env.DEV) {
-      console.log('[ORB] Disposing scene');
-    }
+    console.log('[ORB] Disposing scene');
     
     // Stop animation
     isActiveRef.current = false;

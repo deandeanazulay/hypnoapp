@@ -326,9 +326,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     };
 
     utterance.onresume = () => {
-      if (import.meta.env.DEV) {
-        console.log('[SPEECH] Speech resumed');
-      }
+      console.log('[SPEECH] Speech resumed');
     };
 
     synthRef.current.speak(utterance);
@@ -367,7 +365,9 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         synthRef.current.cancel();
       }
       
-      console.log('Starting speech recognition');
+      if (import.meta.env.DEV) {
+        console.log('Starting speech recognition');
+      }
       recognitionRef.current.start();
     } catch (error) {
       console.error('Error starting speech recognition:', error);
