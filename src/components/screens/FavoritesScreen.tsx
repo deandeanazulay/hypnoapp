@@ -5,76 +5,17 @@ import { useAppStore, getEgoState } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import PageShell from '../layout/PageShell';
 import ModalShell from '../layout/ModalShell';
+import { supabase } from '../../lib/supabase';
 
-interface FavoriteSession {
+interface Session {
   id: string;
-  name: string;
-  egoState: string;
+  user_id: string;
+  ego_state: string;
   action: string;
   duration: number;
-  completedCount: number;
-  lastCompleted: Date;
-  rating: number;
-  streak: number;
-  isPinned: boolean;
-  badges: string[];
+  experience_gained: number;
+  completed_at: string;
 }
-
-// Mock data
-const mockFavorites: FavoriteSession[] = [
-  {
-    id: '1',
-    name: 'Guardian Stress Relief',
-    egoState: 'guardian',
-    action: 'stress-relief',
-    duration: 10,
-    completedCount: 12,
-    lastCompleted: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    rating: 5,
-    streak: 3,
-    isPinned: true,
-    badges: ['guardian-adept']
-  },
-  {
-    id: '2',
-    name: 'Healer Recovery',
-    egoState: 'healer',
-    action: 'healing',
-    duration: 12,
-    completedCount: 22,
-    lastCompleted: new Date(Date.now() - 5 * 60 * 60 * 1000),
-    rating: 4,
-    streak: 0,
-    isPinned: false,
-    badges: ['healer-master']
-  },
-  {
-    id: '3',
-    name: 'Explorer Adventure',
-    egoState: 'explorer',
-    action: 'creativity',
-    duration: 8,
-    completedCount: 7,
-    lastCompleted: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    rating: 5,
-    streak: 2,
-    isPinned: false,
-    badges: []
-  },
-  {
-    id: '4',
-    name: 'Child Joy',
-    egoState: 'child',
-    action: 'happiness',
-    duration: 6,
-    completedCount: 18,
-    lastCompleted: new Date(Date.now() - 30 * 60 * 1000),
-    rating: 5,
-    streak: 5,
-    isPinned: false,
-    badges: ['child-enthusiast']
-  }
-];
 
 interface FavoritesScreenProps {
   onSessionSelect: (session: FavoriteSession) => void;

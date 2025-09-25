@@ -44,7 +44,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
     }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!isAuthenticated) {
       onShowAuth();
       return;
@@ -55,9 +55,46 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       return;
     }
 
-    onProtocolCreate(protocol);
-    showToast({ type: 'success', message: 'Protocol created successfully!' });
-    
+    try {
+      // Save protocol to database
+      const { user } = await supabase.auth.getUser();
+      if (!user.user?.id) {
+        showToast({ type: 'error', message: 'User not authenticated' });
+        return;
+      }
+
+      const protocolData = {
+        user_id: user.user.id,
+        name: protocol.name,
+        induction: protocol.induction,
+        deepener: protocol.deepener,
+        goals: protocol.goals,
+        metaphors: protocol.metaphors,
+        duration: protocol.duration
+      };
+
+      const { data, error } = await supabase
+        .from('custom_protocols')
+        .insert(protocolData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[CREATE] Error saving protocol:', error);
+        showToast({ type: 'error', message: 'Failed to save protocol' });
+        return;
+      }
+
+      console.log('[CREATE] Protocol saved successfully:', data);
+      
+      // Call the callback with the saved protocol data
+      onProtocolCreate(data);
+      showToast({ type: 'success', message: 'Protocol created and saved!' });
+    } catch (err) {
+      console.error('[CREATE] Unexpected error saving protocol:', err);
+      showToast({ type: 'error', message: 'Failed to create protocol' });
+      return;
+    }
     // Reset wizard
     setCurrentStep(1);
     setProtocol({

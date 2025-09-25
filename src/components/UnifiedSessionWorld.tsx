@@ -36,6 +36,7 @@ interface SessionState {
 export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfig }: UnifiedSessionWorldProps) {
   const { user, updateUser, addExperience, incrementStreak } = useGameState();
   const { activeEgoState, showToast, openEgoModal } = useAppStore();
+  const { isAuthenticated } = useSimpleAuth();
   
   const [sessionState, setSessionState] = useState<SessionState>({
     depth: 1,

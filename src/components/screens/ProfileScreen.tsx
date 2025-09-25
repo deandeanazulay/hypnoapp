@@ -12,9 +12,9 @@ interface ProfileScreenProps {
 }
 
 export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: ProfileScreenProps) {
-  const { user, isLoading } = useGameState();
+  const { user, isLoading, error } = useGameState();
   const { activeEgoState, openModal, openEgoModal, showToast } = useAppStore();
-  const { isAuthenticated, signOut } = useAuth();
+  const { isAuthenticated, signOut, user: authUser } = useAuth();
   const [showAnalytics, setShowAnalytics] = useState(false);
 
   const currentEgoState = getEgoState(activeEgoState);
@@ -92,6 +92,30 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
             <div className="text-center">
               <div className="w-16 h-16 border-4 border-teal-400/20 border-t-teal-400 rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-white/60 text-sm">Loading your profile...</p>
+            </div>
+          </div>
+        }
+      />
+    );
+  }
+  // Show error state if there's an error loading profile
+  if (error) {
+    return (
+      <PageShell
+        body={
+          <div className="h-full bg-black flex items-center justify-center p-4">
+            <div className="text-center max-w-sm">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-6 border border-red-500/30">
+                <Users size={32} className="text-red-400" />
+              </div>
+              <h3 className="text-white text-xl font-light mb-4">Error loading profile</h3>
+              <p className="text-red-400 text-sm mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
+              >
+                Retry
+              </button>
             </div>
           </div>
         }
@@ -301,7 +325,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-white/70">Email</span>
-                    <span className="text-white font-medium">{user.email}</span>
+                    <span className="text-white font-medium">{authUser?.email || user.email}</span>
                   </div>
                   <button
                     onClick={handleSignOut}
