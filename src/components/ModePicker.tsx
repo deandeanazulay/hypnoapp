@@ -62,6 +62,7 @@ export default function ModePicker({ onSelect, onClose }: ModePickerProps) {
       setSelectedMode(availableModes[0]); // Default to voice interactive
     }
   }, [selectedMode]);
+  
   const handleSelect = () => {
     if (selectedMode) {
       onSelect({ mode: selectedMode, duration: selectedDuration });
@@ -219,31 +220,6 @@ export default function ModePicker({ onSelect, onClose }: ModePickerProps) {
             className="flex-1 px-4 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-lg text-black font-semibold hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Begin Session
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex space-x-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white font-medium transition-all duration-300"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSelect}
-            disabled={!selectedMode && availableModes.length > 0}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-lg text-black font-semibold hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {availableModes.length > 0 ? 'Select Mode' : 'Continue'}
           </button>
         </div>
       </div>
