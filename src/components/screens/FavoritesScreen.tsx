@@ -252,15 +252,22 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                 <div className="space-y-3">
                   <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
                     <span className="text-white/70">Most Completed</span>
-                    <span className="text-white font-medium">Healer Recovery (22x)</span>
+                    <span className="text-white font-medium">
+                      {favoritesSessions.length > 0 
+                        ? `${favoritesSessions[0].name} (${favoritesSessions[0].completedCount}x)` 
+                        : 'No sessions yet'
+                      }
+                    </span>
                   </div>
                   <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
                     <span className="text-white/70">Longest Streak</span>
-                    <span className="text-white font-medium">Child Joy (5 days)</span>
+                    <span className="text-white font-medium">{user?.session_streak || 0} days</span>
                   </div>
                   <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
                     <span className="text-white/70">Favorite Ego State</span>
-                    <span className="text-white font-medium">Healer 🌿</span>
+                    <span className="text-white font-medium">
+                      {getEgoState(user?.active_ego_state || 'guardian').name} {getEgoState(user?.active_ego_state || 'guardian').icon}
+                    </span>
                   </div>
                 </div>
               </div>
