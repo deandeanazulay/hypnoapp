@@ -266,6 +266,7 @@ export class SessionManager {
 
     // Cancel any existing speech
     window.speechSynthesis.cancel();
+  }
   private _startSpeechSynthesis(text: string, segmentNumber: number) {
     // Check if speech synthesis is available
     if (!window.speechSynthesis) {
@@ -312,6 +313,7 @@ export class SessionManager {
       clearTimeout(backupTimeout);
       setTimeout(() => this._handleSegmentEnd(), 3000);
     }
+  }
   private _handleSegmentEnd() {
     const completedSegment = this.currentSegmentIndex + 1;
     console.log(`Session: Segment ${completedSegment} ended, checking for next segment...`);
