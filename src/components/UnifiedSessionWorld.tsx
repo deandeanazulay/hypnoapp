@@ -63,6 +63,8 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const [conversation, setConversation] = useState<Array<{role: 'ai' | 'user', content: string, timestamp: number}>>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [chatHeight, setChatHeight] = useState(80); // Default chat height in pixels
+  const [autoProgressEnabled, setAutoProgressEnabled] = useState(true);
+  const [currentScriptPhase, setCurrentScriptPhase] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartY, setDragStartY] = useState(0);
   const [dragStartHeight, setDragStartHeight] = useState(0);
@@ -72,6 +74,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const orbRef = useRef<any>(null);
   const breathingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const scriptProgressRef = useRef<NodeJS.Timeout | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [micPermission, setMicPermission] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking');
 
@@ -169,7 +172,54 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   useEffect(() => {
     if (conversation.length === 0) {
       setTimeout(() => {
-        let welcomeMessage = '';
+        startHypnotherapySession();
+      }, 2000);
+    }
+  }, [sessionConfig, isVoiceEnabled]);
+
+  // Auto-progression for hypnotherapy protocols
+  useEffect(() => {
+    if (autoProgressEnabled && sessionConfig.protocol && conversation.length > 0) {
+      startScriptProgression();
+    }
+    
+    return () => {
+      if (scriptProgressRef.current) {
+        clearTimeout(scriptProgressRef.current);
+      }
+    };
+  }, [autoProgressEnabled, sessionConfig.protocol, conversation.length]);
+
+  const startHypnotherapySession = () => {
+    let welcomeMessage = '';
+    let sessionContext = {
+      egoState: sessionConfig.egoState,
+      userProfile: {
+        experience_level: 'some' as const,
+        preferred_imagery: 'nature' as const,
+        voice_tone: 'gentle' as const
+      },
+      customGoals: sessionConfig.goal ? [sessionConfig.goal.name] : undefined
+    };
+    
+    if (sessionConfig.protocol) {
+      // This is a protocol session - start with induction
+      const protocol = sessionConfig.protocol;
+      const personalizedProtocol = scriptGenerator.generatePersonalizedScript(protocol, sessionContext);
+      
+      welcomeMessage = `Welcome to your ${protocol.name} session. Find a comfortable position and close your eyes when you're ready. We'll begin with some deep, calming breaths.`;
+      
+      // Set session state for protocol
+      setSessionState(prev => ({ 
+        ...prev, 
+        phase: 'preparation',
+        totalDuration: protocol.duration * 60 
+      }));
+      
+    } else if (sessionConfig.customProtocol?.name) {
+      // Generate personalized script for custom protocol
+      const personalizedProtocol = scriptGenerator.generatePersonalizedScript(
+        sessionConfig.customProtocol,
         let sessionContext = {
           egoState: sessionConfig.egoState,
           userProfile: {
@@ -179,34 +229,112 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           },
           customGoals: sessionConfig.goal ? [sessionConfig.goal.name] : undefined
         };
-        
-        if (sessionConfig.customProtocol?.name) {
-          // Generate personalized script for custom protocol
-          const personalizedProtocol = scriptGenerator.generatePersonalizedScript(
-            sessionConfig.customProtocol,
-            sessionContext
-          );
-          welcomeMessage = personalizedProtocol.script.induction;
-        } else if (sessionConfig.method?.protocol) {
-          // Use the selected method's protocol with personalization
-          const personalizedProtocol = scriptGenerator.generatePersonalizedScript(
-            sessionConfig.method.protocol,
-            sessionContext
-          );
-          welcomeMessage = personalizedProtocol.script.induction;
-        } else {
-          welcomeMessage = `Welcome to your ${sessionConfig.egoState} session. I'm Libero, and I'll be guiding you through this transformation journey. Take a deep breath and let me know - what would you like to work on today?`;
-        }
-        
-        const aiMessage = { role: 'ai' as const, content: welcomeMessage, timestamp: Date.now() };
-        setConversation([aiMessage]);
-        
-        if (isVoiceEnabled) {
-          speakText(welcomeMessage);
-        }
-      }, 2000);
+      );
+      welcomeMessage = `Welcome to your custom ${sessionConfig.customProtocol.name} session. Find a comfortable position and prepare for transformation.`;
+      
+    } else if (sessionConfig.method?.protocol) {
+      // Use the selected method's protocol with personalization
+      const personalizedProtocol = scriptGenerator.generatePersonalizedScript(
+        sessionConfig.method.protocol,
+        sessionContext
+      );
+      welcomeMessage = `Welcome to your ${sessionConfig.method.protocol.name} session. Let's begin your transformation journey.`;
+      
+    } else {
+      // Interactive session - requires user input
+      welcomeMessage = `Welcome to your ${sessionConfig.egoState} session. I'm Libero, and I'll be guiding you through this transformation journey. Take a deep breath and let me know - what would you like to work on today?`;
+      setAutoProgressEnabled(false); // Disable auto-progression for interactive sessions
     }
-  }, [sessionConfig, isVoiceEnabled]);
+    
+    const aiMessage = { role: 'ai' as const, content: welcomeMessage, timestamp: Date.now() };
+    setConversation([aiMessage]);
+    
+    if (isVoiceEnabled) {
+      speakText(welcomeMessage);
+    }
+  };
+
+  const startScriptProgression = () => {
+    const protocol = sessionConfig.protocol || sessionConfig.customProtocol || sessionConfig.method?.protocol;
+    if (!protocol) return;
+
+    const sessionContext = {
+      egoState: sessionConfig.egoState,
+      userProfile: {
+        experience_level: 'some' as const,
+        preferred_imagery: 'nature' as const,
+        voice_tone: 'gentle' as const
+      },
+      customGoals: sessionConfig.goal ? [sessionConfig.goal.name] : undefined
+    };
+
+    const personalizedProtocol = scriptGenerator.generatePersonalizedScript(protocol, sessionContext);
+    const scriptPhases = [
+      { 
+        name: 'induction', 
+        content: personalizedProtocol.script.induction, 
+        duration: Math.floor(protocol.duration * 0.25) * 60,
+        phase: 'induction'
+      },
+      { 
+        name: 'deepening', 
+        content: personalizedProtocol.script.deepening, 
+        duration: Math.floor(protocol.duration * 0.3) * 60,
+        phase: 'deepening'
+      },
+      { 
+        name: 'suggestions', 
+        content: personalizedProtocol.script.suggestions, 
+        duration: Math.floor(protocol.duration * 0.35) * 60,
+        phase: 'transformation'
+      },
+      { 
+        name: 'emergence', 
+        content: personalizedProtocol.script.emergence, 
+        duration: Math.floor(protocol.duration * 0.1) * 60,
+        phase: 'completion'
+      }
+    ];
+
+    const progressToNextPhase = (phaseIndex: number) => {
+      if (phaseIndex >= scriptPhases.length) {
+        handleSessionComplete();
+        return;
+      }
+
+      const currentPhase = scriptPhases[phaseIndex];
+      
+      // Update session state
+      setSessionState(prev => ({ 
+        ...prev, 
+        phase: currentPhase.phase,
+        depth: Math.min(phaseIndex + 1, 5)
+      }));
+      
+      // Add AI message for this phase
+      const aiMessage = { 
+        role: 'ai' as const, 
+        content: currentPhase.content, 
+        timestamp: Date.now() 
+      };
+      setConversation(prev => [...prev, aiMessage]);
+      
+      // Speak the content
+      if (isVoiceEnabled) {
+        speakText(currentPhase.content);
+      }
+      
+      // Schedule next phase
+      scriptProgressRef.current = setTimeout(() => {
+        progressToNextPhase(phaseIndex + 1);
+      }, currentPhase.duration * 1000);
+    };
+
+    // Start the progression after initial welcome
+    setTimeout(() => {
+      progressToNextPhase(0);
+    }, 5000); // Give 5 seconds after welcome message
+  };
 
   // Breathing cycle management
   useEffect(() => {
@@ -297,6 +425,9 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       }
       if (breathingTimerRef.current) {
         clearInterval(breathingTimerRef.current);
+      }
+      if (scriptProgressRef.current) {
+        clearTimeout(scriptProgressRef.current);
       }
     };
   }, [sessionState.isPaused]);
@@ -708,6 +839,23 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             </div>
           </div>
         </div>
+        
+        {/* Auto-Progress Toggle */}
+        <div className="mt-3 flex items-center justify-center">
+          <button
+            onClick={() => setAutoProgressEnabled(!autoProgressEnabled)}
+            className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all hover:scale-105 ${
+              autoProgressEnabled 
+                ? 'bg-green-500/20 border border-green-500/40 text-green-400' 
+                : 'bg-white/10 border border-white/20 text-white/60'
+            }`}
+          >
+            <Play size={14} />
+            <span className="text-xs font-medium">
+              {autoProgressEnabled ? 'Auto-guided session' : 'Interactive session'}
+            </span>
+          </button>
+        </div>
       </header>
 
         
@@ -835,14 +983,23 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         
         {/* Controls Section */}
         <div className="px-4 py-3 bg-black/95 backdrop-blur-xl">
+          {/* Auto-Progress Info */}
+          {autoProgressEnabled && (
+            <div className="mb-3 p-2 bg-green-500/10 border border-green-500/30 rounded-lg text-center">
+              <p className="text-green-400 text-xs font-medium">
+                🎵 Auto-guided session in progress - just relax and listen
+              </p>
+            </div>
+          )}
+          
           {/* Communication Input Row */}
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className={autoProgressEnabled ? 'opacity-50' : ''}>
             <div className="flex items-center space-x-3">
               {/* Voice Record Button */}
               <button
                 type="button"
                 onClick={toggleListening}
-                disabled={!isMicEnabled || isThinking || micPermission === 'denied'}
+                disabled={!isMicEnabled || isThinking || micPermission === 'denied' || autoProgressEnabled}
                 className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 backdrop-blur-sm border-2 ${
                   sessionState.isListening 
                     ? 'bg-red-500/20 border-red-500/60 text-red-400 animate-pulse shadow-lg shadow-red-500/30' 
@@ -867,13 +1024,17 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                   type="text"
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
-                  placeholder={sessionState.isListening ? "Listening..." : "Share what's happening for you..."}
-                  disabled={sessionState.isListening || isThinking}
+                  placeholder={
+                    autoProgressEnabled ? "Auto-guided session - just relax..." :
+                    sessionState.isListening ? "Listening..." : 
+                    "Share what's happening for you..."
+                  }
+                  disabled={sessionState.isListening || isThinking || autoProgressEnabled}
                   className="w-full bg-white/15 border border-white/30 rounded-2xl px-6 py-3 pr-16 text-white placeholder-white/60 focus:outline-none focus:border-teal-500/60 focus:bg-white/20 focus:shadow-lg focus:shadow-teal-500/20 transition-all disabled:opacity-50 backdrop-blur-sm"
                 />
                 <button
                   type="submit"
-                  disabled={!textInput.trim() || isThinking}
+                  disabled={!textInput.trim() || isThinking || autoProgressEnabled}
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-teal-500/30 border border-teal-500/50 text-teal-400 hover:bg-teal-500/40 hover:shadow-lg hover:shadow-teal-500/30 transition-all disabled:opacity-50 hover:scale-110 backdrop-blur-sm"
                 >
                   <Send size={16} className="ml-0.5" />
@@ -881,6 +1042,18 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               </div>
             </div>
           </form>
+          
+          {/* Mode Toggle */}
+          {!autoProgressEnabled && (
+            <div className="mt-3 text-center">
+              <button
+                onClick={() => setAutoProgressEnabled(true)}
+                className="text-xs text-teal-400 hover:text-teal-300 font-medium transition-colors"
+              >
+                Switch to auto-guided mode →
+              </button>
+            </div>
+          )}
         </div>
       </div>
       
