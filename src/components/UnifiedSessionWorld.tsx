@@ -1,10 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Volume2, VolumeX, Send, ArrowLeft, Pause, Play, SkipForward, SkipBack, Settings, Target, Brain, Heart, Zap, Wind, Clock, Activity, Eye } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Orb from './Orb';
-import { useAppStore } from "../store";
+import { useAppStore, getEgoState } from '../store';
 import { useGameState } from './GameStateManager';
 import { SessionManager } from '../services/session';
 import AIVoiceSystem from './premium/PremiumFeatures';
+
+// Reusable Session Components
+import SessionHeader from './session/SessionHeader';
+import SessionIndicators from './session/SessionIndicators';
+import SessionControls from './session/SessionControls';
+import SessionStats from './session/SessionStats';
+import SessionStatusBar from './session/SessionStatusBar';
+import SessionProgress from './session/SessionProgress';
+import VoiceInputDock from './session/VoiceInputDock';
 
 interface UnifiedSessionWorldProps {
   sessionConfig: {
@@ -38,6 +47,22 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const { showToast, activeEgoState } = useAppStore();
   const { user, addExperience, incrementStreak, updateEgoStateUsage } = useGameState();
   
+  // Session state tracking
+  const [sessionWorldState, setSessionWorldState] = useState<SessionState>({
+    phase: 'preparation',
+    depth: 1,
+    breathing: 'rest',
+    timeRemaining: sessionConfig.duration * 60,
+    totalTime: sessionConfig.duration * 60,
+    currentSegment: '',
+    isPlaying: false,
+    orbEnergy: 0.3,
+  });
+
+  // Audio and session controls
+  const [audioLevel, setAudioLevel] = useState(0.8);
+  const [showControls, setShowControls] = useState(true);
+  
   const [conversation, setConversation] = useState<Array<{
     role: 'user' | 'ai';
     content: string;
@@ -64,10 +89,12 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const orbRef = useRef<any>(null);
 
   const currentEgoState = getEgoState(activeEgoState);
+
+  useEffect(() => {
     // Initialize speech synthesis
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       synthRef.current = window.speechSynthesis;
@@ -140,6 +167,96 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     };
   }, [showToast]);
 
+  // Session timer
+  useEffect(() => {
+    if (sessionWorldState.isPlaying && sessionWorldState.timeRemaining > 0) {
+      timerRef.current = setInterval(() => {
+        setSessionWorldState(prev => {
+          const newTimeRemaining = prev.timeRemaining - 1;
+          if (newTimeRemaining <= 0) {
+            // Session complete
+            setTimeout(handleSessionComplete, 1000);
+            return { ...prev, timeRemaining: 0, isPlaying: false };
+          }
+          return { ...prev, timeRemaining: newTimeRemaining };
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [sessionWorldState.isPlaying, sessionWorldState.timeRemaining]);
+
+  // Breathing cycle
+  useEffect(() => {
+    const breathingCycle = setInterval(() => {
+      setSessionWorldState(prev => {
+        const cycle = ['inhale', 'hold-inhale', 'exhale', 'hold-exhale'] as const;
+        const currentIndex = cycle.indexOf(prev.breathing);
+        const nextIndex = (currentIndex + 1) % cycle.length;
+        return { ...prev, breathing: cycle[nextIndex] };
+      });
+    }, 4000); // 4 second breathing cycle
+
+    return () => clearInterval(breathingCycle);
+  }, []);
+
+  // Phase progression
+  useEffect(() => {
+    const progressTime = sessionWorldState.totalTime - sessionWorldState.timeRemaining;
+    const totalTime = sessionWorldState.totalTime;
+    const progress = progressTime / totalTime;
+
+    let newPhase: SessionState['phase'] = 'preparation';
+    let newDepth = 1;
+    let newOrbEnergy = 0.3;
+
+    if (progress < 0.1) {
+      newPhase = 'preparation';
+      newDepth = 1;
+      newOrbEnergy = 0.3;
+    } else if (progress < 0.25) {
+      newPhase = 'induction';
+      newDepth = 2;
+      newOrbEnergy = 0.5;
+    } else if (progress < 0.4) {
+      newPhase = 'deepening';
+      newDepth = 3;
+      newOrbEnergy = 0.7;
+    } else if (progress < 0.6) {
+      newPhase = 'exploration';
+      newDepth = 4;
+      newOrbEnergy = 0.8;
+    } else if (progress < 0.8) {
+      newPhase = 'transformation';
+      newDepth = 5;
+      newOrbEnergy = 1.0;
+    } else if (progress < 0.95) {
+      newPhase = 'integration';
+      newDepth = 4;
+      newOrbEnergy = 0.9;
+    } else {
+      newPhase = 'completion';
+      newDepth = 2;
+      newOrbEnergy = 0.6;
+    }
+
+    setSessionWorldState(prev => ({
+      ...prev,
+      phase: newPhase,
+      depth: newDepth,
+      orbEnergy: newOrbEnergy
+    }));
+  }, [sessionWorldState.timeRemaining, sessionWorldState.totalTime]);
+
   // Initialize session when component mounts
   useEffect(() => {
     const initSession = async () => {
@@ -191,6 +308,51 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     };
   }, [sessionConfig, isVoiceEnabled, showToast]);
 
+  const handleSessionComplete = async () => {
+    console.log('[SESSION] Session completed');
+    
+    // Award experience and update stats
+    if (user) {
+      const baseXP = Math.floor(sessionConfig.duration * 2);
+      const bonusXP = sessionWorldState.depth * 5;
+      const totalXP = baseXP + bonusXP;
+      
+      await addExperience(totalXP);
+      await incrementStreak();
+      await updateEgoStateUsage(activeEgoState);
+      
+      showToast({
+        type: 'success',
+        message: `Session complete! +${totalXP} XP earned`
+      });
+    }
+    
+    setTimeout(onComplete, 2000);
+  };
+
+  const togglePlayPause = () => {
+    setSessionWorldState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
+    if (sessionManager) {
+      if (sessionWorldState.isPlaying) {
+        sessionManager.pause();
+      } else {
+        sessionManager.play();
+      }
+    }
+  };
+
+  const skipForward = () => {
+    if (sessionManager) {
+      sessionManager.next();
+    }
+  };
+
+  const skipBack = () => {
+    if (sessionManager) {
+      sessionManager.prev();
+    }
+  };
+
   const handleUserInput = async (input: string) => {
     if (!input.trim()) return;
 
@@ -217,9 +379,9 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           message: input,
           sessionContext: {
             egoState: sessionConfig.egoState,
-            phase: sessionState.scriptPlan ? 'active' : 'preparation',
-            depth: Math.min(sessionState.currentSegmentIndex + 1, 5),
-            breathing: 'inhale',
+            phase: sessionWorldState.phase,
+            depth: sessionWorldState.depth,
+            breathing: sessionWorldState.breathing,
             userProfile: {},
             customProtocol: sessionConfig.customProtocol,
             goal: sessionConfig.goal,
@@ -383,13 +545,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (textInput.trim()) {
-      handleUserInput(textInput.trim());
-    }
-  };
-
   const toggleVoice = () => {
     setIsVoiceEnabled(!isVoiceEnabled);
     if (!isVoiceEnabled && synthRef.current) {
@@ -397,16 +552,30 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     }
   };
 
-  const formatTime = (timestamp: number) => {
+  const formatTimestamp = (timestamp: number) => {
     return new Date(timestamp).toLocaleTimeString([], { 
       hour: '2-digit', 
       minute: '2-digit' 
     });
   };
 
+  // Get session title based on config
+  const getSessionTitle = () => {
+    if (sessionConfig.customProtocol?.name) {
+      return sessionConfig.customProtocol.name;
+    }
+    if (sessionConfig.protocol?.name) {
+      return sessionConfig.protocol.name;
+    }
+    if (sessionConfig.action?.name) {
+      return sessionConfig.action.name;
+    }
+    return `${currentEgoState.name} Session`;
+  };
+
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      {/* Animated background */}
+      {/* Cosmic Background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/20 to-teal-950/20" />
         {Array.from({ length: 100 }).map((_, i) => (
@@ -425,160 +594,67 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
       </div>
 
       {/* Session Header */}
-      <div className="relative z-50 flex items-center justify-between p-4 bg-black/60 backdrop-blur-xl border-b border-white/10">
-        <button
-          onClick={onCancel}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 transition-all hover:scale-105"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">Exit</span>
-        </button>
-        
-        <div className="text-center">
-          <h1 className="text-lg font-light text-white">Session with Libero</h1>
-          <p className="text-sm text-white/70 capitalize">{sessionConfig.egoState} • {sessionWorldState.phase}</p>
-        </div>
+      <SessionHeader
+        sessionTitle={getSessionTitle()}
+        currentSegment={sessionState.currentSegmentIndex + 1}
+        totalSegments={sessionState.scriptPlan?.segments?.length || 6}
+        bufferedAhead={sessionState.bufferedAhead}
+        onClose={onCancel}
+      />
 
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-white font-medium text-sm">{formatTime(sessionWorldState.timeRemaining)}</div>
-            <div className="text-white/60 text-xs">remaining</div>
-          </div>
-          <button
-            onClick={toggleVoice}
-            className={`p-2 rounded-lg transition-all hover:scale-110 ${
-              isVoiceEnabled ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-white/10 text-white/60 border border-white/20'
-            }`}
-          >
-            {isVoiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
+      {/* Session Indicators */}
+      <SessionIndicators
+        depth={sessionWorldState.depth}
+        breathing={sessionWorldState.breathing}
+        phase={sessionWorldState.isPlaying ? sessionWorldState.phase : 'paused'}
+      />
+
+      {/* Session Status Bar */}
+      <SessionStatusBar
+        isPlaying={sessionWorldState.isPlaying}
+        currentSegment={sessionState.currentSegmentIndex + 1}
+        totalSegments={sessionState.scriptPlan?.segments?.length || 6}
+        phase={sessionWorldState.phase}
+      />
 
       {/* Main Session Area */}
       <div className="relative z-10 flex-1 h-screen">
         {/* Central Orb */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative">
-            <Orb
-              ref={orbRef}
-              onTap={() => {}}
-              egoState={activeEgoState}
-              afterglow={sessionWorldState.orbEnergy > 0.7}
-              size={300}
-              variant="webgl"
-            />
-            
-            {/* Orb Status Overlay */}
-            <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center">
-              <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/20">
-                <div className="text-white/90 text-sm font-medium mb-1">{getBreathingPrompt()}</div>
-                <div className="text-white/60 text-xs">Depth Level {sessionWorldState.depth}</div>
-              </div>
-            </div>
-          </div>
+          <Orb
+            ref={orbRef}
+            onTap={() => {}}
+            egoState={activeEgoState}
+            afterglow={sessionWorldState.orbEnergy > 0.7}
+            size={300}
+            variant="webgl"
+          />
         </div>
 
-        {/* Session Indicators - Top */}
-        <div className="absolute top-4 left-4 right-4 z-30">
-          <div className="flex items-center justify-between">
-            {/* Phase Indicator */}
-            <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/20">
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${
-                  sessionWorldState.phase === 'preparation' ? 'bg-blue-400' :
-                  sessionWorldState.phase === 'induction' ? 'bg-teal-400' :
-                  sessionWorldState.phase === 'deepening' ? 'bg-purple-400' :
-                  sessionWorldState.phase === 'exploration' ? 'bg-yellow-400' :
-                  sessionWorldState.phase === 'transformation' ? 'bg-orange-400' :
-                  sessionWorldState.phase === 'integration' ? 'bg-green-400' :
-                  'bg-white'
-                } animate-pulse`} />
-                <span className="text-white/90 text-sm font-medium capitalize">{sessionWorldState.phase}</span>
-              </div>
-              <div className="text-white/60 text-xs mt-1">{getPhaseDescription()}</div>
-            </div>
+        {/* Floating Controls - Left Side */}
+        <SessionControls
+          isPlaying={sessionWorldState.isPlaying}
+          isVoiceEnabled={isVoiceEnabled}
+          audioLevel={audioLevel}
+          onPlayPause={togglePlayPause}
+          onSkipBack={skipBack}
+          onSkipForward={skipForward}
+          onToggleVoice={toggleVoice}
+          onVolumeChange={setAudioLevel}
+        />
 
-            {/* Progress Ring */}
-            <div className="relative w-16 h-16">
-              <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
-                <circle 
-                  cx="32" cy="32" r="28" fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  className="text-teal-400"
-                  style={{
-                    strokeDasharray: `${2 * Math.PI * 28}`,
-                    strokeDashoffset: `${2 * Math.PI * 28 * (sessionWorldState.timeRemaining / sessionWorldState.totalTime)}`
-                  }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-white/90 text-xs font-medium">{Math.round((1 - sessionWorldState.timeRemaining / sessionWorldState.totalTime) * 100)}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Session Stats - Right Side */}
+        <SessionStats
+          depth={sessionWorldState.depth}
+          orbEnergy={sessionWorldState.orbEnergy}
+          timeRemaining={sessionWorldState.timeRemaining}
+          totalTime={sessionWorldState.totalTime}
+          currentSegment={sessionWorldState.currentSegment}
+        />
 
-        {/* Floating Action Buttons - Left Side */}
-        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30 space-y-3">
-          <button
-            onClick={togglePlayPause}
-            className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all"
-          >
-            {sessionWorldState.isPlaying ? <Pause size={20} className="text-white" /> : <Play size={20} className="text-white ml-0.5" />}
-          </button>
-          
-          <button
-            onClick={skipBack}
-            className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all"
-          >
-            <SkipBack size={18} className="text-white/80" />
-          </button>
-          
-          <button
-            onClick={skipForward}
-            className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all"
-          >
-            <SkipForward size={18} className="text-white/80" />
-          </button>
-        </div>
-
-        {/* Floating Action Buttons - Right Side */}
-        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30 space-y-3">
-          <div className="bg-black/80 backdrop-blur-xl rounded-xl p-3 border border-white/20">
-            <div className="text-center">
-              <div className="text-white/90 text-lg font-bold">{sessionWorldState.depth}</div>
-              <div className="text-white/60 text-xs">Depth</div>
-            </div>
-          </div>
-          
-          <div className="bg-black/80 backdrop-blur-xl rounded-xl p-3 border border-white/20">
-            <div className="text-center">
-              <div className={`w-3 h-3 rounded-full mx-auto mb-1 ${
-                sessionWorldState.breathing === 'inhale' ? 'bg-blue-400 animate-pulse' :
-                sessionWorldState.breathing === 'hold-inhale' ? 'bg-teal-400' :
-                sessionWorldState.breathing === 'exhale' ? 'bg-purple-400 animate-pulse' :
-                sessionWorldState.breathing === 'hold-exhale' ? 'bg-pink-400' :
-                'bg-white/40'
-              }`} />
-              <div className="text-white/60 text-xs">Breath</div>
-            </div>
-          </div>
-          
-          <div className="bg-black/80 backdrop-blur-xl rounded-xl p-3 border border-white/20">
-            <div className="text-center">
-              <div className="text-white/90 text-sm font-bold">{Math.round(sessionWorldState.orbEnergy * 100)}%</div>
-              <div className="text-white/60 text-xs">Energy</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Conversation Overlay - Bottom Left */}
+        {/* Conversation Overlay */}
         {conversation.length > 0 && (
-          <div className="absolute bottom-24 left-4 right-4 z-40">
+          <div className="absolute bottom-36 left-4 right-4 z-40">
             <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-4 border border-white/20 max-h-48 overflow-y-auto">
               <div 
                 ref={chatContainerRef}
@@ -622,45 +698,26 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             </div>
           </div>
         )}
-
-        {/* Header */}
-        {/* Input Dock - The dock you like! */}
-        <div className="absolute bottom-0 left-0 right-0 z-50 p-4 bg-black/60 backdrop-blur-xl border-t border-white/10">
-          <form onSubmit={handleSubmit} className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleListening}
-              disabled={!isMicEnabled || micPermission === 'denied'}
-              className={`p-3 rounded-lg transition-colors ${
-                isListening
-                  ? 'bg-red-500/20 text-red-400 animate-pulse'
-                  : micPermission === 'granted' && isMicEnabled
-                  ? 'bg-white/10 hover:bg-white/20 text-white'
-                  : 'bg-white/5 text-white/30 cursor-not-allowed'
-              }`}
-            >
-              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            </button>
-
-            <input
-              type="text"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              placeholder="Type your message or use voice..."
-              className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent backdrop-blur-sm"
-              disabled={isThinking}
-            />
-
-            <button
-              type="submit"
-              disabled={!textInput.trim() || isThinking}
-              className="p-3 bg-purple-500 hover:bg-purple-600 disabled:bg-white/10 disabled:text-white/30 rounded-lg transition-colors"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </form>
-        </div>
       </div>
+
+      {/* Session Progress */}
+      <SessionProgress
+        currentSegment={sessionState.currentSegmentIndex + 1}
+        totalSegments={sessionState.scriptPlan?.segments?.length || 6}
+        bufferedAhead={sessionState.bufferedAhead}
+      />
+
+      {/* Voice Input Dock */}
+      <VoiceInputDock
+        textInput={textInput}
+        onTextChange={setTextInput}
+        onSubmit={handleUserInput}
+        isListening={isListening}
+        onToggleListening={toggleListening}
+        isMicEnabled={isMicEnabled}
+        micPermission={micPermission}
+        isThinking={isThinking}
+      />
 
       {/* AI Voice System Integration */}
       <AIVoiceSystem
