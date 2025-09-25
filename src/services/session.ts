@@ -129,23 +129,54 @@ class SessionManager implements SessionHandle {
         const voiceId = AI.voice.defaultVoiceId;
         const voiceModel = AI.voice.model;
         const cacheKey = this.scriptPlan!.hash + '-' + segment.id + '-' + voiceId + '-' + voiceModel;
-        const audioBlob = await synthesizeSegment(segment.text, {
+        const voiceResult = await synthesizeSegment(segment.text, {
           voiceId: voiceId,
           model: voiceModel,
           cacheKey: cacheKey,
           mode: 'pre-gen'
         });
 
-        const audioElement = new Audio(URL.createObjectURL(audioBlob));
-        this.segments[index] = { ...segment, audio: audioElement };
+        // Handle different TTS providers
+        let audioElement: HTMLAudioElement | null = null;
+        
+        if (voiceResult.provider === 'elevenlabs' && voiceResult.audioUrl) {
+          audioElement = new Audio(voiceResult.audioUrl);
+        } else if (voiceResult.provider === 'browser-tts') {
+          // For browser TTS, we'll play it when needed
+          audioElement = null; // Will use speechSynthesis directly
+        } else {
+          // No audio available, will show text only
+          audioElement = null;
+        }
+        
+        this.segments[index] = { 
+          ...segment, 
+          audio: audioElement,
+          ttsProvider: voiceResult.provider,
+          ttsError: voiceResult.error
+        };
+        
         if (import.meta.env.DEV) {
-          console.log('Session: Prefetched segment ' + index + ': ' + segment.id);
+          console.log('Session: Prefetched segment', index, ':', segment.id, 'provider:', voiceResult.provider);
         }
         this._emit('segment-ready', segment.id);
-        track('segment_buffered', { segmentId: segment.id, index: index });
+        track('segment_buffered', { 
+          segmentId: segment.id, 
+          index: index, 
+          provider: voiceResult.provider 
+        });
 
       } catch (error: any) {
-        console.error('Session: Failed to prefetch segment ' + index + ':', error);
+        console.error('Session: Failed to prefetch segment', index, ':', error);
+        
+        // Don't fail the entire session - create a text-only segment
+        this.segments[index] = { 
+          ...segment, 
+          audio: null,
+          ttsProvider: 'none',
+          ttsError: error.message
+        };
+        
         track('segment_buffer_error', { segmentId: segment.id, error: error.message });
       }
     }));
@@ -159,8 +190,19 @@ class SessionManager implements SessionHandle {
     if (this.currentSegmentIndex >= 0 && this.segments[this.currentSegmentIndex]) {
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
-        this.currentAudioElement = segment.audio;
-        this.currentAudioElement.play();
+        // Handle different TTS providers
+        if (segment.audio && segment.ttsProvider === 'elevenlabs') {
+          this.currentAudioElement = segment.audio;
+          this.currentAudioElement.play();
+        } else if (segment.ttsProvider === 'browser-tts') {
+          // Use browser TTS
+          this.playWithBrowserTTS(segment.text);
+        } else {
+          // Text-only mode - just mark as playing
+          if (import.meta.env.DEV) {
+            console.log('Session: Playing text-only segment:', segment.id);
+          }
+        }
         this._updateState({ playState: 'playing' });
         this._emit('play');
       }
@@ -210,6 +252,12 @@ class SessionManager implements SessionHandle {
       this.currentAudioElement.pause();
       this.currentAudioElement = null;
     }
+    
+    // Stop any browser TTS
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    
     this.eventListeners = {};
     this._updateState({ playState: 'stopped' });
   }
@@ -223,6 +271,52 @@ class SessionManager implements SessionHandle {
 
   getCurrentState(): SessionState {
     return { ...this._state };
+  }
+  
+  private playWithBrowserTTS(text: string) {
+    if (!window.speechSynthesis) {
+      console.warn('Browser TTS not available');
+      return;
+    }
+
+    // Stop any current speech
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.7;
+    utterance.pitch = 0.8;
+    utterance.volume = 0.9;
+
+    // Find a suitable voice
+    const voices = speechSynthesis.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.includes('Female') || 
+      voice.name.includes('Karen') ||
+      voice.name.includes('Samantha') ||
+      voice.lang.includes('en')
+    ) || voices[0];
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onend = () => {
+      // Auto-advance to next segment when browser TTS finishes
+      setTimeout(() => {
+        if (this.currentSegmentIndex < this.segments.length - 1) {
+          this.next();
+        } else {
+          this._updateState({ playState: 'stopped' });
+          this._emit('end');
+        }
+      }, 500);
+    };
+
+    utterance.onerror = (event) => {
+      console.error('Browser TTS error:', event.error);
+    };
+
+    window.speechSynthesis.speak(utterance);
   }
 }
 

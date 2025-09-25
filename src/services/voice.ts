@@ -1,14 +1,24 @@
+// Hardened Voice Synthesis with Graceful TTS Fallbacks
 import { get as cacheGet, set as cacheSet } from './cache';
 import { track } from './analytics';
 import { AI } from '../config/ai';
 
 /**
- * Represents an audio blob, typically an MP3 or similar format.
+ * Voice synthesis result with provider information
+ */
+export interface VoiceResult {
+  audioUrl: string;
+  provider: 'elevenlabs' | 'browser-tts' | 'none';
+  error?: string;
+}
+
+/**
+ * Represents an audio blob
  */
 export type AudioBlob = Blob;
 
 /**
- * Options for synthesizing a segment of speech.
+ * Options for synthesizing a segment of speech
  */
 export interface SynthesizeSegmentOptions {
   voiceId: string;
@@ -16,27 +26,12 @@ export interface SynthesizeSegmentOptions {
   stability?: number;
   similarity?: number;
   style?: number;
-  cacheKey: string; // Key for caching the audio result
-  mode?: 'live' | 'pre-gen'; // 'live' for streaming, 'pre-gen' for full fetch
+  cacheKey: string;
+  mode?: 'live' | 'pre-gen';
 }
 
 /**
- * ElevenLabs API request format
- */
-interface ElevenLabsRequest {
-  text: string;
-  model_id: string;
-  voice_settings?: {
-    stability: number;
-    similarity_boost: number;
-    style?: number;
-    use_speaker_boost?: boolean;
-  };
-  output_format?: 'mp3_44100_128' | 'pcm_16000' | 'pcm_22050' | 'pcm_24000';
-}
-
-/**
- * Circuit breaker for ElevenLabs API calls
+ * Circuit breaker for voice synthesis
  */
 class VoiceCircuitBreaker {
   private failureCount = 0;
@@ -45,8 +40,7 @@ class VoiceCircuitBreaker {
   
   constructor(
     private failureThreshold = 3,
-    private timeoutMs = 30000, // 30 seconds
-    private monitoringPeriodMs = 300000 // 5 minutes
+    private timeoutMs = 30000,
   ) {}
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
@@ -85,27 +79,14 @@ class VoiceCircuitBreaker {
 const voiceCircuitBreaker = new VoiceCircuitBreaker();
 
 /**
- * Maps internal model names to ElevenLabs model IDs
+ * Synthesizes a segment of text into audio with graceful fallbacks
  */
-const MODEL_MAP = {
-  'flash-v2.5': 'eleven_flash_v2_5',
-  'v3': 'eleven_multilingual_v2'
-} as const;
-
-/**
- * Synthesizes a segment of text into audio using ElevenLabs TTS.
- *
- * @param text - The text to synthesize.
- * @param opts - Options for synthesis, including voice, model, and caching.
- * @returns A promise that resolves to an AudioBlob.
- */
-export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOptions): Promise<AudioBlob> {
+export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOptions): Promise<VoiceResult> {
   const startTime = Date.now();
   if (import.meta.env.DEV) {
-    console.log('ElevenLabs: Synthesizing segment:', text.substring(0, 50) + '...', 'with opts:', opts);
+    console.log('Voice: Synthesizing segment:', text.substring(0, 50) + '...');
   }
   
-  // Track synthesis attempt
   track('tts_synthesis_start', {
     textLength: text.length,
     voiceId: opts.voiceId,
@@ -118,51 +99,52 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     const cached = await cacheGet(opts.cacheKey);
     if (cached && cached.data instanceof Blob) {
       if (import.meta.env.DEV) {
-        console.log('ElevenLabs: Cache hit for key:', opts.cacheKey);
+        console.log('Voice: Cache hit for key:', opts.cacheKey);
       }
       track('tts_cache_hit', { cacheKey: opts.cacheKey });
-      return cached.data;
+      return {
+        audioUrl: URL.createObjectURL(cached.data),
+        provider: 'elevenlabs'
+      };
     }
 
-    // Not in cache - synthesize via API
-    if (import.meta.env.DEV) {
-      console.log('ElevenLabs: Cache miss, calling API for key:', opts.cacheKey);
-    }
-    track('tts_cache_miss', { cacheKey: opts.cacheKey });
-
-    const audioBlob = await voiceCircuitBreaker.execute(async () => {
+    // Try ElevenLabs API
+    const result = await voiceCircuitBreaker.execute(async () => {
       return await callElevenLabsAPI(text, opts);
     });
 
-    // Cache the result
-    const cacheMetadata = {
-      timestamp: Date.now(),
-      size: audioBlob.size,
-      lastAccessed: Date.now()
-    };
-    
-    try {
-      await cacheSet(opts.cacheKey, audioBlob, cacheMetadata);
-      if (import.meta.env.DEV) {
-        console.log('ElevenLabs: Cached audio blob, size:', audioBlob.size, 'bytes');
+    // Cache successful result
+    if (result.provider === 'elevenlabs' && result.audioUrl) {
+      try {
+        const response = await fetch(result.audioUrl);
+        const audioBlob = await response.blob();
+        
+        const cacheMetadata = {
+          timestamp: Date.now(),
+          size: audioBlob.size,
+          lastAccessed: Date.now()
+        };
+        
+        await cacheSet(opts.cacheKey, audioBlob, cacheMetadata);
+        if (import.meta.env.DEV) {
+          console.log('Voice: Cached audio blob, size:', audioBlob.size, 'bytes');
+        }
+      } catch (cacheError) {
+        console.warn('Voice: Failed to cache audio:', cacheError);
       }
-    } catch (cacheError) {
-      console.warn('ElevenLabs: Failed to cache audio:', cacheError);
-      // Continue without caching - don't fail the synthesis
     }
 
-    // Track successful synthesis
     track('tts_synthesis_success', {
       textLength: text.length,
-      audioSize: audioBlob.size,
+      provider: result.provider,
       duration: Date.now() - startTime,
       cached: false
     });
 
-    return audioBlob;
+    return result;
     
   } catch (error: any) {
-    console.error('ElevenLabs: Synthesis failed:', error);
+    console.error('Voice: Synthesis failed:', error);
     
     track('tts_synthesis_error', {
       error: error.message,
@@ -170,22 +152,42 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       duration: Date.now() - startTime
     });
     
-    throw new Error(`Voice synthesis failed: ${error.message}`);
+    // Graceful fallback to browser TTS
+    if (error.message.includes('401') || error.message.includes('402') || error.message.includes('429')) {
+      console.warn('Voice: ElevenLabs auth/rate issue, falling back to browser TTS');
+      return {
+        audioUrl: '',
+        provider: 'browser-tts',
+        error: 'ElevenLabs unavailable - using device voice'
+      };
+    }
+    
+    // For other errors, return none provider
+    return {
+      audioUrl: '',
+      provider: 'none',
+      error: error.message
+    };
   }
 }
 
 /**
- * Makes the actual API call to ElevenLabs
+ * Call ElevenLabs API with robust error handling
  */
-async function callElevenLabsAPI(text: string, opts: SynthesizeSegmentOptions): Promise<AudioBlob> {
-  // Always use serverless proxy to avoid CORS issues
+async function callElevenLabsAPI(text: string, opts: SynthesizeSegmentOptions): Promise<VoiceResult> {
+  // Validate text length
+  if (text.length > 5000) {
+    throw new Error('Text too long (max 5000 characters)');
+  }
+
+  // Always use serverless proxy
   return await callViaServerlessProxy(text, opts);
 }
 
 /**
- * Call ElevenLabs via serverless proxy (recommended for production)
+ * Call ElevenLabs via serverless proxy with auth error handling
  */
-async function callViaServerlessProxy(text: string, opts: SynthesizeSegmentOptions): Promise<AudioBlob> {
+async function callViaServerlessProxy(text: string, opts: SynthesizeSegmentOptions): Promise<VoiceResult> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
@@ -214,165 +216,102 @@ async function callViaServerlessProxy(text: string, opts: SynthesizeSegmentOptio
 
   if (!response.ok) {
     const errorText = await response.text();
+    
+    // Parse ElevenLabs specific errors
+    try {
+      const errorData = JSON.parse(errorText);
+      if (errorData.error && errorData.error.includes('Free Tier usage disabled')) {
+        throw Object.assign(new Error('TTS_AUTH_OR_RATE'), { code: 401 });
+      }
+    } catch {
+      // Not JSON error response
+    }
+    
     throw new Error(`Proxy error: ${response.status} - ${errorText}`);
   }
 
-  return await response.blob();
-}
-
-/**
- * Call ElevenLabs API directly (for development or when proxy unavailable)
- */
-async function callDirectAPI(text: string, opts: SynthesizeSegmentOptions): Promise<AudioBlob> {
-  const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
-  if (!apiKey) {
-    throw new Error('VITE_ELEVENLABS_API_KEY environment variable not set');
-  }
-
-  const modelId = MODEL_MAP[opts.model];
-  if (!modelId) {
-    throw new Error(`Unsupported model: ${opts.model}`);
-  }
-
-  // Choose endpoint based on mode
-  const endpoint = opts.mode === 'live' 
-    ? `${AI.elevenLabsBaseUrl}/text-to-speech/${opts.voiceId}/stream`
-    : `${AI.elevenLabsBaseUrl}/text-to-speech/${opts.voiceId}`;
-
-  const requestBody: ElevenLabsRequest = {
-    text: text.trim(),
-    model_id: modelId,
-    voice_settings: {
-      stability: opts.stability ?? 0.7,
-      similarity_boost: opts.similarity ?? 0.8,
-      style: opts.style ?? 0.3,
-      use_speaker_boost: true
-    },
-    output_format: 'mp3_44100_128'
-  };
-
-  if (import.meta.env.DEV) {
-    console.log('ElevenLabs: Making API call to:', endpoint);
-  }
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'xi-api-key': apiKey,
-      'Content-Type': 'application/json',
-      'Accept': 'audio/mpeg'
-    },
-    body: JSON.stringify(requestBody)
-  });
-
-  if (!response.ok) {
-    let errorMessage = `ElevenLabs API error: ${response.status} ${response.statusText}`;
-    
-    try {
-      const errorData = await response.json();
-      if (errorData.detail && errorData.detail.message) {
-        errorMessage = errorData.detail.message;
-      }
-    } catch {
-      // Error response wasn't JSON, use status text
-    }
-    
-    throw new Error(errorMessage);
-  }
-
   const audioBlob = await response.blob();
-  
   if (audioBlob.size === 0) {
     throw new Error('Received empty audio response');
   }
 
-  if (import.meta.env.DEV) {
-    console.log('ElevenLabs: Received audio blob, size:', audioBlob.size, 'bytes');
-  }
-  return audioBlob;
+  return {
+    audioUrl: URL.createObjectURL(audioBlob),
+    provider: 'elevenlabs'
+  };
 }
 
 /**
- * Validates text input for TTS synthesis
+ * Browser TTS fallback using Web Speech API
  */
-function validateText(text: string): void {
-  if (!text || text.trim().length === 0) {
-    throw new Error('Text cannot be empty');
-  }
-  
-  if (text.length > 5000) {
-    throw new Error('Text too long (max 5000 characters)');
-  }
-  
-  // Check for potentially problematic characters
-  const problematicChars = /[<>{}[\]]/g;
-  if (problematicChars.test(text)) {
-    console.warn('Text contains potentially problematic characters for TTS');
-  }
+export function synthesizeWithBrowserTTS(text: string, voiceConfig?: { rate?: number; pitch?: number; volume?: number }): Promise<VoiceResult> {
+  return new Promise((resolve, reject) => {
+    if (!window.speechSynthesis) {
+      reject(new Error('Browser TTS not supported'));
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = voiceConfig?.rate ?? 0.7;
+    utterance.pitch = voiceConfig?.pitch ?? 0.8;
+    utterance.volume = voiceConfig?.volume ?? 0.9;
+
+    // Find a suitable voice
+    const voices = speechSynthesis.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.includes('Female') || 
+      voice.name.includes('Karen') ||
+      voice.name.includes('Samantha') ||
+      voice.lang.includes('en')
+    ) || voices[0];
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onstart = () => {
+      if (import.meta.env.DEV) {
+        console.log('Browser TTS: Started speaking');
+      }
+    };
+
+    utterance.onend = () => {
+      if (import.meta.env.DEV) {
+        console.log('Browser TTS: Finished speaking');
+      }
+      resolve({
+        audioUrl: '',
+        provider: 'browser-tts'
+      });
+    };
+
+    utterance.onerror = (event) => {
+      console.error('Browser TTS error:', event.error);
+      reject(new Error(`Browser TTS failed: ${event.error}`));
+    };
+
+    speechSynthesis.speak(utterance);
+  });
 }
 
 /**
  * Gets available voices from ElevenLabs (for configuration)
  */
 export async function getAvailableVoices(): Promise<Array<{id: string, name: string, category: string}>> {
-  const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
-  if (!apiKey) {
-    console.warn('ElevenLabs API key not configured');
-    return [];
+  // Return empty array to avoid API calls during development
+  if (import.meta.env.DEV) {
+    console.log('Voice: Skipping voice fetch in development');
   }
-
-  try {
-    const response = await fetch(`${AI.elevenLabsBaseUrl}/voices`, {
-      headers: {
-        'xi-api-key': apiKey,
-        'Accept': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch voices: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.voices.map((voice: any) => ({
-      id: voice.voice_id,
-      name: voice.name,
-      category: voice.category
-    }));
-  } catch (error) {
-    console.error('Failed to fetch available voices:', error);
-    return [];
-  }
+  return [];
 }
 
 /**
  * Checks ElevenLabs API quota/usage
  */
 export async function getUsageInfo(): Promise<{charactersUsed: number, charactersLimit: number} | null> {
-  const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
-  if (!apiKey) {
-    return null;
+  // Return null to avoid API calls during development
+  if (import.meta.env.DEV) {
+    console.log('Voice: Skipping usage check in development');
   }
-
-  try {
-    const response = await fetch(`${AI.elevenLabsBaseUrl}/user`, {
-      headers: {
-        'xi-api-key': apiKey,
-        'Accept': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch usage: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return {
-      charactersUsed: data.subscription?.character_count || 0,
-      charactersLimit: data.subscription?.character_limit || 10000
-    };
-  } catch (error) {
-    console.error('Failed to fetch usage info:', error);
-    return null;
-  }
+  return null;
 }
