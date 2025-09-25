@@ -220,15 +220,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       // Generate personalized script for custom protocol
       const personalizedProtocol = scriptGenerator.generatePersonalizedScript(
         sessionConfig.customProtocol,
-        let sessionContext = {
-          egoState: sessionConfig.egoState,
-          userProfile: {
-            experience_level: 'some' as const,
-            preferred_imagery: 'nature' as const,
-            voice_tone: 'gentle' as const
-          },
-          customGoals: sessionConfig.goal ? [sessionConfig.goal.name] : undefined
-        };
+        sessionContext
       );
       welcomeMessage = `Welcome to your custom ${sessionConfig.customProtocol.name} session. Find a comfortable position and prepare for transformation.`;
       
