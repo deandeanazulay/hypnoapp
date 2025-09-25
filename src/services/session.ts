@@ -45,11 +45,11 @@ export class SessionManager {
   private scriptPlan: any = null;
 
   async initialize(userContext: any) {
-    console.log('Session: Initializing with context:', userContext);
+    console.log('Session: Initializing...');
     
     try {
       await this._initializeSession(userContext);
-      console.log('Session: Successfully initialized');
+      console.log('Session: Initialized successfully');
     } catch (error) {
       console.error('Session: Failed to initialize:', error);
       throw error;
@@ -63,61 +63,51 @@ export class SessionManager {
       emerge: "On the count of three, you'll emerge feeling refreshed..."
     };
 
-    console.log('Session: Starting script generation...');
+    console.log('Session: Generating script...');
     
     try {
       this.scriptPlan = await getSessionScript(userContext);
-      console.log('Session: Generated script with', this.scriptPlan.segments?.length || 0, 'segments');
+      console.log('Session: Got script with', this.scriptPlan.segments?.length || 0, 'segments');
       
       // Ensure we have valid segments
       if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
-        console.warn('Session: Generated script has no segments, using fallback');
-        throw new Error('No segments in generated script');
+        console.log('Session: No segments, creating fallback');
+        this.scriptPlan = this._createFallbackScript(userContext);
       }
     } catch (error: any) {
-      console.error('Session: Script generation failed:', error.message);
-      console.log('Session: Creating fallback script...');
+      console.log('Session: Script failed, using fallback');
       this.scriptPlan = this._createFallbackScript(userContext);
-      console.log('Session: Fallback script created with', this.scriptPlan.segments?.length || 0, 'segments');
     }
 
     // Double-check we have segments
     if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
-      console.error('Session: No segments available, creating emergency fallback');
+      console.log('Session: Creating emergency fallback');
       this.scriptPlan = this._createEmergencyFallback();
     }
 
-    // Initialize segments array
-    this.segments = new Array(this.scriptPlan.segments.length).fill(null);
-    this._updateState({ 
-      scriptPlan: this.scriptPlan,
-      currentSegmentId: this.scriptPlan.segments[0].id,
-      totalSegments: this.scriptPlan.segments.length
-    });
+    // Validate final script
+    if (!this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
+      throw new Error('Failed to create any segments');
+    }
 
-    // Convert all segments to playable segments immediately
-    console.log('Session: Converting', this.scriptPlan.segments.length, 'segments to playable format...');
-    for (let i = 0; i < this.scriptPlan.segments.length; i++) {
-      const segment = this.scriptPlan.segments[i];
-      this.segments[i] = {
-        id: segment.id,
+    // Initialize segments array
+    utterance.onstart = () => {};
         text: segment.text,
-        approxSec: segment.approxSec || 20,
         audio: null,
         ttsProvider: 'browser-tts' as const
       };
     }
     
-    console.log(`Session: ✅ All ${this.segments.length} segments ready for playback`);
+    console.log('Session: Ready with', this.segments.length, 'segments');
   }
 
   private _createFallbackScript(userContext: any) {
-    console.log('Session: Creating fallback script for:', userContext);
+    console.log('Session: Creating fallback script');
     
     return {
-      title: `${userContext.egoState || 'Mindful'} Session`,
+      title: `${userContext.egoState || 'Guardian'} Session`,
       segments: [
-        { id: "intro", text: `Welcome to your ${userContext.egoState || 'mindful'} session. Take a deep breath and allow yourself to settle in comfortably.`, approxSec: 15 },
+        { id: "intro", text: `Welcome to your ${userContext.egoState || 'guardian'} session. Take a deep breath and allow yourself to settle in comfortably.`, approxSec: 15 },
         { id: "relaxation", text: "Close your eyes gently and feel your body beginning to relax. With each breath, let go of any tension you've been holding.", approxSec: 20 },
         { id: "deepening", text: "Going deeper now, feeling more and more relaxed with each breath you take. Each exhale releases stress and brings you deeper into peace.", approxSec: 25 },
         { id: "safe-space", text: "Imagine yourself in a beautiful, safe space where you feel completely protected and at peace. This is your sanctuary.", approxSec: 30 },
@@ -130,7 +120,7 @@ export class SessionManager {
   }
 
   private _createEmergencyFallback() {
-    console.log('Session: Creating emergency fallback script');
+    console.log('Session: Emergency fallback');
     
     return {
       title: 'Relaxation Session',
@@ -242,27 +232,24 @@ export class SessionManager {
     
     // Check if we have segments
     if (!this.segments || this.segments.length === 0) {
-      console.error('Session: Cannot play - no segments available');
+      console.error('Session: No segments to play');
       this._updateState({ error: 'No segments available to play' });
       return;
     }
     
-    const segmentNumber = this.currentSegmentIndex + 1;
-    console.log(`Session: Playing segment ${segmentNumber} of ${this.segments.length}`);
+    console.log('Session: Playing segment', this.currentSegmentIndex + 1);
     
     // Check if we have a valid segment
     if (this.currentSegmentIndex < 0 || this.currentSegmentIndex >= this.segments.length) {
-      console.error(`Session: Invalid segment index ${this.currentSegmentIndex}. Total segments: ${this.segments.length}`);
+      console.error('Session: Invalid segment index');
       return;
     }
     
     const segment = this.segments[this.currentSegmentIndex];
     if (!segment) {
-      console.error(`Session: No segment available at index ${this.currentSegmentIndex}`);
+      console.error('Session: No segment available');
       return;
     }
-    
-    console.log(`Session: ▶️ Playing "${segment.id}" - ${segment.text.substring(0, 30)}...`);
     
     // Update state to show current segment
     this._updateState({ 
@@ -291,123 +278,28 @@ export class SessionManager {
 
   private _playWithBrowserTTS(text: string) {
     if (!window.speechSynthesis) {
-      console.warn('Session: Browser TTS not available');
+      console.log('Session: No TTS, auto-advancing');
       const estimatedDuration = Math.max(4000, text.length * 100);
-      console.log('Session: Auto-advancing after', estimatedDuration, 'ms');
       setTimeout(() => {
         this._handleSegmentEnd();
       }, estimatedDuration);
       return;
     }
 
-    const segmentNumber = this.currentSegmentIndex + 1;
-    console.log(`Session: 🎵 Speaking segment ${segmentNumber}`);
-
     // Cancel any existing speech
     window.speechSynthesis.cancel();
     
-    // Small delay to ensure cancel is processed
     setTimeout(() => {
-      this._startSpeechSynthesis(text, segmentNumber);
-    }, 100);
-  }
-  
-  private _startSpeechSynthesis(text: string, segmentNumber: number) {
-    if (!text || text.trim().length === 0) {
-      console.error('Session: No text to speak');
-      setTimeout(() => this._handleSegmentEnd(), 1000);
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text.trim());
-    utterance.rate = 0.8;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    utterance.onstart = () => {
-      console.log(`Session: ✅ Speaking segment ${segmentNumber}`);
-    };
-
-    utterance.onend = () => {
-      console.log(`Session: ✅ Finished segment ${segmentNumber}`);
       this._handleSegmentEnd();
     };
 
-    utterance.onerror = (event) => {
-      console.error(`Session: TTS error:`, event.error);
-      setTimeout(() => this._handleSegmentEnd(), 500);
-    };
-
-    // Use first available voice
-    const voices = speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      const voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
-      if (voice) {
-        utterance.voice = voice;
-      }
-    }
-
-    try {
-      window.speechSynthesis.speak(utterance);
-      console.log(`Session: TTS started for segment ${segmentNumber}`);
-    } catch (error) {
-      console.error('Session: Failed to start TTS:', error);
-      setTimeout(() => this._handleSegmentEnd(), 3000);
-    }
-  }
-  
-  private _oldStartSpeechSynthesis(text: string, segmentNumber: number) {
-    // Check if speech synthesis is available
-    if (!window.speechSynthesis) {
-      console.error('Session: Speech synthesis not available');
-      setTimeout(() => this._handleSegmentEnd(), 3000);
-      return;
-    }
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.7; // Slower for hypnosis
-    utterance.pitch = 0.9;
-    utterance.volume = 1.0;
-
-    // Set up event handlers first
-    utterance.onstart = () => {
-      console.log(`Session: ✅ TTS started for segment ${segmentNumber}`);
-    };
-
-    utterance.onend = () => {
-      console.log(`Session: ✅ TTS finished for segment ${segmentNumber}`);
-      this._handleSegmentEnd();
-    };
-
-    utterance.onerror = (event) => {
-      console.error(`Session: ❌ TTS error for segment ${segmentNumber}:`, event.error);
-      this._handleSegmentEnd();
-    };
-
-    // Voice selection
-    const voices = speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      const voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
-      if (voice) {
-        utterance.voice = voice;
-        console.log(`Session: Using voice: ${voice.name}`);
-      }
-    }
-
-    try {
-      window.speechSynthesis.speak(utterance);
-    } catch (error) {
-      console.error(`Session: Failed to start speech:`, error);
-      setTimeout(() => this._handleSegmentEnd(), 3000);
+    // Use default voice for reliability
+    window.speechSynthesis.speak(utterance);
     }
   }
   private _handleSegmentEnd() {
-    const completedSegment = this.currentSegmentIndex + 1;
-    console.log(`Session: Segment ${completedSegment} ended, checking for next segment...`);
-    
     if (this.currentSegmentIndex < this.segments.length - 1) {
       this.currentSegmentIndex++;
-      const nextSegment = this.currentSegmentIndex + 1;
-      console.log(`Session: Advancing to segment ${nextSegment} of ${this.segments.length}`);
       
       this._updateState({ 
         currentSegmentIndex: this.currentSegmentIndex,
@@ -416,11 +308,9 @@ export class SessionManager {
       
       // Small delay between segments for natural flow
       setTimeout(() => {
-        console.log(`Session: Auto-playing segment ${nextSegment}`);
         this.play();
       }, 1000);
     } else {
-      console.log('Session: All segments completed successfully');
       this._updateState({ playState: 'stopped' });
       this._emit('end');
     }
@@ -443,8 +333,6 @@ export class SessionManager {
   }
 
   next() {
-    console.log(`Session: Manual next requested, current segment: ${this.currentSegmentIndex + 1}`);
-    
     // Stop current audio
     if (this.currentAudioElement) {
       this.currentAudioElement.pause();
@@ -458,7 +346,6 @@ export class SessionManager {
     
     if (this.currentSegmentIndex < this.segments.length - 1) {
       this.currentSegmentIndex++;
-      console.log(`Session: Manually advanced to segment ${this.currentSegmentIndex + 1}`);
       
       this._updateState({ 
         currentSegmentIndex: this.currentSegmentIndex,
@@ -470,13 +357,7 @@ export class SessionManager {
           this.play();
         }, 200);
       }
-      
-      // Prefetch next segments
-      this._prefetchSegments(this.currentSegmentIndex + 1, AI.voice.preBufferSegments).catch(() => {
-        console.log('Session: Prefetch failed, continuing without');
-      });
     } else {
-      console.log('Session: Manual next reached end of segments');
       this._updateState({ playState: 'stopped' });
       this._emit('end');
     }
@@ -496,7 +377,6 @@ export class SessionManager {
       }
       
       this.currentSegmentIndex--;
-      console.log(`Session: Moved back to segment ${this.currentSegmentIndex}`);
       
       this._updateState({ 
         currentSegmentIndex: this.currentSegmentIndex,
@@ -512,7 +392,6 @@ export class SessionManager {
   }
 
   dispose() {
-    console.log('Session: Disposing session manager');
     
     if (this.currentAudioElement) {
       this.currentAudioElement.pause();

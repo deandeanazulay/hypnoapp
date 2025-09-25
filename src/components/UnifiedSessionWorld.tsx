@@ -198,15 +198,15 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
 
   // Initialize session
   useEffect(() => {
-    if (initRef.current) return;
-    initRef.current = true;
-    
-    if (initRef.current) return;
+    if (initRef.current) {
+      console.log('Session: Already initialized, skipping');
+      return;
+    }
     initRef.current = true;
     
     const initSession = async () => {
       try {
-        console.log('Session: Initializing new session with config:', sessionConfig);
+        console.log('Session: Starting new session');
         const manager = new SessionManager();
         setSessionManager(manager);
         
@@ -240,7 +240,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           userPrefs: {}
         });
         console.log('Auto-starting session...');
-        manager.play();
         
       } catch (error) {
         console.error('Session initialization failed:', error);
@@ -253,10 +252,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     return () => {
       initRef.current = false;
       
-      initRef.current = false;
-      
       if (sessionManager) {
-        console.log('Session: Cleaning up session manager');
         sessionManager.dispose();
       }
       if (timerRef.current) {
@@ -363,7 +359,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         (s: any) => s.id === sessionManagerState.currentSegmentId
       );
       
-      if (currentSegment && currentSegment.text) {
         // Add current segment text to conversation
         const aiMessage = { 
           role: 'ai' as const, 
@@ -400,7 +395,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
       if (!supabaseUrl) {
-        console.warn('Supabase not configured, using local fallback');
         const fallbackMessage = getLocalFallbackResponse(input, sessionConfig.egoState);
         const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
         setConversation(prev => [...prev, aiMessage]);
@@ -458,7 +452,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         throw new Error('No response from AI');
       }
     } catch (error) {
-      console.error('AI conversation error:', error);
       const fallbackMessage = getLocalFallbackResponse(input, sessionConfig.egoState);
       
       if (isVoiceEnabled) {
@@ -508,7 +501,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   };
 
   const handleSessionComplete = async () => {
-    console.log('Session: Completing session');
     if (user) {
       const baseXP = Math.floor(sessionConfig.duration * 2);
       const bonusXP = sessionState.depth * 5;
@@ -655,11 +647,38 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     >
       {/* CSS Custom Properties for Responsive Layout */}
       <style jsx>{`
-        .session-layout { --header-h: 64px; --dock-h: 88px; --rail-w: 72px; --indicator-w: 84px; --gutter: 24px; }
-        @media (max-width: 1199px) { .session-layout { --rail-w: 64px; --indicator-w: 72px; --gutter: 20px; --dock-h: 80px; } }
-        @media (max-width: 767px) { .session-layout { --rail-w: 56px; --indicator-w: 64px; --gutter: 16px; --dock-h: 72px; --header-h: 56px; } }
-        @keyframes twinkle { 0%, 100% { opacity: 0.1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.1); } }
-        @keyframes breathe-glow { 0%, 100% { opacity: 0.85; } 50% { opacity: 1.0; } }
+        .session-layout { 
+          --header-h: 64px; 
+          --dock-h: 88px; 
+          --rail-w: 72px; 
+          --indicator-w: 84px; 
+          --gutter: 24px; 
+        }
+        @media (max-width: 1199px) { 
+          .session-layout { 
+            --rail-w: 64px; 
+            --indicator-w: 72px; 
+            --gutter: 20px; 
+            --dock-h: 80px; 
+          } 
+        }
+        @media (max-width: 767px) { 
+          .session-layout { 
+            --rail-w: 56px; 
+            --indicator-w: 64px; 
+            --gutter: 16px; 
+            --dock-h: 72px; 
+            --header-h: 56px; 
+          } 
+        }
+        @keyframes twinkle { 
+          0%, 100% { opacity: 0.1; transform: scale(1); } 
+          50% { opacity: 0.3; transform: scale(1.1); } 
+        }
+        @keyframes breathe-glow { 
+          0%, 100% { opacity: 0.85; } 
+          50% { opacity: 1.0; } 
+        }
       `}</style>
 
       {/* Cosmic Background with Brand Aura */}
