@@ -6,7 +6,6 @@ import { SessionManager } from '../services/session';
 
 // Premium Session Components
 import SessionHeader from './session/SessionHeader';
-import TopIndicators from './session/TopIndicators';
 import StatusBar from './session/StatusBar';
 import FloatingControls from './session/FloatingControls';
 import StatsPanel from './session/StatsPanel';
@@ -428,13 +427,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           onClose={onCancel}
         />
 
-        {/* 2. Top Indicators */}
-        <TopIndicators
-          depth={sessionState.depth}
-          breathing={sessionState.breathing}
-          phase={sessionState.isPlaying ? sessionState.phase : 'paused'}
-        />
-
         {/* Status Bar */}
         <StatusBar
           isPlaying={sessionState.isPlaying}
@@ -466,12 +458,14 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             onToggleVoice={() => setIsVoiceEnabled(!isVoiceEnabled)}
           />
 
-          {/* Stats Panel - Right */}
+          {/* Stats Panel - Right (includes breathing and phase) */}
           <StatsPanel
             timeRemaining={sessionState.timeRemaining}
             depth={sessionState.depth}
             orbEnergy={sessionState.orbEnergy}
             progress={progress}
+            breathing={sessionState.breathing}
+            phase={sessionState.isPlaying ? sessionState.phase : 'paused'}
           />
         </div>
 

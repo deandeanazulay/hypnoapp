@@ -1,18 +1,44 @@
 import React from 'react';
-import { Clock, Activity, Zap, Target } from 'lucide-react';
+import { Clock, Activity, Zap, Target, Wind, Brain } from 'lucide-react';
 
 interface StatsPanelProps {
   timeRemaining: number;
   depth: number;
   orbEnergy: number;
   progress: number;
+  breathing: 'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale' | 'rest';
+  phase: string;
 }
 
-export default function StatsPanel({ timeRemaining, depth, orbEnergy, progress }: StatsPanelProps) {
+export default function StatsPanel({ timeRemaining, depth, orbEnergy, progress, breathing, phase }: StatsPanelProps) {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getBreathingColor = () => {
+    switch (breathing) {
+      case 'inhale': return 'text-blue-400';
+      case 'hold-inhale': return 'text-teal-400';
+      case 'exhale': return 'text-green-400';
+      case 'hold-exhale': return 'text-purple-400';
+      default: return 'text-white/60';
+    }
+  };
+
+  const getPhaseColor = () => {
+    switch (phase.toLowerCase()) {
+      case 'preparation': return 'text-blue-400';
+      case 'induction': return 'text-teal-400';
+      case 'deepening': return 'text-purple-400';
+      case 'exploration': return 'text-yellow-400';
+      case 'transformation': return 'text-orange-400';
+      case 'integration': return 'text-green-400';
+      case 'completion': return 'text-white';
+      case 'paused': return 'text-gray-400';
+      default: return 'text-white/60';
+    }
   };
 
   return (
@@ -39,6 +65,19 @@ export default function StatsPanel({ timeRemaining, depth, orbEnergy, progress }
           <div className="text-white/60 text-xs">Energy</div>
         </div>
 
+        {/* Breathing State */}
+        <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-4 border border-white/20 text-center shadow-2xl min-w-[80px]">
+          <Wind size={16} className={`mx-auto mb-2 ${getBreathingColor()}`} />
+          <div className={`text-sm font-bold capitalize ${getBreathingColor()}`}>{breathing.replace('-', ' ')}</div>
+          <div className="text-white/60 text-xs">Breathing</div>
+        </div>
+
+        {/* Phase */}
+        <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-4 border border-white/20 text-center shadow-2xl min-w-[80px]">
+          <Brain size={16} className={`mx-auto mb-2 ${getPhaseColor()}`} />
+          <div className={`text-sm font-bold capitalize ${getPhaseColor()}`}>{phase}</div>
+          <div className="text-white/60 text-xs">Phase</div>
+        </div>
         {/* Progress */}
         <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-4 border border-white/20 text-center shadow-2xl min-w-[80px]">
           <Target size={16} className="text-cyan-400 mx-auto mb-2" />
