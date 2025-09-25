@@ -332,6 +332,8 @@ export class SessionManager {
       return;
     }
     
+    console.log('Session: Starting play with', this.segments.length, 'segments');
+    
     
     // Check if we have a valid segment
     if (this.currentSegmentIndex < 0 || this.currentSegmentIndex >= this.segments.length) {
@@ -344,6 +346,8 @@ export class SessionManager {
       console.error('Session: No segment available');
       return;
     }
+    
+    console.log('Session: Playing segment', this.currentSegmentIndex + 1, ':', segment.text.substring(0, 50) + '...');
     
     // Update state to show current segment
     this._updateState({ 
@@ -372,6 +376,7 @@ export class SessionManager {
 
   private _playWithBrowserTTS(text: string) {
     if (!window.speechSynthesis) {
+      console.log('Session: speechSynthesis not available');
       const estimatedDuration = Math.max(4000, text.length * 100);
       setTimeout(() => {
         this._handleSegmentEnd();
@@ -379,39 +384,63 @@ export class SessionManager {
       return;
     }
 
+    console.log('Session: Starting TTS for text:', text.substring(0, 50) + '...');
+
     // Cancel any existing speech
     window.speechSynthesis.cancel();
     
-    // Small delay to ensure cancel is processed
-    setTimeout(() => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.7; // Slower for hypnosis
-      utterance.pitch = 0.9; // Slightly lower for authority
-      utterance.volume = 1.0;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.7; // Slower for hypnosis
+    utterance.pitch = 0.9; // Slightly lower for authority
+    utterance.volume = 1.0;
+    
+    // Wait for voices to load if needed
+    const setVoiceAndSpeak = () => {
+      const voices = window.speechSynthesis.getVoices();
+      console.log('Session: Available voices:', voices.length);
       
       // Select optimal voice for hypnosis
-      const voices = window.speechSynthesis.getVoices();
       const hypnosisVoice = voices.find(voice => 
         voice.name.includes('Daniel') || // Deep male voice
         voice.name.includes('Karen') || // Calm female voice
         voice.name.includes('Samantha') || // Soothing voice
-        (voice.lang.includes('en') && voice.name.includes('Microsoft'))
+        voice.name.includes('Victoria') || // macOS voice
+        voice.name.includes('Moira') || // macOS voice
+        (voice.lang.includes('en') && voice.name.includes('Google'))
       ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
       
       if (hypnosisVoice) {
         utterance.voice = hypnosisVoice;
+        console.log('Session: Selected voice:', hypnosisVoice.name);
+      } else {
+        console.log('Session: Using default voice');
       }
       
+      utterance.onstart = () => {
+        console.log('Session: TTS started successfully');
+      };
+      
       utterance.onend = () => {
+        console.log('Session: TTS ended, moving to next segment');
         this._handleSegmentEnd();
       };
       
-      utterance.onerror = () => {
+      utterance.onerror = (event) => {
+        console.error('Session: TTS error:', event.error);
         this._handleSegmentEnd();
       };
       
+      console.log('Session: Calling speechSynthesis.speak()');
       window.speechSynthesis.speak(utterance);
-    }, 100);
+    };
+
+    // Handle voice loading
+    if (window.speechSynthesis.getVoices().length === 0) {
+      console.log('Session: Waiting for voices to load...');
+      window.speechSynthesis.addEventListener('voiceschanged', setVoiceAndSpeak, { once: true });
+    } else {
+      setVoiceAndSpeak();
+    }
   }
   private _handleSegmentEnd() {
     if (this.currentSegmentIndex < this.segments.length - 1) {
