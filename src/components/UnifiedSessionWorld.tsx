@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Pause, Play, Volume2, VolumeX, Mic, MicOff, Send, MessageCircle, Brain, Loader } from 'lucide-react';
+import { X, Pause, Play, Volume2, VolumeX, Mic, MicOff, Send, MessageCircle, Brain, Loader, Circle, Users } from 'lucide-react';
 import Orb from './Orb';
 import GlassCard from './ui/GlassCard';
 import { useGameState } from './GameStateManager';
@@ -35,6 +35,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const [textInput, setTextInput] = useState('');
   const [conversation, setConversation] = useState<Array<{role: 'ai' | 'user', content: string, timestamp: number}>>([]);
   const [isThinking, setIsThinking] = useState(false);
+  const [sessionMode, setSessionMode] = useState<'auto' | 'interactive'>('auto');
   const [chatHeight, setChatHeight] = useState(80); // Default chat height in pixels
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartY, setDragStartY] = useState(0);
@@ -740,23 +741,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         
         {/* Controls Section */}
         <div className="px-4 py-3 bg-black/95 backdrop-blur-xl">
-          {/* Session Status Info */}
-          {sessionState.playState === 'playing' && (
-            <div className="mb-3 p-2 bg-green-500/10 border border-green-500/30 rounded-lg text-center">
-              <p className="text-green-400 text-xs font-medium">
-                🎵 Guided session in progress - interact anytime or just listen
-              </p>
-            </div>
-          )}
-          
-          {sessionState.playState === 'loading' && (
-            <div className="mb-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg text-center">
-              <p className="text-blue-400 text-xs font-medium">
-                ⏳ Preparing your personalized session...
-              </p>
-            </div>
-          )}
-          
           {/* Communication Input Row */}
           <form onSubmit={handleSubmit}>
             <div className="flex items-center space-x-3">
@@ -836,6 +820,31 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       
       {/* Floating Control Sidebar */}
       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 space-y-3">
+        {/* Auto/Interactive Mode Toggle */}
+        <button
+          onClick={() => setSessionMode('auto')}
+          className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+            sessionMode === 'auto'
+              ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/30' 
+              : 'bg-white/10 border-white/30 text-white/60 hover:bg-white/20'
+          }`}
+          title="Auto-guided session"
+        >
+          <Circle size={18} />
+        </button>
+        
+        <button
+          onClick={() => setSessionMode('interactive')}
+          className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+            sessionMode === 'interactive'
+              ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400 shadow-cyan-500/30' 
+              : 'bg-white/10 border-white/30 text-white/60 hover:bg-white/20'
+          }`}
+          title="Interactive session"
+        >
+          <MessageCircle size={18} />
+        </button>
+        
         {/* Pause/Play */}
         <button
           onClick={togglePlayPause}
