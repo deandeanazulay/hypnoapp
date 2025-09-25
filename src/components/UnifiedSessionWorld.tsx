@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, Send, ArrowLeft } from 'lucide-react';
-import { useAuthStore } from '../store';
+import { useAppStore } from "../store";
 import { SessionManager } from '../services/session';
 import { useToast } from '../hooks/useToast';
 
@@ -12,11 +12,9 @@ interface UnifiedSessionWorldProps {
     customProtocol?: any;
   };
   onBack: () => void;
-}
 
 export default function UnifiedSessionWorld({ sessionConfig, onBack }: UnifiedSessionWorldProps) {
-  const { user } = useAuthStore();
-  const { showToast } = useToast();
+  const { user, showToast } = useAppStore();
   
   const [conversation, setConversation] = useState<Array<{
     role: 'user' | 'ai';
