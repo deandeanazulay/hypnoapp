@@ -6,6 +6,8 @@ import { useGameState } from './GameStateManager';
 import { useAppStore, getEgoState } from '../store';
 import { getEgoColor } from '../config/theme';
 import { useSimpleAuth } from '../hooks/useSimpleAuth';
+import { scriptGenerator } from '../utils/scriptGenerator';
+import { HypnosisProtocol } from '../data/protocols';
 
 interface SessionConfig {
   egoState: string;
@@ -13,6 +15,9 @@ interface SessionConfig {
   protocol?: any;
   type: 'unified' | 'protocol' | 'favorite';
   customProtocol?: any;
+  goal?: any;
+  method?: any;
+  duration?: number;
 }
 
 interface UnifiedSessionWorldProps {
@@ -165,9 +170,30 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     if (conversation.length === 0) {
       setTimeout(() => {
         let welcomeMessage = '';
+        let sessionContext = {
+          egoState: sessionConfig.egoState,
+          userProfile: {
+            experience_level: 'some' as const,
+            preferred_imagery: 'nature' as const,
+            voice_tone: 'gentle' as const
+          },
+          customGoals: sessionConfig.goal ? [sessionConfig.goal.name] : undefined
+        };
         
         if (sessionConfig.customProtocol?.name) {
-          welcomeMessage = `Welcome to your ${sessionConfig.customProtocol.name}. We're focusing on ${sessionConfig.customProtocol.goals?.join(' and ') || 'transformation'} today. Let's begin right away. Close your eyes gently and take a deep, slow breath in through your nose...`;
+          // Generate personalized script for custom protocol
+          const personalizedProtocol = scriptGenerator.generatePersonalizedScript(
+            sessionConfig.customProtocol,
+            sessionContext
+          );
+          welcomeMessage = personalizedProtocol.script.induction;
+        } else if (sessionConfig.method?.protocol) {
+          // Use the selected method's protocol with personalization
+          const personalizedProtocol = scriptGenerator.generatePersonalizedScript(
+            sessionConfig.method.protocol,
+            sessionContext
+          );
+          welcomeMessage = personalizedProtocol.script.induction;
         } else {
           welcomeMessage = `Welcome to your ${sessionConfig.egoState} session. I'm Libero, and I'll be guiding you through this transformation journey. Take a deep breath and let me know - what would you like to work on today?`;
         }
@@ -315,6 +341,8 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             breathing: sessionState.breathing,
             userProfile: user,
             customProtocol: sessionConfig.customProtocol,
+            goal: sessionConfig.goal,
+            method: sessionConfig.method,
             conversationHistory: conversation.map(msg => ({
               role: msg.role === 'ai' ? 'assistant' : 'user',
               content: msg.content
