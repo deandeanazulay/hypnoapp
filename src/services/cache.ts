@@ -127,7 +127,7 @@ async function enforceCacheLimits(): Promise<void> {
     // Calculate current cache size
     const currentSizeMB = allMetadata.reduce((total, meta) => total + (meta.size / (1024 * 1024)), 0);
     
-    console.log(`Cache: Current size: ${currentSizeMB.toFixed(2)}MB / ${AI.voice.maxCacheMB}MB`);
+    console.log(\`Cache: Current size: ${currentSizeMB.toFixed(2)}MB / ${AI.voice.maxCacheMB}MB`);
     
     if (currentSizeMB > AI.voice.maxCacheMB) {
       // Sort by lastAccessed (oldest first) for LRU eviction
@@ -143,13 +143,13 @@ async function enforceCacheLimits(): Promise<void> {
           await cache.delete(new Request(entry.key));
           await deleteMetadata(entry.key);
           removedSize += entry.size / (1024 * 1024);
-          console.log(`Cache: Evicted ${entry.key}, freed ${(entry.size / (1024 * 1024)).toFixed(2)}MB`);
+          console.log(\`Cache: Evicted ${entry.key}, freed ${(entry.size / (1024 * 1024)).toFixed(2)}MB`);
         } catch (error) {
-          console.error(`Cache: Failed to evict ${entry.key}:`, error);
+          console.error(\`Cache: Failed to evict ${entry.key}:`, error);
         }
       }
       
-      console.log(`Cache: Eviction complete. Freed ${removedSize.toFixed(2)}MB`);
+      console.log(\`Cache: Eviction complete. Freed ${removedSize.toFixed(2)}MB`);
     }
   } catch (error) {
     console.error('Cache: Error enforcing limits:', error);

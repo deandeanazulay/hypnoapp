@@ -26,7 +26,7 @@ class AnalyticsQueue {
   }
 
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return \`session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   add(event: string, payload: Record<string, any>): void {
@@ -84,7 +84,7 @@ class AnalyticsQueue {
         await this.sendEvents(eventsToSend);
       }
       
-      console.log(`Analytics: Flushed ${eventsToSend.length} events`);
+      console.log(\`Analytics: Flushed ${eventsToSend.length} events`);
     } catch (error) {
       console.error('Analytics: Failed to send events:', error);
       // Re-add events to front of queue for retry
@@ -120,7 +120,7 @@ class AnalyticsQueue {
     });
 
     if (!response.ok) {
-      throw new Error(`Analytics API error: ${response.status}`);
+      throw new Error(\`Analytics API error: ${response.status}`);
     }
   }
 
