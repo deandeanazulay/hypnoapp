@@ -736,6 +736,19 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             >
               {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
             </button>
+            
+            {/* Fixation Toggle (Settings) */}
+            <button
+              onClick={() => setShowFixationCue(!showFixationCue)}
+              title="Toggle Fixation Cue"
+              className={`w-12 h-12 rounded-xl backdrop-blur-xl border transition-all hover:scale-105 flex items-center justify-center shadow-lg ${
+                showFixationCue 
+                  ? 'bg-gradient-to-br from-purple-500/20 to-violet-500/10 border-purple-400/40 text-purple-300 shadow-purple-400/20' 
+                  : 'bg-white/5 border-white/20 text-white/40 hover:bg-white/10'
+              }`}
+            >
+              <div className="w-2 h-2 rounded-full bg-current" />
+            </button>
           </div>
 
           {/* Center Stage - Orb */}
