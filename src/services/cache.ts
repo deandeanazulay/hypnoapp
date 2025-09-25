@@ -126,7 +126,7 @@ async function enforceCacheLimits(): Promise<void> {
     // Calculate current cache size
     const currentSizeMB = allMetadata.reduce((total, meta) => total + (meta.size / (1024 * 1024)), 0);
     
-    console.log(\`Cache: Current size: ${currentSizeMB.toFixed(2)}MB / ${AI.voice.maxCacheMB}MB`);
+    console.log('Cache: Current size: ' + currentSizeMB.toFixed(2) + 'MB / ' + AI.voice.maxCacheMB + 'MB');
     
     if (currentSizeMB > AI.voice.maxCacheMB) {
       // Sort by lastAccessed (oldest first) for LRU eviction
