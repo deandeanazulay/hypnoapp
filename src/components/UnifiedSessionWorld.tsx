@@ -3,7 +3,10 @@ import Orb from './Orb';
 import { useAppStore, getEgoState } from '../store';
 import { useGameState } from './GameStateManager';
 import { SessionManager } from '../services/session';
-import { X, MessageCircle } from 'lucide-react';
+import { 
+  X, MessageCircle, Play, Pause, SkipBack, SkipForward, 
+  Volume2, VolumeX, Mic, Send, Brain, Loader 
+} from 'lucide-react';
 
 interface UnifiedSessionWorldProps {
   sessionConfig: {
@@ -53,17 +56,15 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     orbEnergy: 0.3
   });
 
-  // Audio controls
+  // UI state
+  const [showCoachBubble, setShowCoachBubble] = useState(false);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
-  const [isMicEnabled, setIsMicEnabled] = useState(true);
-  
-  // Chat system
   const [conversation, setConversation] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [showCoachBubble, setShowCoachBubble] = useState(false);
   const [textInput, setTextInput] = useState('');
+  const [showStatusCallout, setShowStatusCallout] = useState(true);
   
   // Session management
   const [sessionManager, setSessionManager] = useState<SessionManager | null>(null);
@@ -79,6 +80,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const orbRef = useRef<any>(null);
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
+  const statusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentEgoState = getEgoState(activeEgoState);
 
@@ -133,6 +135,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           if (isVoiceEnabled) {
             speakText(welcomeMessage);
           }
+          setShowCoachBubble(true);
         }, 2000);
         
       } catch (error) {
@@ -192,6 +195,23 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     return () => clearInterval(breathingCycle);
   }, []);
 
+  // Auto-hide status callout
+  useEffect(() => {
+    if (showStatusCallout) {
+      if (statusTimeoutRef.current) {
+        clearTimeout(statusTimeoutRef.current);
+      }
+      statusTimeoutRef.current = setTimeout(() => {
+        setShowStatusCallout(false);
+      }, 3000);
+    }
+    return () => {
+      if (statusTimeoutRef.current) {
+        clearTimeout(statusTimeoutRef.current);
+      }
+    };
+  }, [showStatusCallout, sessionState.phase]);
+
   // Phase progression
   useEffect(() => {
     const progressTime = sessionState.totalTime - sessionState.timeRemaining;
@@ -244,7 +264,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     }));
   }, [sessionState.timeRemaining, sessionState.totalTime, sessionState.isPlaying]);
 
-  // AI conversation handler
+  // Event handlers
   const handleUserInput = async (input: string) => {
     if (!input.trim()) return;
 
@@ -313,7 +333,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     }
   };
 
-  // Text-to-speech
   const speakText = (text: string) => {
     if (!synthRef.current || !isVoiceEnabled) return;
 
@@ -336,9 +355,8 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     synthRef.current.speak(utterance);
   };
 
-  // Voice recognition toggle
   const toggleListening = () => {
-    if (!recognitionRef.current || !isMicEnabled) return;
+    if (!recognitionRef.current) return;
 
     if (isListening) {
       recognitionRef.current.stop();
@@ -373,14 +391,25 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   };
 
   const togglePlayPause = () => {
-    setSessionState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
+    const newIsPlaying = !sessionState.isPlaying;
+    setSessionState(prev => ({ ...prev, isPlaying: newIsPlaying }));
+    setShowStatusCallout(true);
+    
     if (sessionManager) {
-      sessionState.isPlaying ? sessionManager.pause() : sessionManager.play();
+      newIsPlaying ? sessionManager.play() : sessionManager.pause();
     }
   };
 
-  const skipForward = () => sessionManager?.next();
-  const skipBack = () => sessionManager?.prev();
+  const skipForward = () => {
+    sessionManager?.next();
+    setShowStatusCallout(true);
+  };
+  
+  const skipBack = () => {
+    sessionManager?.prev();
+    setShowStatusCallout(true);
+  };
+
   const toggleCoachBubble = () => setShowCoachBubble(!showCoachBubble);
 
   const getSessionTitle = () => {
@@ -397,11 +426,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     }
   };
 
-  const progress = (sessionState.totalTime - sessionState.timeRemaining) / sessionState.totalTime;
-  const currentSegment = sessionManagerState.currentSegmentIndex + 1;
-  const totalSegments = sessionManagerState.scriptPlan?.segments?.length || 5;
-  const bufferedAhead = sessionManagerState.bufferedAhead;
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -410,115 +434,162 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
 
   const getBreathingDisplay = () => {
     const displays = {
-      'inhale': { text: 'Inhale', color: 'text-teal-400 bg-teal-500/20 border-teal-500/40' },
-      'hold-inhale': { text: 'Hold', color: 'text-amber-400 bg-amber-500/20 border-amber-500/40' },
-      'exhale': { text: 'Exhale', color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/40' },
-      'hold-exhale': { text: 'Hold', color: 'text-amber-400 bg-amber-500/20 border-amber-500/40' },
-      'rest': { text: 'Rest', color: 'text-slate-400 bg-slate-500/20 border-slate-500/40' }
+      'inhale': { text: 'Inhale', color: 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-400/40 text-teal-300' },
+      'hold-inhale': { text: 'Hold', color: 'bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-amber-400/40 text-amber-300' },
+      'exhale': { text: 'Exhale', color: 'bg-gradient-to-br from-emerald-500/20 to-green-500/20 border-emerald-400/40 text-emerald-300' },
+      'hold-exhale': { text: 'Hold', color: 'bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-amber-400/40 text-amber-300' },
+      'rest': { text: 'Rest', color: 'bg-gradient-to-br from-slate-500/20 to-gray-500/20 border-slate-400/40 text-slate-300' }
     };
     return displays[sessionState.breathing] || displays.rest;
   };
 
   const getPhaseDisplay = () => {
     const displays = {
-      'paused': { text: 'Paused', color: 'text-slate-400 bg-slate-500/20 border-slate-500/40' },
-      'preparation': { text: 'Preparing', color: 'text-blue-400 bg-blue-500/20 border-blue-500/40' },
-      'induction': { text: 'Guiding', color: 'text-teal-400 bg-teal-500/20 border-teal-500/40' },
-      'deepening': { text: 'Deepening', color: 'text-purple-400 bg-purple-500/20 border-purple-500/40' },
-      'exploration': { text: 'Exploring', color: 'text-yellow-400 bg-yellow-500/20 border-yellow-500/40' },
-      'transformation': { text: 'Transforming', color: 'text-orange-400 bg-orange-500/20 border-orange-500/40' },
-      'integration': { text: 'Integrating', color: 'text-green-400 bg-green-500/20 border-green-500/40' },
-      'completion': { text: 'Complete', color: 'text-white bg-white/20 border-white/40' }
+      'paused': { text: 'Paused', color: 'bg-gradient-to-br from-slate-500/20 to-gray-500/20 border-slate-400/40 text-slate-300' },
+      'preparation': { text: 'Preparing', color: 'bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-400/40 text-blue-300' },
+      'induction': { text: 'Guiding', color: 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-400/40 text-teal-300' },
+      'deepening': { text: 'Deepening', color: 'bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-purple-400/40 text-purple-300' },
+      'exploration': { text: 'Exploring', color: 'bg-gradient-to-br from-yellow-500/20 to-amber-500/20 border-yellow-400/40 text-yellow-300' },
+      'transformation': { text: 'Transforming', color: 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-400/40 text-orange-300' },
+      'integration': { text: 'Integrating', color: 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-400/40 text-green-300' },
+      'completion': { text: 'Complete', color: 'bg-gradient-to-br from-white/20 to-gray-300/20 border-white/40 text-white' }
     };
     return displays[sessionState.phase] || displays.paused;
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement) return; // Don't trigger shortcuts when typing
+      
+      switch (e.key) {
+        case ' ':
+          e.preventDefault();
+          togglePlayPause();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          skipBack();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          skipForward();
+          break;
+        case 'c':
+        case 'C':
+          e.preventDefault();
+          toggleCoachBubble();
+          break;
+        case 'm':
+        case 'M':
+          e.preventDefault();
+          setIsVoiceEnabled(!isVoiceEnabled);
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [sessionState.isPlaying, isVoiceEnabled]);
+
+  const progress = (sessionState.totalTime - sessionState.timeRemaining) / sessionState.totalTime;
+  const currentSegment = sessionManagerState.currentSegmentIndex + 1;
+  const totalSegments = sessionManagerState.scriptPlan?.segments?.length || 5;
+  const bufferedAhead = sessionManagerState.bufferedAhead;
   const latestAiMessage = conversation.filter(msg => msg.role === 'ai').slice(-1)[0];
 
   return (
-    <div className="h-screen bg-black text-white relative overflow-hidden flex flex-col">
+    <div className="h-screen bg-black text-white relative overflow-hidden">
       {/* Premium Cosmic Background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/30 to-teal-950/30" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-400/10 to-cyan-400/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-400/10 to-indigo-400/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-400/8 to-cyan-400/4 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-400/8 to-indigo-400/4 rounded-full blur-3xl" />
         
         {/* Subtle stars */}
-        {Array.from({ length: 80 }).map((_, i) => (
+        {Array.from({ length: 60 }).map((_, i) => (
           <div
             key={`star-${i}`}
-            className="absolute bg-white rounded-full opacity-20"
+            className="absolute bg-white rounded-full opacity-15"
             style={{
-              width: `${0.5 + Math.random() * 2}px`,
-              height: `${0.5 + Math.random() * 2}px`,
+              width: `${0.5 + Math.random() * 1.5}px`,
+              height: `${0.5 + Math.random() * 1.5}px`,
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              animation: `twinkle ${3 + Math.random() * 4}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 3}s`
+              animation: `twinkle ${4 + Math.random() * 6}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 4}s`
             }}
           />
         ))}
       </div>
 
-      {/* Header - Sticky, Minimal */}
-      <header className="relative z-30 bg-black/90 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        {/* Left: Title + Subtitle */}
-        <div>
-          <h1 className="text-white text-lg font-medium">{getSessionTitle()}</h1>
-          <p className="text-white/60 text-sm">Segment {currentSegment} of {totalSegments}</p>
-        </div>
-
-        {/* Center: Progress Bar */}
-        <div className="flex-1 max-w-md mx-8">
-          <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full transition-all duration-700"
-              style={{ width: `${progress * 100}%` }}
-            />
+      {/* Layer 1: Header (Fixed, 64px) */}
+      <header className="fixed top-0 left-0 right-0 z-[200] h-16 bg-black/95 backdrop-blur-xl border-b border-white/10">
+        <div className="h-full px-6 flex items-center justify-between">
+          {/* Left: Title */}
+          <div>
+            <h1 className="text-white text-lg font-medium">{getSessionTitle()}</h1>
+            <p className="text-white/60 text-sm">Segment {currentSegment} of {totalSegments}</p>
           </div>
-        </div>
 
-        {/* Right: Stats + Close */}
-        <div className="flex items-center space-x-4">
-          <div className="text-right">
-            <div className="text-white/80 text-sm font-medium">{currentSegment}/{totalSegments}</div>
-            <div className="text-white/50 text-xs">Queued: {bufferedAhead}</div>
+          {/* Center: Progress Bar */}
+          <div className="flex-1 max-w-md mx-8">
+            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full transition-all duration-700"
+                style={{ width: `${progress * 100}%` }}
+              />
+            </div>
           </div>
-          <button
-            onClick={onCancel}
-            className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-105"
-          >
-            <X size={18} className="text-white/80" />
-          </button>
+
+          {/* Right: Stats + Close */}
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <div className="text-white/80 text-sm font-medium">{currentSegment}/{totalSegments}</div>
+              <div className="text-white/50 text-xs">Queued: {bufferedAhead}</div>
+            </div>
+            <button
+              onClick={onCancel}
+              className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-105"
+            >
+              <X size={18} className="text-white/80" />
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* 3-Column Main Layout */}
-      <div className="flex-1 min-h-0 relative">
-        <div className="absolute inset-0 grid grid-cols-[72px_1fr_96px] gap-6 px-4 py-6">
+      {/* Layer 2: Content Band (3-Column Grid) */}
+      <div 
+        className="fixed left-0 right-0 z-[100]"
+        style={{ 
+          top: '80px', // Header + 16px
+          bottom: '112px' // Dock + 16px 
+        }}
+      >
+        <div className="h-full grid grid-cols-[72px_1fr_96px] gap-6 px-4">
           
-          {/* Left Rail - Controllers */}
-          <div className="flex flex-col justify-center space-y-3 z-20">
-            {/* Play/Pause */}
+          {/* Left Rail: Controllers */}
+          <div className="flex flex-col justify-center space-y-4 z-[150]">
+            {/* Play/Pause (Primary) */}
             <button
               onClick={togglePlayPause}
               title={`${sessionState.isPlaying ? 'Pause' : 'Play'} (Space)`}
-              className={`w-14 h-14 rounded-xl backdrop-blur-xl border transition-all hover:scale-[0.98] flex items-center justify-center shadow-lg ${
+              className={`w-14 h-14 rounded-2xl backdrop-blur-xl border-2 transition-all duration-300 hover:scale-95 flex items-center justify-center shadow-xl ${
                 sessionState.isPlaying 
-                  ? 'bg-orange-500/20 border-orange-400/60 text-orange-300 shadow-orange-400/25 hover:shadow-orange-400/40' 
-                  : 'bg-green-500/20 border-green-400/60 text-green-300 shadow-green-400/25 hover:shadow-green-400/40'
+                  ? 'bg-gradient-to-br from-orange-500/30 to-red-500/20 border-orange-400/60 text-orange-300 shadow-orange-400/30' 
+                  : 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-300 shadow-green-400/30'
               }`}
             >
-              {sessionState.isPlaying ? '⏸' : '▶'}
+              {sessionState.isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
             </button>
 
-            {/* Coach Bubble Toggle */}
+            {/* Chat Toggle */}
             <button
               onClick={toggleCoachBubble}
               title="Open Chat (C)"
-              className={`w-12 h-12 rounded-xl backdrop-blur-xl border transition-all hover:scale-[0.98] flex items-center justify-center shadow-lg ${
+              className={`w-12 h-12 rounded-2xl backdrop-blur-xl border transition-all duration-300 hover:scale-95 flex items-center justify-center shadow-lg ${
                 showCoachBubble 
-                  ? 'bg-teal-500/20 border-teal-400/60 text-teal-300 shadow-teal-400/25' 
+                  ? 'bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-teal-400/60 text-teal-300 shadow-teal-400/30' 
                   : 'bg-white/10 border-white/30 text-white/70 hover:bg-white/20'
               }`}
             >
@@ -529,64 +600,53 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             <button
               onClick={skipBack}
               title="Previous (←)"
-              className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-[0.98] transition-all shadow-lg text-white/70"
+              className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-95 transition-all duration-300 shadow-lg text-white/70"
             >
-              ⏮
+              <SkipBack size={16} />
             </button>
 
             {/* Next */}
             <button
               onClick={skipForward}
               title="Next (→)"
-              className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-[0.98] transition-all shadow-lg text-white/70"
+              className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-95 transition-all duration-300 shadow-lg text-white/70"
             >
-              ⏭
+              <SkipForward size={16} />
             </button>
 
             {/* Volume */}
             <button
               onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
               title="Volume (M)"
-              className={`w-12 h-12 rounded-xl backdrop-blur-xl border transition-all hover:scale-[0.98] flex items-center justify-center shadow-lg ${
+              className={`w-12 h-12 rounded-2xl backdrop-blur-xl border transition-all duration-300 hover:scale-95 flex items-center justify-center shadow-lg ${
                 isVoiceEnabled 
-                  ? 'bg-green-500/20 border-green-400/60 text-green-300 shadow-green-400/25' 
-                  : 'bg-red-500/20 border-red-400/60 text-red-300 shadow-red-400/25'
+                  ? 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-300 shadow-green-400/30' 
+                  : 'bg-gradient-to-br from-red-500/30 to-orange-500/20 border-red-400/60 text-red-300 shadow-red-400/30'
               }`}
             >
-              {isVoiceEnabled ? '🔊' : '🔇'}
-            </button>
-
-            {/* Mic/PTT */}
-            <button
-              onClick={toggleListening}
-              title="Talk (Hold V)"
-              disabled={!isMicEnabled}
-              className={`w-12 h-12 rounded-xl backdrop-blur-xl border transition-all hover:scale-[0.98] flex items-center justify-center shadow-lg disabled:opacity-50 ${
-                isListening 
-                  ? 'bg-red-500/20 border-red-400/60 text-red-300 animate-pulse shadow-red-400/25' 
-                  : 'bg-blue-500/20 border-blue-400/60 text-blue-300 shadow-blue-400/25'
-              }`}
-            >
-              🎤
+              {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
             </button>
           </div>
 
-          {/* Center Stage - Orb */}
-          <div className="flex items-center justify-center relative z-10">
-            {/* Coach Bubble - Above orb in stage */}
+          {/* Center Stage: Orb + Optional Message Bubble */}
+          <div className="flex items-center justify-center relative">
+            {/* Coach Bubble - Above orb when active */}
             {showCoachBubble && latestAiMessage && (
-              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 max-w-[720px] w-full mb-8 z-26">
-                <div className="bg-gradient-to-br from-teal-500/25 to-cyan-500/15 backdrop-blur-xl rounded-2xl p-5 border border-teal-500/30 shadow-2xl animate-slide-up">
+              <div 
+                className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-[170] mb-6"
+                style={{ maxWidth: '720px', width: '90%' }}
+              >
+                <div className="bg-gradient-to-br from-teal-500/25 to-cyan-500/15 backdrop-blur-xl rounded-2xl p-5 border border-teal-500/30 shadow-2xl">
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-cyan-400 border border-teal-400/60 flex items-center justify-center flex-shrink-0">
-                      🧠
+                      <Brain size={16} className="text-black" />
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-3">
+                      <div className="flex items-center space-x-2 mb-2">
                         <span className="text-teal-100 text-lg font-medium">Libero</span>
                         {isThinking && (
                           <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-teal-300 rounded-full animate-pulse"></div>
+                            <Loader size={14} className="text-teal-300 animate-spin" />
                             <span className="text-teal-200 text-sm">thinking...</span>
                           </div>
                         )}
@@ -612,161 +672,136 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
               onTap={() => {}}
               egoState={activeEgoState}
               afterglow={sessionState.orbEnergy > 0.7}
-              size={Math.min(480, window.innerWidth * 0.4)}
+              size={Math.min(560, window.innerWidth * 0.35, window.innerHeight * 0.4)}
               variant="webgl"
             />
           </div>
 
-          {/* Right Rail - Indicators */}
-          <div className="flex flex-col justify-center space-y-3 z-20">
+          {/* Right Rail: Indicators */}
+          <div className="flex flex-col justify-center space-y-3 z-[150]">
             {/* Breathing Pill */}
-            <div className={`px-3 py-2 rounded-full border text-sm font-medium transition-all ${
+            <div className={`px-3 py-2 rounded-xl border backdrop-blur-xl text-center transition-all duration-300 ${
               sessionState.isPlaying ? 'animate-pulse' : ''
             } ${getBreathingDisplay().color}`}>
-              <div className="text-center">
-                <div className="text-xs opacity-80 mb-1">💨</div>
-                <div className="text-xs">{getBreathingDisplay().text}</div>
-              </div>
+              <div className="text-xs font-bold">💨</div>
+              <div className="text-xs font-medium">{getBreathingDisplay().text}</div>
             </div>
 
             {/* Phase Badge */}
-            <div className={`px-3 py-2 rounded-xl border text-sm font-medium transition-all ${getPhaseDisplay().color}`}>
-              <div className="text-center">
-                <div className="text-xs opacity-80 mb-1">⚡</div>
-                <div className="text-xs">{getPhaseDisplay().text}</div>
-              </div>
+            <div className={`px-3 py-2 rounded-xl border backdrop-blur-xl text-center transition-all duration-300 ${getPhaseDisplay().color}`}>
+              <div className="text-xs font-bold">⚡</div>
+              <div className="text-xs font-medium">{getPhaseDisplay().text}</div>
             </div>
 
-            {/* Depth Indicator */}
-            <div className="px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-center">
-              <div className="text-teal-400 text-xs mb-1">📊</div>
-              <div className="text-white text-sm font-bold">Level {sessionState.depth}</div>
+            {/* Depth Level */}
+            <div className="px-3 py-2 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 text-center">
+              <div className="text-teal-400 text-xs font-bold">📊</div>
+              <div className="text-white text-xs font-medium">Level {sessionState.depth}</div>
             </div>
 
             {/* Timer */}
-            <div className="px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-center">
-              <div className="text-white/60 text-xs mb-1">⏱</div>
-              <div className="text-white text-sm font-bold">{formatTime(sessionState.timeRemaining)}</div>
+            <div className="px-3 py-2 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 text-center">
+              <div className="text-white/60 text-xs font-bold">⏱</div>
+              <div className="text-white text-xs font-medium">{formatTime(sessionState.timeRemaining)}</div>
             </div>
 
             {/* Status Callout (Auto-dismiss) */}
-            <div className="px-3 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-center">
-              <div className="text-yellow-400 text-xs">
-                Session {sessionState.isPlaying ? 'active' : 'paused'}
+            {showStatusCallout && (
+              <div className="px-3 py-2 rounded-xl bg-yellow-500/20 backdrop-blur-xl border border-yellow-500/40 text-center animate-fade-in">
+                <div className="text-yellow-300 text-xs font-medium">
+                  Session {sessionState.isPlaying ? 'active' : 'paused'}
+                </div>
               </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Layer 3: Bottom Dock (Fixed, 96px) */}
+      <div className="fixed bottom-0 left-0 right-0 z-[180] h-24 bg-black/95 backdrop-blur-xl border-t border-white/10 shadow-2xl shadow-black/50">
+        <div className="h-full px-6 py-4">
+          {/* Session Progress Text */}
+          <div className="text-center mb-3">
+            <span className="text-white/50 text-sm">
+              Session progress: {currentSegment} of {totalSegments} segments • {bufferedAhead} buffered ahead
+            </span>
+          </div>
+
+          {/* Input Row */}
+          <form onSubmit={handleSubmit} className="flex items-center space-x-4 mb-2">
+            {/* Mic Button (Far Left, Large) */}
+            <button
+              type="button"
+              onClick={toggleListening}
+              disabled={isThinking}
+              title="Talk (Hold V)"
+              className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 shadow-xl ${
+                isListening 
+                  ? 'bg-gradient-to-br from-red-500/40 to-red-600/30 border-2 border-red-400/80 text-red-200 animate-pulse' 
+                  : 'bg-gradient-to-br from-blue-500/40 to-cyan-500/30 border-2 border-blue-400/80 text-blue-200'
+              }`}
+            >
+              <Mic size={18} />
+            </button>
+
+            {/* Text Input (Center, Wide) */}
+            <div className="flex-1">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder={isListening ? "Listening..." : "Type your message or use voice..."}
+                disabled={isListening || isThinking}
+                className="w-full bg-white/8 backdrop-blur-xl border border-white/20 rounded-full px-6 py-3 text-white text-base placeholder-white/50 focus:outline-none focus:border-teal-400/60 focus:bg-white/12 transition-all disabled:opacity-50"
+              />
             </div>
-          </div>
+
+            {/* Send Button (Right of Input) */}
+            <button
+              type="submit"
+              disabled={!textInput.trim() || isThinking}
+              title="Send Message"
+              className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500/40 to-cyan-500/30 border-2 border-teal-400/80 text-teal-200 hover:scale-110 transition-all duration-300 disabled:opacity-50 shadow-xl flex items-center justify-center"
+            >
+              <Send size={18} />
+            </button>
+          </form>
+
+          {/* Quick Suggestions (Below Input) */}
+          {conversation.length <= 1 && (
+            <div className="flex justify-center space-x-3">
+              {[
+                'I feel stressed',
+                'Help me focus', 
+                'I want to relax',
+                'I need confidence'
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => handleUserInput(suggestion)}
+                  disabled={isThinking}
+                  className="px-4 py-2 bg-white/8 backdrop-blur-sm hover:bg-white/15 border border-white/20 rounded-full text-white/70 text-sm font-medium transition-all hover:scale-105 disabled:opacity-50 hover:border-teal-400/40"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Bottom Dock - Like Purple Screenshot */}
-      <div className="relative z-25 bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-4">
-        {/* Session Progress Text */}
-        <div className="text-center mb-4">
-          <span className="text-white/50 text-sm">
-            Session progress: {currentSegment} of {totalSegments} segments • {bufferedAhead} buffered ahead
-          </span>
-        </div>
-
-        {/* Main Input Row */}
-        <form onSubmit={handleSubmit} className="flex items-center space-x-4 mb-4">
-          {/* Large Circular Mic Button - Far Left */}
-          <button
-            type="button"
-            onClick={toggleListening}
-            disabled={!isMicEnabled || isThinking}
-            className={`w-16 h-16 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 shadow-xl ${
-              isListening 
-                ? 'bg-gradient-to-br from-red-500/30 to-red-600/20 border-2 border-red-400/60 text-red-300 animate-pulse' 
-                : 'bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-2 border-teal-400/60 text-teal-300'
-            }`}
-          >
-            🎤
-          </button>
-
-          {/* Wide Text Input - Center */}
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              placeholder={isListening ? "Listening..." : "Type your message or use voice..."}
-              disabled={isListening || isThinking}
-              className="w-full bg-black/40 backdrop-blur-xl border border-white/20 rounded-full px-6 py-4 text-white text-base placeholder-white/50 focus:outline-none focus:border-teal-400/50 focus:bg-black/60 transition-all disabled:opacity-50"
-            />
-          </div>
-
-          {/* Send Button - Circular, Right of Input */}
-          <button
-            type="submit"
-            disabled={!textInput.trim() || isThinking}
-            className="w-14 h-14 rounded-full bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-2 border-teal-400/60 text-teal-300 hover:scale-110 transition-all disabled:opacity-50 shadow-xl"
-          >
-            ⬆
-          </button>
-
-          {/* Audio Controls - Far Right */}
-          <div className="flex items-center space-x-3">
-            <button
-              type="button"
-              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-              className={`w-14 h-14 rounded-full transition-all duration-300 hover:scale-110 shadow-xl ${
-                isVoiceEnabled 
-                  ? 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-2 border-green-400/60 text-green-300' 
-                  : 'bg-black/60 border-2 border-white/30 text-white/60'
-              }`}
-            >
-              {isVoiceEnabled ? '🔊' : '🔇'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsMicEnabled(!isMicEnabled)}
-              className={`w-14 h-14 rounded-full transition-all duration-300 hover:scale-110 shadow-xl ${
-                isMicEnabled 
-                  ? 'bg-gradient-to-br from-blue-500/30 to-cyan-500/20 border-2 border-blue-400/60 text-blue-300' 
-                  : 'bg-black/60 border-2 border-white/30 text-white/60'
-              }`}
-            >
-              🎤
-            </button>
-          </div>
-        </form>
-
-        {/* Quick Suggestions Pills - Below Input */}
-        {conversation.length <= 1 && (
-          <div className="flex flex-wrap gap-3 justify-center">
-            {[
-              'I feel stressed',
-              'Help me focus', 
-              'I want to relax',
-              'I need confidence'
-            ].map((suggestion) => (
-              <button
-                key={suggestion}
-                onClick={() => handleUserInput(suggestion)}
-                disabled={isThinking}
-                className="px-4 py-2 bg-gradient-to-br from-black/40 to-gray-900/30 backdrop-blur-sm hover:bg-black/60 border border-white/20 rounded-full text-white/70 text-sm font-medium transition-all hover:scale-105 disabled:opacity-50 hover:border-teal-400/40"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Premium animations */}
+      {/* Custom Animations */}
       <style jsx>{`
         @keyframes twinkle {
           0%, 100% { opacity: 0.1; transform: scale(1); }
-          50% { opacity: 0.4; transform: scale(1.1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
         }
-        @keyframes slide-up {
-          from { transform: translateY(20px) translateX(-50%); opacity: 0; }
-          to { transform: translateY(0) translateX(-50%); opacity: 1; }
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .animate-slide-up {
-          animation: slide-up 0.3s ease-out;
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
         }
       `}</style>
     </div>
