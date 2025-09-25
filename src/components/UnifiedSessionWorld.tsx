@@ -81,6 +81,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   useEffect(() => {
     return () => {
     };
+  }, []);
 
   // Session timer
   useEffect(() => {
@@ -211,6 +212,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         sessionManager.dispose();
       }
     };
+  }, [sessionConfig, showToast]);
 
   const handleSessionComplete = async () => {
     console.log('[SESSION] Session completed');
