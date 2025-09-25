@@ -128,7 +128,7 @@ class SessionManager implements SessionHandle {
       try {
         const voiceId = AI.voice.defaultVoiceId;
         const voiceModel = AI.voice.model;
-        const cacheKey = this.scriptPlan!.hash + '-' + segment.id + '-' + voiceId + '-' + voiceModel;
+        const cacheKey = `${this.scriptPlan!.title || 'script'}-${segment.id}-${voiceId}-${voiceModel}`;
         const voiceResult = await synthesizeSegment(segment.text, {
           voiceId: voiceId,
           model: voiceModel,
@@ -141,12 +141,6 @@ class SessionManager implements SessionHandle {
         
         if (voiceResult.provider === 'elevenlabs' && voiceResult.audioUrl) {
           audioElement = new Audio(voiceResult.audioUrl);
-        } else if (voiceResult.provider === 'browser-tts') {
-          // For browser TTS, we'll play it when needed
-          audioElement = null; // Will use speechSynthesis directly
-        } else {
-          // No audio available, will show text only
-          audioElement = null;
         }
         
         this.segments[index] = { 
@@ -167,13 +161,15 @@ class SessionManager implements SessionHandle {
         });
 
       } catch (error: any) {
-        console.error('Session: Failed to prefetch segment', index, ':', error);
+        if (import.meta.env.DEV) {
+          console.error('Session: Failed to prefetch segment', index, ':', error);
+        }
         
         // Don't fail the entire session - create a text-only segment
         this.segments[index] = { 
           ...segment, 
           audio: null,
-          ttsProvider: 'none',
+          ttsProvider: 'browser-tts', // Default to browser TTS fallback
           ttsError: error.message
         };
         
@@ -194,14 +190,9 @@ class SessionManager implements SessionHandle {
         if (segment.audio && segment.ttsProvider === 'elevenlabs') {
           this.currentAudioElement = segment.audio;
           this.currentAudioElement.play();
-        } else if (segment.ttsProvider === 'browser-tts') {
+        } else if (segment.ttsProvider === 'browser-tts' || segment.ttsProvider === 'none') {
           // Use browser TTS
           this.playWithBrowserTTS(segment.text);
-        } else {
-          // Text-only mode - just mark as playing
-          if (import.meta.env.DEV) {
-            console.log('Session: Playing text-only segment:', segment.id);
-          }
         }
         this._updateState({ playState: 'playing' });
         this._emit('play');
