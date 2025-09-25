@@ -91,12 +91,13 @@ export class SessionManager {
     }
 
     // Initialize segments array
-    utterance.onstart = () => {};
-        text: segment.text,
-        audio: null,
-        ttsProvider: 'browser-tts' as const
-      };
-    }
+    this.segments = this.scriptPlan.segments.map((segment: any) => ({
+      id: segment.id,
+      text: segment.text,
+      approxSec: segment.approxSec || 30,
+      audio: null,
+      ttsProvider: 'browser-tts' as const
+    }));
     
     console.log('Session: Ready with', this.segments.length, 'segments');
   }
@@ -289,13 +290,21 @@ export class SessionManager {
     // Cancel any existing speech
     window.speechSynthesis.cancel();
     
-    setTimeout(() => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.8;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    utterance.onend = () => {
       this._handleSegmentEnd();
     };
-
+    
+    utterance.onerror = () => {
+      this._handleSegmentEnd();
+    };
+    
     // Use default voice for reliability
     window.speechSynthesis.speak(utterance);
-    }
   }
   private _handleSegmentEnd() {
     if (this.currentSegmentIndex < this.segments.length - 1) {
