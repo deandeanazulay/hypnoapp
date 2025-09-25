@@ -82,7 +82,7 @@ export async function startSession(options: StartSessionOptions): Promise<Sessio
       const segment = scriptPlan.segments[i];
       if (!segments[i]) { // Only fetch if not already fetched
         try {
-          const cacheKey = `${scriptPlan.hash}-${segment.id}-${AI.voice.defaultVoiceId}-${AI.voice.model}`;
+          const cacheKey = \`${scriptPlan.hash}-${segment.id}-${AI.voice.defaultVoiceId}-${AI.voice.model}`;
           const audioBlob = await synthesizeSegment(segment.text, {
             voiceId: AI.voice.defaultVoiceId,
             model: AI.voice.model,
@@ -91,11 +91,11 @@ export async function startSession(options: StartSessionOptions): Promise<Sessio
           });
           // For simplicity, we'll just store the blob. In a real app, you'd decode to AudioBuffer or create an AudioElement.
           segments[i] = { ...segment, audio: new Audio(URL.createObjectURL(audioBlob)) };
-          console.log(`Session: Prefetched segment ${i}: ${segment.id}`);
+          console.log(\`Session: Prefetched segment ${i}: ${segment.id}`);
           emit('segment-ready', segment.id);
         } catch (error) {
-          console.error(`Session: Failed to prefetch segment ${i}:`, error);
-          emit('error', new Error(`Failed to load audio for segment ${segment.id}`));
+          console.error(\`Session: Failed to prefetch segment ${i}:`, error);
+          emit('error', new Error(\`Failed to load audio for segment ${segment.id}`));
         }
       }
     }
