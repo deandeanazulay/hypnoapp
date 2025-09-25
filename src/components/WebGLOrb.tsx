@@ -80,9 +80,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
   // Stable tap handler - no re-init on function change
   const handleTap = useCallback(() => {
-    if (import.meta.env.DEV) {
-      console.log('[WEBGL-ORB] Tap detected, calling onTap');
-    }
+    console.log('[WEBGL-ORB] Tap detected, calling onTap');
     onTap?.();
   }, [onTap]);
 
@@ -215,7 +213,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     });
 
     canvas.addEventListener('webglcontextrestored', () => {
-      console.log('[ORB] WebGL context restored');
+      if (import.meta.env.DEV) {
+        console.log('[ORB] WebGL context restored');
+      }
       setContextLost(false);
       // Reinitialize scene
       setTimeout(() => {

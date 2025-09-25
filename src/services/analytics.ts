@@ -57,7 +57,7 @@ class AnalyticsQueue {
 
     // Console log for development
     if (import.meta.env.DEV) {
-      console.log('Analytics:', event, payload);
+      // Reduced analytics logging in dev mode
     }
   }
 
