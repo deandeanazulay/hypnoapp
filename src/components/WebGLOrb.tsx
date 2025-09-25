@@ -520,7 +520,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   }, [egoState]);
 
   const disposeScene = () => {
-    console.log('[ORB] Disposing scene');
+    if (import.meta.env.DEV) {
+      console.log('[ORB] Disposing scene');
+    }
     
     // Stop animation
     isActiveRef.current = false;

@@ -45,7 +45,9 @@ export function useSimpleAuth() {
       
       // Trigger profile creation/fetch when user signs in
       if (session?.user && _event === 'SIGNED_IN') {
-        console.log('[AUTH] User signed in, profile will be fetched by GameStateManager');
+        if (import.meta.env.DEV) {
+          console.log('[AUTH] User signed in, profile will be fetched by GameStateManager');
+        }
       }
     });
 

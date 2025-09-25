@@ -145,7 +145,9 @@ export function GameStateProvider({ children }: GameStateProviderProps) {
         return;
       }
 
-      console.log('[GAME_STATE] User profile updated successfully:', data);
+      if (import.meta.env.DEV) {
+        console.log('[GAME_STATE] User profile updated successfully:', data);
+      }
       setUser(data);
     } catch (err) {
       console.error('[GAME_STATE] Unexpected error updating user profile:', err);

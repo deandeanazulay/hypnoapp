@@ -219,7 +219,9 @@ export async function set(key: string, data: Blob | string, meta: CacheMetadata)
  * Checks if an item exists in the cache.
  */
 export async function has(key: string): Promise<boolean> {
-  console.log('Cache: Checking for key:', key);
+  if (import.meta.env.DEV) {
+    console.log('Cache: Checking for key:', key);
+  }
   
   try {
     const cache = await caches.open(CACHE_NAME);

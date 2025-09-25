@@ -16,7 +16,9 @@ export function setLayoutVars() {
   root.setProperty('--vvh', vvh + 'px');
   
   // Debug logging for iOS issues
-  console.log('Layout vars set:', { hudH, tabsH, vvh });
+  if (import.meta.env.DEV) {
+    console.log('Layout vars set:', { hudH, tabsH, vvh });
+  }
 }
 
 export function initLayoutWatchers() {

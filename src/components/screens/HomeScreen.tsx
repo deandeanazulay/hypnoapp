@@ -31,13 +31,19 @@ export default function HomeScreen({
 
   // Handle orb tap with authentication check
   const handleOrbTap = () => {
-    console.log('[HOME] Orb tapped, isAuthenticated:', isAuthenticated);
+    if (import.meta.env.DEV) {
+      console.log('[HOME] Orb tapped, isAuthenticated:', isAuthenticated);
+    }
     if (!isAuthenticated) {
-      console.log('[HOME] Not authenticated, showing auth modal');
+      if (import.meta.env.DEV) {
+        console.log('[HOME] Not authenticated, showing auth modal');
+      }
       onShowAuth();
       return;
     }
-    console.log('[HOME] Authenticated, calling original onOrbTap');
+    if (import.meta.env.DEV) {
+      console.log('[HOME] Authenticated, calling original onOrbTap');
+    }
     onOrbTap();
   };
 

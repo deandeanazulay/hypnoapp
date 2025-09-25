@@ -117,13 +117,17 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     // Check cache first
     const cached = await cacheGet(opts.cacheKey);
     if (cached && cached.data instanceof Blob) {
-      console.log('ElevenLabs: Cache hit for key:', opts.cacheKey);
+      if (import.meta.env.DEV) {
+        console.log('ElevenLabs: Cache hit for key:', opts.cacheKey);
+      }
       track('tts_cache_hit', { cacheKey: opts.cacheKey });
       return cached.data;
     }
 
     // Not in cache - synthesize via API
-    console.log('ElevenLabs: Cache miss, calling API for key:', opts.cacheKey);
+    if (import.meta.env.DEV) {
+      console.log('ElevenLabs: Cache miss, calling API for key:', opts.cacheKey);
+    }
     track('tts_cache_miss', { cacheKey: opts.cacheKey });
 
     const audioBlob = await voiceCircuitBreaker.execute(async () => {
@@ -139,7 +143,9 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     
     try {
       await cacheSet(opts.cacheKey, audioBlob, cacheMetadata);
-      console.log('ElevenLabs: Cached audio blob, size:', audioBlob.size, 'bytes');
+      if (import.meta.env.DEV) {
+        console.log('ElevenLabs: Cached audio blob, size:', audioBlob.size, 'bytes');
+      }
     } catch (cacheError) {
       console.warn('ElevenLabs: Failed to cache audio:', cacheError);
       // Continue without caching - don't fail the synthesis
@@ -245,7 +251,9 @@ async function callDirectAPI(text: string, opts: SynthesizeSegmentOptions): Prom
     output_format: 'mp3_44100_128'
   };
 
-  console.log('ElevenLabs: Making API call to:', endpoint);
+  if (import.meta.env.DEV) {
+    console.log('ElevenLabs: Making API call to:', endpoint);
+  }
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -278,7 +286,9 @@ async function callDirectAPI(text: string, opts: SynthesizeSegmentOptions): Prom
     throw new Error('Received empty audio response');
   }
 
-  console.log('ElevenLabs: Received audio blob, size:', audioBlob.size, 'bytes');
+  if (import.meta.env.DEV) {
+    console.log('ElevenLabs: Received audio blob, size:', audioBlob.size, 'bytes');
+  }
   return audioBlob;
 }
 

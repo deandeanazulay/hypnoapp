@@ -61,7 +61,9 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
     );
   }
 
-  console.log('[ORB-WRAPPER] Rendering orb, useWebGL:', useWebGL);
+  if (import.meta.env.DEV) {
+    console.log('[ORB-WRAPPER] Rendering orb, useWebGL:', useWebGL);
+  }
 
   // Render the appropriate orb type - NEVER switch after initial render
   return useWebGL ? <WebGLOrb {...props} onTap={debugOnTap} size={size} /> : <CSSOrb {...props} onTap={debugOnTap} size={size} />;

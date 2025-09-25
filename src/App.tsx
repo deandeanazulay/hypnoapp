@@ -201,10 +201,14 @@ export default function App() {
   }
 
   function handleProtocolSelect(protocol: any) {
-    console.log('[APP] Protocol selected:', protocol);
+    if (import.meta.env.DEV) {
+      console.log('[APP] Protocol selected:', protocol);
+    }
     
     if (!isAuthenticated) {
-      console.log('[APP] Not authenticated, showing auth modal');
+      if (import.meta.env.DEV) {
+        console.log('[APP] Not authenticated, showing auth modal');
+      }
       openModal('auth');
       showToast({
         type: 'warning',

@@ -326,7 +326,9 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     };
 
     utterance.onresume = () => {
-      console.log('[SPEECH] Speech resumed');
+      if (import.meta.env.DEV) {
+        console.log('[SPEECH] Speech resumed');
+      }
     };
 
     synthRef.current.speak(utterance);
