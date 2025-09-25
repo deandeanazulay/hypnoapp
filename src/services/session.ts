@@ -274,12 +274,24 @@ export class SessionManager {
   }
 
   private _startSpeechSynthesis(text: string, segmentNumber: number) {
-    console.log(`Session: Attempting to start speech synthesis for segment ${segmentNumber}`);
+    console.log(`Session: === TTS DEBUG START ===`);
+    console.log(`Session: Segment ${segmentNumber} text length:`, text.length);
+    console.log(`Session: Text preview:`, text.substring(0, 100));
+    console.log(`Session: Speech synthesis available:`, !!window.speechSynthesis);
+    console.log(`Session: Speech synthesis speaking:`, window.speechSynthesis?.speaking);
+    console.log(`Session: Speech synthesis pending:`, window.speechSynthesis?.pending);
     
     // Check if speech synthesis is available
     if (!window.speechSynthesis) {
       console.error('Session: Speech synthesis not available');
       setTimeout(() => this._handleSegmentEnd(), 3000);
+      return;
+    }
+
+    // Check if text is valid
+    if (!text || text.trim().length === 0) {
+      console.error('Session: No valid text to speak');
+      setTimeout(() => this._handleSegmentEnd(), 1000);
       return;
     }
 
@@ -297,19 +309,19 @@ export class SessionManager {
 
     // Set up event handlers first
     utterance.onstart = () => {
-      console.log(`Session: TTS STARTED for segment ${segmentNumber}`);
+      console.log(`Session: ✅ TTS STARTED for segment ${segmentNumber}`);
     };
 
     utterance.onend = () => {
-      console.log(`Session: TTS FINISHED for segment ${segmentNumber}, advancing...`);
+      console.log(`Session: ✅ TTS FINISHED for segment ${segmentNumber}, advancing...`);
       this._handleSegmentEnd();
     };
 
     utterance.onerror = (event) => {
       if (event.error === 'interrupted') {
-        console.log(`Session: TTS interrupted for segment ${segmentNumber} (normal)`);
+        console.log(`Session: ℹ️ TTS interrupted for segment ${segmentNumber} (normal)`);
       } else {
-        console.error(`Session: TTS error for segment ${segmentNumber}:`, event.error);
+        console.error(`Session: ❌ TTS error for segment ${segmentNumber}:`, event.error);
       }
       // Always advance on any error
       setTimeout(() => this._handleSegmentEnd(), 500);
@@ -317,27 +329,70 @@ export class SessionManager {
 
     // Simple voice selection - use default voice to avoid complexity
     const voices = speechSynthesis.getVoices();
-    console.log(`Session: Available voices: ${voices.length}`);
+    console.log(`Session: Available voices count:`, voices.length);
+    console.log(`Session: Voice names:`, voices.slice(0, 5).map(v => v.name));
     
     if (voices.length > 0) {
       // Use first English voice or just the first voice
       const voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
       if (voice) {
         utterance.voice = voice;
-        console.log(`Session: Selected voice: ${voice.name} (${voice.lang})`);
+        console.log(`Session: ✅ Selected voice: ${voice.name} (${voice.lang})`);
+      } else {
+        console.warn(`Session: ⚠️ No voice selected, using default`);
       }
+    } else {
+      console.warn(`Session: ⚠️ No voices available, using default`);
     }
 
-    // Start speaking immediately
-    console.log(`Session: SPEAKING NOW for segment ${segmentNumber}...`);
+    // Test if speech synthesis is currently speaking
+    if (window.speechSynthesis.speaking) {
+      console.warn(`Session: ⚠️ Speech synthesis already speaking, canceling first`);
+      window.speechSynthesis.cancel();
+      // Wait a bit before starting new speech
+      setTimeout(() => this._startSpeechSynthesis(text, segmentNumber), 200);
+      return;
+    }
+
+    console.log(`Session: 🎵 SPEAKING NOW for segment ${segmentNumber}...`);
+    console.log(`Session: Utterance object:`, {
+      text: utterance.text.substring(0, 50) + '...',
+      voice: utterance.voice?.name || 'default',
+      rate: utterance.rate,
+      pitch: utterance.pitch,
+      volume: utterance.volume
+    });
+
     try {
       window.speechSynthesis.speak(utterance);
-      console.log(`Session: Speech synthesis started successfully for segment ${segmentNumber}`);
+      console.log(`Session: ✅ Speech synthesis .speak() called successfully for segment ${segmentNumber}`);
+      
+      // Add a timeout as backup in case onstart/onend never fire
+      const backupTimeout = setTimeout(() => {
+        console.warn(`Session: ⚠️ TTS timeout for segment ${segmentNumber}, forcing advance`);
+        this._handleSegmentEnd();
+      }, Math.max(10000, text.length * 100)); // At least 10 seconds or based on text length
+      
+      // Clear timeout if utterance ends normally
+      const originalOnEnd = utterance.onend;
+      utterance.onend = () => {
+        clearTimeout(backupTimeout);
+        if (originalOnEnd) originalOnEnd();
+      };
+      
+      const originalOnError = utterance.onerror;
+      utterance.onerror = (event) => {
+        clearTimeout(backupTimeout);
+        if (originalOnError) originalOnError(event);
+      };
+      
     } catch (error) {
-      console.error(`Session: Failed to start speech for segment ${segmentNumber}:`, error);
+      console.error(`Session: ❌ FAILED to start speech for segment ${segmentNumber}:`, error);
       // Fallback - advance after a delay
       setTimeout(() => this._handleSegmentEnd(), 3000);
     }
+    
+    console.log(`Session: === TTS DEBUG END ===`);
   }
 
   private _handleSegmentEnd() {
