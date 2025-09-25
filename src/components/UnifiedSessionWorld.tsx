@@ -157,6 +157,8 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const [sessionManagerState, setSessionManagerState] = useState<any>({
     playState: 'stopped',
     currentSegmentIndex: 0,
+    currentSegmentId: null,
+    totalSegments: 0,
     scriptPlan: null,
     bufferedAhead: 0
   });
@@ -201,7 +203,27 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         setSessionManager(manager);
         
         manager.on('state-change', (newState: any) => {
+          console.log('Session state changed:', newState);
           setSessionManagerState(newState);
+        });
+
+        manager.on('segment-ready', (segmentId: string) => {
+          console.log('Segment ready:', segmentId);
+        });
+
+        manager.on('play', () => {
+          console.log('Session manager started playing');
+          setSessionState(prev => ({ ...prev, isPlaying: true }));
+        });
+
+        manager.on('pause', () => {
+          console.log('Session manager paused');
+          setSessionState(prev => ({ ...prev, isPlaying: false }));
+        });
+
+        manager.on('end', () => {
+          console.log('Session completed');
+          handleSessionComplete();
         });
         
         await manager.initialize({
@@ -214,16 +236,12 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           userPrefs: {}
         });
 
-        // Auto-start welcome message
+        // Auto-start session after initialization
         setTimeout(() => {
-          const welcomeMessage = `Welcome to your ${sessionConfig.egoState} session. I'm Libero, and I'll be guiding you through this transformation journey.`;
-          setConversation([{ role: 'ai', content: welcomeMessage, timestamp: Date.now() }]);
-          
-          if (isVoiceEnabled) {
-            speakText(welcomeMessage);
-          }
-          setShowCoachBubble(true);
-        }, 2000);
+          console.log('Auto-starting session...');
+          manager.play();
+          setSessionState(prev => ({ ...prev, isPlaying: true, phase: 'induction' }));
+        }, 1000);
         
       } catch (error) {
         console.error('Session initialization failed:', error);
@@ -245,7 +263,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
 
   // Session timer
   useEffect(() => {
-    if (sessionState.isPlaying && sessionState.timeRemaining > 0) {
+    if (sessionManagerState.playState === 'playing' && sessionState.timeRemaining > 0) {
       timerRef.current = setInterval(() => {
         setSessionState(prev => {
           const newTimeRemaining = prev.timeRemaining - 1;
@@ -266,7 +284,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [sessionState.isPlaying, sessionState.timeRemaining]);
+  }, [sessionManagerState.playState, sessionState.timeRemaining]);
 
   // Breathing cycle
   useEffect(() => {
@@ -292,7 +310,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     let newDepth = 1;
     let newOrbEnergy = 0.3;
 
-    if (sessionState.isPlaying) {
+    if (sessionManagerState.playState === 'playing') {
       if (progress < 0.1) {
         newPhase = 'preparation';
         newDepth = 1;
@@ -332,7 +350,38 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
       depth: newDepth,
       orbEnergy: newOrbEnergy
     }));
-  }, [sessionState.timeRemaining, sessionState.totalTime, sessionState.isPlaying]);
+  }, [sessionState.timeRemaining, sessionState.totalTime, sessionManagerState.playState]);
+
+  // Listen for segment changes and update conversation
+  useEffect(() => {
+    if (sessionManagerState.scriptPlan && sessionManagerState.currentSegmentId) {
+      const currentSegment = sessionManagerState.scriptPlan.segments?.find(
+        (s: any) => s.id === sessionManagerState.currentSegmentId
+      );
+      
+      if (currentSegment && currentSegment.text) {
+        console.log('Adding current segment to conversation:', currentSegment.text);
+        
+        // Add current segment text to conversation
+        const aiMessage = { 
+          role: 'ai' as const, 
+          content: currentSegment.text, 
+          timestamp: Date.now() 
+        };
+        
+        setConversation(prev => {
+          // Only add if it's not already the last message
+          const lastMessage = prev[prev.length - 1];
+          if (!lastMessage || lastMessage.content !== currentSegment.text) {
+            return [...prev, aiMessage];
+          }
+          return prev;
+        });
+        
+        setShowCoachBubble(true);
+      }
+    }
+  }, [sessionManagerState.currentSegmentId, sessionManagerState.scriptPlan]);
 
   // Event handlers
   const handleUserInput = async (input: string) => {
@@ -461,19 +510,24 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   };
 
   const togglePlayPause = () => {
-    const newIsPlaying = !sessionState.isPlaying;
-    setSessionState(prev => ({ ...prev, isPlaying: newIsPlaying }));
-    
     if (sessionManager) {
-      newIsPlaying ? sessionManager.play() : sessionManager.pause();
+      if (sessionManagerState.playState === 'playing') {
+        console.log('Pausing session');
+        sessionManager.pause();
+      } else {
+        console.log('Playing session');
+        sessionManager.play();
+      }
     }
   };
 
   const skipForward = () => {
+    console.log('Skipping to next segment');
     sessionManager?.next();
   };
   
   const skipBack = () => {
+    console.log('Skipping to previous segment');
     sessionManager?.prev();
   };
 
@@ -537,11 +591,11 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [sessionState.isPlaying, isVoiceEnabled, showFixationCue]);
+  }, [sessionManagerState.playState, isVoiceEnabled, showFixationCue]);
 
   const progress = (sessionState.totalTime - sessionState.timeRemaining) / sessionState.totalTime;
-  const currentSegment = sessionManagerState.currentSegmentIndex + 1;
-  const totalSegments = sessionManagerState.scriptPlan?.segments?.length || 5;
+  const currentSegment = (sessionManagerState.currentSegmentIndex || 0) + 1;
+  const totalSegments = sessionManagerState.scriptPlan?.segments?.length || 0;
   const bufferedAhead = sessionManagerState.bufferedAhead;
   const latestAiMessage = conversation.filter(msg => msg.role === 'ai').slice(-1)[0];
 
@@ -736,23 +790,23 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             {/* Play/Pause (Primary Control) */}
             <button
               onClick={togglePlayPause}
-              title={`${sessionState.isPlaying ? 'Pause' : 'Play'} Session (Space)`}
+              title={`${sessionManagerState.playState === 'playing' ? 'Pause' : 'Play'} Session (Space)`}
               className="backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center"
               style={{
                 width: '56px',
                 height: '56px',
                 borderRadius: LIBERO_BRAND.radius.control,
-                background: sessionState.isPlaying 
+                background: sessionManagerState.playState === 'playing' 
                   ? `linear-gradient(135deg, ${LIBERO_BRAND.colors.gold}30, ${LIBERO_BRAND.colors.danger}20)`
                   : `linear-gradient(135deg, ${LIBERO_BRAND.colors.success}30, ${LIBERO_BRAND.colors.liberoTeal}20)`,
-                borderColor: sessionState.isPlaying 
+                borderColor: sessionManagerState.playState === 'playing' 
                   ? `${LIBERO_BRAND.colors.gold}60` 
                   : `${LIBERO_BRAND.colors.success}60`,
-                color: sessionState.isPlaying ? LIBERO_BRAND.colors.gold : LIBERO_BRAND.colors.success,
-                boxShadow: sessionState.isPlaying ? LIBERO_BRAND.gradients.ctaGlow : LIBERO_BRAND.elevation.e1
+                color: sessionManagerState.playState === 'playing' ? LIBERO_BRAND.colors.gold : LIBERO_BRAND.colors.success,
+                boxShadow: sessionManagerState.playState === 'playing' ? LIBERO_BRAND.gradients.ctaGlow : LIBERO_BRAND.elevation.e1
               }}
             >
-              {sessionState.isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
+              {sessionManagerState.playState === 'playing' ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
             </button>
 
             {/* Chat Toggle */}

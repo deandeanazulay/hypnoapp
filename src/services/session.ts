@@ -21,8 +21,14 @@ export interface SessionState {
   playState: 'stopped' | 'playing' | 'paused';
   currentSegmentIndex: number;
   currentSegmentId: string | null;
+  totalSegments: number;
+  
+  if (options.autoPlay !== undefined) {
+    manager.setAutoPlay(options.autoPlay);
+  }
   scriptPlan: any;
   bufferedAhead: number;
+  error: string | null;
 }
 
 export class SessionManager {
@@ -30,8 +36,11 @@ export class SessionManager {
     playState: 'stopped',
     currentSegmentIndex: 0,
     currentSegmentId: null,
+    totalSegments: 0,
     scriptPlan: null,
-    bufferedAhead: 0
+    bufferedAhead: 0,
+    getCurrentState: () => manager.getCurrentState(),
+    setAutoPlay: (enabled: boolean) => manager.setAutoPlay(enabled)
   };
 
   private segments: (PlayableSegment | null)[] = [];
@@ -39,6 +48,7 @@ export class SessionManager {
   private eventListeners: Record<string, Function[]> = {};
   private currentSegmentIndex = 0;
   private scriptPlan: any = null;
+  private autoPlayEnabled = true;
 
   async initialize(userContext: any) {
     console.log('Session: Initializing with context:', userContext);
@@ -66,7 +76,8 @@ export class SessionManager {
       this.segments = new Array(this.scriptPlan.segments?.length || 0).fill(null);
       this._updateState({ 
         scriptPlan: this.scriptPlan,
-        currentSegmentId: this.scriptPlan.segments?.[0]?.id || null
+        currentSegmentId: this.scriptPlan.segments?.[0]?.id || null,
+        totalSegments: this.scriptPlan.segments?.length || 0
       });
 
       // Start prefetching segments
@@ -80,16 +91,20 @@ export class SessionManager {
       this.scriptPlan = {
         title: "Mindful Session",
         segments: [
-          { id: "intro", text: "Welcome to your mindful session. Take a deep breath and relax." },
-          { id: "body", text: "Feel the tension leaving your body with each exhale." },
-          { id: "outro", text: "When you're ready, slowly open your eyes feeling refreshed." }
+          { id: "intro", text: "Welcome to your mindful session. Take a deep breath and relax.", approxSec: 15 },
+          { id: "induction", text: "Close your eyes gently and feel your body beginning to relax with each breath.", approxSec: 30 },
+          { id: "deepening", text: "Going deeper now, feeling more and more relaxed with each breath you take.", approxSec: 45 },
+          { id: "body", text: "Feel the tension leaving your body with each exhale. You are completely relaxed and peaceful.", approxSec: 60 },
+          { id: "integration", text: "These feelings of peace and calm are becoming part of you now.", approxSec: 30 },
+          { id: "outro", text: "In a moment, I'll count from 1 to 5. On 5, you'll open your eyes feeling refreshed and renewed. 1... 2... 3... 4... 5... eyes open, fully alert.", approxSec: 25 }
         ]
       };
       
       this.segments = new Array(this.scriptPlan.segments.length).fill(null);
       this._updateState({ 
         scriptPlan: this.scriptPlan,
-        currentSegmentId: this.scriptPlan.segments[0].id
+        currentSegmentId: this.scriptPlan.segments[0].id,
+        totalSegments: this.scriptPlan.segments.length
       });
 
       await this._prefetchSegments(0, AI.voice.preBufferSegments);
@@ -199,6 +214,8 @@ export class SessionManager {
   play() {
     if (this._state.playState === 'playing') return;
     
+    console.log(`Session: Playing segment ${this.currentSegmentIndex}`);
+    
     if (this.currentSegmentIndex >= 0 && this.segments[this.currentSegmentIndex]) {
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
@@ -207,6 +224,19 @@ export class SessionManager {
         // Handle different TTS providers
         if (segment.ttsProvider === 'elevenlabs' && segment.audio) {
           this.currentAudioElement = segment.audio;
+          
+          // Set up audio event handlers
+          this.currentAudioElement.onended = () => {
+            console.log(`Session: Segment ${this.currentSegmentIndex} audio ended`);
+            this._handleSegmentEnd();
+          };
+          
+          this.currentAudioElement.onerror = (error) => {
+            console.error(`Session: Audio error for segment ${this.currentSegmentIndex}:`, error);
+            // Fallback to browser TTS on audio error
+            this._playWithBrowserTTS(segment.text);
+          };
+          
           this.currentAudioElement.play().catch(error => {
             console.error('Session: Audio play error:', error);
             this._playWithBrowserTTS(segment.text);
@@ -218,6 +248,18 @@ export class SessionManager {
         
         this._updateState({ playState: 'playing' });
         this._emit('play');
+      }
+    } else {
+      console.log(`Session: No segment available at index ${this.currentSegmentIndex}, trying to prefetch...`);
+      
+      // Try to prefetch current segment if not available
+      if (this.scriptPlan && this.scriptPlan.segments && this.scriptPlan.segments[this.currentSegmentIndex]) {
+        this._prefetchSegments(this.currentSegmentIndex, 1).then(() => {
+          // Retry playing after prefetch
+          if (this.segments[this.currentSegmentIndex]) {
+            this.play();
+          }
+        });
       }
     }
   }
@@ -243,6 +285,8 @@ export class SessionManager {
       // Stop current audio
       if (this.currentAudioElement) {
         this.currentAudioElement.pause();
+        this.currentAudioElement.onended = null;
+        this.currentAudioElement.onerror = null;
         this.currentAudioElement = null;
       }
       if (window.speechSynthesis) {
@@ -250,19 +294,28 @@ export class SessionManager {
       }
       
       this.currentSegmentIndex++;
+      console.log(`Session: Advanced to segment ${this.currentSegmentIndex}`);
+      
       this._updateState({ 
         currentSegmentIndex: this.currentSegmentIndex,
-        currentSegmentId: this.scriptPlan!.segments[this.currentSegmentIndex]?.id 
+        currentSegmentId: this.scriptPlan!.segments[this.currentSegmentIndex]?.id || null
       });
       
       if (this._state.playState === 'playing') {
-        this.play();
+        // Auto-continue playing next segment
+        setTimeout(() => {
+          this.play();
+        }, 500);
       }
       
       // Prefetch next segments
       this._prefetchSegments(this.currentSegmentIndex + 1, AI.voice.preBufferSegments).catch(() => {
         // Continue without prefetch
       });
+    } else {
+      console.log('Session: Reached end of segments');
+      this._updateState({ playState: 'stopped' });
+      this._emit('end');
     }
   }
 
@@ -271,6 +324,8 @@ export class SessionManager {
       // Stop current audio
       if (this.currentAudioElement) {
         this.currentAudioElement.pause();
+        this.currentAudioElement.onended = null;
+        this.currentAudioElement.onerror = null;
         this.currentAudioElement = null;
       }
       if (window.speechSynthesis) {
@@ -278,13 +333,17 @@ export class SessionManager {
       }
       
       this.currentSegmentIndex--;
+      console.log(`Session: Moved back to segment ${this.currentSegmentIndex}`);
+      
       this._updateState({ 
         currentSegmentIndex: this.currentSegmentIndex,
-        currentSegmentId: this.scriptPlan!.segments[this.currentSegmentIndex]?.id 
+        currentSegmentId: this.scriptPlan!.segments[this.currentSegmentIndex]?.id || null
       });
       
       if (this._state.playState === 'playing') {
-        this.play();
+        setTimeout(() => {
+          this.play();
+        }, 500);
       }
     }
   }
@@ -327,19 +386,26 @@ export class SessionManager {
   
   private _handleSegmentEnd() {
     // Auto-advance to next segment when current segment finishes
-    setTimeout(() => {
-      if (this.currentSegmentIndex < this.segments.length - 1) {
+    console.log(`Session: Segment ${this.currentSegmentIndex} ended, auto-advancing...`);
+    
+    if (this.autoPlayEnabled && this.currentSegmentIndex < this.segments.length - 1) {
+      setTimeout(() => {
         this.next();
-      } else {
-        this._updateState({ playState: 'stopped' });
-        this._emit('end');
-      }
-    }, 500);
+      }, 1000); // Brief pause between segments
+    } else {
+      console.log('Session: All segments completed or auto-play disabled');
+      this._updateState({ playState: 'stopped' });
+      this._emit('end');
+    }
   }
   
   private _playWithBrowserTTS(text: string) {
     if (!window.speechSynthesis) {
       console.warn('Browser TTS not available');
+      // Auto-advance after estimated duration if no TTS
+      setTimeout(() => {
+        this._handleSegmentEnd();
+      }, text.length * 100); // Rough estimation: 100ms per character
       return;
     }
 
@@ -379,11 +445,17 @@ export class SessionManager {
         console.debug('Browser TTS interrupted (normal when skipping/pausing):', event.error);
       } else {
         console.error('Browser TTS error:', event.error);
+        // Continue to next segment even on error
+        this._handleSegmentEnd();
       }
-      // Continue to next segment even on error
-      this._handleSegmentEnd();
     };
 
     window.speechSynthesis.speak(utterance);
   }
+
+  setAutoPlay(enabled: boolean) {
+    this.autoPlayEnabled = enabled;
+    console.log(`Session: Auto-play ${enabled ? 'enabled' : 'disabled'}`);
+  }
 }
+  setAutoPlay: (enabled: boolean) => void;
