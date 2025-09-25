@@ -137,7 +137,7 @@ class SessionManager implements SessionHandle {
         
         const audioElement = new Audio(URL.createObjectURL(audioBlob));
         this.segments[index] = { ...segment, audio: audioElement };
-        console.log(\`Session: Prefetched segment ${index}: ${segment.id}`);
+        console.log('Session: Prefetched segment ' + index + ': ' + segment.id);
         this._emit('segment-ready', segment.id);
         track('segment_buffered', { segmentId: segment.id, index: index });
         this._updateBufferedAhead();
