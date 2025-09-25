@@ -453,19 +453,35 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const bufferedAhead = sessionManagerState.bufferedAhead;
   const latestAiMessage = conversation.filter(msg => msg.role === 'ai').slice(-1)[0];
 
+  // Get breathing color for right rail indicator
+  const getBreathingColor = () => {
+    switch (sessionState.breathing) {
+      case 'inhale': return 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-500/40 text-teal-400';
+      case 'hold-inhale': return 'bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border-blue-500/40 text-blue-400';
+      case 'exhale': return 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/40 text-green-400';
+      case 'hold-exhale': return 'bg-gradient-to-br from-purple-500/20 to-violet-500/20 border-purple-500/40 text-purple-400';
+      default: return 'bg-white/5 border-white/20 text-white/60';
+    }
+  };
+
+  const getPhaseColor = () => {
+    if (!sessionState.isPlaying) return 'bg-gradient-to-br from-gray-500/20 to-slate-500/20 border-gray-500/40 text-gray-400';
+    return 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/40 text-green-400';
+  };
+
   return (
-    <div className="h-screen bg-black text-white relative overflow-hidden">
-      {/* CSS Custom Properties */}
+    <div className="h-screen bg-black text-white overflow-hidden">
+      {/* CSS Custom Properties for Layout */}
       <style jsx>{`
-        .session-world {
+        .session-layout {
           --header-h: 64px;
           --dock-h: 88px;
           --rail-w: 72px;
           --gutter: 24px;
         }
         
-        @media (max-width: 1023px) {
-          .session-world {
+        @media (max-width: 1199px) {
+          .session-layout {
             --rail-w: 64px;
             --gutter: 16px;
             --dock-h: 80px;
@@ -473,7 +489,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         }
         
         @media (max-width: 767px) {
-          .session-world {
+          .session-layout {
             --rail-w: 56px;
             --gutter: 12px;
             --dock-h: 72px;
@@ -504,262 +520,255 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         ))}
       </div>
 
-      {/* Fixed Header (App Bar) */}
-      <header 
-        className="fixed top-0 left-0 right-0 z-[200] bg-black/95 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/20"
-        style={{ height: 'var(--header-h)' }}
-      >
-        <div className="h-full px-6 flex items-center justify-between">
-          {/* Left: Title + Subtitle */}
-          <div className="flex-shrink-0">
-            <h1 className="text-white text-lg font-semibold leading-tight">{getSessionTitle()}</h1>
-            <p className="text-white/60 text-sm">Segment {currentSegment} of {totalSegments}</p>
+      {/* Container with Layout Variables */}
+      <div className="session-layout h-full flex flex-col">
+        
+        {/* Fixed Header (App Bar) */}
+        <header 
+          className="fixed top-0 left-0 right-0 z-[200] bg-black/95 backdrop-blur-xl border-b border-white/10 shadow-lg"
+          style={{ height: 'var(--header-h)' }}
+        >
+          <div className="h-full px-6 flex items-center justify-between">
+            {/* Left: Title + Subtitle */}
+            <div className="flex-shrink-0">
+              <h1 className="text-white text-lg font-semibold leading-tight">{getSessionTitle()}</h1>
+              <p className="text-white/60 text-sm">Segment {currentSegment} of {totalSegments}</p>
+            </div>
+
+            {/* Center: Progress Bar */}
+            <div className="flex-1 max-w-md mx-8">
+              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full transition-all duration-700"
+                  style={{ width: `${progress * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Right: Stats + Close */}
+            <div className="flex items-center space-x-4 flex-shrink-0">
+              <div className="text-right">
+                <div className="text-white text-sm font-semibold">{currentSegment}/{totalSegments}</div>
+                <div className="text-white/50 text-xs">Queued: {bufferedAhead}</div>
+              </div>
+              <button
+                onClick={onCancel}
+                title="Close Session"
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200 hover:scale-105"
+              >
+                <X size={18} className="text-white/80" />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Area - 3 Column Grid */}
+        <div 
+          className="flex-1 grid"
+          style={{
+            gridTemplateColumns: 'var(--rail-w) 1fr var(--rail-w)',
+            paddingTop: 'calc(var(--header-h) + 16px)',
+            paddingBottom: 'calc(var(--dock-h) + 16px)',
+            paddingLeft: 'var(--gutter)',
+            paddingRight: 'var(--gutter)',
+            gap: 'var(--gutter)'
+          }}
+        >
+          {/* Left Rail - Controls (Card Style) */}
+          <div className="flex flex-col items-center justify-center space-y-4 z-[150]">
+            {/* Play/Pause (Primary) */}
+            <button
+              onClick={togglePlayPause}
+              title={`${sessionState.isPlaying ? 'Pause' : 'Play'} Session (Space)`}
+              className={`w-14 h-14 rounded-xl backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center shadow-lg ${
+                sessionState.isPlaying 
+                  ? 'bg-gradient-to-br from-orange-500/30 to-red-500/20 border-orange-400/60 text-orange-200 shadow-orange-400/20' 
+                  : 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-200 shadow-green-400/20'
+              }`}
+            >
+              {sessionState.isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
+            </button>
+
+            {/* Chat Toggle */}
+            <button
+              onClick={toggleCoachBubble}
+              title="Chat with Libero (C)"
+              className={`w-12 h-12 rounded-xl backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center shadow-lg ${
+                showCoachBubble 
+                  ? 'bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-teal-400/60 text-teal-200 shadow-teal-400/20' 
+                  : 'bg-white/10 border-white/30 text-white/70 hover:bg-white/20'
+              }`}
+            >
+              <MessageCircle size={16} />
+            </button>
+
+            {/* Previous */}
+            <button
+              onClick={skipBack}
+              title="Previous Segment (←)"
+              className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg text-white/70"
+            >
+              <SkipBack size={16} />
+            </button>
+
+            {/* Next */}
+            <button
+              onClick={skipForward}
+              title="Next Segment (→)"
+              className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg text-white/70"
+            >
+              <SkipForward size={16} />
+            </button>
+
+            {/* Volume */}
+            <button
+              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+              title="Toggle Volume (M)"
+              className={`w-12 h-12 rounded-xl backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center shadow-lg ${
+                isVoiceEnabled 
+                  ? 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-200 shadow-green-400/20' 
+                  : 'bg-gradient-to-br from-red-500/30 to-orange-500/20 border-red-400/60 text-red-200 shadow-red-400/20'
+              }`}
+            >
+              {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
           </div>
 
-          {/* Center: Progress Bar */}
-          <div className="flex-1 max-w-md mx-8">
-            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+          {/* Center Stage - Orb */}
+          <div className="relative flex flex-col items-center justify-center z-[100]">
+            {/* AI Message Card (Above Orb) */}
+            {showCoachBubble && latestAiMessage && (
               <div 
-                className="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full transition-all duration-700"
-                style={{ width: `${progress * 100}%` }}
+                className="absolute bottom-full mb-8 z-[170] w-full max-w-[720px] px-4"
+              >
+                <div className="bg-gradient-to-br from-white/8 to-white/12 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-400 to-cyan-400 border border-teal-400/60 flex items-center justify-center flex-shrink-0">
+                      <Brain size={18} className="text-black" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <span className="text-white text-lg font-semibold">Libero</span>
+                        {isThinking && (
+                          <div className="flex items-center space-x-2">
+                            <Loader size={14} className="text-teal-300 animate-spin" />
+                            <span className="text-teal-200 text-sm">thinking...</span>
+                          </div>
+                        )}
+                        {isSpeaking && (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span className="text-green-200 text-sm">speaking</span>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-white/90 text-base leading-relaxed">
+                        {latestAiMessage.content}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Orb - Perfectly Centered */}
+            <div className="flex items-center justify-center">
+              <Orb
+                ref={orbRef}
+                onTap={() => {}}
+                egoState={activeEgoState}
+                afterglow={sessionState.orbEnergy > 0.7}
+                size={Math.min(
+                  window.innerWidth < 768 ? 320 : 
+                  window.innerWidth < 1024 ? 400 : 520,
+                  Math.min(window.innerWidth * 0.42, window.innerHeight * 0.42)
+                )}
+                variant="webgl"
               />
             </div>
           </div>
 
-          {/* Right: Stats + Close */}
-          <div className="flex items-center space-x-4 flex-shrink-0">
-            <div className="text-right">
-              <div className="text-white text-sm font-semibold">{currentSegment}/{totalSegments}</div>
-              <div className="text-white/50 text-xs">Queued: {bufferedAhead}</div>
-            </div>
-            <button
-              onClick={onCancel}
-              title="Close Session"
-              className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200 hover:scale-105"
-            >
-              <X size={18} className="text-white/80" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Content Area - 3 Column Grid */}
-      <div 
-        className="session-world fixed left-0 right-0 grid"
-        style={{
-          top: 'var(--header-h)',
-          bottom: 'var(--dock-h)',
-          gridTemplateColumns: 'var(--rail-w) 1fr var(--rail-w)',
-          padding: '0 var(--gutter)'
-        }}
-      >
-        {/* Left Rail - Controls (Square Cards) */}
-        <div className="flex flex-col items-center justify-center space-y-4 z-[150]">
-          {/* Play/Pause (Primary) */}
-          <button
-            onClick={togglePlayPause}
-            title={`${sessionState.isPlaying ? 'Pause' : 'Play'} (Space)`}
-            className={`w-14 h-14 rounded-xl backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center shadow-lg ${
-              sessionState.isPlaying 
-                ? 'bg-gradient-to-br from-orange-500/30 to-red-500/20 border-orange-400/60 text-orange-200 shadow-orange-400/20' 
-                : 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-200 shadow-green-400/20'
-            }`}
-          >
-            {sessionState.isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
-          </button>
-
-          {/* Chat Toggle */}
-          <button
-            onClick={toggleCoachBubble}
-            title="Chat with Libero (C)"
-            className={`w-12 h-12 rounded-xl backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center shadow-lg ${
-              showCoachBubble 
-                ? 'bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-teal-400/60 text-teal-200 shadow-teal-400/20' 
-                : 'bg-white/10 border-white/30 text-white/70 hover:bg-white/20'
-            }`}
-          >
-            <MessageCircle size={16} />
-          </button>
-
-          {/* Previous */}
-          <button
-            onClick={skipBack}
-            title="Previous Segment (←)"
-            className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg text-white/70"
-          >
-            <SkipBack size={16} />
-          </button>
-
-          {/* Next */}
-          <button
-            onClick={skipForward}
-            title="Next Segment (→)"
-            className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg text-white/70"
-          >
-            <SkipForward size={16} />
-          </button>
-
-          {/* Volume */}
-          <button
-            onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-            title="Toggle Volume (M)"
-            className={`w-12 h-12 rounded-xl backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center shadow-lg ${
-              isVoiceEnabled 
-                ? 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-200 shadow-green-400/20' 
-                : 'bg-gradient-to-br from-red-500/30 to-orange-500/20 border-red-400/60 text-red-200 shadow-red-400/20'
-            }`}
-          >
-            {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
-        </div>
-
-        {/* Center Stage - Orb + Chat Bubble */}
-        <div className="relative flex flex-col items-center justify-center z-[100]">
-          {/* Chat Bubble (Above Orb) */}
-          {showCoachBubble && latestAiMessage && (
-            <div 
-              className="absolute bottom-full mb-8 z-[170] max-w-[720px] w-[90%]"
-              style={{ maxWidth: 'min(720px, 90%)' }}
-            >
-              <div className="bg-gradient-to-br from-white/8 to-white/12 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl">
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-400 to-cyan-400 border border-teal-400/60 flex items-center justify-center flex-shrink-0">
-                    <Brain size={18} className="text-black" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <span className="text-white text-lg font-semibold">Libero</span>
-                      {isThinking && (
-                        <div className="flex items-center space-x-2">
-                          <Loader size={14} className="text-teal-300 animate-spin" />
-                          <span className="text-teal-200 text-sm">thinking...</span>
-                        </div>
-                      )}
-                      {isSpeaking && (
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                          <span className="text-green-200 text-sm">speaking</span>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-white/90 text-base leading-relaxed">
-                      {latestAiMessage.content}
-                    </p>
-                  </div>
-                </div>
+          {/* Right Rail - Indicators (Card Style) */}
+          <div className="flex flex-col items-center justify-center space-y-3 z-[150]">
+            {/* Breathing Phase Card */}
+            <div className={`w-16 h-14 rounded-xl backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center shadow-lg ${getBreathingColor()}`}>
+              <Wind size={12} className="mb-1" />
+              <div className="text-xs font-semibold capitalize leading-none">
+                {sessionState.breathing === 'hold-inhale' ? 'Hold' : 
+                 sessionState.breathing === 'hold-exhale' ? 'Hold' :
+                 sessionState.breathing.split('-')[0]}
               </div>
             </div>
-          )}
 
-          {/* Orb - Perfectly Centered */}
-          <div className="flex items-center justify-center">
-            <Orb
-              ref={orbRef}
-              onTap={() => {}}
-              egoState={activeEgoState}
-              afterglow={sessionState.orbEnergy > 0.7}
-              size={Math.min(480, window.innerWidth * 0.3, window.innerHeight * 0.4)}
-              variant="webgl"
-            />
-          </div>
-        </div>
+            {/* Session State Card */}
+            <div className={`w-16 h-14 rounded-xl backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center shadow-lg ${getPhaseColor()}`}>
+              <div className={`w-2 h-2 rounded-full mb-1 ${sessionState.isPlaying ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`} />
+              <div className="text-xs font-semibold leading-none">
+                {sessionState.isPlaying ? 'Play' : 'Pause'}
+              </div>
+            </div>
 
-        {/* Right Rail - Indicators (Square Cards) */}
-        <div className="flex flex-col items-center justify-center space-y-4 z-[150]">
-          {/* Breathing Phase Card */}
-          <div className={`w-16 h-14 rounded-xl backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center shadow-lg ${
-            sessionState.breathing === 'inhale' ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/15 border-teal-400/40' :
-            sessionState.breathing === 'exhale' ? 'bg-gradient-to-br from-emerald-500/20 to-green-500/15 border-emerald-400/40' :
-            sessionState.breathing.includes('hold') ? 'bg-gradient-to-br from-amber-500/20 to-yellow-500/15 border-amber-400/40' :
-            'bg-white/10 border-white/30'
-          }`}>
-            <Wind size={12} className="mb-1" />
-            <div className="text-xs font-semibold capitalize leading-none">
-              {sessionState.breathing.split('-')[0]}
+            {/* Depth Level Card */}
+            <div className="w-16 h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 backdrop-blur-xl border border-blue-500/40 flex flex-col items-center justify-center shadow-lg">
+              <Activity size={12} className="text-blue-400 mb-1" />
+              <div className="text-xs font-semibold text-blue-400 leading-none">L{sessionState.depth}</div>
+            </div>
+
+            {/* Timer Card */}
+            <div className="w-16 h-14 rounded-xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 backdrop-blur-xl border border-purple-500/40 flex flex-col items-center justify-center shadow-lg">
+              <Clock size={12} className="text-purple-400 mb-1" />
+              <div className="text-xs font-semibold text-purple-400 leading-none">{formatTime(sessionState.timeRemaining)}</div>
             </div>
           </div>
-
-          {/* Session State Card */}
-          <div className={`w-16 h-14 rounded-xl backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center shadow-lg ${
-            sessionState.isPlaying 
-              ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/15 border-green-400/40' 
-              : 'bg-gradient-to-br from-slate-500/20 to-gray-500/15 border-slate-400/40'
-          }`}>
-            <div className={`w-2 h-2 rounded-full mb-1 ${sessionState.isPlaying ? 'bg-green-400 animate-pulse' : 'bg-slate-400'}`} />
-            <div className="text-xs font-semibold leading-none">
-              {sessionState.isPlaying ? 'Play' : 'Pause'}
-            </div>
-          </div>
-
-          {/* Depth Level Card */}
-          <div className="w-16 h-14 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 flex flex-col items-center justify-center shadow-lg">
-            <Activity size={12} className="text-teal-400 mb-1" />
-            <div className="text-xs font-semibold text-white leading-none">L{sessionState.depth}</div>
-          </div>
-
-          {/* Timer Card */}
-          <div className="w-16 h-14 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 flex flex-col items-center justify-center shadow-lg">
-            <Clock size={12} className="text-white/60 mb-1" />
-            <div className="text-xs font-semibold text-white leading-none">{formatTime(sessionState.timeRemaining)}</div>
-          </div>
         </div>
-      </div>
 
-      {/* Progress Guide (Above Dock) */}
-      <div 
-        className="fixed left-1/2 transform -translate-x-1/2 z-[160]"
-        style={{ bottom: 'calc(var(--dock-h) + 16px)' }}
-      >
-        <div className="bg-black/60 backdrop-blur-xl border border-white/20 rounded-xl px-4 py-2 shadow-lg">
-          <span className="text-white/60 text-sm">
-            Session progress: {currentSegment} of {totalSegments} segments • {bufferedAhead} buffered ahead
-          </span>
-        </div>
-      </div>
+        {/* Bottom Dock (Clean Composer) */}
+        <div 
+          className="fixed bottom-0 left-0 right-0 z-[180] bg-black/95 backdrop-blur-xl border-t border-white/10 shadow-2xl"
+          style={{ 
+            height: 'var(--dock-h)',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+          }}
+        >
+          <div className="h-full px-6 flex items-center justify-center">
+            <form onSubmit={handleSubmit} className="flex items-center space-x-4 w-full max-w-4xl">
+              
+              {/* Mic Button (Only Instance) */}
+              <button
+                type="button"
+                onClick={toggleListening}
+                disabled={isThinking}
+                title="Talk to Libero"
+                className={`w-12 h-12 rounded-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 shadow-xl flex-shrink-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 ${
+                  isListening 
+                    ? 'border-red-400/80 text-red-300 animate-pulse shadow-red-400/20' 
+                    : 'text-white/70 hover:bg-white/20 hover:border-white/30'
+                }`}
+              >
+                <Mic size={18} />
+              </button>
 
-      {/* Bottom Dock (Clean Composer) */}
-      <div 
-        className="fixed bottom-0 left-0 right-0 z-[180] bg-black/95 backdrop-blur-xl border-t border-white/10 shadow-2xl shadow-black/30"
-        style={{ height: 'var(--dock-h)' }}
-      >
-        <div className="h-full px-6 py-4 flex items-center justify-center">
-          <form onSubmit={handleSubmit} className="flex items-center space-x-4 w-full max-w-4xl">
-            
-            {/* Mic Button (Only Instance) */}
-            <button
-              type="button"
-              onClick={toggleListening}
-              disabled={isThinking}
-              title="Talk to Libero"
-              className={`w-12 h-12 rounded-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 shadow-xl flex-shrink-0 ${
-                isListening 
-                  ? 'bg-gradient-to-br from-red-500/40 to-red-600/30 border-2 border-red-400/80 text-red-200 animate-pulse' 
-                  : 'bg-gradient-to-br from-blue-500/40 to-cyan-500/30 border-2 border-blue-400/80 text-blue-200'
-              }`}
-            >
-              <Mic size={18} />
-            </button>
+              {/* Text Input (Center) */}
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder={isListening ? "Listening..." : "Type your message or use voice..."}
+                disabled={isListening || isThinking}
+                className="flex-1 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl px-6 py-3 text-white text-base placeholder-white/50 focus:outline-none focus:border-teal-400/60 focus:bg-white/15 transition-all disabled:opacity-50 shadow-lg"
+              />
 
-            {/* Text Input (Center) */}
-            <input
-              type="text"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              placeholder={isListening ? "Listening..." : "Type your message or use voice..."}
-              disabled={isListening || isThinking}
-              className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-6 py-3 text-white text-base placeholder-white/50 focus:outline-none focus:border-teal-400/60 focus:bg-white/15 transition-all disabled:opacity-50 shadow-lg"
-            />
-
-            {/* Send Button */}
-            <button
-              type="submit"
-              disabled={!textInput.trim() || isThinking}
-              title="Send Message"
-              className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500/40 to-cyan-500/30 border-2 border-teal-400/80 text-teal-200 hover:scale-105 transition-all duration-200 disabled:opacity-50 shadow-xl flex items-center justify-center flex-shrink-0"
-            >
-              <Send size={18} />
-            </button>
-          </form>
+              {/* Send Button */}
+              <button
+                type="submit"
+                disabled={!textInput.trim() || isThinking}
+                title="Send Message"
+                className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border border-teal-400/60 text-teal-200 hover:scale-105 transition-all duration-200 disabled:opacity-50 shadow-xl flex items-center justify-center flex-shrink-0 backdrop-blur-xl"
+              >
+                <Send size={18} />
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
