@@ -1,6 +1,9 @@
 ```typescript
 // src/services/gemini.ts
 
+import { AI } from '../config/ai';
+import { track } from './analytics';
+
 /**
  * Represents a single segment of a generated script.
  */
@@ -35,6 +38,126 @@ export interface GetSessionScriptParams {
   userPrefs: Record<string, any>; // Placeholder for user preferences
 }
 
+interface GeminiRequest {
+  contents: Array<{
+    role: 'user' | 'model';
+    parts: Array<{ text: string }>;
+  }>;
+  generationConfig?: {
+    temperature?: number;
+    topK?: number;
+    topP?: number;
+    maxOutputTokens?: number;
+    stopSequences?: string[];
+  };
+  safetySettings?: Array<{
+    category: string;
+    threshold: string;
+  }>;
+}
+
+interface GeminiResponse {
+  candidates: Array<{
+    content: {
+      parts: Array<{ text: string }>;
+      role: string;
+    };
+    finishReason: string;
+    index: number;
+    safetyRatings: Array<any>;
+  }>;
+  promptFeedback?: {
+    safetyRatings: Array<any>;
+  };
+}
+
+/**
+ * Circuit breaker for Gemini API calls
+ */
+class CircuitBreaker {
+  private failureCount = 0;
+  private lastFailureTime = 0;
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+  
+  constructor(
+    private failureThreshold = 5,
+    private timeoutMs = 60000, // 1 minute
+  ) {}
+
+  async execute<T>(operation: () => Promise<T>): Promise<T> {
+    if (this.state === 'OPEN') {
+      if (Date.now() - this.lastFailureTime < this.timeoutMs) {
+        throw new Error('Circuit breaker is OPEN - Gemini service temporarily unavailable');
+      }
+      this.state = 'HALF_OPEN';
+    }
+
+    try {
+      const result = await operation();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  private onSuccess() {
+    this.failureCount = 0;
+    this.state = 'CLOSED';
+  }
+
+  private onFailure() {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+    
+    if (this.failureCount >= this.failureThreshold) {
+      this.state = 'OPEN';
+      track('llm_circuit_open', { failureCount: this.failureCount });
+    }
+  }
+}
+
+const geminiCircuitBreaker = new CircuitBreaker();
+
+/**
+ * Token bucket for client-side rate limiting
+ */
+class TokenBucket {
+  private tokens: number;
+  private lastRefill: number;
+
+  constructor(
+    private capacity: number,
+    private refillRate: number // tokens per second
+  ) {
+    this.tokens = capacity;
+    this.lastRefill = Date.now();
+  }
+
+  tryConsume(tokens: number = 1): boolean {
+    this.refill();
+    
+    if (this.tokens >= tokens) {
+      this.tokens -= tokens;
+      return true;
+    }
+    
+    return false;
+  }
+
+  private refill() {
+    const now = Date.now();
+    const elapsed = (now - this.lastRefill) / 1000;
+    const tokensToAdd = elapsed * this.refillRate;
+    
+    this.tokens = Math.min(this.capacity, this.tokens + tokensToAdd);
+    this.lastRefill = now;
+  }
+}
+
+const geminiRateLimit = new TokenBucket(10, 0.1); // 10 requests max, 1 every 10 seconds
+
 /**
  * Generates a session script plan using the Gemini API.
  *
@@ -42,20 +165,273 @@ export interface GetSessionScriptParams {
  * @returns A promise that resolves to a ScriptPlan.
  */
 export async function getSessionScript(params: GetSessionScriptParams): Promise<ScriptPlan> {
-  // TODO: Implement Gemini API call here.
-  // - Use AI.geminiModel from src/config/ai.ts
-  // - Construct prompt using templates from src/prompts/
-  // - Handle streaming where available, hard timeout, retries, rate-limiting, and circuit breaking.
-  // - Return a mock ScriptPlan for now.
+  const startTime = Date.now();
   console.log('Gemini: Generating session script with params:', params);
+  track('llm_generation_start', { goalId: params.goalId, egoState: params.egoState });
+
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    console.warn('VITE_GEMINI_API_KEY environment variable not set. Using mock script.');
+    track('llm_api_key_missing', { context: 'getSessionScript' });
+    return getMockScriptPlan(params); // Fallback to mock script
+  }
+
+  if (!geminiRateLimit.tryConsume()) {
+    track('llm_rate_limit_exceeded');
+    throw new Error('Gemini API rate limit exceeded. Please wait before making another request.');
+  }
+
+  try {
+    const scriptPlan = await geminiCircuitBreaker.execute(async () => {
+      // 1. Load prompts
+      const systemPrompt = await loadPrompt('/src/prompts/sessionScript.system.txt');
+      const userPromptTemplate = await loadPrompt('/src/prompts/sessionScript.user.template.txt');
+
+      // 2. Build user prompt with template substitution
+      const userPrompt = userPromptTemplate
+        .replace('{{goalId}}', params.goalId)
+        .replace('{{egoState}}', params.egoState)
+        .replace('{{lengthSec}}', params.lengthSec.toString())
+        .replace('{{level}}', params.level.toString())
+        .replace('{{streak}}', params.streak.toString())
+        .replace('{{locale}}', params.locale)
+        .replace('{{userPrefs}}', JSON.stringify(params.userPrefs));
+
+      // 3. Prepare request
+      const request: GeminiRequest = {
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: systemPrompt + '\n\n' + userPrompt }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2048,
+          stopSequences: ['</script>', 'END_SESSION']
+        },
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          }
+        ]
+      };
+
+      // 4. Make API call with retry logic
+      const response = await fetchWithRetry(
+        `https://generativelanguage.googleapis.com/v1beta/models/${AI.geminiModel}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request)
+        },
+        AI.geminiMaxRetries,
+        AI.geminiTimeoutMs
+      );
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        track('llm_api_error', { status: response.status, body: errorBody });
+        throw new Error(`Gemini API error: ${response.status} ${response.statusText} - ${errorBody}`);
+      }
+
+      const data: GeminiResponse = await response.json();
+      const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!generatedText) {
+        track('llm_no_content', { response: data });
+        throw new Error('No content generated by Gemini');
+      }
+
+      // 5. Parse the JSON response from Gemini
+      let scriptPlan: ScriptPlan;
+      try {
+        const parsed = JSON.parse(generatedText);
+        scriptPlan = validateScriptPlan(parsed);
+      } catch (error: any) {
+        track('llm_parse_error', { error: error.message, generatedText });
+        throw new Error(`Failed to parse Gemini response: ${error.message}. Raw: ${generatedText.substring(0, 200)}`);
+      }
+      
+      track('llm_generation_success', { duration: Date.now() - startTime, segments: scriptPlan.segments.length });
+      return scriptPlan;
+    });
+    return scriptPlan;
+  } catch (error: any) {
+    track('llm_generation_failure', { error: error.message });
+    console.error('Gemini: Script generation failed, falling back to mock:', error);
+    return getMockScriptPlan(params); // Fallback to mock script on failure
+  }
+}
+
+// Helper function to load prompts from files
+async function loadPrompt(filepath: string): Promise<string> {
+  try {
+    const response = await fetch(filepath);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.text();
+  } catch (error) {
+    console.error(`Failed to load prompt ${filepath}:`, error);
+    // Fallback content for prompts if files can't be loaded
+    if (filepath.includes('system')) {
+      return "You are Libero, a supportive hypnotherapy guide. Produce short, paced segments (10–45s), with breath and pause markers. Avoid clinical claims. If user appears distressed, include a gentle stop suggestion.";
+    } else {
+      return `Generate a hypnotherapy script for the following session:
+Goal: {{goalId}}
+Ego State: {{egoState}}
+Length: {{lengthSec}} seconds
+User Level: {{level}}
+Session Streak: {{streak}}
+Locale: {{locale}}
+User Preferences: {{userPrefs}}
+
+Output should be a JSON object with an array of segments, an outline, safety notes, a version, and a hash. Each segment should have an 'id', 'text', 'approxSec', and optional 'markers' (type: 'breath'|'pause'|'affirm', t: time in seconds within segment).`;
+    }
+  }
+}
+
+// Retry logic with exponential backoff
+async function fetchWithRetry(
+  url: string, 
+  options: RequestInit, 
+  maxRetries: number, 
+  timeoutMs: number
+): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      // Success case
+      if (response.ok) {
+        return response;
+      }
+
+      // Rate limit (429) or server error (5xx) - should retry
+      if (response.status === 429 || response.status >= 500) {
+        if (attempt < maxRetries) {
+          const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000; // Exponential backoff with jitter
+          console.warn(`Gemini API retry ${attempt + 1}/${maxRetries} after ${delay}ms for status ${response.status}`);
+          track('llm_retry', { attempt: attempt + 1, status: response.status });
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+      }
+
+      // Client error (4xx) - don't retry
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        track('llm_timeout', { attempt: attempt + 1 });
+        throw new Error(`Gemini API timeout after ${timeoutMs}ms`);
+      }
+      
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Network error - retry with backoff
+      const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+      console.warn(`Gemini API network error, retrying in ${delay}ms:`, error.message);
+      track('llm_retry', { attempt: attempt + 1, error: error.message });
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw new Error('Max retries exceeded');
+}
+
+// Validate and ensure the response matches our expected format
+function validateScriptPlan(parsed: any): ScriptPlan {
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Invalid script plan: not an object');
+  }
+  if (!parsed.segments || !Array.isArray(parsed.segments)) {
+    throw new Error('Invalid script plan: missing segments array');
+  }
+
+  const segments: ScriptSegment[] = parsed.segments.map((seg: any, index: number) => {
+    if (!seg || typeof seg !== 'object') {
+      throw new Error(`Invalid segment ${index}: not an object`);
+    }
+    if (typeof seg.text !== 'string' || seg.text.trim().length === 0) {
+      throw new Error(`Invalid segment ${index}: missing or empty text`);
+    }
+    if (typeof seg.approxSec !== 'number' || seg.approxSec <= 0) {
+      throw new Error(`Invalid segment ${index}: missing or invalid approxSec`);
+    }
+
+    return {
+      id: seg.id || `segment-${index}`,
+      text: seg.text.trim(),
+      approxSec: Math.max(1, Math.min(60, seg.approxSec)), // Clamp between 1-60 seconds
+      markers: seg.markers || []
+    };
+  });
+
   return {
-    segments: [
-      { id: 'seg1', text: 'Welcome to your session. Take a deep breath and relax.', approxSec: 10 },
-      { id: 'seg2', text: 'Feel yourself drifting deeper into a state of calm.', approxSec: 15, markers: [{ type: 'breath' }] },
-    ],
-    outline: 'Relaxation and focus session.',
+    segments,
+    outline: typeof parsed.outline === 'string' ? parsed.outline : 'Generated hypnotherapy script',
+    safetyNotes: Array.isArray(parsed.safetyNotes) ? parsed.safetyNotes : [],
+    version: typeof parsed.version === 'string' ? parsed.version : 'libero-v1',
+    hash: generateHash(segments.map(s => s.text).join('')) // Hash based on actual segment text
+  };
+}
+
+// Simple hash generation for cache keys (for client-side use)
+function generateHash(input: string): string {
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    const char = input.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(36);
+}
+
+// Fallback mock script plan
+function getMockScriptPlan(params: GetSessionScriptParams): ScriptPlan {
+  const segments: ScriptSegment[] = [
+    { id: 'mock-1', text: `Welcome to your ${params.goalId} session, ${params.egoState}. Take a deep breath and relax.`, approxSec: 15 },
+    { id: 'mock-2', text: 'Feel yourself drifting deeper into a state of calm and peace.', approxSec: 20, markers: [{ type: 'breath' }] },
+    { id: 'mock-3', text: 'Each breath takes you further into this wonderful relaxation.', approxSec: 18 },
+    { id: 'mock-4', text: 'You are safe, secure, and completely at ease.', approxSec: 15, markers: [{ type: 'affirm' }] },
+    { id: 'mock-5', text: 'When you are ready, you will gently return to your waking awareness, feeling refreshed and revitalized.', approxSec: 25 },
+  ];
+
+  return {
+    segments,
+    outline: `Mock script for ${params.goalId} with ${params.egoState}`,
+    safetyNotes: ['This is a mock script for demonstration purposes.'],
     version: 'mock-v1',
-    hash: 'mock-hash-123',
+    hash: generateHash(segments.map(s => s.text).join(''))
   };
 }
 ```
