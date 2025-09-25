@@ -16,13 +16,27 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const { showToast } = useAppStore();
 
+  // Dynamic data that should be loaded from CMS or API
+  const [features, setFeatures] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [pricingPlans, setPricingPlans] = useState<any[]>([]);
+  const [stats, setStats] = useState<any[]>([]);
+
   useEffect(() => {
     setIsLoaded(true);
-    const interval = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+    
+    // Only set up testimonial rotation if we have testimonials
+    let interval: NodeJS.Timeout | null = null;
+    if (testimonials.length > 0) {
+      interval = setInterval(() => {
+        setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+      }, 4000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [testimonials.length]);
 
   const handleUpgrade = async () => {
     try {
@@ -49,118 +63,6 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
       setIsProcessingPayment(false);
     }
   };
-  const features = [
-    {
-      icon: <Brain size={24} className="text-teal-400" />,
-      title: "15 Archetypal Guides",
-      description: "Channel different aspects of your psyche - from the protective Guardian to the transcendent Mystic",
-      gradient: "from-teal-500/20 to-cyan-500/20"
-    },
-    {
-      icon: <Eye size={24} className="text-purple-400" />,
-      title: "Hypnotic Orb Technology", 
-      description: "Advanced WebGL visualizations create deep trance states through sacred geometry and light patterns",
-      gradient: "from-purple-500/20 to-indigo-500/20"
-    },
-    {
-      icon: <Zap size={24} className="text-yellow-400" />,
-      title: "AI-Powered Sessions",
-      description: "Personalized hypnosis journeys that adapt to your progress, goals, and archetypal preferences",
-      gradient: "from-yellow-500/20 to-orange-500/20"
-    },
-    {
-      icon: <Heart size={24} className="text-rose-400" />,
-      title: "Transformation Tracking",
-      description: "Gamified progress system with levels, streaks, and insights into your consciousness evolution",
-      gradient: "from-rose-500/20 to-pink-500/20"
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: "Sarah M.",
-      role: "Entrepreneur",
-      text: "Libero helped me break through anxiety patterns that therapy couldn't touch. The Rebel archetype sessions gave me my confidence back.",
-      rating: 5
-    },
-    {
-      name: "Marcus L.",
-      role: "Software Engineer", 
-      text: "I've tried every meditation app. Nothing compares to Libero's depth. The orb visualizations actually put me in trance states.",
-      rating: 5
-    },
-    {
-      name: "Dr. Jennifer K.",
-      role: "Clinical Psychologist",
-      text: "As a professional, I'm impressed by Libero's sophisticated approach to archetypal psychology and hypnosis.",
-      rating: 5
-    },
-    {
-      name: "Alex R.",
-      role: "Creative Director",
-      text: "The Mystic sessions unlocked creativity I didn't know I had. This isn't just an app - it's consciousness technology.",
-      rating: 5
-    }
-  ];
-
-  const pricingPlans = [
-    {
-      name: "Explorer",
-      price: "Free",
-      description: "Begin your transformation journey",
-      features: [
-        "1 session per day",
-        "5 archetypal guides",
-        "Basic orb visualizations",
-        "Progress tracking"
-      ],
-      cta: "Start Free",
-      popular: false,
-      action: onEnterApp
-    },
-    {
-      name: "Mystic",
-      price: "$27",
-      period: "/month",
-      description: "Unlock your full potential",
-      features: [
-        "Unlimited sessions",
-        "All 15 archetypal guides",
-        "Advanced orb experiences",
-        "Custom protocol builder",
-        "Premium AI voices",
-        "Deep analytics"
-      ],
-      cta: isProcessingPayment ? "Processing..." : "Upgrade Now",
-      popular: true,
-      action: handleUpgrade,
-      disabled: isProcessingPayment
-    },
-    {
-      name: "Visionary", 
-      price: "$199",
-      period: "/year",
-      description: "Master consciousness transformation",
-      features: [
-        "Everything in Mystic",
-        "Priority support",
-        "Beta features access",
-        "Monthly group sessions",
-        "Personal transformation coach"
-      ],
-      cta: "Coming Soon",
-      popular: false,
-      action: () => {},
-      comingSoon: true
-    }
-  ];
-
-  const stats = [
-    { number: "50K+", label: "Transformations" },
-    { number: "4.9★", label: "App Store Rating" },
-    { number: "89%", label: "Report Breakthroughs" },
-    { number: "15", label: "Archetypal Guides" }
-  ];
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden overflow-y-auto" style={{ height: '100vh', overflowY: 'scroll' }}>
@@ -290,169 +192,181 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
 
           {/* Social Proof */}
           <div className={`transition-all duration-1000 delay-700 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 text-center">
-              {stats.map((stat, index) => (
-                <div key={index} className="opacity-80 hover:opacity-100 transition-opacity">
-                  <div className="text-xl md:text-3xl font-bold text-teal-400 mb-1 md:mb-2">{stat.number}</div>
-                  <div className="text-white/60 text-xs md:text-sm">{stat.label}</div>
-                </div>
-              ))}
-            </div>
+            {stats.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 text-center">
+                {stats.map((stat, index) => (
+                  <div key={index} className="opacity-80 hover:opacity-100 transition-opacity">
+                    <div className="text-xl md:text-3xl font-bold text-teal-400 mb-1 md:mb-2">{stat.number}</div>
+                    <div className="text-white/60 text-xs md:text-sm">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center">
+                <p className="text-white/60 text-sm">Join thousands transforming their lives with Libero</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-light mb-6 bg-gradient-to-r from-white to-teal-400 bg-clip-text text-transparent">
-              Consciousness Technology
-            </h2>
-            <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              Libero combines ancient wisdom with cutting-edge technology to create the most advanced transformation platform ever built.
-            </p>
-          </div>
+      {features.length > 0 && (
+        <section id="features" className="py-20 px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-20">
+              <h2 className="text-4xl md:text-5xl font-light mb-6 bg-gradient-to-r from-white to-teal-400 bg-clip-text text-transparent">
+                Consciousness Technology
+              </h2>
+              <p className="text-xl text-white/70 max-w-3xl mx-auto">
+                Libero combines ancient wisdom with cutting-edge technology to create the most advanced transformation platform ever built.
+              </p>
+            </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className={`group p-8 rounded-3xl bg-gradient-to-br ${feature.gradient} backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-500 hover:scale-105`}
-              >
-                <div className="w-16 h-16 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
+            <div className="grid md:grid-cols-2 gap-8">
+              {features.map((feature, index) => (
+                <div
+                  key={index}
+                  className={`group p-8 rounded-3xl bg-gradient-to-br ${feature.gradient} backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-500 hover:scale-105`}
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-2xl font-semibold mb-4 text-white">
+                    {feature.title}
+                  </h3>
+                  <p className="text-white/70 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="text-2xl font-semibold mb-4 text-white">
-                  {feature.title}
-                </h3>
-                <p className="text-white/70 leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 px-6 bg-gradient-to-br from-purple-950/20 to-teal-950/20">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-light mb-20 bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
-            Transformation Stories
-          </h2>
+      {testimonials.length > 0 && (
+        <section id="testimonials" className="py-20 px-6 bg-gradient-to-br from-purple-950/20 to-teal-950/20">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl md:text-5xl font-light mb-20 bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
+              Transformation Stories
+            </h2>
 
-          <div className="relative h-64 overflow-hidden">
-            {testimonials.map((testimonial, index) => (
-              <div
-                key={index}
-                className={`absolute inset-0 transition-all duration-1000 ${
-                  currentTestimonial === index 
-                    ? 'opacity-100 translate-y-0' 
-                    : 'opacity-0 translate-y-8'
-                }`}
-              >
-                <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-8 border border-white/10">
-                  <div className="flex justify-center mb-6">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} size={20} className="text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                  <blockquote className="text-xl text-white/90 mb-6 italic leading-relaxed">
-                    "{testimonial.text}"
-                  </blockquote>
-                  <div>
-                    <div className="font-semibold text-white">{testimonial.name}</div>
-                    <div className="text-white/60">{testimonial.role}</div>
+            <div className="relative h-64 overflow-hidden">
+              {testimonials.map((testimonial, index) => (
+                <div
+                  key={index}
+                  className={`absolute inset-0 transition-all duration-1000 ${
+                    currentTestimonial === index 
+                      ? 'opacity-100 translate-y-0' 
+                      : 'opacity-0 translate-y-8'
+                  }`}
+                >
+                  <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-8 border border-white/10">
+                    <div className="flex justify-center mb-6">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} size={20} className="text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                    <blockquote className="text-xl text-white/90 mb-6 italic leading-relaxed">
+                      "{testimonial.text}"
+                    </blockquote>
+                    <div>
+                      <div className="font-semibold text-white">{testimonial.name}</div>
+                      <div className="text-white/60">{testimonial.role}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="flex justify-center space-x-2 mt-8">
-            {testimonials.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentTestimonial(index)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  currentTestimonial === index ? 'bg-teal-400 scale-125' : 'bg-white/30 hover:bg-white/50'
-                }`}
-              />
-            ))}
+            <div className="flex justify-center space-x-2 mt-8">
+              {testimonials.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentTestimonial(index)}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    currentTestimonial === index ? 'bg-teal-400 scale-125' : 'bg-white/30 hover:bg-white/50'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-light mb-6 bg-gradient-to-r from-white to-yellow-400 bg-clip-text text-transparent">
-              Choose Your Path
-            </h2>
-            <p className="text-xl text-white/70">
-              Every transformation begins with a single decision. What will yours be?
-            </p>
-          </div>
+      {pricingPlans.length > 0 && (
+        <section id="pricing" className="py-20 px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-20">
+              <h2 className="text-4xl md:text-5xl font-light mb-6 bg-gradient-to-r from-white to-yellow-400 bg-clip-text text-transparent">
+                Choose Your Path
+              </h2>
+              <p className="text-xl text-white/70">
+                Every transformation begins with a single decision. What will yours be?
+              </p>
+            </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <div
-                key={index}
-                className={`relative p-8 rounded-3xl backdrop-blur-sm border transition-all duration-500 hover:scale-105 ${
-                  plan.popular
-                    ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-400/30 shadow-2xl shadow-teal-400/20'
-                   : plan.comingSoon
-                   ? 'bg-white/5 border-white/10 opacity-60'
-                    : 'bg-white/5 border-white/10 hover:border-white/20'
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <div className="px-6 py-2 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full text-black font-semibold text-sm flex items-center space-x-2">
-                      <Crown size={16} />
-                      <span>Most Popular</span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-semibold mb-2">{plan.name}</h3>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    {plan.period && <span className="text-white/60">{plan.period}</span>}
-                  </div>
-                  <p className="text-white/70">{plan.description}</p>
-                </div>
-
-                <div className="space-y-4 mb-8">
-                  {plan.features.map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-center space-x-3">
-                      <Check size={16} className="text-teal-400 flex-shrink-0" />
-                      <span className="text-white/90">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={plan.action}
-                  disabled={plan.comingSoon || plan.disabled}
-                  className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-300 hover:scale-105 ${
+            <div className="grid md:grid-cols-3 gap-8">
+              {pricingPlans.map((plan, index) => (
+                <div
+                  key={index}
+                  className={`relative p-8 rounded-3xl backdrop-blur-sm border transition-all duration-500 hover:scale-105 ${
                     plan.popular
-                      ? 'bg-gradient-to-r from-teal-400 to-cyan-400 text-black shadow-lg shadow-teal-400/25'
+                      ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-400/30 shadow-2xl shadow-teal-400/20'
                      : plan.comingSoon
-                     ? 'bg-white/10 text-white/50 cursor-not-allowed border border-white/10'
-                      : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
-                  } ${plan.disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
+                     ? 'bg-white/5 border-white/10 opacity-60'
+                      : 'bg-white/5 border-white/10 hover:border-white/20'
+                  }`}
                 >
-                  {plan.cta}
-                </button>
-              </div>
-            ))}
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <div className="px-6 py-2 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full text-black font-semibold text-sm flex items-center space-x-2">
+                        <Crown size={16} />
+                        <span>Most Popular</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="text-center mb-8">
+                    <h3 className="text-2xl font-semibold mb-2">{plan.name}</h3>
+                    <div className="mb-4">
+                      <span className="text-4xl font-bold">{plan.price}</span>
+                      {plan.period && <span className="text-white/60">{plan.period}</span>}
+                    </div>
+                    <p className="text-white/70">{plan.description}</p>
+                  </div>
+
+                  <div className="space-y-4 mb-8">
+                    {plan.features.map((feature, featureIndex) => (
+                      <div key={featureIndex} className="flex items-center space-x-3">
+                        <Check size={16} className="text-teal-400 flex-shrink-0" />
+                        <span className="text-white/90">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={plan.action}
+                    disabled={plan.comingSoon || plan.disabled}
+                    className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-300 hover:scale-105 ${
+                      plan.popular
+                        ? 'bg-gradient-to-r from-teal-400 to-cyan-400 text-black shadow-lg shadow-teal-400/25'
+                       : plan.comingSoon
+                       ? 'bg-white/10 text-white/50 cursor-not-allowed border border-white/10'
+                        : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                    } ${plan.disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  >
+                    {plan.cta}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Final CTA Section */}
       <section className="py-20 px-6 bg-gradient-to-br from-black via-purple-950/30 to-teal-950/30">

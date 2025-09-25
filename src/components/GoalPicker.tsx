@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Target, Snowflake, Flame, Star, Moon, Shield, Lightbulb, Plus } from 'lucide-react';
 
-interface Goal {
+export interface Goal {
   id: string;
   name: string;
   description: string;
@@ -12,86 +12,6 @@ interface Goal {
   anchor?: string;
   outcome?: string;
 }
-
-const quickGoals: Goal[] = [
-  {
-    id: 'stress',
-    name: 'Release Stress',
-    description: 'Down-regulation, longer exhales, gentle unwinding',
-    icon: <Shield size={20} className="text-amber-400" />,
-    color: 'from-amber-500/20 to-orange-500/20',
-    target: 'tension and stress',
-    desiredResponse: 'calm and centered',
-    anchor: 'breath + shoulders drop',
-    outcome: 'moving through your day with ease'
-  },
-  {
-    id: 'focus',
-    name: 'Dial in Focus',
-    description: 'Laser concentration, mental clarity, flow state',
-    icon: <Target size={20} className="text-cyan-400" />,
-    color: 'from-cyan-500/20 to-blue-500/20',
-    target: 'distractions and mental fog',
-    desiredResponse: 'sharp and focused',
-    anchor: 'breath + word "focus"',
-    outcome: 'completing tasks with precision'
-  },
-  {
-    id: 'confidence',
-    name: 'Confidence On Camera',
-    description: 'Self-assurance, natural presence, authentic expression',
-    icon: <Star size={20} className="text-yellow-400" />,
-    color: 'from-yellow-500/20 to-amber-500/20',
-    target: 'camera anxiety and self-doubt',
-    desiredResponse: 'confident and natural',
-    anchor: 'breath + "I belong here"',
-    outcome: 'speaking authentically on camera'
-  },
-  {
-    id: 'sleep',
-    name: 'Sleep Priming',
-    description: 'Deep rest preparation, mind quieting, body release',
-    icon: <Moon size={20} className="text-purple-400" />,
-    color: 'from-purple-500/20 to-indigo-500/20',
-    target: 'racing thoughts and tension',
-    desiredResponse: 'deeply relaxed and sleepy',
-    anchor: 'breath + body melting',
-    outcome: 'drifting into peaceful sleep'
-  },
-  {
-    id: 'cravings',
-    name: 'Craving Control',
-    description: 'Impulse regulation, mindful choices, inner strength',
-    icon: <Flame size={20} className="text-red-400" />,
-    color: 'from-red-500/20 to-orange-500/20',
-    target: 'overwhelming cravings',
-    desiredResponse: 'in control and mindful',
-    anchor: 'breath + "I choose"',
-    outcome: 'making healthy choices easily'
-  },
-  {
-    id: 'pain',
-    name: 'Pain Dial',
-    description: 'Comfort enhancement, sensation modulation, relief',
-    icon: <Snowflake size={20} className="text-teal-400" />,
-    color: 'from-teal-500/20 to-cyan-500/20',
-    target: 'pain and discomfort',
-    desiredResponse: 'comfortable and at ease',
-    anchor: 'breath + cooling sensation',
-    outcome: 'moving with comfort and ease'
-  },
-  {
-    id: 'creative',
-    name: 'Creative Unlock',
-    description: 'Innovation flow, idea generation, artistic expression',
-    icon: <Lightbulb size={20} className="text-green-400" />,
-    color: 'from-green-500/20 to-teal-500/20',
-    target: 'creative blocks and limitations',
-    desiredResponse: 'inspired and flowing',
-    anchor: 'breath + "ideas flow"',
-    outcome: 'creating with joy and ease'
-  }
-];
 
 interface GoalPickerProps {
   onSelect: (goal: Goal) => void;
@@ -140,38 +60,24 @@ export default function GoalPicker({ onSelect, onClose, onNavigateToCreate }: Go
 
         {!showCustom ? (
           <>
-            {/* Quick Goals */}
-            <div className="space-y-3 mb-6">
-              {quickGoals.map((goal) => (
-                <button
-                  key={goal.id}
-                  onClick={() => onSelect(goal)}
-                  className={`w-full p-4 rounded-xl bg-gradient-to-br ${goal.color} border border-white/10 hover:border-white/20 transition-all duration-200 hover:scale-105`}
-                >
-                  <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0">
-                      {goal.icon}
-                    </div>
-                    <div className="flex-1 text-left">
-                      <h3 className="text-white font-semibold text-base mb-1">{goal.name}</h3>
-                      <p className="text-white/70 text-sm leading-relaxed">{goal.description}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
+            {/* Custom Goal Creation */}
+            <div className="space-y-4 mb-6">
+              <div className="text-center py-8">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-500/20 to-cyan-500/20 flex items-center justify-center mx-auto mb-4 border border-teal-500/30">
+                  <Target size={24} className="text-teal-400" />
+                </div>
+                <h3 className="text-white text-lg font-medium mb-2">Create Your Goal</h3>
+                <p className="text-white/70 text-sm">Define what you want to transform today</p>
+              </div>
             </div>
 
-            {/* Custom Goal Button */}
             <button
-              onClick={() => {
-                onClose();
-                onNavigateToCreate();
-              }}
+              onClick={() => setShowCustom(true)}
               className="w-full p-4 rounded-xl bg-gradient-to-br from-white/10 to-gray-500/10 border border-white/20 hover:border-white/30 transition-all duration-200 hover:scale-105"
             >
               <div className="flex items-center justify-center space-x-3">
                 <Plus size={20} className="text-white" />
-                <span className="text-white font-medium">Create Custom Goal</span>
+                <span className="text-white font-medium">Define Your Goal</span>
               </div>
             </button>
           </>

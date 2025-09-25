@@ -29,12 +29,7 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   const achievements = user?.achievements || [];
   const totalAchievements = 25; // Example total available
 
-  // Mock recent sessions for display
-  const recentSessions = [
-    { id: 1, name: 'Guardian Stress Relief', ago: '2h ago', xp: 15 },
-    { id: 2, name: 'Healer Recovery', ago: '1d ago', xp: 20 },
-    { id: 3, name: 'Explorer Adventure', ago: '2d ago', xp: 18 }
-  ];
+  const [recentSessions, setRecentSessions] = useState<any[]>([]);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -269,20 +264,30 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                   <Brain size={20} className="text-teal-400" />
                   <span>Recent Sessions</span>
                 </h3>
-                <div className="space-y-3">
-                  {recentSessions.map((session) => (
-                    <div key={session.id} className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
-                      <div>
-                        <div className="text-white font-medium text-sm">{session.name}</div>
-                        <div className="text-white/60 text-xs">{session.ago}</div>
+                {recentSessions.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentSessions.map((session) => (
+                      <div key={session.id} className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
+                        <div>
+                          <div className="text-white font-medium text-sm">{session.name}</div>
+                          <div className="text-white/60 text-xs">{session.ago}</div>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Star size={14} className="text-orange-400" />
+                          <span className="text-orange-400 font-medium text-sm">+{session.xp} XP</span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Star size={14} className="text-orange-400" />
-                        <span className="text-orange-400 font-medium text-sm">+{session.xp} XP</span>
-                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-500/20 to-slate-500/20 flex items-center justify-center mx-auto mb-4 border border-gray-500/30">
+                      <Brain size={24} className="text-gray-400" />
                     </div>
-                  ))}
-                </div>
+                    <h4 className="text-white font-medium mb-2">No Recent Sessions</h4>
+                    <p className="text-white/60 text-sm">Complete a session to see your history here</p>
+                  </div>
+                )}
               </div>
 
               {/* Achievements Preview */}

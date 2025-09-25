@@ -5,6 +5,7 @@ import GlassCard from './ui/GlassCard';
 import { useGameState } from './GameStateManager';
 import { useAppStore, getEgoState } from '../store';
 import { getEgoColor } from '../config/theme';
+import { useSimpleAuth } from '../hooks/useSimpleAuth';
 
 interface SessionConfig {
   egoState: string;

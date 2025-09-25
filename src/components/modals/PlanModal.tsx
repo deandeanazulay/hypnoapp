@@ -7,25 +7,10 @@ import { useGameState } from '../GameStateManager';
 export default function PlanModal() {
   const { modals, closeModal } = useAppStore();
   const { user } = useGameState();
-
-  const features = {
-    free: [
-      '1 session per day',
-      'Basic ego states (5)',
-      'Quick protocols',
-      'Progress tracking'
-    ],
-    premium: [
-      'Unlimited sessions',
-      'All ego states (15+)',
-      'AI voice guidance',
-      'Custom protocols',
-      'Advanced analytics',
-      'Priority support',
-      'Exclusive content',
-      'Session recording'
-    ]
-  };
+  const [planFeatures, setPlanFeatures] = useState<{ free: string[]; premium: string[] }>({
+    free: [],
+    premium: []
+  });
 
   const handleUpgrade = () => {
     // TODO: Integrate with Stripe checkout
@@ -83,12 +68,17 @@ export default function PlanModal() {
             </div>
             
             <ul className="space-y-3 mb-6">
-              {features.free.map((feature, i) => (
+              {planFeatures.free.map((feature, i) => (
                 <li key={i} className="flex items-center space-x-3 text-sm">
                   <Check size={16} className="text-blue-400 flex-shrink-0" />
                   <span className="text-white/80">{feature}</span>
                 </li>
               ))}
+              {planFeatures.free.length === 0 && (
+                <li className="text-white/60 text-sm text-center py-4">
+                  Free plan features loading...
+                </li>
+              )}
             </ul>
             
             {user?.plan === 'free' && (
@@ -116,12 +106,17 @@ export default function PlanModal() {
             </div>
             
             <ul className="space-y-3 mb-6">
-              {features.premium.map((feature, i) => (
+              {planFeatures.premium.map((feature, i) => (
                 <li key={i} className="flex items-center space-x-3 text-sm">
                   <Check size={16} className="text-yellow-400 flex-shrink-0" />
                   <span className="text-white/80">{feature}</span>
                 </li>
               ))}
+              {planFeatures.premium.length === 0 && (
+                <li className="text-white/60 text-sm text-center py-4">
+                  Premium plan features loading...
+                </li>
+              )}
             </ul>
             
             {user?.plan === 'free' ? (

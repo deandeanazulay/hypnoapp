@@ -50,41 +50,5 @@ export interface Protocol {
   tags: string[];
 }
 
-export const DEFAULT_PROTOCOLS: Protocol[] = [
-  {
-    id: 'rapid-induction',
-    name: 'Rapid Induction',
-    description: 'Quick entry into trance state using Elman technique',
-    duration: 5,
-    type: 'induction',
-    difficulty: 'intermediate',
-    tags: ['quick', 'direct', 'analytical']
-  },
-  {
-    id: 'progressive-relaxation',
-    name: 'Progressive Relaxation',
-    description: 'Gentle body-based induction for beginners',
-    duration: 15,
-    type: 'complete',
-    difficulty: 'beginner',
-    tags: ['gentle', 'body-based', 'relaxing']
-  },
-  {
-    id: 'book-balloon',
-    name: 'Book & Balloon',
-    description: 'Kinesthetic induction using visualization',
-    duration: 12,
-    type: 'induction',
-    difficulty: 'beginner',
-    tags: ['kinesthetic', 'visualization', 'creative']
-  },
-  {
-    id: 'spiral-staircase',
-    name: 'Spiral Staircase',
-    description: 'Classic deepening technique',
-    duration: 8,
-    type: 'deepener',
-    difficulty: 'beginner',
-    tags: ['deepening', 'visualization', 'classic']
-  }
-];
+// Protocols should be fetched dynamically from the database
+// or from a content management system in production
