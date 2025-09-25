@@ -36,7 +36,7 @@ interface SessionState {
 
 export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCancel }: UnifiedSessionWorldProps) {
   const { showToast, activeEgoState } = useAppStore();
-  const { user, addExperience, incrementStreak, updateEgoStateUsage } = useGameState();</action>
+  const { user, addExperience, incrementStreak, updateEgoStateUsage } = useGameState();
   
   const [conversation, setConversation] = useState<Array<{
     role: 'user' | 'ai';
@@ -66,6 +66,8 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+
+  const currentEgoState = getEgoState(activeEgoState);
     // Initialize speech synthesis
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       synthRef.current = window.speechSynthesis;
@@ -240,6 +242,11 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         
         if (isVoiceEnabled) {
           speakText(data.response);
+        }
+        
+        // Apply any session updates from AI
+        if (data.sessionUpdates && Object.keys(data.sessionUpdates).length > 0) {
+          setSessionWorldState(prev => ({ ...prev, ...data.sessionUpdates }));
         }
         
         // Auto-scroll to bottom after AI message
