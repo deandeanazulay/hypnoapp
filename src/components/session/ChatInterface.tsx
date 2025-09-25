@@ -67,32 +67,32 @@ export default function ChatInterface({
   const latestAiMessage = conversation.filter(msg => msg.role === 'ai').slice(-1)[0];
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-40 px-4 pb-4">
+    <div className="absolute bottom-0 left-0 right-0 z-40 px-6 pb-6">
       {/* Libero Message Bubble - Only latest AI message */}
       {latestAiMessage && (
-        <div className="mb-4">
-          <div className="bg-gradient-to-br from-teal-500/30 to-cyan-500/20 backdrop-blur-xl rounded-3xl p-6 border border-teal-500/40 shadow-2xl shadow-teal-500/10 max-w-5xl mx-auto">
-            <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-400 border-2 border-teal-400/60 flex items-center justify-center flex-shrink-0 shadow-lg">
+        <div className="mb-6">
+          <div className="bg-gradient-to-br from-teal-500/25 to-cyan-500/15 backdrop-blur-xl rounded-2xl p-5 border border-teal-500/30 shadow-2xl max-w-4xl mx-auto">
+            <div className="flex items-start space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-cyan-400 border border-teal-400/60 flex items-center justify-center flex-shrink-0">
                 <Brain size={20} className="text-black" />
               </div>
               <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-teal-100 text-base font-semibold">Libero</span>
+                <div className="flex items-center space-x-2 mb-3">
+                  <span className="text-teal-100 text-lg font-medium">Libero</span>
                   {isThinking && (
                     <div className="flex items-center space-x-2">
                       <Loader size={12} className="text-teal-300 animate-spin" />
-                      <span className="text-teal-200 text-xs">thinking...</span>
+                      <span className="text-teal-200 text-sm">thinking...</span>
                     </div>
                   )}
                   {isSpeaking && (
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-green-200 text-xs">speaking</span>
+                      <span className="text-green-200 text-sm">speaking</span>
                     </div>
                   )}
                 </div>
-                <p className="text-teal-50 text-lg leading-relaxed">
+                <p className="text-teal-50 text-base leading-relaxed">
                   {latestAiMessage.content}
                 </p>
               </div>
@@ -102,31 +102,31 @@ export default function ChatInterface({
       )}
 
       {/* Session Progress Text - Above Input */}
-      <div className="text-center mb-4">
-        <span className="text-white/60 text-sm">
+      <div className="text-center mb-3">
+        <span className="text-white/50 text-sm">
           Session progress: {currentSegment} of {totalSegments} segments • {bufferedAhead} buffered ahead
         </span>
       </div>
 
-      {/* Bottom Input Dock - Matching 2nd Image Layout */}
-      <div className="space-y-3">
-        {/* Main Input Row */}
-        <div className="flex items-center space-x-3">
-          {/* Large Circular Mic Button - Far Left */}
+      {/* Bottom Input Dock - Exactly Like 2nd Image */}
+      <div className="space-y-4">
+        {/* Main Input Row - Exactly matching the 2nd image layout */}
+        <div className="flex items-center space-x-4">
+          {/* Large Circular Mic Button - Far Left (matches 2nd image) */}
           <button
             type="button"
             onClick={onToggleListening}
             disabled={!isMicEnabled || isThinking}
-            className={`w-16 h-16 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 shadow-2xl ${
+            className={`w-14 h-14 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 shadow-xl ${
               isListening 
-                ? 'bg-gradient-to-br from-red-500/50 to-red-600/40 border-2 border-red-400/80 text-red-200 animate-pulse shadow-red-500/50' 
-                : 'bg-gradient-to-br from-teal-500/50 to-cyan-500/40 border-2 border-teal-400/80 text-teal-200 shadow-teal-500/40'
+                ? 'bg-gradient-to-br from-red-500/30 to-red-600/20 border-2 border-red-400/60 text-red-300 animate-pulse' 
+                : 'bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-2 border-teal-400/60 text-teal-300'
             }`}
           >
-            <Mic size={26} />
+            <Mic size={20} />
           </button>
 
-          {/* Text Input - Center */}
+          {/* Text Input - Center (matching 2nd image) */}
           <div className="flex-1 relative">
             <input
               type="text"
@@ -134,11 +134,11 @@ export default function ChatInterface({
               onChange={(e) => setTextInput(e.target.value)}
               placeholder={isListening ? "Listening..." : "Type your message or use voice..."}
               disabled={isListening || isThinking}
-              className="w-full bg-gradient-to-br from-black/80 to-gray-900/60 backdrop-blur-xl border border-white/30 rounded-2xl px-6 py-4 pr-16 text-white text-lg placeholder-white/50 focus:outline-none focus:border-teal-400/60 focus:bg-black/90 transition-all disabled:opacity-50 shadow-xl"
+              className="w-full bg-black/40 backdrop-blur-xl border border-white/20 rounded-full px-6 py-4 pr-16 text-white text-base placeholder-white/50 focus:outline-none focus:border-teal-400/50 focus:bg-black/60 transition-all disabled:opacity-50"
             />
           </div>
 
-          {/* Send Button - Separate, Right of Input */}
+          {/* Send Button - Circular, Right of Input (matching 2nd image) */}
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -148,48 +148,48 @@ export default function ChatInterface({
               }
             }}
             disabled={!textInput.trim() || isThinking}
-            className="w-14 h-14 rounded-full bg-gradient-to-br from-teal-500/40 to-cyan-500/30 border-2 border-teal-400/70 text-teal-200 hover:scale-110 transition-all disabled:opacity-50 shadow-xl shadow-teal-500/30"
+            className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-2 border-teal-400/60 text-teal-300 hover:scale-110 transition-all disabled:opacity-50"
           >
-            <ArrowUp size={22} />
+            <ArrowUp size={16} />
           </button>
 
-          {/* Audio Controls - Far Right (Circular) */}
+          {/* Audio Controls - Far Right (matching 2nd image) */}
           <div className="flex items-center space-x-3">
             <button
               type="button"
               onClick={onToggleVoice}
-              className={`w-14 h-14 rounded-full transition-all duration-300 hover:scale-110 shadow-xl ${
+              className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 ${
                 isVoiceEnabled 
-                  ? 'bg-gradient-to-br from-green-500/40 to-emerald-500/30 border-2 border-green-400/70 text-green-200 shadow-green-500/30' 
-                  : 'bg-gradient-to-br from-black/80 to-gray-900/60 border-2 border-white/30 text-white/60 shadow-black/30'
+                  ? 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-2 border-green-400/60 text-green-300' 
+                  : 'bg-black/60 border-2 border-white/30 text-white/60'
               }`}
             >
-              {isVoiceEnabled ? <Volume2 size={22} /> : <VolumeX size={22} />}
+              {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
             </button>
 
             <button
               type="button"
               onClick={onToggleMic}
-              className={`w-14 h-14 rounded-full transition-all duration-300 hover:scale-110 shadow-xl ${
+              className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 ${
                 isMicEnabled 
-                  ? 'bg-gradient-to-br from-blue-500/40 to-cyan-500/30 border-2 border-blue-400/70 text-blue-200 shadow-blue-500/30' 
-                  : 'bg-gradient-to-br from-black/80 to-gray-900/60 border-2 border-white/30 text-white/60 shadow-black/30'
+                  ? 'bg-gradient-to-br from-blue-500/30 to-cyan-500/20 border-2 border-blue-400/60 text-blue-300' 
+                  : 'bg-black/60 border-2 border-white/30 text-white/60'
               }`}
             >
-              {isMicEnabled ? <Mic size={22} /> : <MicOff size={22} />}
+              {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
             </button>
           </div>
         </div>
 
         {/* Quick Suggestions Pills - Below Input */}
         {conversation.length <= 1 && (
-          <div className="flex flex-wrap gap-3 justify-center mt-4">
+          <div className="flex flex-wrap gap-3 justify-center">
             {quickSuggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 onClick={() => onUserInput(suggestion)}
                 disabled={isThinking}
-                className="px-5 py-3 bg-gradient-to-br from-black/70 to-gray-900/50 backdrop-blur-sm hover:bg-black/90 border border-white/30 rounded-2xl text-white/80 text-sm font-medium transition-all hover:scale-105 disabled:opacity-50 shadow-lg hover:shadow-xl hover:border-teal-400/40"
+                className="px-4 py-2 bg-black/40 backdrop-blur-sm hover:bg-black/60 border border-white/20 rounded-full text-white/70 text-sm font-medium transition-all hover:scale-105 disabled:opacity-50 hover:border-teal-400/40"
               >
                 {suggestion}
               </button>
