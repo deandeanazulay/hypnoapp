@@ -9,15 +9,13 @@ export interface VoiceResult {
 export interface SynthesizeSegmentOptions {
   voiceId?: string;
   model?: 'flash-v2.5' | 'v3';
-  cacheKey: string;
+  cacheKey?: string;
   mode?: 'live' | 'pre-gen';
 }
 
-export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOptions): Promise<VoiceResult> {
+export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOptions = {}): Promise<VoiceResult> {
   const startTime = Date.now();
-  if (import.meta.env.DEV) {
-    console.log('Voice: Synthesizing segment:', text.substring(0, 50) + '...');
-  }
+  console.log(`Voice: Synthesizing ${text.length} chars with voice ${opts.voiceId || 'default'}`);
   
   track('tts_synthesis_start', {
     textLength: text.length,
@@ -30,60 +28,80 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
   if (!supabaseUrl || !supabaseAnonKey) {
-    if (import.meta.env.DEV) {
-      console.warn('Supabase configuration missing for voice synthesis');
-    }
+    console.warn('Voice: Supabase configuration missing, falling back to browser TTS');
+    track('tts_synthesis_success', {
+      textLength: text.length,
+      provider: 'browser-tts',
+      duration: Date.now() - startTime,
+      reason: 'no-config'
+    });
     return { provider: 'browser-tts' };
   }
 
   try {
     const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
+    console.log(`Voice: Calling TTS function at ${baseUrl}/functions/v1/tts`);
     
-    const r = await fetch(`${baseUrl}/functions/v1/tts`, {
+    const response = await fetch(`${baseUrl}/functions/v1/tts`, {
       method: "POST",
       headers: { 
         "content-type": "application/json",
         "Authorization": `Bearer ${supabaseAnonKey}`
       },
-      body: JSON.stringify({ text, voiceId: opts.voiceId }),
+      body: JSON.stringify({ 
+        text: text.trim(), 
+        voiceId: opts.voiceId || "21m00Tcm4TlvDq8ikWAM"
+      }),
     });
 
-    // JSON response means fallback to browser TTS
-    if (r.headers.get("content-type")?.includes("application/json")) {
-      const j = await r.json();
-      if (j.fallback === "browser-tts") {
-        track('tts_synthesis_success', {
-          textLength: text.length,
-          provider: 'browser-tts',
-          duration: Date.now() - startTime,
-          cached: false
-        });
-        return { provider: "browser-tts" };
+    if (!response.ok) {
+      throw new Error(`TTS function returned ${response.status}: ${await response.text()}`);
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    
+    // Check if response is JSON (fallback signal)
+    if (contentType.includes("application/json")) {
+      const fallbackData = await response.json();
+      console.log(`Voice: ElevenLabs fallback triggered:`, fallbackData.reason || 'unknown reason');
+      
+      track('tts_synthesis_success', {
+        textLength: text.length,
+        provider: 'browser-tts',
+        duration: Date.now() - startTime,
+        reason: fallbackData.reason || 'api-fallback'
+      });
+      
+      return { provider: "browser-tts" };
+    }
+
+    // Check if response is audio
+    if (contentType.includes("audio/")) {
+      const audioBlob = await response.blob();
+      
+      if (audioBlob.size === 0) {
+        console.warn('Voice: Received empty audio response, falling back to browser TTS');
+        return { provider: 'browser-tts' };
       }
-      throw new Error("TTS unexpected JSON response");
+      
+      const audioUrl = URL.createObjectURL(audioBlob);
+      console.log(`Voice: Successfully generated ${audioBlob.size} bytes of audio`);
+      
+      track('tts_synthesis_success', {
+        textLength: text.length,
+        provider: 'elevenlabs',
+        duration: Date.now() - startTime,
+        audioSize: audioBlob.size
+      });
+      
+      return { provider: "elevenlabs", audioUrl };
     }
 
-    // Audio response means success
-    const blob = await r.blob();
-    if (blob.size === 0) {
-      throw new Error('Received empty audio response');
-    }
-    
-    const url = URL.createObjectURL(blob);
-    
-    track('tts_synthesis_success', {
-      textLength: text.length,
-      provider: 'elevenlabs',
-      duration: Date.now() - startTime,
-      cached: false
-    });
-    
-    return { provider: "elevenlabs", audioUrl: url };
+    // Unexpected content type
+    throw new Error(`Unexpected content type: ${contentType}`);
 
   } catch (error: any) {
-    if (import.meta.env.DEV) {
-      console.error('Voice: Synthesis failed:', error);
-    }
+    console.error('Voice: Synthesis failed:', error.message);
     
     track('tts_synthesis_error', {
       error: error.message,
@@ -91,68 +109,140 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       duration: Date.now() - startTime
     });
     
+    // Always fall back to browser TTS on error
     return { provider: 'browser-tts', error: error.message };
   }
 }
 
-export function synthesizeWithBrowserTTS(text: string, voiceConfig?: { rate?: number; pitch?: number; volume?: number }): Promise<VoiceResult> {
+export function synthesizeWithBrowserTTS(
+  text: string, 
+  voiceConfig: { rate?: number; pitch?: number; volume?: number } = {}
+): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!window.speechSynthesis) {
       reject(new Error('Browser TTS not supported'));
       return;
     }
 
+    console.log(`Voice: Using browser TTS for: ${text.substring(0, 50)}...`);
+
+    // Cancel any existing speech
+    window.speechSynthesis.cancel();
+
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = voiceConfig?.rate ?? 0.7;
-    utterance.pitch = voiceConfig?.pitch ?? 0.8;
-    utterance.volume = voiceConfig?.volume ?? 0.9;
+    utterance.rate = voiceConfig.rate ?? 0.6; // Slower for hypnotherapy
+    utterance.pitch = voiceConfig.pitch ?? 0.7; // Lower, more soothing
+    utterance.volume = voiceConfig.volume ?? 0.9;
 
-    const voices = speechSynthesis.getVoices();
-    const preferredVoice = voices.find(voice => 
-      voice.name.includes('Female') || 
-      voice.name.includes('Karen') ||
-      voice.name.includes('Samantha') ||
-      voice.lang.includes('en')
-    ) || voices[0];
-    
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
+    // Wait for voices to load if needed
+    const setVoiceAndSpeak = () => {
+      const voices = speechSynthesis.getVoices();
+      console.log(`Voice: Found ${voices.length} browser voices`);
+      
+      // Find the most suitable voice for hypnotherapy
+      const preferredVoice = voices.find(voice => 
+        voice.name.includes('Female') || 
+        voice.name.includes('Karen') ||
+        voice.name.includes('Samantha') ||
+        voice.name.includes('Victoria') ||
+        voice.name.includes('Moira') ||
+        (voice.lang.includes('en') && voice.name.includes('Google'))
+      ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
+      
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+        console.log(`Voice: Using browser voice: ${preferredVoice.name}`);
+      }
+
+      utterance.onstart = () => {
+        console.log('Voice: Browser TTS started');
+      };
+
+      utterance.onend = () => {
+        console.log('Voice: Browser TTS finished');
+        resolve();
+      };
+
+      utterance.onerror = (event) => {
+        console.error('Voice: Browser TTS error:', event.error);
+        reject(new Error(`Browser TTS failed: ${event.error}`));
+      };
+
+      speechSynthesis.speak(utterance);
+    };
+
+    // Handle voice loading
+    if (speechSynthesis.getVoices().length === 0) {
+      speechSynthesis.addEventListener('voiceschanged', setVoiceAndSpeak, { once: true });
+    } else {
+      setVoiceAndSpeak();
     }
-
-    utterance.onstart = () => {
-      if (import.meta.env.DEV) {
-        console.log('Browser TTS: Started speaking');
-      }
-    };
-
-    utterance.onend = () => {
-      if (import.meta.env.DEV) {
-        console.log('Browser TTS: Finished speaking');
-      }
-      resolve({
-        provider: 'browser-tts'
-      });
-    };
-
-    utterance.onerror = (event) => {
-      console.error('Browser TTS error:', event.error);
-      reject(new Error(`Browser TTS failed: ${event.error}`));
-    };
-
-    speechSynthesis.speak(utterance);
   });
 }
 
 export async function getAvailableVoices(): Promise<Array<{id: string, name: string, category: string}>> {
-  if (import.meta.env.DEV) {
-    console.log('Voice: Skipping voice fetch in development');
+  console.log('Voice: Getting available voices');
+  
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Voice: Supabase not configured for voice listing');
+    return [];
   }
-  return [];
+
+  try {
+    const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
+    
+    const response = await fetch(`${baseUrl}/functions/v1/elevenlabs-voices`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${supabaseAnonKey}`
+      }
+    });
+
+    if (!response.ok) {
+      console.warn('Voice: Could not fetch ElevenLabs voices');
+      return [];
+    }
+
+    const data = await response.json();
+    return data.voices || [];
+  } catch (error) {
+    console.error('Voice: Error fetching voices:', error);
+    return [];
+  }
 }
 
 export async function getUsageInfo(): Promise<{charactersUsed: number, charactersLimit: number} | null> {
-  if (import.meta.env.DEV) {
-    console.log('Voice: Skipping usage check in development');
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null;
   }
-  return null;
+
+  try {
+    const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
+    
+    const response = await fetch(`${baseUrl}/functions/v1/elevenlabs-usage`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${supabaseAnonKey}`
+      }
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return {
+      charactersUsed: data.character_count || 0,
+      charactersLimit: data.character_limit || 10000
+    };
+  } catch (error) {
+    console.error('Voice: Error fetching usage info:', error);
+    return null;
+  }
 }
