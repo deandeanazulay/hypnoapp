@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Volume2, VolumeX, Send, ArrowLeft } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, Send, ArrowLeft, Pause, Play, SkipForward, SkipBack, Settings, Target, Brain, Heart, Zap, Wind, Clock, Activity, Eye } from 'lucide-react';
+import Orb from './Orb';
 import { useAppStore } from "../store";
+import { useGameState } from './GameStateManager';
 import { SessionManager } from '../services/session';
+import AIVoiceSystem from './premium/PremiumFeatures';</action>
 
 interface UnifiedSessionWorldProps {
   sessionConfig: {
@@ -9,13 +12,31 @@ interface UnifiedSessionWorldProps {
     goal?: string;
     method?: string;
     customProtocol?: any;
+    duration: number;
+    type: 'unified' | 'protocol' | 'favorite';
+    protocol?: any;
+    action?: any;
+    mode?: any;
+    session?: any;
   };
   onComplete: () => void;
   onCancel: () => void;
 }
 
+interface SessionState {
+  phase: 'preparation' | 'induction' | 'deepening' | 'exploration' | 'transformation' | 'integration' | 'completion';
+  depth: number;
+  breathing: 'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale' | 'rest';
+  timeRemaining: number;
+  totalTime: number;
+  currentSegment: string;
+  isPlaying: boolean;
+  orbEnergy: number;
+}
+
 export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCancel }: UnifiedSessionWorldProps) {
-  const { showToast } = useAppStore();
+  const { showToast, activeEgoState } = useAppStore();
+  const { user, addExperience, incrementStreak, updateEgoStateUsage } = useGameState();</action>
   
   const [conversation, setConversation] = useState<Array<{
     role: 'user' | 'ai';
@@ -377,85 +398,227 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
       {/* Animated background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/20 to-teal-950/20" />
+        {Array.from({ length: 100 }).map((_, i) => (
+          <div
+            key={`star-${i}`}
+            className="absolute bg-white rounded-full opacity-20"
+            style={{
+              width: `${0.5 + Math.random() * 2}px`,
+              height: `${0.5 + Math.random() * 2}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animation: `twinkle ${2 + Math.random() * 4}s ease-in-out infinite`
+            }}
+          />
+        ))}
       </div>
 
-      <div className="relative z-10 flex flex-col h-screen">
-        {/* Header */}
-        <header className="flex items-center justify-between p-4 border-b border-white/10 backdrop-blur-sm">
-          <button
-            onClick={onCancel}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-          
-          <div className="text-center">
-            <h1 className="text-lg font-medium">Session with Libero</h1>
-            <p className="text-sm text-white/60 capitalize">{sessionConfig.egoState} State</p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleVoice}
-              className={`p-2 rounded-lg transition-colors ${
-                isVoiceEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white/60'
-              }`}
-            >
-              {isVoiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-            </button>
-          </div>
-        </header>
-
-        {/* Chat Area */}
-        <div 
-          ref={chatContainerRef}
-          className="flex-1 overflow-y-auto p-4 space-y-4"
+      {/* Session Header */}
+      <div className="relative z-50 flex items-center justify-between p-4 bg-black/60 backdrop-blur-xl border-b border-white/10">
+        <button
+          onClick={onCancel}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 transition-all hover:scale-105"
         >
-          {conversation.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[80%] p-4 rounded-lg backdrop-blur-sm ${
-                  message.role === 'user'
-                    ? 'bg-blue-500/20 text-blue-100 border border-blue-400/30'
-                    : 'bg-white/10 text-white border border-white/20'
-                }`}
-              >
-                <p className="text-sm leading-relaxed">{message.content}</p>
-                <p className="text-xs opacity-60 mt-2">
-                  {formatTime(message.timestamp)}
-                </p>
-              </div>
-            </div>
-          ))}
-          
-          {isThinking && (
-            <div className="flex justify-start">
-              <div className="bg-white/10 text-white border border-white/20 p-4 rounded-lg backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
-                  <span className="text-sm text-white/80">Libero is thinking...</span>
-                </div>
-              </div>
-            </div>
-          )}
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm font-medium">Exit</span>
+        </button>
+        
+        <div className="text-center">
+          <h1 className="text-lg font-light text-white">Session with Libero</h1>
+          <p className="text-sm text-white/70 capitalize">{sessionConfig.egoState} • {sessionWorldState.phase}</p>
         </div>
 
-        {/* Input Area - The dock you like! */}
-        <div className="p-4 border-t border-white/10 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <div className="text-white font-medium text-sm">{formatTime(sessionWorldState.timeRemaining)}</div>
+            <div className="text-white/60 text-xs">remaining</div>
+          </div>
+          <button
+            onClick={toggleVoice}
+            className={`p-2 rounded-lg transition-all hover:scale-110 ${
+              isVoiceEnabled ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-white/10 text-white/60 border border-white/20'
+            }`}
+          >
+            {isVoiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Session Area */}
+      <div className="relative z-10 flex-1 h-screen">
+        {/* Central Orb */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative">
+            <Orb
+              ref={orbRef}
+              onTap={() => {}}
+              egoState={activeEgoState}
+              afterglow={sessionWorldState.orbEnergy > 0.7}
+              size={300}
+              variant="webgl"
+            />
+            
+            {/* Orb Status Overlay */}
+            <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center">
+              <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/20">
+                <div className="text-white/90 text-sm font-medium mb-1">{getBreathingPrompt()}</div>
+                <div className="text-white/60 text-xs">Depth Level {sessionWorldState.depth}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Session Indicators - Top */}
+        <div className="absolute top-4 left-4 right-4 z-30">
+          <div className="flex items-center justify-between">
+            {/* Phase Indicator */}
+            <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/20">
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  sessionWorldState.phase === 'preparation' ? 'bg-blue-400' :
+                  sessionWorldState.phase === 'induction' ? 'bg-teal-400' :
+                  sessionWorldState.phase === 'deepening' ? 'bg-purple-400' :
+                  sessionWorldState.phase === 'exploration' ? 'bg-yellow-400' :
+                  sessionWorldState.phase === 'transformation' ? 'bg-orange-400' :
+                  sessionWorldState.phase === 'integration' ? 'bg-green-400' :
+                  'bg-white'
+                } animate-pulse`} />
+                <span className="text-white/90 text-sm font-medium capitalize">{sessionWorldState.phase}</span>
+              </div>
+              <div className="text-white/60 text-xs mt-1">{getPhaseDescription()}</div>
+            </div>
+
+            {/* Progress Ring */}
+            <div className="relative w-16 h-16">
+              <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
+                <circle 
+                  cx="32" cy="32" r="28" fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  className="text-teal-400"
+                  style={{
+                    strokeDasharray: `${2 * Math.PI * 28}`,
+                    strokeDashoffset: `${2 * Math.PI * 28 * (sessionWorldState.timeRemaining / sessionWorldState.totalTime)}`
+                  }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-white/90 text-xs font-medium">{Math.round((1 - sessionWorldState.timeRemaining / sessionWorldState.totalTime) * 100)}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Action Buttons - Left Side */}
+        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30 space-y-3">
+          <button
+            onClick={togglePlayPause}
+            className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all"
+          >
+            {sessionWorldState.isPlaying ? <Pause size={20} className="text-white" /> : <Play size={20} className="text-white ml-0.5" />}
+          </button>
+          
+          <button
+            onClick={skipBack}
+            className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all"
+          >
+            <SkipBack size={18} className="text-white/80" />
+          </button>
+          
+          <button
+            onClick={skipForward}
+            className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all"
+          >
+            <SkipForward size={18} className="text-white/80" />
+          </button>
+        </div>
+
+        {/* Floating Action Buttons - Right Side */}
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30 space-y-3">
+          <div className="bg-black/80 backdrop-blur-xl rounded-xl p-3 border border-white/20">
+            <div className="text-center">
+              <div className="text-white/90 text-lg font-bold">{sessionWorldState.depth}</div>
+              <div className="text-white/60 text-xs">Depth</div>
+            </div>
+          </div>
+          
+          <div className="bg-black/80 backdrop-blur-xl rounded-xl p-3 border border-white/20">
+            <div className="text-center">
+              <div className={`w-3 h-3 rounded-full mx-auto mb-1 ${
+                sessionWorldState.breathing === 'inhale' ? 'bg-blue-400 animate-pulse' :
+                sessionWorldState.breathing === 'hold-inhale' ? 'bg-teal-400' :
+                sessionWorldState.breathing === 'exhale' ? 'bg-purple-400 animate-pulse' :
+                sessionWorldState.breathing === 'hold-exhale' ? 'bg-pink-400' :
+                'bg-white/40'
+              }`} />
+              <div className="text-white/60 text-xs">Breath</div>
+            </div>
+          </div>
+          
+          <div className="bg-black/80 backdrop-blur-xl rounded-xl p-3 border border-white/20">
+            <div className="text-center">
+              <div className="text-white/90 text-sm font-bold">{Math.round(sessionWorldState.orbEnergy * 100)}%</div>
+              <div className="text-white/60 text-xs">Energy</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Conversation Overlay - Bottom Left */}
+        {conversation.length > 0 && (
+          <div className="absolute bottom-24 left-4 right-4 z-40">
+            <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-4 border border-white/20 max-h-48 overflow-y-auto">
+              <div 
+                ref={chatContainerRef}
+                className="space-y-3"
+              >
+                {conversation.slice(-3).map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] p-3 rounded-xl ${
+                        message.role === 'user'
+                          ? 'bg-blue-500/20 text-blue-100 border border-blue-400/30'
+                          : 'bg-white/10 text-white border border-white/20'
+                      }`}
+                    >
+                      <p className="text-sm leading-relaxed">{message.content}</p>
+                      <p className="text-xs opacity-60 mt-1">
+                        {formatTimestamp(message.timestamp)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                
+                {isThinking && (
+                  <div className="flex justify-start">
+                    <div className="bg-teal-500/20 border border-teal-500/30 p-3 rounded-xl">
+                      <div className="flex items-center gap-2">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                        <span className="text-sm text-teal-100">Libero is thinking...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        {/* Input Dock - The dock you like! */}
+        <div className="absolute bottom-0 left-0 right-0 z-50 p-4 bg-black/60 backdrop-blur-xl border-t border-white/10">
           <form onSubmit={handleSubmit} className="flex items-center gap-3">
             <button
               type="button"
@@ -491,6 +654,24 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           </form>
         </div>
       </div>
+
+      {/* AI Voice System Integration */}
+      <AIVoiceSystem
+        isActive={conversation.length > 0}
+        sessionType="unified"
+        onStateChange={(updates) => {
+          setSessionWorldState(prev => ({ ...prev, ...updates }));
+        }}
+        sessionState={sessionWorldState}
+        sessionConfig={sessionConfig}
+      />
+
+      <style jsx>{`
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 0.8; }
+        }
+      `}</style>
     </div>
   );
 }
