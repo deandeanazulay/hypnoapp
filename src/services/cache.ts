@@ -1,4 +1,3 @@
-```typescript
 import { AI } from '../config/ai';
 
 /**
@@ -273,4 +272,3 @@ export async function getStats(): Promise<{totalItems: number, totalSizeMB: numb
     return { totalItems: 0, totalSizeMB: 0 };
   }
 }
-```

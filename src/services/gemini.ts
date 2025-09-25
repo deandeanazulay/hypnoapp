@@ -1,4 +1,3 @@
-```typescript
 // src/services/gemini.ts
 
 import { AI } from '../config/ai';
@@ -434,4 +433,3 @@ function getMockScriptPlan(params: GetSessionScriptParams): ScriptPlan {
     hash: generateHash(segments.map(s => s.text).join(''))
   };
 }
-```

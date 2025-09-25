@@ -1,4 +1,3 @@
-```typescript
 interface AnalyticsEvent {
   event: string;
   payload: Record<string, any>;
@@ -197,4 +196,3 @@ export function getAnalyticsStatus(): {queueSize: number} {
     queueSize: analyticsQueue.getQueueSize()
   };
 }
-```
