@@ -33,22 +33,20 @@ export interface GetSessionScriptParams {
 
 export async function getSessionScript(params: GetSessionScriptParams): Promise<ScriptPlan> {
   const startTime = Date.now();
-  if (import.meta.env.DEV) {
-    console.log('Gemini: Generating session script with params:', params);
-  }
+  console.log('Gemini: Generating script for', params.egoState, 'session');
   track('llm_generation_start', { goalId: params.goalId, egoState: params.egoState });
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
   if (!supabaseUrl || !supabaseAnonKey) {
-    if (import.meta.env.DEV) {
-      console.warn('Supabase configuration missing. Using mock script.');
-    }
+    console.warn('Gemini: Supabase configuration missing. Using mock script.');
     track('supabase_config_missing', { context: 'getSessionScript' });
     return getMockScriptPlan(params);
   }
 
+  console.log('Gemini: Calling generate-script function...');
+  
   try {
     const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
     
@@ -70,16 +68,16 @@ export async function getSessionScript(params: GetSessionScriptParams): Promise<
 
     if (!res.ok) {
       const errorText = await res.text();
-      if (import.meta.env.DEV) {
-        console.warn(`Generate script edge function failed: ${res.status} - ${errorText}`);
-      }
+      console.warn(`Gemini: Edge function failed: ${res.status} - ${errorText}`);
       track('llm_generation_failure', { error: `HTTP ${res.status}` });
       return getMockScriptPlan(params);
     }
 
     const json = await res.json();
+    console.log('Gemini: Received response, parsing...');
     const script = ScriptSchema.parse(json);
     
+    console.log('Gemini: ✅ Generated script with', script.segments.length, 'segments');
     track('llm_generation_success', { 
       duration: Date.now() - startTime, 
       segments: script.segments.length 
@@ -88,15 +86,16 @@ export async function getSessionScript(params: GetSessionScriptParams): Promise<
     return script;
 
   } catch (error: any) {
-    if (import.meta.env.DEV) {
-      console.error('Gemini: Script generation failed, falling back to mock:', error);
-    }
+    console.error('Gemini: Script generation failed:', error.message);
     track('llm_generation_failure', { error: error.message });
+    console.log('Gemini: Using mock script as fallback');
     return getMockScriptPlan(params);
   }
 }
 
 function getMockScriptPlan(params: GetSessionScriptParams): ScriptPlan {
+  console.log('Gemini: Creating mock script for', params.egoState);
+  
   const segments: ScriptSegment[] = [
     { 
       id: 'intro', 
@@ -141,6 +140,8 @@ function getMockScriptPlan(params: GetSessionScriptParams): ScriptPlan {
       sfx: 'uplifting'
     }
   ];
+
+  console.log('Gemini: ✅ Mock script created with', segments.length, 'segments');
 
   return {
     title: `${params.egoState} transformation session for ${params.goalId}`,

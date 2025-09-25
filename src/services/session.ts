@@ -63,12 +63,28 @@ export class SessionManager {
       emerge: "On the count of three, you'll emerge feeling refreshed..."
     };
 
+    console.log('Session: Starting script generation...');
+    
     try {
       this.scriptPlan = await getSessionScript(userContext);
       console.log('Session: Generated script with', this.scriptPlan.segments?.length || 0, 'segments');
+      
+      // Ensure we have valid segments
+      if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
+        console.warn('Session: Generated script has no segments, using fallback');
+        throw new Error('No segments in generated script');
+      }
     } catch (error: any) {
-      console.error('Session: Script generation failed, using fallback:', error.message);
+      console.error('Session: Script generation failed:', error.message);
+      console.log('Session: Creating fallback script...');
       this.scriptPlan = this._createFallbackScript(userContext);
+      console.log('Session: Fallback script created with', this.scriptPlan.segments?.length || 0, 'segments');
+    }
+
+    // Double-check we have segments
+    if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
+      console.error('Session: No segments available, creating emergency fallback');
+      this.scriptPlan = this._createEmergencyFallback();
     }
 
     // Initialize segments array
@@ -80,7 +96,7 @@ export class SessionManager {
     });
 
     // Convert all segments to playable segments immediately
-    console.log('Session: Converting segments to playable format...');
+    console.log('Session: Converting', this.scriptPlan.segments.length, 'segments to playable format...');
     for (let i = 0; i < this.scriptPlan.segments.length; i++) {
       const segment = this.scriptPlan.segments[i];
       this.segments[i] = {
@@ -92,10 +108,12 @@ export class SessionManager {
       };
     }
     
-    console.log(`Session: All ${this.segments.length} segments ready for playback`);
+    console.log(`Session: ✅ All ${this.segments.length} segments ready for playback`);
   }
 
   private _createFallbackScript(userContext: any) {
+    console.log('Session: Creating fallback script for:', userContext);
+    
     return {
       title: `${userContext.egoState || 'Mindful'} Session`,
       segments: [
@@ -107,6 +125,21 @@ export class SessionManager {
         { id: "strengthening", text: "These positive changes are becoming stronger now, integrating into every cell of your being. You are transforming naturally.", approxSec: 25 },
         { id: "integration", text: "Feel these wonderful changes becoming a permanent part of who you are. They will stay with you long after this session ends.", approxSec: 25 },
         { id: "emergence", text: "Now it's time to return, bringing all these positive changes with you. Count with me: One, energy returning. Two, becoming aware. Three, feeling refreshed. Four, almost ready. Five, eyes open, fully alert and wonderfully refreshed.", approxSec: 30 }
+      ]
+    };
+  }
+
+  private _createEmergencyFallback() {
+    console.log('Session: Creating emergency fallback script');
+    
+    return {
+      title: 'Relaxation Session',
+      segments: [
+        { id: "welcome", text: "Welcome. Take a deep breath and relax.", approxSec: 10 },
+        { id: "breathe", text: "Close your eyes and breathe naturally.", approxSec: 15 },
+        { id: "release", text: "Feel all tension leaving your body.", approxSec: 15 },
+        { id: "peace", text: "You are at peace. You are calm.", approxSec: 10 },
+        { id: "return", text: "Now return refreshed and alert.", approxSec: 10 }
       ]
     };
   }
@@ -207,8 +240,15 @@ export class SessionManager {
   play() {
     if (this._state.playState === 'playing') return;
     
+    // Check if we have segments
+    if (!this.segments || this.segments.length === 0) {
+      console.error('Session: Cannot play - no segments available');
+      this._updateState({ error: 'No segments available to play' });
+      return;
+    }
+    
     const segmentNumber = this.currentSegmentIndex + 1;
-    console.log(`Session: Attempting to play segment ${segmentNumber} of ${this.segments.length}`);
+    console.log(`Session: Playing segment ${segmentNumber} of ${this.segments.length}`);
     
     // Check if we have a valid segment
     if (this.currentSegmentIndex < 0 || this.currentSegmentIndex >= this.segments.length) {
@@ -222,7 +262,7 @@ export class SessionManager {
       return;
     }
     
-    console.log(`Session: Playing segment ${segmentNumber} (${segment.id}) with text: "${segment.text.substring(0, 50)}..."`);
+    console.log(`Session: ▶️ Playing "${segment.id}" - ${segment.text.substring(0, 30)}...`);
     
     // Update state to show current segment
     this._updateState({ 
@@ -246,15 +286,14 @@ export class SessionManager {
     }
     
     // Always use browser TTS for reliability (for now)
-    console.log(`Session: Using browser TTS for segment ${segmentNumber}`);
     this._playWithBrowserTTS(segment.text);
   }
 
   private _playWithBrowserTTS(text: string) {
     if (!window.speechSynthesis) {
-      console.warn(`Session: Browser TTS not available for segment ${this.currentSegmentIndex + 1}`);
+      console.warn('Session: Browser TTS not available');
       const estimatedDuration = Math.max(4000, text.length * 100);
-      console.log(`Session: Auto-advancing after ${estimatedDuration}ms`);
+      console.log('Session: Auto-advancing after', estimatedDuration, 'ms');
       setTimeout(() => {
         this._handleSegmentEnd();
       }, estimatedDuration);
@@ -262,41 +301,68 @@ export class SessionManager {
     }
 
     const segmentNumber = this.currentSegmentIndex + 1;
-    console.log(`Session: Starting browser TTS for segment ${segmentNumber}: "${text.substring(0, 50)}..."`);
+    console.log(`Session: 🎵 Speaking segment ${segmentNumber}`);
 
     // Cancel any existing speech
     window.speechSynthesis.cancel();
+    
+    // Small delay to ensure cancel is processed
+    setTimeout(() => {
+      this._startSpeechSynthesis(text, segmentNumber);
+    }, 100);
   }
+  
   private _startSpeechSynthesis(text: string, segmentNumber: number) {
+    if (!text || text.trim().length === 0) {
+      console.error('Session: No text to speak');
+      setTimeout(() => this._handleSegmentEnd(), 1000);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text.trim());
+    utterance.rate = 0.8;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    utterance.onstart = () => {
+      console.log(`Session: ✅ Speaking segment ${segmentNumber}`);
+    };
+
+    utterance.onend = () => {
+      console.log(`Session: ✅ Finished segment ${segmentNumber}`);
+      this._handleSegmentEnd();
+    };
+
+    utterance.onerror = (event) => {
+      console.error(`Session: TTS error:`, event.error);
+      setTimeout(() => this._handleSegmentEnd(), 500);
+    };
+
+    // Use first available voice
+    const voices = speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      const voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+      if (voice) {
+        utterance.voice = voice;
+      }
+    }
+
+    try {
+      window.speechSynthesis.speak(utterance);
+      console.log(`Session: TTS started for segment ${segmentNumber}`);
+    } catch (error) {
+      console.error('Session: Failed to start TTS:', error);
+      setTimeout(() => this._handleSegmentEnd(), 3000);
+    }
+  }
+  
+  private _oldStartSpeechSynthesis(text: string, segmentNumber: number) {
     // Check if speech synthesis is available
     if (!window.speechSynthesis) {
       console.error('Session: Speech synthesis not available');
       setTimeout(() => this._handleSegmentEnd(), 3000);
       return;
     }
-    if (!text?.trim()) {
-      console.error('Session: No valid text to speak for segment', segmentNumber);
-      setTimeout(() => this._handleSegmentEnd(), 500);
-      return;
-    }
-    
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
-      window.speechSynthesis.cancel();
-
-    // Cancel any existing speech first
-    window.speechSynthesis.cancel();
-    
-    // Small delay to ensure cancel is processed
-    setTimeout(() => {
-      this._actuallyStartSpeech(text, segmentNumber);
-    }, 100);
-  }
-  
-  private _actuallyStartSpeech(text: string, segmentNumber: number) {
-    console.log(`Session: Starting TTS for segment ${segmentNumber}`);
-    
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.7; // Slower for hypnosis
     utterance.pitch = 0.9;
@@ -304,16 +370,16 @@ export class SessionManager {
 
     // Set up event handlers first
     utterance.onstart = () => {
-      console.log(`Session: TTS started for segment ${segmentNumber}`);
+      console.log(`Session: ✅ TTS started for segment ${segmentNumber}`);
     };
 
     utterance.onend = () => {
-      console.log(`Session: TTS finished for segment ${segmentNumber}`);
+      console.log(`Session: ✅ TTS finished for segment ${segmentNumber}`);
       this._handleSegmentEnd();
     };
 
     utterance.onerror = (event) => {
-      console.error(`Session: TTS error for segment ${segmentNumber}:`, event.error);
+      console.error(`Session: ❌ TTS error for segment ${segmentNumber}:`, event.error);
       this._handleSegmentEnd();
     };
 
@@ -328,10 +394,9 @@ export class SessionManager {
     }
 
     try {
-      console.log(`Session: Speaking segment ${segmentNumber}...`);
       window.speechSynthesis.speak(utterance);
     } catch (error) {
-      console.error(`Session: Failed to start speech for segment ${segmentNumber}:`, error);
+      console.error(`Session: Failed to start speech:`, error);
       setTimeout(() => this._handleSegmentEnd(), 3000);
     }
   }

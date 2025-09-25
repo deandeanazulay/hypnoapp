@@ -655,42 +655,11 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     >
       {/* CSS Custom Properties for Responsive Layout */}
       <style jsx>{`
-        .session-layout {
-          --header-h: 64px;
-          --dock-h: 88px;
-          --rail-w: 72px;
-          --indicator-w: 84px;
-          --gutter: 24px;
-        }
-        
-        @media (max-width: 1199px) {
-          .session-layout {
-            --rail-w: 64px;
-            --indicator-w: 72px;
-            --gutter: 20px;
-            --dock-h: 80px;
-          }
-        }
-        
-        @media (max-width: 767px) {
-          .session-layout {
-            --rail-w: 56px;
-            --indicator-w: 64px;
-            --gutter: 16px;
-            --dock-h: 72px;
-            --header-h: 56px;
-          }
-        }
-        
-        @keyframes twinkle {
-          0%, 100% { opacity: 0.1; transform: scale(1); }
-          50% { opacity: 0.3; transform: scale(1.1); }
-        }
-        
-        @keyframes breathe-glow {
-          0%, 100% { opacity: 0.85; }
-          50% { opacity: 1.0; }
-        }
+        .session-layout { --header-h: 64px; --dock-h: 88px; --rail-w: 72px; --indicator-w: 84px; --gutter: 24px; }
+        @media (max-width: 1199px) { .session-layout { --rail-w: 64px; --indicator-w: 72px; --gutter: 20px; --dock-h: 80px; } }
+        @media (max-width: 767px) { .session-layout { --rail-w: 56px; --indicator-w: 64px; --gutter: 16px; --dock-h: 72px; --header-h: 56px; } }
+        @keyframes twinkle { 0%, 100% { opacity: 0.1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.1); } }
+        @keyframes breathe-glow { 0%, 100% { opacity: 0.85; } 50% { opacity: 1.0; } }
       `}</style>
 
       {/* Cosmic Background with Brand Aura */}
