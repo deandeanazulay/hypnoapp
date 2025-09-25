@@ -19,24 +19,24 @@ export default function FloatingControls({
   onToggleVoice
 }: FloatingControlsProps) {
   return (
-    <div className="absolute left-6 top-1/2 transform -translate-y-1/2 z-30">
+    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30">
       <div className="space-y-3">
         {/* Main Play/Pause Button */}
         <button
           onClick={onPlayPause}
-          className={`w-16 h-16 rounded-full backdrop-blur-xl border-2 transition-all hover:scale-110 flex items-center justify-center shadow-2xl ${
+          className={`w-20 h-16 rounded-2xl backdrop-blur-xl border-2 transition-all hover:scale-105 flex items-center justify-center shadow-2xl ${
             isPlaying 
-              ? 'bg-orange-500/20 border-orange-500/60 text-orange-400 shadow-orange-500/30' 
-              : 'bg-green-500/20 border-green-500/60 text-green-400 shadow-green-500/30'
+              ? 'bg-gradient-to-br from-orange-500/30 to-orange-600/20 border-orange-400/80 text-orange-300 shadow-orange-500/40' 
+              : 'bg-gradient-to-br from-green-500/30 to-green-600/20 border-green-400/80 text-green-300 shadow-green-500/40'
           }`}
         >
-          {isPlaying ? <Pause size={28} /> : <Play size={28} className="ml-1" />}
+          {isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
         </button>
 
         {/* Skip Back */}
         <button
           onClick={onSkipBack}
-          className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all shadow-xl"
+          className="w-16 h-12 rounded-xl bg-gradient-to-br from-black/80 to-gray-900/60 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/10 hover:scale-105 transition-all shadow-xl"
         >
           <SkipBack size={20} className="text-white/80" />
         </button>
@@ -44,7 +44,7 @@ export default function FloatingControls({
         {/* Skip Forward */}
         <button
           onClick={onSkipForward}
-          className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all shadow-xl"
+          className="w-16 h-12 rounded-xl bg-gradient-to-br from-black/80 to-gray-900/60 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/10 hover:scale-105 transition-all shadow-xl"
         >
           <SkipForward size={20} className="text-white/80" />
         </button>
@@ -52,10 +52,10 @@ export default function FloatingControls({
         {/* Volume Toggle */}
         <button
           onClick={onToggleVoice}
-          className={`w-12 h-12 rounded-full backdrop-blur-xl border transition-all hover:scale-110 flex items-center justify-center shadow-xl ${
+          className={`w-16 h-12 rounded-xl backdrop-blur-xl border transition-all hover:scale-105 flex items-center justify-center shadow-xl ${
             isVoiceEnabled 
-              ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/20' 
-              : 'bg-red-500/20 border-red-500/40 text-red-400 shadow-red-500/20'
+              ? 'bg-gradient-to-br from-green-500/30 to-green-600/20 border-green-400/60 text-green-300 shadow-green-500/30' 
+              : 'bg-gradient-to-br from-red-500/30 to-red-600/20 border-red-400/60 text-red-300 shadow-red-500/30'
           }`}
         >
           {isVoiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
