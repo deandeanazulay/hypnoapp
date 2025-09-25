@@ -453,4 +453,3 @@ export class SessionManager {
     console.log(`Session: Auto-play ${enabled ? 'enabled' : 'disabled'}`);
   }
 }
-  setAutoPlay: (enabled: boolean) => void;
