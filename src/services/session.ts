@@ -284,33 +284,54 @@ export class SessionManager {
       window.speechSynthesis.cancel();
     }
       window.speechSynthesis.cancel();
+
+    // Cancel any existing speech first
+    window.speechSynthesis.cancel();
+    
+    // Small delay to ensure cancel is processed
+    setTimeout(() => {
+      this._actuallyStartSpeech(text, segmentNumber);
+    }, 100);
+  }
+  
+  private _actuallyStartSpeech(text: string, segmentNumber: number) {
+    console.log(`Session: Starting TTS for segment ${segmentNumber}`);
+    
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.8;
-    // Backup timeout in case TTS events don't fire
-    const backupTimeout = setTimeout(() => {
-      console.log(`Session: TTS timeout for segment ${segmentNumber}, advancing`);
-      this._handleSegmentEnd();
-    }, Math.max(8000, text.length * 80));
-    
-    // Clear timeout when utterance completes
-    const originalOnEnd = utterance.onend;
+    utterance.rate = 0.7; // Slower for hypnosis
+    utterance.pitch = 0.9;
+    utterance.volume = 1.0;
+
+    // Set up event handlers first
+    utterance.onstart = () => {
+      console.log(`Session: TTS started for segment ${segmentNumber}`);
+    };
+
     utterance.onend = () => {
-      clearTimeout(backupTimeout);
-      if (originalOnEnd) originalOnEnd();
+      console.log(`Session: TTS finished for segment ${segmentNumber}`);
+      this._handleSegmentEnd();
     };
-    
-    const originalOnError = utterance.onerror;
+
     utterance.onerror = (event) => {
-      clearTimeout(backupTimeout);
-      if (originalOnError) originalOnError(event);
+      console.error(`Session: TTS error for segment ${segmentNumber}:`, event.error);
+      this._handleSegmentEnd();
     };
-    
-    // Start speaking
+
+    // Voice selection
+    const voices = speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      const voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+      if (voice) {
+        utterance.voice = voice;
+        console.log(`Session: Using voice: ${voice.name}`);
+      }
+    }
+
     try {
-      console.log(`Session: Started TTS for segment ${segmentNumber}`);
+      console.log(`Session: Speaking segment ${segmentNumber}...`);
+      window.speechSynthesis.speak(utterance);
     } catch (error) {
-      console.error(`Session: Failed to start TTS for segment ${segmentNumber}:`, error);
-      clearTimeout(backupTimeout);
+      console.error(`Session: Failed to start speech for segment ${segmentNumber}:`, error);
       setTimeout(() => this._handleSegmentEnd(), 3000);
     }
   }

@@ -836,7 +836,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             {/* Play/Pause (Primary Control) */}
             <button
               onClick={togglePlayPause}
-              title={`${sessionManagerState.playState === 'playing' ? 'Pause' : 'Play'} Session (Space)`}
+              title={`${sessionManagerState.playState === 'playing' ? 'Pause' : 'Start'} Session (Space)`}
               className="backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center"
               style={{
                 width: '56px',
@@ -852,7 +852,11 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
                 boxShadow: sessionManagerState.playState === 'playing' ? LIBERO_BRAND.gradients.ctaGlow : LIBERO_BRAND.elevation.e1
               }}
             >
-              {sessionManagerState.playState === 'playing' ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
+              {sessionManagerState.playState === 'playing' ? (
+                <Pause size={24} />
+              ) : (
+                <Play size={24} className="ml-0.5" />
+              )}
             </button>
 
             {/* Chat Toggle */}
