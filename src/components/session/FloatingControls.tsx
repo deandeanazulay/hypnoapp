@@ -59,7 +59,6 @@ export default function FloatingControls({
         >
           {isVoiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
         </button>
+    </div>
   );
-}
-  )
 }

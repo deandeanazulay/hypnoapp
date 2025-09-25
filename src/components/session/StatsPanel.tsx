@@ -83,7 +83,6 @@ export default function StatsPanel({ timeRemaining, depth, orbEnergy, progress, 
           <div className="text-cyan-400 text-xl font-bold">{Math.round(progress * 100)}%</div>
           <div className="text-white/60 text-xs">Progress</div>
         </div>
+    </div>
   );
-}
-  )
 }
