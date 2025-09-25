@@ -96,12 +96,96 @@ Deno.serve(async (req: Request) => {
     
     // Handle script generation differently
     if (requestType === 'script_generation' && scriptParams) {
-      // For script generation, return mock script directly
+      // For script generation, try AI with hardened JSON rules, fallback to mock
+      try {
+        const prompt = [
+          {
+            role: 'user',
+            parts: [{ text: JSON_ONLY_RULES + `
+
+Generate a ${scriptParams.lengthSec / 60}-minute hypnotherapy script:
+- Goal: ${scriptParams.goalId}
+- Ego State: ${scriptParams.egoState}  
+- User Level: ${scriptParams.level}
+- Locale: ${scriptParams.locale}
+
+Return ONLY the JSON object - no other text.` }]
+          }
+        ];
+
+        console.log('Calling Gemini for script generation with JSON-only rules...')
+        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: prompt,
+            generationConfig: {
+              temperature: 0.3, // Lower temperature for more predictable JSON
+              topK: 20,
+              topP: 0.8,
+              maxOutputTokens: 2048,
+              responseMimeType: 'application/json' // Request JSON format
+            },
+            safetySettings: [
+              { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+              { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+              { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+              { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
+            ]
+          })
+        });
+
+        if (geminiResponse.ok) {
+          const geminiData = await geminiResponse.json();
+          const aiResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+          
+          if (aiResponse) {
+            // Try to parse as JSON - use defensive extraction
+            let scriptResponse: any;
+            try {
+              scriptResponse = JSON.parse(aiResponse);
+            } catch {
+              // Try extracting JSON from mixed content
+              const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                scriptResponse = JSON.parse(jsonMatch[0]);
+              } else {
+                throw new Error('No JSON found in response');
+              }
+            }
+            
+            // Validate basic structure
+            if (scriptResponse.segments && Array.isArray(scriptResponse.segments)) {
+              console.log('Script generation successful via Gemini API');
+              return new Response(
+                JSON.stringify({
+                  response: JSON.stringify(scriptResponse),
+                  sessionUpdates: {},
+                  timestamp: Date.now()
+                }),
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...corsHeaders,
+                  },
+                }
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Script generation failed, using mock:', error);
+      }
+      
+      // Fallback to mock script
       const mockScript = getMockScript(scriptParams)
       return new Response(
         JSON.stringify({
           response: JSON.stringify(mockScript),
           sessionUpdates: {},
+          source: 'mock_fallback',
           timestamp: Date.now()
         }),
         {
