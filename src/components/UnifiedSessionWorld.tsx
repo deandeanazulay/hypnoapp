@@ -4,7 +4,7 @@ import Orb from './Orb';
 import { useAppStore } from "../store";
 import { useGameState } from './GameStateManager';
 import { SessionManager } from '../services/session';
-import AIVoiceSystem from './premium/PremiumFeatures';</action>
+import AIVoiceSystem from './premium/PremiumFeatures';
 
 interface UnifiedSessionWorldProps {
   sessionConfig: {
