@@ -85,3 +85,5 @@ export default function StatsPanel({ timeRemaining, depth, orbEnergy, progress, 
         </div>
   );
 }
+  )
+}
