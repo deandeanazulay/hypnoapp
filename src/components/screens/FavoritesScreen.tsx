@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Play, Clock, Star, Trash2, Share2, Pin, Award, TrendingUp, BarChart3, Crown } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState } from '../../store';
@@ -39,8 +40,41 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   const { user, isLoading } = useGameState();
   const { activeEgoState, showToast } = useAppStore();
   const { isAuthenticated } = useAuth();
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   const [selectedSession, setSelectedSession] = useState<FavoriteSession | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+
+  // Fetch sessions when user is authenticated
+  useEffect(() => {
+    const fetchSessions = async () => {
+      if (!isAuthenticated || !user?.id) return;
+      
+      setSessionsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('sessions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('completed_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching sessions:', error);
+          showToast('Failed to load sessions', 'error');
+          setSessions([]);
+        } else {
+          setSessions(data || []);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setSessions([]);
+      } finally {
+        setSessionsLoading(false);
+      }
+    };
+
+    fetchSessions();
+  }, [isAuthenticated, user?.id, showToast]);
 
   const formatLastCompleted = (date: Date) => {
     const now = new Date();
@@ -119,13 +153,14 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
   }
 
   if (isLoading || !user) {
+  if (isLoading || !user || sessionsLoading) {
     return (
       <PageShell
         body={
           <div className="h-full bg-black flex items-center justify-center">
             <div className="text-center">
               <div className="w-16 h-16 border-4 border-rose-400/20 border-t-rose-400 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-white/60 text-sm">Loading your treasures...</p>
+              <p className="text-white/60 text-sm">{sessionsLoading ? 'Loading sessions...' : 'Loading your treasures...'}</p>
             </div>
           </div>
         }
