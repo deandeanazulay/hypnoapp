@@ -1,0 +1,12 @@
+```text
+Generate a hypnotherapy script for the following session:
+Goal: {{goalId}}
+Ego State: {{egoState}}
+Length: {{lengthSec}} seconds
+User Level: {{level}}
+Session Streak: {{streak}}
+Locale: {{locale}}
+User Preferences: {{userPrefs}}
+
+Output should be a JSON object with an array of segments, an outline, safety notes, a version, and a hash. Each segment should have an 'id', 'text', 'approxSec', and optional 'markers' (type: 'breath'|'pause'|'affirm', t: time in seconds within segment).
+```
