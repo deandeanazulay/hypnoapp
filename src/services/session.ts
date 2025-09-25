@@ -130,8 +130,9 @@ class SessionManager implements SessionHandle {
         const voiceId = AI.voice.defaultVoiceId;
         const voiceModel = AI.voice.model;
         const cacheKey = \`${this.scriptPlan!.hash}-${segment.id}-${voiceId}-${voiceModel}`;
-          voiceId: AI.voice.defaultVoiceId,
-          model: AI.voice.model,
+        const audioBlob = await synthesizeSegment(segment.text, {
+          voiceId: voiceId,
+          model: voiceModel,
           cacheKey: cacheKey,
           mode: 'pre-gen'
         });
