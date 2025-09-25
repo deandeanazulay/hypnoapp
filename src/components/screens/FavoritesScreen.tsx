@@ -166,6 +166,10 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
     );
   }
 
+  // Initialize achievements after user is confirmed to exist
+  const achievements = user?.achievements || [];
+  const totalAchievements = 25; // Total available achievements in the system
+
   return (
     <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
       {/* Background Effects */}
