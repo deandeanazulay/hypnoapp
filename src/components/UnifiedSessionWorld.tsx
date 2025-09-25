@@ -836,6 +836,33 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       
       {/* Floating Control Sidebar */}
       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 space-y-3">
+        {/* Session Mode Toggle */}
+        <div className="space-y-2">
+          <button
+            onClick={() => {/* Toggle to auto mode */}}
+            className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+              true // isAutoMode - you can add state for this
+                ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/30' 
+                : 'bg-white/10 border-white/30 text-white/60 hover:bg-white/20'
+            }`}
+            title="Auto-guided session"
+          >
+            <div className="w-4 h-4 rounded-full bg-current opacity-80" />
+          </button>
+          
+          <button
+            onClick={() => {/* Toggle to interactive mode */}}
+            className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
+              false // isInteractiveMode - you can add state for this
+                ? 'bg-teal-500/20 border-teal-500/40 text-teal-400 shadow-teal-500/30' 
+                : 'bg-white/10 border-white/30 text-white/60 hover:bg-white/20'
+            }`}
+            title="Interactive session"
+          >
+            <MessageCircle size={18} />
+          </button>
+        </div>
+        
         {/* Pause/Play */}
         <button
           onClick={togglePlayPause}
