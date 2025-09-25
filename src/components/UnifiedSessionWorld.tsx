@@ -168,6 +168,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const orbRef = useRef<any>(null);
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
+  const initRef = useRef(false);
 
   const currentEgoState = getEgoState(activeEgoState);
 
@@ -197,6 +198,9 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
 
   // Initialize session
   useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+    
     const initSession = async () => {
       try {
         console.log('Session: Initializing new session with config:', sessionConfig);
@@ -204,30 +208,25 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         setSessionManager(manager);
         
         manager.on('state-change', (newState: any) => {
-          console.log('Session state changed:', newState);
           setSessionManagerState(newState);
         });
 
         manager.on('segment-ready', (segmentId: string) => {
-          console.log('Segment ready:', segmentId);
+          // Segment ready - no logging needed
         });
 
         manager.on('play', () => {
-          console.log('Session manager started playing');
           setSessionState(prev => ({ ...prev, isPlaying: true }));
         });
 
         manager.on('pause', () => {
-          console.log('Session manager paused');
           setSessionState(prev => ({ ...prev, isPlaying: false }));
         });
 
         manager.on('end', () => {
-          console.log('Session completed');
           handleSessionComplete();
         });
         
-        console.log('Session: Calling manager.initialize...');
         await manager.initialize({
           goalId: sessionConfig.goal || 'transformation',
           egoState: sessionConfig.egoState,
@@ -237,16 +236,10 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           streak: user?.session_streak || 0,
           userPrefs: {}
         });
-        console.log('Session: Manager initialized successfully');
 
-        // Auto-start session after initialization
-        setTimeout(() => {
-          console.log('Auto-starting session...');
-          if (manager) {
-            setSessionState(prev => ({ ...prev, isPlaying: true, phase: 'induction' }));
-            manager.play();
-          }
-        }, 2000); // Longer delay to ensure initialization completes
+        // Auto-start session immediately after initialization
+        setSessionState(prev => ({ ...prev, isPlaying: true, phase: 'induction' }));
+        manager.play();
         
       } catch (error) {
         console.error('Session initialization failed:', error);
@@ -257,7 +250,8 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     initSession();
 
     return () => {
-      console.log('Session: Cleaning up session manager');
+      initRef.current = false;
+      
       if (sessionManager) {
         sessionManager.dispose();
       }
@@ -1048,7 +1042,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             {/* Orb - Perfectly Centered */}
             <div className="flex items-center justify-center">
               <Orb
-                ref={orbRef}
                 onTap={() => {}}
                 egoState={activeEgoState}
                 afterglow={sessionState.orbEnergy > 0.7}
