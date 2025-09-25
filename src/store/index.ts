@@ -242,3 +242,6 @@ export const EGO_STATES = [
 export const getEgoState = (id: EgoStateId) => {
   return EGO_STATES.find(state => state.id === id) || EGO_STATES[0];
 };
+
+// Export session store
+export { useSessionStore } from './sessionStore';
