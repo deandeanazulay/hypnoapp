@@ -3,7 +3,8 @@ import { X, Pause, Play, Volume2, VolumeX, Mic, MicOff, Send, MessageCircle, Bra
 import Orb from './Orb';
 import GlassCard from './ui/GlassCard';
 import { useGameState } from './GameStateManager';
-import { useAppStore, getEgoState, useSessionStore } from '../store';
+import { useAppStore, getEgoState } from '../store';
+import { useSessionStore } from '../store/sessionStore';
 import { getEgoColor } from '../config/theme';
 import { useSimpleAuth } from '../hooks/useSimpleAuth';
 
