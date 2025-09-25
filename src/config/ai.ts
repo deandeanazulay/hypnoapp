@@ -1,4 +1,3 @@
-```typescript
 // src/config/ai.ts
 
 /**
@@ -16,4 +15,3 @@ export const AI = {
   },
   // Add other AI-related configurations here
 };
-```
