@@ -38,7 +38,7 @@ interface FavoritesScreenProps {
 
 export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProps) {
   const { user, isLoading } = useGameState();
-  const { activeEgoState, showToast } = useAppStore();
+  const { activeEgoState, showToast, openModal } = useAppStore();
   const { isAuthenticated } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
@@ -152,7 +152,6 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
     );
   }
 
-  if (isLoading || !user) {
   if (isLoading || !user || sessionsLoading) {
     return (
       <PageShell
@@ -250,7 +249,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-400/20 to-purple-400/20 border border-white/20 flex items-center justify-center">
-                              <span className="text-sm">{getEgoStateIcon(session.egoState)}</span>
+                              <span className="text-sm">{getEgoStateIcon(session.ego_state)}</span>
                             </div>
                             <div>
                               <div className="text-white font-medium text-sm flex items-center space-x-2">
