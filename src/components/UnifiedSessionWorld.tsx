@@ -199,14 +199,12 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   // Initialize session
   useEffect(() => {
     if (initRef.current) {
-      console.log('Session: Already initialized, skipping');
       return;
     }
     initRef.current = true;
     
     const initSession = async () => {
       try {
-        console.log('Session: Starting new session');
         const manager = new SessionManager();
         setSessionManager(manager);
         
@@ -230,16 +228,22 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           handleSessionComplete();
         });
         
-        await manager.initialize({
-          goalId: sessionConfig.goal || 'transformation',
+        // Create proper context for script generation
+        const scriptContext = {
+          goalId: sessionConfig.goal || sessionConfig.customProtocol?.goals?.[0] || sessionConfig.protocol?.category || 'transformation',
           egoState: sessionConfig.egoState,
           lengthSec: sessionConfig.duration * 60,
           locale: 'en-US',
           level: user?.level || 1,
           streak: user?.session_streak || 0,
-          userPrefs: {}
-        });
-        console.log('Auto-starting session...');
+          userPrefs: {
+            customProtocol: sessionConfig.customProtocol,
+            protocol: sessionConfig.protocol,
+            sessionType: sessionConfig.type
+          }
+        };
+        
+        await manager.initialize(scriptContext);
         
       } catch (error) {
         console.error('Session initialization failed:', error);

@@ -45,11 +45,9 @@ export class SessionManager {
   private scriptPlan: any = null;
 
   async initialize(userContext: any) {
-    console.log('Session: Initializing...');
     
     try {
       await this._initializeSession(userContext);
-      console.log('Session: Initialized successfully');
     } catch (error) {
       console.error('Session: Failed to initialize:', error);
       throw error;
@@ -57,31 +55,21 @@ export class SessionManager {
   }
 
   private async _initializeSession(userContext: any) {
-    const templates = {
-      induction: "Close your eyes and breathe deeply...",
-      deepener: "With each breath, you go deeper...",
-      emerge: "On the count of three, you'll emerge feeling refreshed..."
-    };
-
-    console.log('Session: Generating script...');
+    // Generate sophisticated hypnosis script
     
     try {
       this.scriptPlan = await getSessionScript(userContext);
-      console.log('Session: Got script with', this.scriptPlan.segments?.length || 0, 'segments');
       
       // Ensure we have valid segments
       if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
-        console.log('Session: No segments, creating fallback');
         this.scriptPlan = this._createFallbackScript(userContext);
       }
     } catch (error: any) {
-      console.log('Session: Script failed, using fallback');
       this.scriptPlan = this._createFallbackScript(userContext);
     }
 
     // Double-check we have segments
     if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
-      console.log('Session: Creating emergency fallback');
       this.scriptPlan = this._createEmergencyFallback();
     }
 
@@ -99,29 +87,135 @@ export class SessionManager {
       ttsProvider: 'browser-tts' as const
     }));
     
-    console.log('Session: Ready with', this.segments.length, 'segments');
+    // Update state with total segments
+    this._updateState({
+      totalSegments: this.segments.length,
+      scriptPlan: this.scriptPlan,
+      currentSegmentId: this.segments[0]?.id || null
+    });
   }
 
-  private _createFallbackScript(userContext: any) {
-    console.log('Session: Creating fallback script');
+  private _createFallbackScript(userContext: any): any {
+    // Advanced hypnosis script based on psychological principles
+    const { egoState = 'guardian', goalId = 'transformation', lengthSec = 900 } = userContext;
+    
+    // Calculate timing based on speaking rate (150-200 words per minute for hypnosis)
+    const wordsPerMinute = 160;
+    const totalMinutes = lengthSec / 60;
+    const totalWords = Math.floor(totalMinutes * wordsPerMinute);
+    
+    // Sophisticated script structure (7-stage hypnosis protocol)
+    const segments = [
+      {
+        id: "pre_induction",
+        text: this._generatePreInduction(egoState, goalId),
+        approxSec: Math.floor(lengthSec * 0.08) // 8% - setup rapport
+      },
+      {
+        id: "induction", 
+        text: this._generateInduction(egoState, goalId),
+        approxSec: Math.floor(lengthSec * 0.20) // 20% - enter hypnosis
+      },
+      {
+        id: "deepening",
+        text: this._generateDeepening(egoState, goalId), 
+        approxSec: Math.floor(lengthSec * 0.15) // 15% - deepen trance
+      },
+      {
+        id: "ego_state_activation",
+        text: this._generateEgoStateActivation(egoState, goalId),
+        approxSec: Math.floor(lengthSec * 0.12) // 12% - activate archetype
+      },
+      {
+        id: "transformation_work",
+        text: this._generateTransformationWork(egoState, goalId),
+        approxSec: Math.floor(lengthSec * 0.25) // 25% - core change work
+      },
+      {
+        id: "integration", 
+        text: this._generateIntegration(egoState, goalId),
+        approxSec: Math.floor(lengthSec * 0.12) // 12% - embed changes
+      },
+      {
+        id: "emergence",
+        text: this._generateEmergence(egoState, goalId),
+        approxSec: Math.floor(lengthSec * 0.08) // 8% - return to consciousness
+      }
+    ];
     
     return {
-      title: `${userContext.egoState || 'Guardian'} Session`,
-      segments: [
-        { id: "intro", text: `Welcome to your ${userContext.egoState || 'guardian'} session. Take a deep breath and allow yourself to settle in comfortably.`, approxSec: 15 },
-        { id: "relaxation", text: "Close your eyes gently and feel your body beginning to relax. With each breath, let go of any tension you've been holding.", approxSec: 20 },
-        { id: "deepening", text: "Going deeper now, feeling more and more relaxed with each breath you take. Each exhale releases stress and brings you deeper into peace.", approxSec: 25 },
-        { id: "safe-space", text: "Imagine yourself in a beautiful, safe space where you feel completely protected and at peace. This is your sanctuary.", approxSec: 30 },
-        { id: "transformation", text: "In this peaceful state, positive changes are happening within you. You are releasing old patterns and embracing new possibilities.", approxSec: 30 },
-        { id: "strengthening", text: "These positive changes are becoming stronger now, integrating into every cell of your being. You are transforming naturally.", approxSec: 25 },
-        { id: "integration", text: "Feel these wonderful changes becoming a permanent part of who you are. They will stay with you long after this session ends.", approxSec: 25 },
-        { id: "emergence", text: "Now it's time to return, bringing all these positive changes with you. Count with me: One, energy returning. Two, becoming aware. Three, feeling refreshed. Four, almost ready. Five, eyes open, fully alert and wonderfully refreshed.", approxSec: 30 }
-      ]
+      title: `${egoState} Transformation Protocol: ${goalId}`,
+      segments,
+      metadata: {
+        totalWords: totalWords,
+        avgWordsPerMinute: wordsPerMinute,
+        egoStateActivation: egoState,
+        transformationGoal: goalId,
+        techniqueUsed: 'progressive_with_ego_state_integration'
+      }
     };
   }
 
+  // Advanced hypnosis script generation methods
+  private _generatePreInduction(egoState: string, goalId: string): string {
+    const egoIntros = {
+      guardian: "I want you to feel completely safe and protected here with me. Your guardian energy is awakening, ready to shield you from anything that doesn't serve your highest good.",
+      rebel: "There's a revolutionary force within you that's ready to break free. Feel that rebel energy stirring, ready to shatter the limitations that have held you back for far too long.",
+      healer: "Feel the gentle, nurturing energy of your inner healer beginning to awaken. This wise part of you knows exactly how to restore balance and wholeness to your entire being.",
+      mystic: "Connect now with the infinite wisdom that flows through you. Your mystic nature is awakening, ready to access realms of consciousness beyond the ordinary mind.",
+      explorer: "There's an adventurous spirit within you that's eager to discover new territories of possibility. Feel that explorer energy awakening, ready to venture into uncharted aspects of yourself."
+    };
+    
+    const intro = egoIntros[egoState as keyof typeof egoIntros] || egoIntros.guardian;
+    return `${intro} Today we're focusing specifically on ${goalId}, and your ${egoState} archetype will guide this powerful transformation. Are you ready to begin this journey?`;
+  }
+
+  private _generateInduction(egoState: string, goalId: string): string {
+    // Stage hypnosis-style rapid induction with archetypal activation
+    return `Take a deep breath and close your eyes now. That's right... And as you exhale, feel your body beginning to relax. Now, with each breath you take, you're going deeper and deeper into a state of profound relaxation and receptivity. Your ${egoState} energy is guiding you safely into this transformative state. Feel yourself sinking... deeper and deeper... with each word I speak, each breath you take. Your conscious mind can rest now while your ${egoState} wisdom takes over, leading you exactly where you need to go for your ${goalId}.`;
+  }
+
+  private _generateDeepening(egoState: string, goalId: string): string {
+    // Compound deepening technique
+    return `Now I want you to imagine yourself going even deeper... deeper than you've ever gone before. Feel yourself descending through layers of consciousness, each level bringing you closer to your ${egoState} core. Count backwards with me from 10 to 1, and with each number, let yourself drop twice as deep into this receptive state. 10... sinking deeper... 9... even deeper now... 8... feeling your ${egoState} energy strengthening... 7... going so deep... 6... deeper still... 5... profound relaxation... 4... your ${egoState} wisdom fully activated... 3... so deep now... 2... almost there... 1... perfect. You are now in the ideal state for transformation work on ${goalId}.`;
+  }
+
+  private _generateEgoStateActivation(egoState: string, goalId: string): string {
+    const activations = {
+      guardian: "Feel your inner guardian rising now, strong and protective. This wise protector knows exactly how to shield you from patterns that no longer serve you. Your guardian energy is creating a sacred space for transformation.",
+      rebel: "Feel the rebel force surging through you now. This revolutionary energy is breaking down the walls of limitation, shattering old beliefs that have kept you small. Your rebel spirit is fierce and unstoppable.",
+      healer: "Feel the healing light flowing through every cell of your being now. Your inner healer is activating, bringing restoration and renewal to every aspect of your life. This healing force knows no limits.",
+      mystic: "Feel your connection to infinite consciousness expanding now. Your mystic nature is awakening, accessing wisdom from beyond the ordinary mind. You are tapping into universal intelligence.",
+      explorer: "Feel your adventurous spirit awakening now. Your inner explorer is ready to venture into new territories of possibility, discovering hidden treasures within your own consciousness."
+    };
+    
+    const activation = activations[egoState as keyof typeof activations] || activations.guardian;
+    return `${activation} This ${egoState} energy is now fully activated and focused on your ${goalId}. Feel it growing stronger with each breath, more powerful with each heartbeat.`;
+  }
+
+  private _generateTransformationWork(egoState: string, goalId: string): string {
+    // Core change work using direct suggestion and metaphor
+    const transformationScripts = {
+      'stress-relief': "Your nervous system is learning a new way of being. Each breath teaches your body that safety is your natural state. Stress dissolves like mist in the morning sun, leaving only calm clarity.",
+      'confidence': "Feel confidence flowing through you like liquid gold. Every cell of your being remembers what it feels like to be completely confident. This confidence is your birthright, your natural state.",
+      'sleep': "Your body's natural sleep rhythm is being restored now. Your mind knows exactly how to quiet itself. Sleep comes naturally and easily, like a gentle river flowing to the sea.",
+      'healing': "Your body's innate healing intelligence is activated now. Every cell is working in perfect harmony to restore balance and vitality. Healing happens at the deepest levels.",
+      'transformation': "You are becoming the person you were always meant to be. Old limitations fall away like leaves from a tree. Your true self emerges, powerful and free."
+    };
+    
+    const coreWork = transformationScripts[goalId as keyof typeof transformationScripts] || transformationScripts.transformation;
+    return `${coreWork} Your ${egoState} energy is the catalyst for this change, amplifying every positive suggestion, making every transformation more powerful and permanent. These changes are happening now, at the deepest levels of your being.`;
+  }
+
+  private _generateIntegration(egoState: string, goalId: string): string {
+    return `These powerful changes are now integrating into every aspect of your being. Your ${egoState} energy ensures that these transformations become a permanent part of who you are. Feel these changes locking in at the cellular level, at the neurological level, at the quantum level of your existence. When you return to full awareness, these changes will be with you always, growing stronger every day. Your work on ${goalId} is complete and successful.`;
+  }
+
+  private _generateEmergence(egoState: string, goalId: string): string {
+    return `And now it's time to return, bringing all these powerful changes with you. Your ${egoState} energy will continue working on your ${goalId} long after this session ends. I'll count from 1 to 5, and on 5, you'll emerge feeling fantastic. 1... energy returning to your body... 2... becoming more aware of your surroundings... 3... feeling wonderful, feeling powerful... 4... almost ready to open your eyes... and 5... eyes open! Fully alert, completely refreshed, and permanently transformed.`;
+  }
+
   private _createEmergencyFallback() {
-    console.log('Session: Emergency fallback');
     
     return {
       title: 'Relaxation Session',
@@ -238,7 +332,6 @@ export class SessionManager {
       return;
     }
     
-    console.log('Session: Playing segment', this.currentSegmentIndex + 1);
     
     // Check if we have a valid segment
     if (this.currentSegmentIndex < 0 || this.currentSegmentIndex >= this.segments.length) {
@@ -273,13 +366,12 @@ export class SessionManager {
       window.speechSynthesis.cancel();
     }
     
-    // Always use browser TTS for reliability (for now)
+    // Use browser TTS for reliability
     this._playWithBrowserTTS(segment.text);
   }
 
   private _playWithBrowserTTS(text: string) {
     if (!window.speechSynthesis) {
-      console.log('Session: No TTS, auto-advancing');
       const estimatedDuration = Math.max(4000, text.length * 100);
       setTimeout(() => {
         this._handleSegmentEnd();
@@ -290,21 +382,36 @@ export class SessionManager {
     // Cancel any existing speech
     window.speechSynthesis.cancel();
     
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.8;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-    
-    utterance.onend = () => {
-      this._handleSegmentEnd();
-    };
-    
-    utterance.onerror = () => {
-      this._handleSegmentEnd();
-    };
-    
-    // Use default voice for reliability
-    window.speechSynthesis.speak(utterance);
+    // Small delay to ensure cancel is processed
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.7; // Slower for hypnosis
+      utterance.pitch = 0.9; // Slightly lower for authority
+      utterance.volume = 1.0;
+      
+      // Select optimal voice for hypnosis
+      const voices = window.speechSynthesis.getVoices();
+      const hypnosisVoice = voices.find(voice => 
+        voice.name.includes('Daniel') || // Deep male voice
+        voice.name.includes('Karen') || // Calm female voice
+        voice.name.includes('Samantha') || // Soothing voice
+        (voice.lang.includes('en') && voice.name.includes('Microsoft'))
+      ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
+      
+      if (hypnosisVoice) {
+        utterance.voice = hypnosisVoice;
+      }
+      
+      utterance.onend = () => {
+        this._handleSegmentEnd();
+      };
+      
+      utterance.onerror = () => {
+        this._handleSegmentEnd();
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    }, 100);
   }
   private _handleSegmentEnd() {
     if (this.currentSegmentIndex < this.segments.length - 1) {
