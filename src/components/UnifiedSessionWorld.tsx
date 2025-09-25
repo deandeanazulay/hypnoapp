@@ -454,7 +454,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           )}
         </div>
 
-        {/* Input Area */}
+        {/* Input Area - The dock you like! */}
         <div className="p-4 border-t border-white/10 backdrop-blur-sm">
           <form onSubmit={handleSubmit} className="flex items-center gap-3">
             <button
