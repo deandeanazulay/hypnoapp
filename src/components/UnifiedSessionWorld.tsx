@@ -8,6 +8,109 @@ import {
   Volume2, VolumeX, Mic, Send, Brain, Loader, Activity, Clock, Wind
 } from 'lucide-react';
 
+// Fixation Cue Component
+interface FixationCueProps {
+  breathing: string;
+  isVisible: boolean;
+  showAIMessage: boolean;
+  orbSize: number;
+}
+
+function FixationCue({ breathing, isVisible, showAIMessage, orbSize }: FixationCueProps) {
+  const [opacity, setOpacity] = useState(1);
+  const [isAutoDimmed, setIsAutoDimmed] = useState(false);
+  const autoDimTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Auto-dim after 10 seconds
+  useEffect(() => {
+    if (isVisible && !showAIMessage) {
+      // Reset auto-dim timer on phase change or when becoming visible
+      if (autoDimTimerRef.current) {
+        clearTimeout(autoDimTimerRef.current);
+      }
+      
+      setIsAutoDimmed(false);
+      setOpacity(1);
+      
+      autoDimTimerRef.current = setTimeout(() => {
+        setIsAutoDimmed(true);
+        setOpacity(0.6);
+      }, 10000);
+    }
+    
+    return () => {
+      if (autoDimTimerRef.current) {
+        clearTimeout(autoDimTimerRef.current);
+      }
+    };
+  }, [isVisible, showAIMessage, breathing]);
+  
+  // Restore opacity on user interaction
+  useEffect(() => {
+    const handleUserActivity = () => {
+      if (isAutoDimmed) {
+        setIsAutoDimmed(false);
+        setOpacity(1);
+      }
+    };
+    
+    document.addEventListener('click', handleUserActivity);
+    document.addEventListener('keydown', handleUserActivity);
+    document.addEventListener('touchstart', handleUserActivity);
+    
+    return () => {
+      document.removeEventListener('click', handleUserActivity);
+      document.removeEventListener('keydown', handleUserActivity);
+      document.removeEventListener('touchstart', handleUserActivity);
+    };
+  }, [isAutoDimmed]);
+  
+  if (!isVisible || showAIMessage) return null;
+  
+  // Phase-aware text variations
+  const getFixationText = () => {
+    switch (breathing) {
+      case 'inhale': return 'Let the orb gently grow—keep your eyes soft';
+      case 'hold-inhale': return 'Stay with the stillness';
+      case 'exhale': return 'Follow the release';
+      case 'hold-exhale': return 'Rest in the quiet space';
+      default: return 'Rest your gaze softly on the orb';
+    }
+  };
+  
+  // Breathing opacity sync
+  const getBreathingOpacity = () => {
+    const baseOpacity = isAutoDimmed ? 0.6 : 1;
+    switch (breathing) {
+      case 'inhale': return baseOpacity * 1.0;
+      case 'hold-inhale': return baseOpacity * 0.85;
+      case 'exhale': return baseOpacity * 0.9;
+      case 'hold-exhale': return baseOpacity * 0.8;
+      default: return baseOpacity * 0.9;
+    }
+  };
+  
+  // Check if we should flip above orb (collision detection with bottom dock)
+  const shouldFlipAbove = window.innerHeight < 700; // Simple heuristic for short viewports
+  
+  return (
+    <div 
+      className={`absolute left-1/2 transform -translate-x-1/2 transition-all duration-300 ease-out z-20 ${
+        shouldFlipAbove ? 'bottom-full mb-6' : 'top-full mt-6'
+      }`}
+      style={{ 
+        opacity: getBreathingOpacity(),
+        textShadow: '0 0 8px rgba(255, 255, 255, 0.3)'
+      }}
+      aria-label="Fixation guidance"
+    >
+      <p className="text-white text-center font-medium max-w-[560px] mx-auto px-4 text-base md:text-lg leading-relaxed">
+        {getFixationText()}
+      </p>
+    </div>
+  );
+}
+
 interface UnifiedSessionWorldProps {
   sessionConfig: {
     egoState: string;
@@ -64,6 +167,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [textInput, setTextInput] = useState('');
+  const [showFixationCue, setShowFixationCue] = useState(true);
   
   // Session management
   const [sessionManager, setSessionManager] = useState<SessionManager | null>(null);
@@ -684,6 +788,18 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
                   Math.min(window.innerWidth * 0.42, window.innerHeight * 0.42)
                 )}
                 variant="webgl"
+              />
+              
+              {/* Fixation Cue */}
+              <FixationCue
+                breathing={sessionState.breathing}
+                isVisible={showFixationCue}
+                showAIMessage={showCoachBubble && latestAiMessage !== undefined}
+                orbSize={Math.min(
+                  window.innerWidth < 768 ? 320 : 
+                  window.innerWidth < 1024 ? 400 : 520,
+                  Math.min(window.innerWidth * 0.42, window.innerHeight * 0.42)
+                )}
               />
             </div>
           </div>
