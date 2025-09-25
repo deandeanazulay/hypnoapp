@@ -426,7 +426,11 @@ export class SessionManager {
       };
       
       utterance.onerror = (event) => {
-        console.error('Session: TTS error:', event.error);
+        if (event.error === 'interrupted' || event.error === 'canceled') {
+          console.warn('Session: TTS interrupted:', event.error);
+        } else {
+          console.error('Session: TTS error:', event.error);
+        }
         this._handleSegmentEnd();
       };
       
