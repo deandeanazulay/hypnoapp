@@ -165,11 +165,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
       />
     );
   }
-
-  // Initialize achievements after user is confirmed to exist
-  const achievements = user?.achievements || [];
-  const totalAchievements = 25; // Total available achievements in the system
-
+  
   return (
     <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
       {/* Background Effects */}
@@ -205,7 +201,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                     <div className="text-white/60 text-xs">Sessions</div>
                   </div>
                   <div className="bg-black/20 rounded-lg p-3 border border-white/10">
-                    <div className="text-yellow-400 text-xl font-bold">{avgRating.toFixed(1)}</div>
+                    <div className="text-yellow-400 text-xl font-bold">{sessions.length > 0 ? avgRating.toFixed(1) : '0.0'}</div>
                     <div className="text-white/60 text-xs">Avg Rating</div>
                   </div>
                   <div className="bg-black/20 rounded-lg p-3 border border-white/10">
@@ -259,7 +255,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                                 <span>{session.action}</span>
                               </div>
                               <div className="text-white/60 text-xs">
-                                {session.duration}m • {formatLastCompleted(new Date(session.completed_at))}
+                                {session.duration}m • {new Date(session.completed_at).toLocaleDateString()}
                               </div>
                             </div>
                           </div>
@@ -334,12 +330,12 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                     <Award size={20} className="text-yellow-400" />
                     <span>Earned Badges</span>
                   </h3>
-                  <span className="text-white/60 text-sm">{achievements.length}/{totalAchievements}</span>
+                  <span className="text-white/60 text-sm">{user?.achievements?.length || 0}/25</span>
                 </div>
                 
-                {achievements.length > 0 ? (
+                {user?.achievements && user.achievements.length > 0 ? (
                   <div className="grid grid-cols-3 gap-3">
-                    {achievements.slice(0, 6).map((achievement, i) => {
+                    {user.achievements.slice(0, 6).map((achievement, i) => {
                       const badgeInfo = getBadgeInfo(achievement);
                       return (
                         <div key={i} className="bg-black/20 rounded-lg p-3 border border-white/10 text-center">
@@ -359,7 +355,7 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                   </div>
                 )}
                 
-                <p className="text-white/70 text-sm mt-4">Complete more sessions to unlock rare badges and titles ({achievements.length} earned)</p>
+                <p className="text-white/70 text-sm mt-4">Complete more sessions to unlock rare badges and titles ({user?.achievements?.length || 0} earned)</p>
               </div>
             </div>
           </div>
