@@ -22,10 +22,6 @@ export interface SessionState {
   currentSegmentIndex: number;
   currentSegmentId: string | null;
   totalSegments: number;
-  
-  if (options.autoPlay !== undefined) {
-    manager.setAutoPlay(options.autoPlay);
-  }
   scriptPlan: any;
   bufferedAhead: number;
   error: string | null;
@@ -39,8 +35,7 @@ export class SessionManager {
     totalSegments: 0,
     scriptPlan: null,
     bufferedAhead: 0,
-    getCurrentState: () => manager.getCurrentState(),
-    setAutoPlay: (enabled: boolean) => manager.setAutoPlay(enabled)
+    error: null
   };
 
   private segments: (PlayableSegment | null)[] = [];
