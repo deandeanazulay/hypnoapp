@@ -394,6 +394,29 @@ function buildHypnosisPrompt(context: SessionContext, requestType: string, userM
   const hasCustomProtocol = context.customProtocol && context.customProtocol.name
   const isFirstMessage = context.conversationHistory.length === 0
   
+  // For script generation, return JSON-only instructions
+  if (requestType === 'script_generation') {
+    return `You are a hypnosis script generator. You must respond ONLY with a valid JSON object. Do not include any conversational text, explanations, or markdown outside the JSON block.
+
+Return a JSON object with this exact structure:
+{
+  "segments": [
+    {
+      "id": "intro",
+      "text": "Welcome script text here...",
+      "approxSec": 15,
+      "markers": [{"type": "breath", "t": 10}]
+    }
+  ],
+  "outline": "Brief description",
+  "safetyNotes": "Safety information",
+  "version": "1.0.0",
+  "hash": "unique_hash"
+}
+
+Generate a ${requestType} hypnosis script for ego state: ${egoState}. Respond ONLY with the JSON object above - no other text.`
+  }
+
   const basePrompt = `You are Libero, an advanced AI hypnotist and consciousness guide. You are currently guiding a hypnosis session.
 
 CURRENT SESSION CONTEXT:
