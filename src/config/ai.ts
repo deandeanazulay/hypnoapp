@@ -7,6 +7,7 @@ export const AI = {
   geminiModel: 'gemini-1.5-flash', // Start with 'gemini-1.5-flash', upgrade path 'gemini-1.5-pro'
   geminiTimeoutMs: 8000,           // Hard timeout for Gemini API calls
   geminiMaxRetries: 2,             // Max retries for transient Gemini errors
+  elevenLabsBaseUrl: 'https://api.elevenlabs.io/v1', // ElevenLabs API base URL
   voice: {
     defaultVoiceId: 'EXAVITQu4vr4xnSDxMaL', // Placeholder: Replace with an actual ElevenLabs voice ID
     model: 'flash-v2.5' as 'flash-v2.5' | 'v3', // 'flash-v2.5' for low latency, 'v3' for expressive

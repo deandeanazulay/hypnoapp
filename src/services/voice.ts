@@ -234,8 +234,8 @@ async function callDirectAPI(text: string, opts: SynthesizeSegmentOptions): Prom
 
   // Choose endpoint based on mode
   const endpoint = opts.mode === 'live' 
-    ? `${ELEVENLABS_BASE_URL}/text-to-speech/${opts.voiceId}/stream`
-    : `${ELEVENLABS_BASE_URL}/text-to-speech/${opts.voiceId}`;
+    ? `${AI.elevenLabsBaseUrl}/text-to-speech/${opts.voiceId}/stream`
+    : `${AI.elevenLabsBaseUrl}/text-to-speech/${opts.voiceId}`;
 
   const requestBody: ElevenLabsRequest = {
     text: text.trim(),
@@ -316,7 +316,7 @@ export async function getAvailableVoices(): Promise<Array<{id: string, name: str
   }
 
   try {
-    const response = await fetch(`${ELEVENLABS_BASE_URL}/voices`, {
+    const response = await fetch(`${AI.elevenLabsBaseUrl}/voices`, {
       headers: {
         'xi-api-key': apiKey,
         'Accept': 'application/json'
@@ -349,7 +349,7 @@ export async function getUsageInfo(): Promise<{charactersUsed: number, character
   }
 
   try {
-    const response = await fetch(`${ELEVENLABS_BASE_URL}/user`, {
+    const response = await fetch(`${AI.elevenLabsBaseUrl}/user`, {
       headers: {
         'xi-api-key': apiKey,
         'Accept': 'application/json'
