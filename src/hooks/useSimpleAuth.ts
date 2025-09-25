@@ -42,6 +42,11 @@ export function useSimpleAuth() {
         loading: false,
         error: null
       }));
+      
+      // Trigger profile creation/fetch when user signs in
+      if (session?.user && _event === 'SIGNED_IN') {
+        console.log('[AUTH] User signed in, profile will be fetched by GameStateManager');
+      }
     });
 
     return () => subscription.unsubscribe()

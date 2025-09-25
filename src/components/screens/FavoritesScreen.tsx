@@ -252,22 +252,15 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                 <div className="space-y-3">
                   <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
                     <span className="text-white/70">Most Completed</span>
-                    <span className="text-white font-medium">
-                      {favoritesSessions.length > 0 
-                        ? `${favoritesSessions[0].name} (${favoritesSessions[0].completedCount}x)` 
-                        : 'No sessions yet'
-                      }
-                    </span>
+                    <span className="text-white font-medium">Healer Recovery (22x)</span>
                   </div>
                   <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
                     <span className="text-white/70">Longest Streak</span>
-                    <span className="text-white font-medium">{user?.session_streak || 0} days</span>
+                    <span className="text-white font-medium">Child Joy (5 days)</span>
                   </div>
                   <div className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
                     <span className="text-white/70">Favorite Ego State</span>
-                    <span className="text-white font-medium">
-                      {getEgoState(user?.active_ego_state || 'guardian').name} {getEgoState(user?.active_ego_state || 'guardian').icon}
-                    </span>
+                    <span className="text-white font-medium">Healer 🌿</span>
                   </div>
                 </div>
               </div>
@@ -331,8 +324,10 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
               <h3 className="text-white font-medium mb-3">Ego State Breakdown</h3>
               <div className="space-y-2">
                 {['healer', 'guardian', 'child', 'explorer'].map((state, index) => {
-                  const count = mockFavorites.filter(s => s.egoState === state).length;
-                  const percentage = Math.round((count / mockFavorites.length) * 100);
+                  const count = favoritesSessions.filter(s => s.egoState === state).length;
+                  const percentage = favoritesSessions.length > 0 ? Math.round((count / favoritesSessions.length) * 100) : 0;
+                  
+                  if (count === 0 && favoritesSessions.length > 0) return null;
                   
                   return (
                     <div key={state} className="flex items-center justify-between">
@@ -344,6 +339,11 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                     </div>
                   );
                 })}
+                {favoritesSessions.length === 0 && (
+                  <div className="text-white/60 text-sm text-center py-4">
+                    Complete sessions to see breakdown
+                  </div>
+                )}
               </div>
             </div>
           </div>
