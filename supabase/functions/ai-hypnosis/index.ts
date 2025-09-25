@@ -96,26 +96,21 @@ Deno.serve(async (req: Request) => {
     
     // Handle script generation differently
     if (requestType === 'script_generation' && scriptParams) {
-      // Use specific prompts for script generation
-      const userPrompt = userPromptTemplate
-        .replace('{{goalId}}', scriptParams.goalId)
-        .replace('{{egoState}}', scriptParams.egoState)
-        .replace('{{lengthSec}}', scriptParams.lengthSec.toString())
-        .replace('{{level}}', scriptParams.level.toString())
-        .replace('{{streak}}', scriptParams.streak.toString())
-        .replace('{{locale}}', scriptParams.locale)
-        .replace('{{userPrefs}}', JSON.stringify(scriptParams.userPrefs || {}))
-      
-      conversation = [
+      // For script generation, return mock script directly
+      const mockScript = getMockScript(scriptParams)
+      return new Response(
+        JSON.stringify({
+          response: JSON.stringify(mockScript),
+          sessionUpdates: {},
+          timestamp: Date.now()
+        }),
         {
-          role: 'user',
-          parts: [{ text: systemPromptTemplate }]
-        },
-        {
-          role: 'user',
-          parts: [{ text: userPrompt }]
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
         }
-      ]
+      )
     } else {
       // Build system prompt based on ego state and session context for regular conversations
       const systemPrompt = buildHypnosisPrompt(sessionContext, requestType, message)
