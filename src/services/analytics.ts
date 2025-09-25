@@ -119,7 +119,7 @@ class AnalyticsQueue {
     });
 
     if (!response.ok) {
-      throw new Error(\`Analytics API error: ${response.status}`);
+      throw new Error(`Analytics API error: ${response.status}`);
     }
   }
 
