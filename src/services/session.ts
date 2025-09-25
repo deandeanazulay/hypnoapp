@@ -3,7 +3,7 @@ import { getSessionScript } from './gemini';
 import { synthesizeSegment } from './voice';
 import { AI } from '../config/ai';
 
-// Debug flag for TTS logging
+// Debug flag for TTS logging - OFF by default
 const DEBUG_TTS = false;
 
 export interface ScriptSegment {
@@ -46,9 +46,11 @@ export class SessionManager {
   private eventListeners: Record<string, Function[]> = {};
   private currentSegmentIndex = 0;
   private scriptPlan: any = null;
+  // Single-flight guards
   private ttsLock = false;
   private wasCanceledByUs = false;
   private currentUtteranceId: string | null = null;
+  private voicesLoaded = false;
 
   async initialize(userContext: any) {
     try {
@@ -97,9 +99,7 @@ export class SessionManager {
       currentSegmentId: this.segments[0]?.id || null
     });
 
-    if (DEBUG_TTS) {
-      console.log(`Session: Initialized with ${this.segments.length} segments`);
-    }
+    console.log(`Session: Ready with ${this.segments.length} segments`);
   }
 
   private _createFallbackScript(userContext: any): any {
@@ -265,9 +265,9 @@ export class SessionManager {
 
 
   play() {
-    // Single-flight guard - prevent duplicate starts
-    if (this.ttsLock && this._state.playState === 'playing') {
-      if (DEBUG_TTS) console.log('Session: Play already in progress, ignoring');
+    // Single-flight guard
+    if (this.ttsLock) {
+      console.log('Session: TTS already active, ignoring duplicate play');
       return;
     }
     
@@ -290,9 +290,7 @@ export class SessionManager {
       return;
     }
     
-    if (DEBUG_TTS) {
-      console.log(`TTS start seg ${this.currentSegmentIndex + 1}`);
-    }
+    console.log(`TTS: Starting segment ${this.currentSegmentIndex + 1}/${this.segments.length}`);
     
     // Update state to show current segment
     this._updateState({ 
@@ -302,32 +300,89 @@ export class SessionManager {
     });
     this._emit('play');
     
-    // Use browser TTS for reliability
-    this._playWithBrowserTTS(segment.text);
+    // CRITICAL: Call TTS in same user gesture (no async/await before this)
+    this._speakSegmentNow(segment.text);
   }
 
-  private _playWithBrowserTTS(text: string) {
+  private _speakSegmentNow(text: string) {
     if (!window.speechSynthesis) {
-      console.warn('Session: speechSynthesis not available');
-      const estimatedDuration = Math.max(4000, text.length * 100);
+      console.error('Session: speechSynthesis not available');
       setTimeout(() => {
         this._handleSegmentEnd();
-      }, estimatedDuration);
+      }, 3000);
       return;
     }
 
-    // Generate unique utterance ID
+    // Set single-flight lock IMMEDIATELY
+    this.ttsLock = true;
+    
+    // Generate unique ID for this utterance
     const utteranceId = `utterance-${Date.now()}-${Math.random()}`;
     this.currentUtteranceId = utteranceId;
     this.wasCanceledByUs = false;
     
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9; // Clear dictation
-    utterance.pitch = 1.0; // Natural pitch
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
     utterance.volume = 1.0;
     
-    // Voice selection
+    // Voice selection (handle async loading properly)
+    this._selectBestVoice(utterance);
+    
+    // Event handlers
+    utterance.onstart = () => {
+      console.log(`TTS: Segment ${this.currentSegmentIndex + 1} started`);
+    };
+    
+    utterance.onend = () => {
+      console.log(`TTS: Segment ${this.currentSegmentIndex + 1} ended`);
+      this.ttsLock = false;
+      
+      // Only advance if we didn't cancel this utterance
+      if (this.currentUtteranceId === utteranceId && !this.wasCanceledByUs) {
+        this._handleSegmentEnd();
+      }
+      
+      if (this.wasCanceledByUs) {
+        this.wasCanceledByUs = false;
+      }
+    };
+    
+    utterance.onerror = (event) => {
+      this.ttsLock = false;
+      
+      if (event.error === 'interrupted' || event.error === 'canceled') {
+        // Expected - don't advance
+        console.log('TTS: Interrupted/canceled');
+      } else {
+        console.warn('TTS: Error -', event.error);
+        // Fallback advance to prevent stalling
+        if (this.currentUtteranceId === utteranceId && !this.wasCanceledByUs) {
+          this._handleSegmentEnd();
+        }
+      }
+    };
+    
+    // SPEAK IMMEDIATELY - must be in same user gesture task
+    window.speechSynthesis.speak(utterance);
+    console.log(`TTS: Queued segment ${this.currentSegmentIndex + 1} for playback`);
+  }
+
+  private _selectBestVoice(utterance: SpeechSynthesisUtterance) {
     const voices = window.speechSynthesis.getVoices();
+    
+    if (voices.length === 0) {
+      // Voices not loaded yet - use default and setup async loading
+      if (!this.voicesLoaded) {
+        window.speechSynthesis.addEventListener('voiceschanged', () => {
+          this.voicesLoaded = true;
+          console.log(`TTS: Loaded ${window.speechSynthesis.getVoices().length} voices`);
+        }, { once: true });
+      }
+      return; // Use default voice
+    }
+    
+    // Select best voice
     const preferredVoices = ['Google US English', 'Microsoft Aria', 'Microsoft Mark', 'Microsoft David', 'Samantha', 'Victoria', 'Moira'];
     
     let selectedVoice = null;
@@ -342,58 +397,7 @@ export class SessionManager {
     
     if (selectedVoice) {
       utterance.voice = selectedVoice;
-      if (DEBUG_TTS) {
-        console.log('Session: Selected voice:', selectedVoice.name);
-      }
-    }
-    
-    // Event handlers with single-flight protection
-    utterance.onstart = () => {
-      this.ttsLock = true;
-    };
-    
-    utterance.onend = () => {
-      this.ttsLock = false;
-      
-      // Only advance if this utterance wasn't canceled by us
-      if (this.currentUtteranceId === utteranceId && !this.wasCanceledByUs) {
-        if (DEBUG_TTS) {
-          console.log(`TTS end seg ${this.currentSegmentIndex + 1}`);
-        }
-        this._handleSegmentEnd();
-      } else if (this.wasCanceledByUs) {
-        this.wasCanceledByUs = false;
-      }
-    };
-    
-    utterance.onerror = (event) => {
-      this.ttsLock = false;
-      
-      if (event.error === 'interrupted' || event.error === 'canceled') {
-        // Neutral - don't advance
-        if (DEBUG_TTS) {
-          console.log('Session: TTS interrupted/canceled');
-        }
-      } else {
-        console.warn('Session: TTS error:', event.error);
-        // Fall back to advance to avoid stalls
-        if (this.currentUtteranceId === utteranceId && !this.wasCanceledByUs) {
-          this._handleSegmentEnd();
-        }
-      }
-    };
-    
-    // Speak immediately (must be in same task as user gesture)
-    window.speechSynthesis.speak(utterance);
-    
-    // Handle voice loading asynchronously if needed
-    if (voices.length === 0) {
-      window.speechSynthesis.addEventListener('voiceschanged', () => {
-        // Voice loading completed - voice selection will apply to future utterances
-        if (DEBUG_TTS) {
-          console.log('Session: Voices loaded for future segments');
-        }
-      }, { once: true });
+      console.log(`TTS: Using voice: ${selectedVoice.name}`);
     }
   }
 
@@ -406,13 +410,15 @@ export class SessionManager {
         currentSegmentId: this.scriptPlan!.segments[this.currentSegmentIndex]?.id || null
       });
       
-      // Small delay between segments for natural flow
-      setTimeout(() => {
-        if (this._state.playState === 'playing') {
+      // Continue to next segment immediately if still playing
+      if (this._state.playState === 'playing') {
+        // Small pause for natural flow
+        setTimeout(() => {
           this.play();
-        }
-      }, 1000);
+        }, 800);
+      }
     } else {
+      console.log('TTS: Session complete');
       this._updateState({ playState: 'stopped' });
       this._emit('end');
     }
@@ -441,7 +447,7 @@ export class SessionManager {
       if (this._state.playState === 'playing') {
         setTimeout(() => {
           this.play();
-        }, 200);
+        }, 100);
       }
     } else {
       this._updateState({ playState: 'stopped' });
@@ -463,14 +469,16 @@ export class SessionManager {
       if (this._state.playState === 'playing') {
         setTimeout(() => {
           this.play();
-        }, 500);
+        }, 100);
       }
     }
   }
 
   private _cancelCurrentTTS() {
+    console.log('TTS: Canceling current speech');
     this.wasCanceledByUs = true;
     this.currentUtteranceId = null;
+    this.ttsLock = false;
     
     if (this.currentAudioElement) {
       this.currentAudioElement.pause();
@@ -483,7 +491,9 @@ export class SessionManager {
       window.speechSynthesis.cancel();
     }
   }
+  
   dispose() {
+    console.log('Session: Disposing session manager');
     this._cancelCurrentTTS();
     
     // Clean up audio URLs to prevent memory leaks
@@ -496,6 +506,7 @@ export class SessionManager {
     this.ttsLock = false;
     this.wasCanceledByUs = false;
     this.currentUtteranceId = null;
+    this.voicesLoaded = false;
     this.eventListeners = {};
     this._updateState({ playState: 'stopped' });
   }

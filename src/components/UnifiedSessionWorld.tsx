@@ -75,21 +75,6 @@ function FixationCue({ breathing, isVisible, showAIMessage, orbSize }: FixationC
   
   return (
     <div 
-      className={`absolute left-1/2 transform -translate-x-1/2 transition-all duration-300 ease-out z-15 ${
-        shouldFlipAbove ? 'bottom-full mb-6' : 'top-full mt-6'
-      }`}
-      style={{ 
-        opacity: getBreathingOpacity(),
-        textShadow: '0 0 8px rgba(242, 245, 250, 0.3)',
-        fontSize: window.innerWidth >= 1024 ? '16px' : window.innerWidth >= 768 ? '14px' : '13px',
-        color: LIBERO_BRAND.colors.textSecondary,
-        fontWeight: 500,
-        lineHeight: 1.45
-      }}
-    >
-      <p className="text-center font-medium max-w-[560px] mx-auto px-4 leading-relaxed">
-        {getFixationText()}
-      </p>
     </div>
   );
 }
@@ -168,7 +153,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const orbRef = useRef<any>(null);
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
-  const initOnce = useRef(false);
+  const initSessionOnce = useRef(false);
 
   const currentEgoState = getEgoState(activeEgoState);
 
@@ -198,20 +183,20 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
 
   // Initialize session
   useEffect(() => {
-    if (initOnce.current) {
+    if (initSessionOnce.current) {
       return;
     }
-    initOnce.current = true;
+    initSessionOnce.current = true;
     
     const initSession = async () => {
       try {
+        console.log('Session: Initializing session manager...');
         const manager = new SessionManager();
         setSessionManager(manager);
         
         manager.on('state-change', (newState: any) => {
           setSessionManagerState(newState);
         });
-
 
         manager.on('play', () => {
           setSessionState(prev => ({ ...prev, isPlaying: true }));
@@ -222,6 +207,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         });
 
         manager.on('end', () => {
+          console.log('Session: Session ended by manager');
           handleSessionComplete();
         });
         
@@ -241,6 +227,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         };
         
         await manager.initialize(scriptContext);
+        console.log('Session: Manager initialized successfully');
         
       } catch (error) {
         console.error('Session initialization failed:', error);
@@ -251,7 +238,8 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     initSession();
 
     return () => {
-      initOnce.current = false;
+      console.log('Session: Cleaning up session effect');
+      initSessionOnce.current = false;
       
       if (sessionManager) {
         sessionManager.dispose();
@@ -260,7 +248,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         clearInterval(timerRef.current);
       }
     };
-  }, []);
+  }, []); // Empty deps - init once only
 
   // Session timer
   useEffect(() => {
@@ -520,20 +508,27 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   };
 
   const togglePlayPause = () => {
+    console.log('UI: Play/Pause clicked, current state:', sessionManagerState.playState);
     if (sessionManager) {
       if (sessionManagerState.playState === 'playing') {
+        console.log('UI: Calling pause()');
         sessionManager.pause();
       } else {
+        console.log('UI: Calling play() - USER GESTURE');
         sessionManager.play();
       }
+    } else {
+      console.error('UI: SessionManager not ready');
     }
   };
 
   const skipForward = () => {
+    console.log('UI: Skip forward clicked');
     sessionManager?.next();
   };
   
   const skipBack = () => {
+    console.log('UI: Skip back clicked');
     sessionManager?.prev();
   };
 
