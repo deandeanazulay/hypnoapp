@@ -127,7 +127,6 @@ class SessionManager implements SessionHandle {
 
     await Promise.all(segmentsToPrefetch.map(async ({ index, segment }) => {
       try {
-        const cacheKey = \`${this.scriptPlan!.hash}-${segment.id}-${AI.voice.defaultVoiceId}-${AI.voice.model}`;
         const cacheKey = `${this.scriptPlan!.hash}-${segment.id}-${AI.voice.defaultVoiceId}-${AI.voice.model}`;
         const audioBlob = await synthesizeSegment(segment.text, {
           voiceId: AI.voice.defaultVoiceId,
