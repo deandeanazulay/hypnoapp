@@ -330,22 +330,32 @@ export default function FavoritesScreen({ onSessionSelect }: FavoritesScreenProp
                     <Award size={20} className="text-yellow-400" />
                     <span>Earned Badges</span>
                   </h3>
-                  <span className="text-white/60 text-sm">3/25</span>
+                  <span className="text-white/60 text-sm">{achievements.length}/{totalAchievements}</span>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-3">
-                  {['guardian-adept', 'healer-master', 'child-enthusiast'].map(badge => {
-                    const badgeInfo = getBadgeInfo(badge);
-                    return (
-                      <div key={badge} className="bg-black/20 rounded-lg p-3 border border-white/10 text-center">
-                        <div className="text-2xl mb-2">{badgeInfo.icon}</div>
-                        <div className={`text-xs font-medium ${badgeInfo.color}`}>{badgeInfo.name.split(' ')[0]}</div>
-                      </div>
-                    );
-                  })}
-                </div>
+                {achievements.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-3">
+                    {achievements.slice(0, 6).map((achievement, i) => {
+                      const badgeInfo = getBadgeInfo(achievement);
+                      return (
+                        <div key={i} className="bg-black/20 rounded-lg p-3 border border-white/10 text-center">
+                          <div className="text-2xl mb-2">{badgeInfo.icon}</div>
+                          <div className={`text-xs font-medium ${badgeInfo.color}`}>{badgeInfo.name.split(' ')[0]}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-black/20 rounded-lg p-6 border border-white/10 text-center">
+                    <div className="w-16 h-16 rounded-full bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center mx-auto mb-3">
+                      <Award size={24} className="text-yellow-400" />
+                    </div>
+                    <h4 className="text-white font-medium mb-2">No Badges Yet</h4>
+                    <p className="text-white/60 text-sm">Complete sessions to earn your first achievement</p>
+                  </div>
+                )}
                 
-                <p className="text-white/70 text-sm mt-4">Complete more sessions to unlock rare badges and titles ({user?.achievements?.length || 0} earned)</p>
+                <p className="text-white/70 text-sm mt-4">Complete more sessions to unlock rare badges and titles ({achievements.length} earned)</p>
               </div>
             </div>
           </div>
