@@ -3,6 +3,9 @@ import { getSessionScript } from './gemini';
 import { synthesizeSegment } from './voice';
 import { AI } from '../config/ai';
 
+// Debug flag for TTS logging
+const DEBUG_TTS = false;
+
 export interface ScriptSegment {
   id: string;
   text: string;
@@ -43,9 +46,11 @@ export class SessionManager {
   private eventListeners: Record<string, Function[]> = {};
   private currentSegmentIndex = 0;
   private scriptPlan: any = null;
+  private ttsLock = false;
+  private wasCanceledByUs = false;
+  private currentUtteranceId: string | null = null;
 
   async initialize(userContext: any) {
-    
     try {
       await this._initializeSession(userContext);
     } catch (error) {
@@ -55,8 +60,6 @@ export class SessionManager {
   }
 
   private async _initializeSession(userContext: any) {
-    // Generate sophisticated hypnosis script
-    
     try {
       this.scriptPlan = await getSessionScript(userContext);
       
@@ -68,14 +71,14 @@ export class SessionManager {
       this.scriptPlan = this._createFallbackScript(userContext);
     }
 
-    // Double-check we have segments
+    // Validate and ensure minimum segments
     if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
-      this.scriptPlan = this._createEmergencyFallback();
+      this.scriptPlan = this._createEmergencyFallback(userContext);
     }
 
-    // Validate final script
-    if (!this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
-      throw new Error('Failed to create any segments');
+    // Final validation - must have at least 5 segments
+    if (!this.scriptPlan.segments || this.scriptPlan.segments.length < 5) {
+      this.scriptPlan = this._createDeterministicFallback(userContext);
     }
 
     // Initialize segments array
@@ -93,6 +96,10 @@ export class SessionManager {
       scriptPlan: this.scriptPlan,
       currentSegmentId: this.segments[0]?.id || null
     });
+
+    if (DEBUG_TTS) {
+      console.log(`Session: Initialized with ${this.segments.length} segments`);
+    }
   }
 
   private _createFallbackScript(userContext: any): any {
@@ -215,20 +222,36 @@ export class SessionManager {
     return `And now it's time to return, bringing all these powerful changes with you. Your ${egoState} energy will continue working on your ${goalId} long after this session ends. I'll count from 1 to 5, and on 5, you'll emerge feeling fantastic. 1... energy returning to your body... 2... becoming more aware of your surroundings... 3... feeling wonderful, feeling powerful... 4... almost ready to open your eyes... and 5... eyes open! Fully alert, completely refreshed, and permanently transformed.`;
   }
 
-  private _createEmergencyFallback() {
-    
+  private _createEmergencyFallback(userContext: any) {
     return {
-      title: 'Relaxation Session',
+      title: `${userContext.egoState || 'Guardian'} Emergency Session`,
       segments: [
-        { id: "welcome", text: "Welcome. Take a deep breath and relax.", approxSec: 10 },
-        { id: "breathe", text: "Close your eyes and breathe naturally.", approxSec: 15 },
-        { id: "release", text: "Feel all tension leaving your body.", approxSec: 15 },
-        { id: "peace", text: "You are at peace. You are calm.", approxSec: 10 },
-        { id: "return", text: "Now return refreshed and alert.", approxSec: 10 }
+        { id: "welcome", text: `Welcome to your ${userContext.egoState || 'Guardian'} session. Find a comfortable position and close your eyes.`, approxSec: 12 },
+        { id: "breathe", text: "Take a deep breath in through your nose... hold it for a moment... and slowly exhale through your mouth.", approxSec: 20 },
+        { id: "relax", text: "Feel your body relaxing completely. Starting with your feet, let relaxation flow up through your legs, your torso, your arms.", approxSec: 25 },
+        { id: "deepen", text: "Going deeper now into this peaceful state. Count backwards from 5 to 1, feeling twice as relaxed with each number.", approxSec: 30 },
+        { id: "transform", text: `Your ${userContext.egoState || 'Guardian'} energy is awakening. Feel this positive change integrating throughout your entire being.`, approxSec: 25 },
+        { id: "integrate", text: "These changes are becoming part of you now. Feel them taking root at the deepest levels of your consciousness.", approxSec: 20 },
+        { id: "return", text: "Now count from 1 to 5, and on 5, open your eyes feeling refreshed and transformed. 1... 2... 3... 4... 5... eyes open!", approxSec: 18 }
       ]
     };
   }
 
+  private _createDeterministicFallback(userContext: any) {
+    const { egoState = 'Guardian', goalId = 'transformation', lengthSec = 900 } = userContext;
+    
+    return {
+      title: `${egoState} Transformation Session`,
+      segments: [
+        { id: "intro", text: `Welcome to your ${egoState} transformation session. We're focusing on ${goalId} today. Find a comfortable position.`, approxSec: Math.floor(lengthSec * 0.08) },
+        { id: "induction", text: "Close your eyes and take three deep breaths. With each exhale, feel yourself becoming more relaxed and receptive.", approxSec: Math.floor(lengthSec * 0.20) },
+        { id: "deepening", text: `Going deeper now into this peaceful state. Your ${egoState} energy is guiding you safely into transformation.`, approxSec: Math.floor(lengthSec * 0.25) },
+        { id: "work", text: `Feel your ${egoState} wisdom working on ${goalId}. These positive changes are happening naturally and easily.`, approxSec: Math.floor(lengthSec * 0.30) },
+        { id: "integration", text: "These changes are integrating at the deepest levels. Feel them becoming a permanent part of who you are.", approxSec: Math.floor(lengthSec * 0.12) },
+        { id: "emergence", text: "Time to return now. Count from 1 to 5. On 5, open your eyes feeling completely refreshed and transformed.", approxSec: Math.floor(lengthSec * 0.05) }
+      ]
+    };
+  }
   private _updateState(updates: Partial<SessionState>) {
     this._state = { ...this._state, ...updates };
     this._emit('state-change', this._state);
@@ -240,90 +263,13 @@ export class SessionManager {
     }
   }
 
-  private async _prefetchSegments(startIndex: number, count: number) {
-    const segmentsToPrefetch = [];
-    for (let i = startIndex; i < Math.min(startIndex + count, this.scriptPlan!.segments.length); i++) {
-      if (!this.segments[i]) {
-        segmentsToPrefetch.push({ index: i, segment: this.scriptPlan!.segments[i] });
-      }
-    }
-
-    if (segmentsToPrefetch.length === 0) return;
-
-    console.log(`Session: Prefetching ${segmentsToPrefetch.length} segments starting from segment ${startIndex + 1}`);
-
-    await Promise.all(segmentsToPrefetch.map(async ({ index, segment }) => {
-      try {
-        const voiceResult = await synthesizeSegment(segment.text, {
-          voiceId: AI.voice.defaultVoiceId,
-          model: AI.voice.model,
-          cacheKey: `${this.scriptPlan!.title || 'script'}-${segment.id}`,
-          mode: 'pre-gen'
-        });
-
-        console.log(`Session: Segment ${index + 1} (${segment.id}) synthesized with provider: ${voiceResult.provider}`);
-
-        // Handle different TTS providers
-        let playableSegment: PlayableSegment;
-        
-        if (voiceResult.provider === 'elevenlabs' && voiceResult.audioUrl) {
-          const audioElement = new Audio(voiceResult.audioUrl);
-          
-          // Preload the audio
-          audioElement.preload = 'auto';
-          audioElement.load(); // Force loading
-          
-          // Don't set global handlers here - they'll be set when playing
-          
-          playableSegment = {
-            id: segment.id,
-            text: segment.text,
-            approxSec: segment.approxSec || 30,
-            audio: audioElement,
-            ttsProvider: 'elevenlabs'
-          };
-        } else {
-          // Browser TTS or no audio
-          playableSegment = {
-            id: segment.id,
-            text: segment.text,
-            approxSec: segment.approxSec || 30,
-            audio: null,
-            ttsProvider: voiceResult.provider
-          };
-        }
-        
-        this.segments[index] = playableSegment;
-        
-        this._emit('segment-ready', segment.id);
-        track('segment_buffered', { 
-          segmentId: segment.id, 
-          index: index + 1, 
-          provider: voiceResult.provider 
-        });
-
-      } catch (error: any) {
-        console.error(`Session: Failed to prefetch segment ${index + 1}:`, error.message);
-        
-        // Don't fail the entire session - create a text-only segment
-        this.segments[index] = {
-          id: segment.id,
-          text: segment.text,
-          approxSec: segment.approxSec || 30,
-          audio: null,
-          ttsProvider: 'browser-tts'
-        };
-        
-        track('segment_buffer_error', { segmentId: segment.id, error: error.message });
-      }
-    }));
-
-    this._updateState({ bufferedAhead: this.segments.filter(s => s !== null).length - this.currentSegmentIndex - 1 });
-    console.log(`Session: Prefetch complete. ${this.segments.filter(s => s !== null).length} total segments ready`);
-  }
 
   play() {
-    if (this._state.playState === 'playing') return;
+    // Single-flight guard - prevent duplicate starts
+    if (this.ttsLock && this._state.playState === 'playing') {
+      if (DEBUG_TTS) console.log('Session: Play already in progress, ignoring');
+      return;
+    }
     
     // Check if we have segments
     if (!this.segments || this.segments.length === 0) {
@@ -331,9 +277,6 @@ export class SessionManager {
       this._updateState({ error: 'No segments available to play' });
       return;
     }
-    
-    console.log('Session: Starting play with', this.segments.length, 'segments');
-    
     
     // Check if we have a valid segment
     if (this.currentSegmentIndex < 0 || this.currentSegmentIndex >= this.segments.length) {
@@ -347,7 +290,9 @@ export class SessionManager {
       return;
     }
     
-    console.log('Session: Playing segment', this.currentSegmentIndex + 1, ':', segment.text.substring(0, 50) + '...');
+    if (DEBUG_TTS) {
+      console.log(`TTS start seg ${this.currentSegmentIndex + 1}`);
+    }
     
     // Update state to show current segment
     this._updateState({ 
@@ -357,26 +302,13 @@ export class SessionManager {
     });
     this._emit('play');
     
-    // Clean up any previous audio
-    if (this.currentAudioElement) {
-      this.currentAudioElement.pause();
-      this.currentAudioElement.onended = null;
-      this.currentAudioElement.onerror = null;
-      this.currentAudioElement = null;
-    }
-    
-    // Stop any browser TTS
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    
     // Use browser TTS for reliability
     this._playWithBrowserTTS(segment.text);
   }
 
   private _playWithBrowserTTS(text: string) {
     if (!window.speechSynthesis) {
-      console.log('Session: speechSynthesis not available');
+      console.warn('Session: speechSynthesis not available');
       const estimatedDuration = Math.max(4000, text.length * 100);
       setTimeout(() => {
         this._handleSegmentEnd();
@@ -384,68 +316,87 @@ export class SessionManager {
       return;
     }
 
-    console.log('Session: Starting TTS for text:', text.substring(0, 50) + '...');
-
-    // Cancel any existing speech
-    window.speechSynthesis.cancel();
+    // Generate unique utterance ID
+    const utteranceId = `utterance-${Date.now()}-${Math.random()}`;
+    this.currentUtteranceId = utteranceId;
+    this.wasCanceledByUs = false;
     
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.7; // Slower for hypnosis
-    utterance.pitch = 0.9; // Slightly lower for authority
+    utterance.rate = 0.9; // Clear dictation
+    utterance.pitch = 1.0; // Natural pitch
     utterance.volume = 1.0;
     
-    // Wait for voices to load if needed
-    const setVoiceAndSpeak = () => {
-      const voices = window.speechSynthesis.getVoices();
-      console.log('Session: Available voices:', voices.length);
-      
-      // Select optimal voice for hypnosis
-      const hypnosisVoice = voices.find(voice => 
-        voice.name.includes('Daniel') || // Deep male voice
-        voice.name.includes('Karen') || // Calm female voice
-        voice.name.includes('Samantha') || // Soothing voice
-        voice.name.includes('Victoria') || // macOS voice
-        voice.name.includes('Moira') || // macOS voice
-        (voice.lang.includes('en') && voice.name.includes('Google'))
-      ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
-      
-      if (hypnosisVoice) {
-        utterance.voice = hypnosisVoice;
-        console.log('Session: Selected voice:', hypnosisVoice.name);
-      } else {
-        console.log('Session: Using default voice');
+    // Voice selection
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoices = ['Google US English', 'Microsoft Aria', 'Microsoft Mark', 'Microsoft David', 'Samantha', 'Victoria', 'Moira'];
+    
+    let selectedVoice = null;
+    for (const voiceName of preferredVoices) {
+      selectedVoice = voices.find(voice => voice.name.includes(voiceName));
+      if (selectedVoice) break;
+    }
+    
+    if (!selectedVoice) {
+      selectedVoice = voices.find(voice => voice.lang.includes('en'));
+    }
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      if (DEBUG_TTS) {
+        console.log('Session: Selected voice:', selectedVoice.name);
       }
+    }
+    
+    // Event handlers with single-flight protection
+    utterance.onstart = () => {
+      this.ttsLock = true;
+    };
+    
+    utterance.onend = () => {
+      this.ttsLock = false;
       
-      utterance.onstart = () => {
-        console.log('Session: TTS started successfully');
-      };
-      
-      utterance.onend = () => {
-        console.log('Session: TTS ended, moving to next segment');
-        this._handleSegmentEnd();
-      };
-      
-      utterance.onerror = (event) => {
-        if (event.error === 'interrupted' || event.error === 'canceled') {
-          console.warn('Session: TTS interrupted:', event.error);
-        } else {
-          console.error('Session: TTS error:', event.error);
+      // Only advance if this utterance wasn't canceled by us
+      if (this.currentUtteranceId === utteranceId && !this.wasCanceledByUs) {
+        if (DEBUG_TTS) {
+          console.log(`TTS end seg ${this.currentSegmentIndex + 1}`);
         }
         this._handleSegmentEnd();
-      };
-      
-      console.log('Session: Calling speechSynthesis.speak()');
-      window.speechSynthesis.speak(utterance);
+      } else if (this.wasCanceledByUs) {
+        this.wasCanceledByUs = false;
+      }
     };
-
-    // Handle voice loading
-    if (window.speechSynthesis.getVoices().length === 0) {
-      console.log('Session: Waiting for voices to load...');
-      window.speechSynthesis.addEventListener('voiceschanged', setVoiceAndSpeak, { once: true });
-    } else {
-      setVoiceAndSpeak();
+    
+    utterance.onerror = (event) => {
+      this.ttsLock = false;
+      
+      if (event.error === 'interrupted' || event.error === 'canceled') {
+        // Neutral - don't advance
+        if (DEBUG_TTS) {
+          console.log('Session: TTS interrupted/canceled');
+        }
+      } else {
+        console.warn('Session: TTS error:', event.error);
+        // Fall back to advance to avoid stalls
+        if (this.currentUtteranceId === utteranceId && !this.wasCanceledByUs) {
+          this._handleSegmentEnd();
+        }
+      }
+    };
+    
+    // Speak immediately (must be in same task as user gesture)
+    window.speechSynthesis.speak(utterance);
+    
+    // Handle voice loading asynchronously if needed
+    if (voices.length === 0) {
+      window.speechSynthesis.addEventListener('voiceschanged', () => {
+        // Voice loading completed - voice selection will apply to future utterances
+        if (DEBUG_TTS) {
+          console.log('Session: Voices loaded for future segments');
+        }
+      }, { once: true });
     }
   }
+
   private _handleSegmentEnd() {
     if (this.currentSegmentIndex < this.segments.length - 1) {
       this.currentSegmentIndex++;
@@ -457,7 +408,9 @@ export class SessionManager {
       
       // Small delay between segments for natural flow
       setTimeout(() => {
-        this.play();
+        if (this._state.playState === 'playing') {
+          this.play();
+        }
       }, 1000);
     } else {
       this._updateState({ playState: 'stopped' });
@@ -468,30 +421,14 @@ export class SessionManager {
   pause() {
     if (this._state.playState === 'paused') return;
     
-    if (this.currentAudioElement) {
-      this.currentAudioElement.pause();
-    }
-    
-    // Stop browser TTS if active
-    if (window.speechSynthesis) {
-      window.speechSynthesis.pause();
-    }
+    this._cancelCurrentTTS();
     
     this._updateState({ playState: 'paused' });
     this._emit('pause');
   }
 
   next() {
-    // Stop current audio
-    if (this.currentAudioElement) {
-      this.currentAudioElement.pause();
-      this.currentAudioElement.onended = null;
-      this.currentAudioElement.onerror = null;
-      this.currentAudioElement = null;
-    }
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+    this._cancelCurrentTTS();
     
     if (this.currentSegmentIndex < this.segments.length - 1) {
       this.currentSegmentIndex++;
@@ -514,16 +451,7 @@ export class SessionManager {
 
   prev() {
     if (this.currentSegmentIndex > 0) {
-      // Stop current audio
-      if (this.currentAudioElement) {
-        this.currentAudioElement.pause();
-        this.currentAudioElement.onended = null;
-        this.currentAudioElement.onerror = null;
-        this.currentAudioElement = null;
-      }
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
+      this._cancelCurrentTTS();
       
       this.currentSegmentIndex--;
       
@@ -540,18 +468,23 @@ export class SessionManager {
     }
   }
 
-  dispose() {
+  private _cancelCurrentTTS() {
+    this.wasCanceledByUs = true;
+    this.currentUtteranceId = null;
     
     if (this.currentAudioElement) {
       this.currentAudioElement.pause();
-      this.currentAudioElement.src = '';
+      this.currentAudioElement.onended = null;
+      this.currentAudioElement.onerror = null;
       this.currentAudioElement = null;
     }
     
-    // Stop any browser TTS
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
+  }
+  dispose() {
+    this._cancelCurrentTTS();
     
     // Clean up audio URLs to prevent memory leaks
     this.segments.forEach(segment => {
@@ -560,6 +493,9 @@ export class SessionManager {
       }
     });
     
+    this.ttsLock = false;
+    this.wasCanceledByUs = false;
+    this.currentUtteranceId = null;
     this.eventListeners = {};
     this._updateState({ playState: 'stopped' });
   }

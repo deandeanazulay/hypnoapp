@@ -168,7 +168,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const orbRef = useRef<any>(null);
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
-  const initRef = useRef(false);
+  const initOnce = useRef(false);
 
   const currentEgoState = getEgoState(activeEgoState);
 
@@ -198,10 +198,10 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
 
   // Initialize session
   useEffect(() => {
-    if (initRef.current) {
+    if (initOnce.current) {
       return;
     }
-    initRef.current = true;
+    initOnce.current = true;
     
     const initSession = async () => {
       try {
@@ -212,9 +212,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           setSessionManagerState(newState);
         });
 
-        manager.on('segment-ready', (segmentId: string) => {
-          // Segment ready - no logging needed
-        });
 
         manager.on('play', () => {
           setSessionState(prev => ({ ...prev, isPlaying: true }));
@@ -254,7 +251,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     initSession();
 
     return () => {
-      initRef.current = false;
+      initOnce.current = false;
       
       if (sessionManager) {
         sessionManager.dispose();
@@ -648,41 +645,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         fontFamily: LIBERO_BRAND.typography.bodyM.fontFamily || 'Inter, sans-serif'
       }}
     >
-      {/* CSS Custom Properties for Responsive Layout */}
-      <style jsx>{`
-        .session-layout { 
-          --header-h: 64px; 
-          --dock-h: 88px; 
-          --rail-w: 72px; 
-          --indicator-w: 84px; 
-          --gutter: 24px; 
-        }
-        @media (max-width: 1199px) { 
-          .session-layout { 
-            --rail-w: 64px; 
-            --indicator-w: 72px; 
-            --gutter: 20px; 
-            --dock-h: 80px; 
-          } 
-        }
-        @media (max-width: 767px) { 
-          .session-layout { 
-            --rail-w: 56px; 
-            --indicator-w: 64px; 
-            --gutter: 16px; 
-            --dock-h: 72px; 
-            --header-h: 56px; 
-          } 
-        }
-        @keyframes twinkle { 
-          0%, 100% { opacity: 0.1; transform: scale(1); } 
-          50% { opacity: 0.3; transform: scale(1.1); } 
-        }
-        @keyframes breathe-glow { 
-          0%, 100% { opacity: 0.85; } 
-          50% { opacity: 1.0; } 
-        }
-      `}</style>
 
       {/* Cosmic Background with Brand Aura */}
       <div className="absolute inset-0 z-0">
@@ -726,20 +688,20 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
       </div>
 
       {/* Container with Layout Variables */}
-      <div className="session-layout h-full flex flex-col">
+      <div className="h-full flex flex-col session-layout">
         
         {/* Fixed Header (App Bar) - Brand Style */}
         <header 
           className="fixed top-0 left-0 right-0 z-[200] backdrop-blur-xl border-b border-white/10"
           style={{ 
-            height: 'var(--header-h)',
+            height: '64px',
             background: `${LIBERO_BRAND.colors.midnight}F0`,
             boxShadow: LIBERO_BRAND.elevation.e1
           }}
         >
           <div 
             className="h-full flex items-center justify-between"
-            style={{ padding: '0 var(--gutter)' }}
+            style={{ padding: '0 24px' }}
           >
             {/* Left: Title + Subtitle */}
             <div className="flex-shrink-0">
@@ -814,12 +776,12 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         <div 
           className="flex-1 grid"
           style={{
-            gridTemplateColumns: 'var(--rail-w) 1fr var(--indicator-w)',
-            paddingTop: 'calc(var(--header-h) + 16px)',
-            paddingBottom: 'calc(var(--dock-h) + 16px)',
-            paddingLeft: 'var(--gutter)',
-            paddingRight: 'var(--gutter)',
-            gap: 'var(--gutter)'
+            gridTemplateColumns: '72px 1fr 84px',
+            paddingTop: '80px',
+            paddingBottom: '104px',
+            paddingLeft: '24px',
+            paddingRight: '24px',
+            gap: '24px'
           }}
         >
           {/* Left Rail - Square Control Cards */}
@@ -1163,7 +1125,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         <div 
           className="fixed bottom-0 left-0 right-0 z-[180] backdrop-blur-xl border-t"
           style={{ 
-            height: 'var(--dock-h)',
+            height: '88px',
             paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             background: `${LIBERO_BRAND.colors.midnight}F0`,
             borderColor: `${LIBERO_BRAND.colors.divider}30`,
@@ -1172,7 +1134,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         >
           <div 
             className="h-full flex items-center justify-center"
-            style={{ padding: `0 ${LIBERO_BRAND.spacing.xl}` }}
+            style={{ padding: `0 24px` }}
           >
             <form onSubmit={handleSubmit} className="flex items-center space-x-4 w-full max-w-4xl">
               
