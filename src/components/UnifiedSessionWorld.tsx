@@ -3,9 +3,10 @@ import Orb from './Orb';
 import { useAppStore, getEgoState } from '../store';
 import { useGameState } from './GameStateManager';
 import { SessionManager } from '../services/session';
+import { LIBERO_BRAND } from '../config/theme';
 import { 
   X, MessageCircle, Play, Pause, SkipBack, SkipForward, 
-  Volume2, VolumeX, Mic, Send, Brain, Loader, Activity, Clock, Wind
+  Volume2, VolumeX, Mic, Send, Brain, Loader, Activity, Clock, Wind, Eye
 } from 'lucide-react';
 
 // Fixation Cue Component
@@ -24,7 +25,6 @@ function FixationCue({ breathing, isVisible, showAIMessage, orbSize }: FixationC
   // Auto-dim after 10 seconds
   useEffect(() => {
     if (isVisible && !showAIMessage) {
-      // Reset auto-dim timer on phase change or when becoming visible
       if (autoDimTimerRef.current) {
         clearTimeout(autoDimTimerRef.current);
       }
@@ -44,26 +44,6 @@ function FixationCue({ breathing, isVisible, showAIMessage, orbSize }: FixationC
       }
     };
   }, [isVisible, showAIMessage, breathing]);
-  
-  // Restore opacity on user interaction
-  useEffect(() => {
-    const handleUserActivity = () => {
-      if (isAutoDimmed) {
-        setIsAutoDimmed(false);
-        setOpacity(1);
-      }
-    };
-    
-    document.addEventListener('click', handleUserActivity);
-    document.addEventListener('keydown', handleUserActivity);
-    document.addEventListener('touchstart', handleUserActivity);
-    
-    return () => {
-      document.removeEventListener('click', handleUserActivity);
-      document.removeEventListener('keydown', handleUserActivity);
-      document.removeEventListener('touchstart', handleUserActivity);
-    };
-  }, [isAutoDimmed]);
   
   if (!isVisible || showAIMessage) return null;
   
@@ -90,21 +70,24 @@ function FixationCue({ breathing, isVisible, showAIMessage, orbSize }: FixationC
     }
   };
   
-  // Check if we should flip above orb (collision detection with bottom dock)
-  const shouldFlipAbove = window.innerHeight < 700; // Simple heuristic for short viewports
+  // Check if we should flip above orb
+  const shouldFlipAbove = window.innerHeight < 700;
   
   return (
     <div 
-      className={`absolute left-1/2 transform -translate-x-1/2 transition-all duration-300 ease-out z-20 ${
+      className={`absolute left-1/2 transform -translate-x-1/2 transition-all duration-300 ease-out z-15 ${
         shouldFlipAbove ? 'bottom-full mb-6' : 'top-full mt-6'
       }`}
       style={{ 
         opacity: getBreathingOpacity(),
-        textShadow: '0 0 8px rgba(255, 255, 255, 0.3)'
+        textShadow: '0 0 8px rgba(242, 245, 250, 0.3)',
+        fontSize: window.innerWidth >= 1024 ? '16px' : window.innerWidth >= 768 ? '14px' : '13px',
+        color: LIBERO_BRAND.colors.textSecondary,
+        fontWeight: 500,
+        lineHeight: 1.45
       }}
-      aria-label="Fixation guidance"
     >
-      <p className="text-white text-center font-medium max-w-[560px] mx-auto px-4 text-base md:text-lg leading-relaxed">
+      <p className="text-center font-medium max-w-[560px] mx-auto px-4 leading-relaxed">
         {getFixationText()}
       </p>
     </div>
@@ -544,12 +527,17 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           e.preventDefault();
           setIsVoiceEnabled(!isVoiceEnabled);
           break;
+        case 'f':
+        case 'F':
+          e.preventDefault();
+          setShowFixationCue(!showFixationCue);
+          break;
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [sessionState.isPlaying, isVoiceEnabled]);
+  }, [sessionState.isPlaying, isVoiceEnabled, showFixationCue]);
 
   const progress = (sessionState.totalTime - sessionState.timeRemaining) / sessionState.totalTime;
   const currentSegment = sessionManagerState.currentSegmentIndex + 1;
@@ -557,37 +545,29 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const bufferedAhead = sessionManagerState.bufferedAhead;
   const latestAiMessage = conversation.filter(msg => msg.role === 'ai').slice(-1)[0];
 
-  // Get breathing color for right rail indicator
-  const getBreathingColor = () => {
-    switch (sessionState.breathing) {
-      case 'inhale': return 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-500/40 text-teal-400';
-      case 'hold-inhale': return 'bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border-blue-500/40 text-blue-400';
-      case 'exhale': return 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/40 text-green-400';
-      case 'hold-exhale': return 'bg-gradient-to-br from-purple-500/20 to-violet-500/20 border-purple-500/40 text-purple-400';
-      default: return 'bg-white/5 border-white/20 text-white/60';
-    }
-  };
-
-  const getPhaseColor = () => {
-    if (!sessionState.isPlaying) return 'bg-gradient-to-br from-gray-500/20 to-slate-500/20 border-gray-500/40 text-gray-400';
-    return 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/40 text-green-400';
-  };
-
   return (
-    <div className="h-screen bg-black text-white overflow-hidden">
-      {/* CSS Custom Properties for Layout */}
+    <div 
+      className="h-screen text-white overflow-hidden"
+      style={{ 
+        background: LIBERO_BRAND.colors.midnight,
+        fontFamily: LIBERO_BRAND.typography.bodyM.fontFamily || 'Inter, sans-serif'
+      }}
+    >
+      {/* CSS Custom Properties for Responsive Layout */}
       <style jsx>{`
         .session-layout {
           --header-h: 64px;
           --dock-h: 88px;
           --rail-w: 72px;
+          --indicator-w: 84px;
           --gutter: 24px;
         }
         
         @media (max-width: 1199px) {
           .session-layout {
             --rail-w: 64px;
-            --gutter: 16px;
+            --indicator-w: 72px;
+            --gutter: 20px;
             --dock-h: 80px;
           }
         }
@@ -595,28 +575,58 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         @media (max-width: 767px) {
           .session-layout {
             --rail-w: 56px;
-            --gutter: 12px;
+            --indicator-w: 64px;
+            --gutter: 16px;
             --dock-h: 72px;
+            --header-h: 56px;
           }
+        }
+        
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.1; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+        
+        @keyframes breathe-glow {
+          0%, 100% { opacity: 0.85; }
+          50% { opacity: 1.0; }
         }
       `}</style>
 
-      {/* Cosmic Background */}
+      {/* Cosmic Background with Brand Aura */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/30 to-teal-950/30" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-400/8 to-cyan-400/4 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-400/8 to-indigo-400/4 rounded-full blur-3xl" />
+        {/* Base gradient */}
+        <div 
+          className="absolute inset-0"
+          style={{ 
+            background: `linear-gradient(135deg, ${LIBERO_BRAND.colors.midnight} 0%, ${LIBERO_BRAND.colors.deepSpace} 50%, ${LIBERO_BRAND.colors.midnight} 100%)`
+          }}
+        />
+        
+        {/* Brand aura gradients */}
+        <div 
+          className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-35"
+          style={{ background: LIBERO_BRAND.gradients.brandAura }}
+        />
+        <div 
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl opacity-25"
+          style={{ 
+            background: `radial-gradient(circle at center, ${LIBERO_BRAND.colors.iris}15 0%, transparent 70%)`
+          }}
+        />
         
         {/* Subtle stars */}
         {Array.from({ length: 40 }).map((_, i) => (
           <div
             key={`star-${i}`}
-            className="absolute bg-white rounded-full opacity-20"
+            className="absolute rounded-full"
             style={{
               width: `${0.5 + Math.random() * 1.5}px`,
               height: `${0.5 + Math.random() * 1.5}px`,
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
+              backgroundColor: LIBERO_BRAND.colors.textMuted,
+              opacity: 0.2,
               animation: `twinkle ${4 + Math.random() * 6}s ease-in-out infinite`,
               animationDelay: `${Math.random() * 4}s`
             }}
@@ -627,24 +637,51 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
       {/* Container with Layout Variables */}
       <div className="session-layout h-full flex flex-col">
         
-        {/* Fixed Header (App Bar) */}
+        {/* Fixed Header (App Bar) - Brand Style */}
         <header 
-          className="fixed top-0 left-0 right-0 z-[200] bg-black/95 backdrop-blur-xl border-b border-white/10 shadow-lg"
-          style={{ height: 'var(--header-h)' }}
+          className="fixed top-0 left-0 right-0 z-[200] backdrop-blur-xl border-b border-white/10"
+          style={{ 
+            height: 'var(--header-h)',
+            background: `${LIBERO_BRAND.colors.midnight}F0`,
+            boxShadow: LIBERO_BRAND.elevation.e1
+          }}
         >
-          <div className="h-full px-6 flex items-center justify-between">
+          <div 
+            className="h-full flex items-center justify-between"
+            style={{ padding: '0 var(--gutter)' }}
+          >
             {/* Left: Title + Subtitle */}
             <div className="flex-shrink-0">
-              <h1 className="text-white text-lg font-semibold leading-tight">{getSessionTitle()}</h1>
-              <p className="text-white/60 text-sm">Segment {currentSegment} of {totalSegments}</p>
+              <h1 
+                className="font-semibold leading-tight"
+                style={{ 
+                  fontSize: '18px',
+                  color: LIBERO_BRAND.colors.textPrimary,
+                  fontFamily: LIBERO_BRAND.typography.h3.fontFamily || 'Cal Sans, Inter, sans-serif'
+                }}
+              >
+                {getSessionTitle()}
+              </h1>
+              <p 
+                className="text-sm"
+                style={{ color: LIBERO_BRAND.colors.textSecondary }}
+              >
+                Segment {currentSegment} of {totalSegments}
+              </p>
             </div>
 
-            {/* Center: Progress Bar */}
+            {/* Center: Progress Bar (Brand Primary) */}
             <div className="flex-1 max-w-md mx-8">
-              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="w-full h-1.5 rounded-full overflow-hidden"
+                style={{ backgroundColor: `${LIBERO_BRAND.colors.divider}60` }}
+              >
                 <div 
-                  className="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full transition-all duration-700"
-                  style={{ width: `${progress * 100}%` }}
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ 
+                    width: `${progress * 100}%`,
+                    background: `linear-gradient(90deg, ${LIBERO_BRAND.colors.liberoTeal}, ${LIBERO_BRAND.colors.iris})`
+                  }}
                 />
               </div>
             </div>
@@ -652,15 +689,31 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             {/* Right: Stats + Close */}
             <div className="flex items-center space-x-4 flex-shrink-0">
               <div className="text-right">
-                <div className="text-white text-sm font-semibold">{currentSegment}/{totalSegments}</div>
-                <div className="text-white/50 text-xs">Queued: {bufferedAhead}</div>
+                <div 
+                  className="text-sm font-semibold"
+                  style={{ color: LIBERO_BRAND.colors.textPrimary }}
+                >
+                  {currentSegment}/{totalSegments}
+                </div>
+                <div 
+                  className="text-xs"
+                  style={{ color: LIBERO_BRAND.colors.textMuted }}
+                >
+                  Queued: {bufferedAhead}
+                </div>
               </div>
               <button
                 onClick={onCancel}
                 title="Close Session"
-                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200 hover:scale-105"
+                className="w-10 h-10 backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center"
+                style={{
+                  background: LIBERO_BRAND.colors.surface1,
+                  borderColor: `${LIBERO_BRAND.colors.divider}60`,
+                  borderRadius: LIBERO_BRAND.radius.control,
+                  color: LIBERO_BRAND.colors.textSecondary
+                }}
               >
-                <X size={18} className="text-white/80" />
+                <X size={18} />
               </button>
             </div>
           </div>
@@ -670,7 +723,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         <div 
           className="flex-1 grid"
           style={{
-            gridTemplateColumns: 'var(--rail-w) 1fr var(--rail-w)',
+            gridTemplateColumns: 'var(--rail-w) 1fr var(--indicator-w)',
             paddingTop: 'calc(var(--header-h) + 16px)',
             paddingBottom: 'calc(var(--dock-h) + 16px)',
             paddingLeft: 'var(--gutter)',
@@ -678,17 +731,26 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             gap: 'var(--gutter)'
           }}
         >
-          {/* Left Rail - Controls (Card Style) */}
-          <div className="flex flex-col items-center justify-center space-y-4 z-[150]">
-            {/* Play/Pause (Primary) */}
+          {/* Left Rail - Square Control Cards */}
+          <div className="flex flex-col justify-center space-y-3 z-[150]">
+            {/* Play/Pause (Primary Control) */}
             <button
               onClick={togglePlayPause}
               title={`${sessionState.isPlaying ? 'Pause' : 'Play'} Session (Space)`}
-              className={`w-14 h-14 rounded-xl backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center shadow-lg ${
-                sessionState.isPlaying 
-                  ? 'bg-gradient-to-br from-orange-500/30 to-red-500/20 border-orange-400/60 text-orange-200 shadow-orange-400/20' 
-                  : 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-200 shadow-green-400/20'
-              }`}
+              className="backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center"
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: LIBERO_BRAND.radius.control,
+                background: sessionState.isPlaying 
+                  ? `linear-gradient(135deg, ${LIBERO_BRAND.colors.gold}30, ${LIBERO_BRAND.colors.danger}20)`
+                  : `linear-gradient(135deg, ${LIBERO_BRAND.colors.success}30, ${LIBERO_BRAND.colors.liberoTeal}20)`,
+                borderColor: sessionState.isPlaying 
+                  ? `${LIBERO_BRAND.colors.gold}60` 
+                  : `${LIBERO_BRAND.colors.success}60`,
+                color: sessionState.isPlaying ? LIBERO_BRAND.colors.gold : LIBERO_BRAND.colors.success,
+                boxShadow: sessionState.isPlaying ? LIBERO_BRAND.gradients.ctaGlow : LIBERO_BRAND.elevation.e1
+              }}
             >
               {sessionState.isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
             </button>
@@ -697,11 +759,19 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             <button
               onClick={toggleCoachBubble}
               title="Chat with Libero (C)"
-              className={`w-12 h-12 rounded-xl backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center shadow-lg ${
-                showCoachBubble 
-                  ? 'bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-teal-400/60 text-teal-200 shadow-teal-400/20' 
-                  : 'bg-white/10 border-white/30 text-white/70 hover:bg-white/20'
-              }`}
+              className="backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center"
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: LIBERO_BRAND.radius.control,
+                background: showCoachBubble 
+                  ? `${LIBERO_BRAND.colors.liberoTeal}30`
+                  : LIBERO_BRAND.colors.surface1,
+                borderColor: showCoachBubble 
+                  ? `${LIBERO_BRAND.colors.liberoTeal}60` 
+                  : `${LIBERO_BRAND.colors.divider}40`,
+                color: showCoachBubble ? LIBERO_BRAND.colors.liberoTeal : LIBERO_BRAND.colors.textSecondary
+              }}
             >
               <MessageCircle size={16} />
             </button>
@@ -710,7 +780,15 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             <button
               onClick={skipBack}
               title="Previous Segment (←)"
-              className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg text-white/70"
+              className="backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center"
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: LIBERO_BRAND.radius.control,
+                background: LIBERO_BRAND.colors.surface1,
+                borderColor: `${LIBERO_BRAND.colors.divider}40`,
+                color: LIBERO_BRAND.colors.textSecondary
+              }}
             >
               <SkipBack size={16} />
             </button>
@@ -719,7 +797,15 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             <button
               onClick={skipForward}
               title="Next Segment (→)"
-              className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg text-white/70"
+              className="backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center"
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: LIBERO_BRAND.radius.control,
+                background: LIBERO_BRAND.colors.surface1,
+                borderColor: `${LIBERO_BRAND.colors.divider}40`,
+                color: LIBERO_BRAND.colors.textSecondary
+              }}
             >
               <SkipForward size={16} />
             </button>
@@ -728,58 +814,122 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             <button
               onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
               title="Toggle Volume (M)"
-              className={`w-12 h-12 rounded-xl backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center shadow-lg ${
-                isVoiceEnabled 
-                  ? 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-200 shadow-green-400/20' 
-                  : 'bg-gradient-to-br from-red-500/30 to-orange-500/20 border-red-400/60 text-red-200 shadow-red-400/20'
-              }`}
+              className="backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center"
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: LIBERO_BRAND.radius.control,
+                background: isVoiceEnabled 
+                  ? `${LIBERO_BRAND.colors.success}30`
+                  : `${LIBERO_BRAND.colors.danger}30`,
+                borderColor: isVoiceEnabled 
+                  ? `${LIBERO_BRAND.colors.success}60` 
+                  : `${LIBERO_BRAND.colors.danger}60`,
+                color: isVoiceEnabled ? LIBERO_BRAND.colors.success : LIBERO_BRAND.colors.danger
+              }}
             >
               {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
             </button>
             
-            {/* Fixation Toggle (Settings) */}
+            {/* Fixation Toggle */}
             <button
               onClick={() => setShowFixationCue(!showFixationCue)}
-              title="Toggle Fixation Cue"
-              className={`w-12 h-12 rounded-xl backdrop-blur-xl border transition-all hover:scale-105 flex items-center justify-center shadow-lg ${
-                showFixationCue 
-                  ? 'bg-gradient-to-br from-purple-500/20 to-violet-500/10 border-purple-400/40 text-purple-300 shadow-purple-400/20' 
-                  : 'bg-white/5 border-white/20 text-white/40 hover:bg-white/10'
-              }`}
+              title="Toggle Fixation Cue (F)"
+              className="backdrop-blur-xl border transition-all duration-200 hover:scale-105 flex items-center justify-center"
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: LIBERO_BRAND.radius.control,
+                background: showFixationCue 
+                  ? `${LIBERO_BRAND.colors.iris}20`
+                  : LIBERO_BRAND.colors.surface1,
+                borderColor: showFixationCue 
+                  ? `${LIBERO_BRAND.colors.iris}40` 
+                  : `${LIBERO_BRAND.colors.divider}40`,
+                color: showFixationCue ? LIBERO_BRAND.colors.iris : LIBERO_BRAND.colors.textMuted
+              }}
             >
-              <div className="w-2 h-2 rounded-full bg-current" />
+              <Eye size={16} />
             </button>
           </div>
 
           {/* Center Stage - Orb */}
           <div className="relative flex flex-col items-center justify-center z-[100]">
-            {/* AI Message Card (Above Orb) */}
+            {/* AI Message Card (Brand Style) */}
             {showCoachBubble && latestAiMessage && (
               <div 
-                className="absolute bottom-full mb-8 z-[170] w-full max-w-[720px] px-4"
+                className="absolute bottom-full mb-8 z-[170] w-full px-4"
+                style={{ maxWidth: '720px' }}
               >
-                <div className="bg-gradient-to-br from-white/8 to-white/12 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl">
+                <div 
+                  className="backdrop-blur-xl border shadow-2xl"
+                  style={{
+                    background: LIBERO_BRAND.colors.surface1,
+                    borderColor: `${LIBERO_BRAND.colors.divider}60`,
+                    borderRadius: LIBERO_BRAND.radius.card,
+                    boxShadow: LIBERO_BRAND.elevation.e2,
+                    padding: LIBERO_BRAND.spacing.xl
+                  }}
+                >
                   <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-400 to-cyan-400 border border-teal-400/60 flex items-center justify-center flex-shrink-0">
+                    <div 
+                      className="border flex items-center justify-center flex-shrink-0"
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: LIBERO_BRAND.radius.control,
+                        background: `linear-gradient(135deg, ${LIBERO_BRAND.colors.liberoTeal}, ${LIBERO_BRAND.colors.iris})`,
+                        borderColor: `${LIBERO_BRAND.colors.liberoTeal}60`
+                      }}
+                    >
                       <Brain size={18} className="text-black" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-3">
-                        <span className="text-white text-lg font-semibold">Libero</span>
+                        <span 
+                          className="font-semibold"
+                          style={{ 
+                            color: LIBERO_BRAND.colors.textPrimary,
+                            fontSize: '18px',
+                            fontFamily: LIBERO_BRAND.typography.h3.fontFamily || 'Cal Sans, Inter, sans-serif'
+                          }}
+                        >
+                          Libero
+                        </span>
                         {isThinking && (
                           <div className="flex items-center space-x-2">
-                            <Loader size={14} className="text-teal-300 animate-spin" />
-                            <span className="text-teal-200 text-sm">thinking...</span>
+                            <Loader size={14} className="animate-spin" style={{ color: LIBERO_BRAND.colors.liberoTeal }} />
+                            <span 
+                              className="text-sm"
+                              style={{ color: LIBERO_BRAND.colors.textSecondary }}
+                            >
+                              thinking...
+                            </span>
                           </div>
                         )}
                         {isSpeaking && (
                           <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                            <span className="text-green-200 text-sm">speaking</span>
+                            <div 
+                              className="w-2 h-2 rounded-full animate-pulse"
+                              style={{ backgroundColor: LIBERO_BRAND.colors.success }}
+                            />
+                            <span 
+                              className="text-sm"
+                              style={{ color: LIBERO_BRAND.colors.success }}
+                            >
+                              speaking
+                            </span>
                           </div>
                         )}
                       </div>
-                      <p className="text-white/90 text-base leading-relaxed">
+                      <p 
+                        className="leading-relaxed"
+                        style={{ 
+                          color: LIBERO_BRAND.colors.textPrimary,
+                          fontSize: LIBERO_BRAND.typography.bodyL.fontSize,
+                          lineHeight: LIBERO_BRAND.typography.bodyL.lineHeight
+                        }}
+                      >
                         {latestAiMessage.content}
                       </p>
                     </div>
@@ -796,33 +946,46 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
                 egoState={activeEgoState}
                 afterglow={sessionState.orbEnergy > 0.7}
                 size={Math.min(
-                  window.innerWidth < 768 ? 320 : 
-                  window.innerWidth < 1024 ? 400 : 520,
+                  window.innerWidth < 768 ? 280 : 
+                  window.innerWidth < 1024 ? 360 : 480,
                   Math.min(window.innerWidth * 0.42, window.innerHeight * 0.42)
                 )}
                 variant="webgl"
               />
               
-              {/* Fixation Cue */}
+              {/* Fixation Cue - Brand Typography */}
               <FixationCue
                 breathing={sessionState.breathing}
                 isVisible={showFixationCue}
                 showAIMessage={showCoachBubble && latestAiMessage !== undefined}
                 orbSize={Math.min(
-                  window.innerWidth < 768 ? 320 : 
-                  window.innerWidth < 1024 ? 400 : 520,
+                  window.innerWidth < 768 ? 280 : 
+                  window.innerWidth < 1024 ? 360 : 480,
                   Math.min(window.innerWidth * 0.42, window.innerHeight * 0.42)
                 )}
               />
             </div>
           </div>
 
-          {/* Right Rail - Indicators (Card Style) */}
-          <div className="flex flex-col items-center justify-center space-y-3 z-[150]">
+          {/* Right Rail - Square Indicator Cards */}
+          <div className="flex flex-col justify-center space-y-3 z-[150]">
             {/* Breathing Phase Card */}
-            <div className={`w-16 h-14 rounded-xl backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center shadow-lg ${getBreathingColor()}`}>
-              <Wind size={12} className="mb-1" />
-              <div className="text-xs font-semibold capitalize leading-none">
+            <div 
+              className="backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center"
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: LIBERO_BRAND.radius.control,
+                background: getBreathingCardBackground(),
+                borderColor: getBreathingCardBorder(),
+                boxShadow: LIBERO_BRAND.elevation.e1
+              }}
+            >
+              <Wind size={12} className="mb-1" style={{ color: getBreathingColor() }} />
+              <div 
+                className="text-xs font-semibold leading-none text-center"
+                style={{ color: getBreathingColor() }}
+              >
                 {sessionState.breathing === 'hold-inhale' ? 'Hold' : 
                  sessionState.breathing === 'hold-exhale' ? 'Hold' :
                  sessionState.breathing.split('-')[0]}
@@ -830,69 +993,161 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             </div>
 
             {/* Session State Card */}
-            <div className={`w-16 h-14 rounded-xl backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center shadow-lg ${getPhaseColor()}`}>
-              <div className={`w-2 h-2 rounded-full mb-1 ${sessionState.isPlaying ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`} />
-              <div className="text-xs font-semibold leading-none">
+            <div 
+              className="backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center"
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: LIBERO_BRAND.radius.control,
+                background: sessionState.isPlaying ? `${LIBERO_BRAND.colors.success}20` : LIBERO_BRAND.colors.surface1,
+                borderColor: sessionState.isPlaying ? `${LIBERO_BRAND.colors.success}40` : `${LIBERO_BRAND.colors.divider}40`,
+                boxShadow: LIBERO_BRAND.elevation.e1
+              }}
+            >
+              <div 
+                className="w-2 h-2 rounded-full mb-1"
+                style={{ 
+                  backgroundColor: sessionState.isPlaying ? LIBERO_BRAND.colors.success : LIBERO_BRAND.colors.textMuted,
+                  animation: sessionState.isPlaying ? 'breathe-glow 2s ease-in-out infinite' : 'none'
+                }}
+              />
+              <div 
+                className="text-xs font-semibold leading-none"
+                style={{ 
+                  color: sessionState.isPlaying ? LIBERO_BRAND.colors.success : LIBERO_BRAND.colors.textMuted
+                }}
+              >
                 {sessionState.isPlaying ? 'Play' : 'Pause'}
               </div>
             </div>
 
             {/* Depth Level Card */}
-            <div className="w-16 h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 backdrop-blur-xl border border-blue-500/40 flex flex-col items-center justify-center shadow-lg">
-              <Activity size={12} className="text-blue-400 mb-1" />
-              <div className="text-xs font-semibold text-blue-400 leading-none">L{sessionState.depth}</div>
+            <div 
+              className="backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center"
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: LIBERO_BRAND.radius.control,
+                background: `${LIBERO_BRAND.colors.iris}20`,
+                borderColor: `${LIBERO_BRAND.colors.iris}40`,
+                boxShadow: LIBERO_BRAND.elevation.e1
+              }}
+            >
+              <Activity size={12} className="mb-1" style={{ color: LIBERO_BRAND.colors.iris }} />
+              <div 
+                className="text-xs font-semibold leading-none"
+                style={{ color: LIBERO_BRAND.colors.iris }}
+              >
+                L{sessionState.depth}
+              </div>
             </div>
 
             {/* Timer Card */}
-            <div className="w-16 h-14 rounded-xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 backdrop-blur-xl border border-purple-500/40 flex flex-col items-center justify-center shadow-lg">
-              <Clock size={12} className="text-purple-400 mb-1" />
-              <div className="text-xs font-semibold text-purple-400 leading-none">{formatTime(sessionState.timeRemaining)}</div>
+            <div 
+              className="backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center"
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: LIBERO_BRAND.radius.control,
+                background: `${LIBERO_BRAND.colors.gold}20`,
+                borderColor: `${LIBERO_BRAND.colors.gold}40`,
+                boxShadow: LIBERO_BRAND.elevation.e1
+              }}
+            >
+              <Clock size={12} className="mb-1" style={{ color: LIBERO_BRAND.colors.gold }} />
+              <div 
+                className="text-xs font-semibold leading-none text-center"
+                style={{ color: LIBERO_BRAND.colors.gold }}
+              >
+                {formatTime(sessionState.timeRemaining)}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom Dock (Clean Composer) */}
+        {/* Bottom Dock (Brand Style Composer) */}
         <div 
-          className="fixed bottom-0 left-0 right-0 z-[180] bg-black/95 backdrop-blur-xl border-t border-white/10 shadow-2xl"
+          className="fixed bottom-0 left-0 right-0 z-[180] backdrop-blur-xl border-t"
           style={{ 
             height: 'var(--dock-h)',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            background: `${LIBERO_BRAND.colors.midnight}F0`,
+            borderColor: `${LIBERO_BRAND.colors.divider}30`,
+            boxShadow: LIBERO_BRAND.elevation.e2
           }}
         >
-          <div className="h-full px-6 flex items-center justify-center">
+          <div 
+            className="h-full flex items-center justify-center"
+            style={{ padding: `0 ${LIBERO_BRAND.spacing.xl}` }}
+          >
             <form onSubmit={handleSubmit} className="flex items-center space-x-4 w-full max-w-4xl">
               
-              {/* Mic Button (Only Instance) */}
+              {/* Mic Button (Brand Primary) */}
               <button
                 type="button"
                 onClick={toggleListening}
                 disabled={isThinking}
                 title="Talk to Libero"
-                className={`w-12 h-12 rounded-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 shadow-xl flex-shrink-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 ${
-                  isListening 
-                    ? 'border-red-400/80 text-red-300 animate-pulse shadow-red-400/20' 
-                    : 'text-white/70 hover:bg-white/20 hover:border-white/30'
-                }`}
+                className="backdrop-blur-xl border transition-all duration-200 hover:scale-105 disabled:opacity-50 flex-shrink-0"
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: LIBERO_BRAND.radius.control,
+                  background: isListening 
+                    ? `${LIBERO_BRAND.colors.danger}30`
+                    : `${LIBERO_BRAND.colors.liberoTeal}20`,
+                  borderColor: isListening 
+                    ? `${LIBERO_BRAND.colors.danger}60`
+                    : `${LIBERO_BRAND.colors.liberoTeal}40`,
+                  color: isListening ? LIBERO_BRAND.colors.danger : LIBERO_BRAND.colors.liberoTeal,
+                  animation: isListening ? 'breathe-glow 1s ease-in-out infinite' : 'none'
+                }}
               >
                 <Mic size={18} />
               </button>
 
-              {/* Text Input (Center) */}
+              {/* Text Input (Brand Style) */}
               <input
                 type="text"
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 placeholder={isListening ? "Listening..." : "Type your message or use voice..."}
                 disabled={isListening || isThinking}
-                className="flex-1 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl px-6 py-3 text-white text-base placeholder-white/50 focus:outline-none focus:border-teal-400/60 focus:bg-white/15 transition-all disabled:opacity-50 shadow-lg"
+                className="flex-1 backdrop-blur-xl border transition-all disabled:opacity-50 focus:outline-none"
+                style={{
+                  background: LIBERO_BRAND.colors.surface1,
+                  borderColor: `${LIBERO_BRAND.colors.divider}40`,
+                  borderRadius: LIBERO_BRAND.radius.card,
+                  padding: `${LIBERO_BRAND.spacing.md} ${LIBERO_BRAND.spacing.lg}`,
+                  color: LIBERO_BRAND.colors.textPrimary,
+                  fontSize: LIBERO_BRAND.typography.bodyL.fontSize,
+                  lineHeight: LIBERO_BRAND.typography.bodyL.lineHeight
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = `${LIBERO_BRAND.colors.liberoTeal}60`;
+                  e.target.style.boxShadow = `0 0 0 2px ${LIBERO_BRAND.colors.liberoTeal}40`;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = `${LIBERO_BRAND.colors.divider}40`;
+                  e.target.style.boxShadow = 'none';
+                }}
               />
 
-              {/* Send Button */}
+              {/* Send Button (Brand Primary) */}
               <button
                 type="submit"
                 disabled={!textInput.trim() || isThinking}
                 title="Send Message"
-                className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border border-teal-400/60 text-teal-200 hover:scale-105 transition-all duration-200 disabled:opacity-50 shadow-xl flex items-center justify-center flex-shrink-0 backdrop-blur-xl"
+                className="backdrop-blur-xl border transition-all duration-200 hover:scale-105 disabled:opacity-50 flex items-center justify-center flex-shrink-0"
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: LIBERO_BRAND.radius.control,
+                  background: `linear-gradient(135deg, ${LIBERO_BRAND.colors.liberoTeal}, ${LIBERO_BRAND.colors.iris})`,
+                  borderColor: `${LIBERO_BRAND.colors.liberoTeal}60`,
+                  color: '#000000',
+                  boxShadow: LIBERO_BRAND.gradients.ctaGlow
+                }}
               >
                 <Send size={18} />
               </button>
@@ -900,14 +1155,37 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           </div>
         </div>
       </div>
-
-      {/* CSS Animations */}
-      <style jsx>{`
-        @keyframes twinkle {
-          0%, 100% { opacity: 0.1; transform: scale(1); }
-          50% { opacity: 0.3; transform: scale(1.1); }
-        }
-      `}</style>
     </div>
   );
+
+  // Helper functions for breathing card styling
+  function getBreathingColor() {
+    switch (sessionState.breathing) {
+      case 'inhale': return LIBERO_BRAND.colors.liberoTeal;
+      case 'hold-inhale': return LIBERO_BRAND.colors.iris;
+      case 'exhale': return LIBERO_BRAND.colors.success;
+      case 'hold-exhale': return LIBERO_BRAND.colors.gold;
+      default: return LIBERO_BRAND.colors.textMuted;
+    }
+  }
+
+  function getBreathingCardBackground() {
+    switch (sessionState.breathing) {
+      case 'inhale': return `${LIBERO_BRAND.colors.liberoTeal}20`;
+      case 'hold-inhale': return `${LIBERO_BRAND.colors.iris}20`;
+      case 'exhale': return `${LIBERO_BRAND.colors.success}20`;
+      case 'hold-exhale': return `${LIBERO_BRAND.colors.gold}20`;
+      default: return LIBERO_BRAND.colors.surface1;
+    }
+  }
+
+  function getBreathingCardBorder() {
+    switch (sessionState.breathing) {
+      case 'inhale': return `${LIBERO_BRAND.colors.liberoTeal}40`;
+      case 'hold-inhale': return `${LIBERO_BRAND.colors.iris}40`;
+      case 'exhale': return `${LIBERO_BRAND.colors.success}40`;
+      case 'hold-exhale': return `${LIBERO_BRAND.colors.gold}40`;
+      default: return `${LIBERO_BRAND.colors.divider}40`;
+    }
+  }
 }

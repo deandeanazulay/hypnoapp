@@ -4,7 +4,7 @@ import { EGO_STATES, useAppStore } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useProtocolStore } from '../../state/protocolStore';
 import { TabId } from '../../types/Navigation';
-import { THEME, getEgoColor } from '../../config/theme';
+import { THEME, getEgoColor, LIBERO_BRAND } from '../../config/theme';
 
 interface HomeScreenProps {
   onOrbTap: () => void;
@@ -48,19 +48,26 @@ export default function HomeScreen({
   };
 
   return (
-    <div className="h-full bg-black flex flex-col overflow-hidden">
+    <div 
+      className="h-full flex flex-col overflow-hidden"
+      style={{ background: LIBERO_BRAND.colors.midnight }}
+    >
       {/* Background */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/10 to-teal-950/10" />
+        <div 
+          className="absolute inset-0"
+          style={{ background: LIBERO_BRAND.gradients.brandAura }}
+        />
         {Array.from({ length: 50 }).map((_, i) => (
           <div
             key={`star-${i}`}
-            className="absolute bg-white rounded-full opacity-20"
+            className="absolute rounded-full opacity-20"
             style={{
               width: `${0.5 + Math.random() * 2}px`,
               height: `${0.5 + Math.random() * 2}px`,
               left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`
+              top: `${Math.random() * 100}%`,
+              backgroundColor: LIBERO_BRAND.colors.textMuted
             }}
           />
         ))}
@@ -93,21 +100,30 @@ export default function HomeScreen({
             {/* Current Ego State in Color */}
             <div className="mb-3">
               <span 
-                className="text-2xl font-light"
+                className="text-brand-h2 font-light"
                 style={{ color: getEgoColor(activeEgoState).accent }}
               >
                 {currentState.name}
               </span>
             </div>
             
-            <p className="text-white/80 text-lg font-light mb-2">
+            <p 
+              className="text-lg font-light mb-2"
+              style={{ color: LIBERO_BRAND.colors.textSecondary }}
+            >
               Tap to begin your journey
             </p>
-            <p className="text-white/60 text-sm">
+            <p 
+              className="text-sm"
+              style={{ color: LIBERO_BRAND.colors.textMuted }}
+            >
               with Libero in {currentState.role} mode
             </p>
             {!isAuthenticated && (
-              <p className="text-teal-400/80 text-xs mt-2">
+              <p 
+                className="text-xs mt-2"
+                style={{ color: `${LIBERO_BRAND.colors.liberoTeal}CC` }}
+              >
                 Sign in to unlock full transformation experience
               </p>
             )}

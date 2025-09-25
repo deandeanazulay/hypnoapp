@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Libero Brand Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cal+Sans:wght@400;600;700&display=swap');
+
 /* Global no-scroll layout */
 html, body, #root {
   height: 100%;
@@ -16,21 +20,43 @@ html, body, #root {
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --nav-height: 64px;
   --total-nav-height: calc(var(--nav-height) + var(--safe-bottom));
+  
+  /* Libero Brand Typography */
+  --font-display: 'Cal Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Premium Design Tokens */
+/* Libero Brand Design Tokens - $1M Quality */
 :root {
-  --glass: rgba(255, 255, 255, 0.06);
-  --glass-strong: rgba(255, 255, 255, 0.12);
-  --ink-1: #EBF4FF;      /* headings */
-  --ink-2: #BFD3E6;      /* body */
-  --ink-dim: #8AA0B4;    /* captions */
-  --xp: #00E6C3;         /* XP bar */
-  --hp: #FF5A5A;         /* HP meter if shown */
-  --mp: #3AA3FF;         /* MP meter */
-  --glow: 0 0 24px rgba(0, 230, 195, 0.35);
-  --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.35);
-  --blur: saturate(130%) blur(12px);
+  /* Brand Canvas */
+  --midnight: #0B0F1A;
+  --deep-space: #0F1523;
+  --surface-1: #121A2A;
+  --surface-2: #162035;
+  --divider: #22304A;
+  
+  /* Brand Accents */
+  --libero-teal: #15E0C3;
+  --iris: #7C5CFF;
+  --gold: #FFC960;
+  --danger: #FF5D5D;
+  --success: #2ED573;
+  
+  /* Text Hierarchy */
+  --text-primary: #F2F5FA;
+  --text-secondary: #B3C1D1;
+  --text-muted: #7A8699;
+  
+  /* Orb Signature */
+  --orb-glow: #5AB6FF;
+  
+  /* Elevation System */
+  --elevation-1: 0 8px 24px rgba(0, 0, 0, 0.24);
+  --elevation-2: 0 12px 32px rgba(0, 0, 0, 0.28);
+  --elevation-3: 0 24px 64px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  
+  /* Brand Aura */
+  --brand-aura: radial-gradient(circle at center, #0F1523 0%, transparent 70%);
 }
 @layer base {
   * {
@@ -38,19 +64,120 @@ html, body, #root {
   }
   
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    background: #000;
+    font-family: var(--font-body);
+    background: var(--midnight);
+    color: var(--text-primary);
     overflow-x: hidden;
     overflow-y: hidden;
   }
 }
 
 @layer utilities {
-  /* Premium Card Styles */
+  /* Libero Brand Card System */
   .card-premium {
-    @apply rounded-2xl border border-white/10;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.03) 100%);
-    box-shadow: var(--shadow-card);
+    background: var(--surface-1);
+    border: 1px solid rgba(34, 48, 74, 0.4);
+    border-radius: 16px;
+    box-shadow: var(--elevation-1);
+  }
+  
+  .card-hover {
+    background: var(--surface-2);
+    border: 1px solid rgba(34, 48, 74, 0.6);
+    box-shadow: var(--elevation-2);
+  }
+  
+  .card-control {
+    background: rgba(18, 26, 42, 0.8);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(34, 48, 74, 0.4);
+    border-radius: 12px;
+    box-shadow: var(--elevation-1);
+  }
+  
+  .card-indicator {
+    background: var(--surface-1);
+    border: 1px solid rgba(34, 48, 74, 0.4);
+    border-radius: 12px;
+    box-shadow: var(--elevation-1);
+  }
+  
+  /* Brand Typography Classes */
+  .text-brand-h1 {
+    font-size: 28px;
+    line-height: 36px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    font-family: var(--font-display);
+  }
+  
+  .text-brand-h2 {
+    font-size: 22px;
+    line-height: 28px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-family: var(--font-display);
+  }
+  
+  .text-brand-h3 {
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 600;
+    font-family: var(--font-display);
+  }
+  
+  .text-brand-body-l {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+  }
+  
+  .text-brand-body-m {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+  }
+  
+  .text-brand-caption {
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 500;
+  }
+  
+  /* Brand Colors */
+  .bg-midnight { background-color: var(--midnight); }
+  .bg-deep-space { background-color: var(--deep-space); }
+  .bg-surface-1 { background-color: var(--surface-1); }
+  .bg-surface-2 { background-color: var(--surface-2); }
+  
+  .text-libero-teal { color: var(--libero-teal); }
+  .text-iris { color: var(--iris); }
+  .text-gold { color: var(--gold); }
+  .text-brand-primary { color: var(--text-primary); }
+  .text-brand-secondary { color: var(--text-secondary); }
+  .text-brand-muted { color: var(--text-muted); }
+  
+  /* Brand Glows */
+  .glow-libero { box-shadow: 0 0 24px rgba(21, 224, 195, 0.25); }
+  .glow-iris { box-shadow: 0 0 24px rgba(124, 92, 255, 0.25); }
+  .glow-orb { box-shadow: 0 0 32px rgba(90, 182, 255, 0.4); }
+  
+  /* Brand Interactions */
+  .brand-hover {
+    transition: all 240ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  }
+  
+  .brand-hover:hover {
+    transform: scale(1.05);
+  }
+  
+  .brand-press:active {
+    transform: scale(0.98);
+  }
+  
+  .brand-focus:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(21, 224, 195, 0.4);
   }
   
   .card-ego-aurora {

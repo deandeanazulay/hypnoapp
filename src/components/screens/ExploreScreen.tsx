@@ -5,6 +5,7 @@ import { useAppStore } from '../../store';
 import PageShell from '../layout/PageShell';
 import ModalShell from '../layout/ModalShell';
 import BeginnerGuide from '../BeginnerGuide';
+import { LIBERO_BRAND } from '../../config/theme';
 import { 
   HYPNOSIS_PROTOCOLS, 
   PROTOCOL_CATEGORIES, 

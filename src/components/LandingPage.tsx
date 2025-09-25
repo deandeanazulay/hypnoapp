@@ -3,6 +3,7 @@ import { Play, Star, Zap, Shield, Crown, ChevronRight, Check, Users, Award, Tren
 import Orb from './Orb';
 import { paymentService, STRIPE_PRODUCTS } from '../lib/stripe';
 import { useAppStore } from '../store';
+import { LIBERO_BRAND } from '../config/theme';
 
 interface LandingPageProps {
   onEnterApp: () => void;
@@ -65,17 +66,42 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
   };
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden overflow-y-auto" style={{ height: '100vh', overflowY: 'scroll' }}>
+    <div 
+      className="min-h-screen text-white overflow-x-hidden overflow-y-auto" 
+      style={{ 
+        height: '100vh', 
+        overflowY: 'scroll',
+        background: LIBERO_BRAND.colors.midnight,
+        color: LIBERO_BRAND.colors.textPrimary
+      }}
+    >
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/10">
+      <header 
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b border-white/10"
+        style={{ 
+          background: `${LIBERO_BRAND.colors.midnight}E6`,
+          boxShadow: LIBERO_BRAND.elevation.e1
+        }}
+      >
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-purple-400 flex items-center justify-center">
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ 
+                  background: `linear-gradient(135deg, ${LIBERO_BRAND.colors.liberoTeal}, ${LIBERO_BRAND.colors.iris})`
+                }}
+              >
                 <Sparkles size={20} className="text-black" />
               </div>
-              <span className="text-2xl font-light bg-gradient-to-r from-white to-teal-400 bg-clip-text text-transparent">
+              <span 
+                className="text-2xl font-light bg-gradient-to-r bg-clip-text text-transparent"
+                style={{ 
+                  backgroundImage: `linear-gradient(90deg, ${LIBERO_BRAND.colors.textPrimary}, ${LIBERO_BRAND.colors.liberoTeal})`,
+                  fontFamily: LIBERO_BRAND.typography.h2.fontFamily || 'Cal Sans, Inter, sans-serif'
+                }}
+              >
                 Libero
               </span>
             </div>
