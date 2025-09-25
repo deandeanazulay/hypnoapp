@@ -615,6 +615,21 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                sessionState.playState === 'loading' ? 'Preparing session...' :
                'Session ready'}
             </span>
+            {sessionState.currentSegmentIndex >= 0 && (
+              <div className="text-xs text-white/50">
+                Segment {sessionState.currentSegmentIndex + 1}/{sessionState.totalSegments}
+                {sessionState.scriptPlan?.segments[sessionState.currentSegmentIndex]?.ttsProvider === 'browser-tts' && (
+                  <span className="ml-2 px-2 py-1 bg-blue-500/20 border border-blue-500/40 text-blue-400 rounded-full">
+                    Device Voice
+                  </span>
+                )}
+                {sessionState.scriptPlan?.segments[sessionState.currentSegmentIndex]?.ttsProvider === 'none' && (
+                  <span className="ml-2 px-2 py-1 bg-gray-500/20 border border-gray-500/40 text-gray-400 rounded-full">
+                    Text Only
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </header>
