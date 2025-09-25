@@ -243,10 +243,10 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         setTimeout(() => {
           console.log('Auto-starting session...');
           if (manager) {
-            manager.play();
             setSessionState(prev => ({ ...prev, isPlaying: true, phase: 'induction' }));
+            manager.play();
           }
-        }, 1000);
+        }, 2000); // Longer delay to ensure initialization completes
         
       } catch (error) {
         console.error('Session initialization failed:', error);

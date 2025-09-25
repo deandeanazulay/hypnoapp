@@ -64,47 +64,51 @@ export class SessionManager {
     };
 
     try {
-      this.scriptPlan = await getSessionScript(userContext, templates);
+      this.scriptPlan = await getSessionScript(userContext);
       console.log('Session: Generated script with', this.scriptPlan.segments?.length || 0, 'segments');
-      
-      this.segments = new Array(this.scriptPlan.segments?.length || 0).fill(null);
-      this._updateState({ 
-        scriptPlan: this.scriptPlan,
-        currentSegmentId: this.scriptPlan.segments?.[0]?.id || null,
-        totalSegments: this.scriptPlan.segments?.length || 0
-      });
-
-      // Start prefetching segments
-      if (this.scriptPlan.segments?.length > 0) {
-        await this._prefetchSegments(0, AI.voice.preBufferSegments);
-      }
     } catch (error: any) {
       console.error('Session: Script generation failed, using fallback:', error.message);
-      
-      // Fallback script
-      this.scriptPlan = {
-        title: "Mindful Session",
-        segments: [
-          { id: "intro", text: "Welcome to your mindful session. Take a deep breath and relax.", approxSec: 15 },
-          { id: "induction", text: "Close your eyes gently and feel your body beginning to relax with each breath. Let go of any tension you're holding.", approxSec: 20 },
-          { id: "deepening", text: "Going deeper now, feeling more and more relaxed with each breath you take. Each exhale releases more stress and tension.", approxSec: 25 },
-          { id: "exploration", text: "In this peaceful state, you can explore new possibilities for yourself. Your mind is open to positive change.", approxSec: 30 },
-          { id: "transformation", text: "Feel the transformation happening within you now. You are becoming the person you want to be, naturally and easily.", approxSec: 25 },
-          { id: "integration", text: "These positive changes are becoming part of you now. They integrate into every aspect of your being.", approxSec: 20 },
-          { id: "conclusion", text: "You have everything you need within you. Trust in your ability to continue growing and transforming.", approxSec: 20 },
-          { id: "emergence", text: "Now it's time to return. Count with me from 1 to 5. One, becoming more aware. Two, energy returning. Three, feeling refreshed. Four, nearly ready. Five, eyes open, fully alert and refreshed.", approxSec: 25 }
-        ]
-      };
-      
-      this.segments = new Array(this.scriptPlan.segments.length).fill(null);
-      this._updateState({ 
-        scriptPlan: this.scriptPlan,
-        currentSegmentId: this.scriptPlan.segments[0].id,
-        totalSegments: this.scriptPlan.segments.length
-      });
-
-      await this._prefetchSegments(0, AI.voice.preBufferSegments);
+      this.scriptPlan = this._createFallbackScript(userContext);
     }
+
+    // Initialize segments array
+    this.segments = new Array(this.scriptPlan.segments.length).fill(null);
+    this._updateState({ 
+      scriptPlan: this.scriptPlan,
+      currentSegmentId: this.scriptPlan.segments[0].id,
+      totalSegments: this.scriptPlan.segments.length
+    });
+
+    // Convert all segments to playable segments immediately
+    console.log('Session: Converting segments to playable format...');
+    for (let i = 0; i < this.scriptPlan.segments.length; i++) {
+      const segment = this.scriptPlan.segments[i];
+      this.segments[i] = {
+        id: segment.id,
+        text: segment.text,
+        approxSec: segment.approxSec || 20,
+        audio: null,
+        ttsProvider: 'browser-tts' as const
+      };
+    }
+    
+    console.log(`Session: All ${this.segments.length} segments ready for playback`);
+  }
+
+  private _createFallbackScript(userContext: any) {
+    return {
+      title: `${userContext.egoState || 'Mindful'} Session`,
+      segments: [
+        { id: "intro", text: `Welcome to your ${userContext.egoState || 'mindful'} session. Take a deep breath and allow yourself to settle in comfortably.`, approxSec: 15 },
+        { id: "relaxation", text: "Close your eyes gently and feel your body beginning to relax. With each breath, let go of any tension you've been holding.", approxSec: 20 },
+        { id: "deepening", text: "Going deeper now, feeling more and more relaxed with each breath you take. Each exhale releases stress and brings you deeper into peace.", approxSec: 25 },
+        { id: "safe-space", text: "Imagine yourself in a beautiful, safe space where you feel completely protected and at peace. This is your sanctuary.", approxSec: 30 },
+        { id: "transformation", text: "In this peaceful state, positive changes are happening within you. You are releasing old patterns and embracing new possibilities.", approxSec: 30 },
+        { id: "strengthening", text: "These positive changes are becoming stronger now, integrating into every cell of your being. You are transforming naturally.", approxSec: 25 },
+        { id: "integration", text: "Feel these wonderful changes becoming a permanent part of who you are. They will stay with you long after this session ends.", approxSec: 25 },
+        { id: "emergence", text: "Now it's time to return, bringing all these positive changes with you. Count with me: One, energy returning. Two, becoming aware. Three, feeling refreshed. Four, almost ready. Five, eyes open, fully alert and wonderfully refreshed.", approxSec: 30 }
+      ]
+    };
   }
 
   private _updateState(updates: Partial<SessionState>) {
@@ -203,9 +207,134 @@ export class SessionManager {
   play() {
     if (this._state.playState === 'playing') return;
     
-    console.log(`Session: Attempting to play segment ${this.currentSegmentIndex + 1} of ${this.segments.length}`);
+    const segmentNumber = this.currentSegmentIndex + 1;
+    console.log(`Session: Attempting to play segment ${segmentNumber} of ${this.segments.length}`);
     
-    if (this.currentSegmentIndex >= 0 && this.currentSegmentIndex < this.segments.length && this.segments[this.currentSegmentIndex]) {
+    // Check if we have a valid segment
+    if (this.currentSegmentIndex < 0 || this.currentSegmentIndex >= this.segments.length) {
+      console.error(`Session: Invalid segment index ${this.currentSegmentIndex}. Total segments: ${this.segments.length}`);
+      return;
+    }
+    
+    const segment = this.segments[this.currentSegmentIndex];
+    if (!segment) {
+      console.error(`Session: No segment available at index ${this.currentSegmentIndex}`);
+      return;
+    }
+    
+    console.log(`Session: Playing segment ${segmentNumber} (${segment.id}) with text: "${segment.text.substring(0, 50)}..."`);
+    
+    // Update state to show current segment
+    this._updateState({ 
+      playState: 'playing',
+      currentSegmentIndex: this.currentSegmentIndex,
+      currentSegmentId: segment.id
+    });
+    this._emit('play');
+    
+    // Clean up any previous audio
+    if (this.currentAudioElement) {
+      this.currentAudioElement.pause();
+      this.currentAudioElement.onended = null;
+      this.currentAudioElement.onerror = null;
+      this.currentAudioElement = null;
+    }
+    
+    // Stop any browser TTS
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    
+    // Always use browser TTS for reliability (for now)
+    console.log(`Session: Using browser TTS for segment ${segmentNumber}`);
+    this._playWithBrowserTTS(segment.text);
+  }
+
+  private _playWithBrowserTTS(text: string) {
+    if (!window.speechSynthesis) {
+      console.warn(`Session: Browser TTS not available for segment ${this.currentSegmentIndex + 1}`);
+      const estimatedDuration = Math.max(4000, text.length * 100);
+      console.log(`Session: Auto-advancing after ${estimatedDuration}ms`);
+      setTimeout(() => {
+        this._handleSegmentEnd();
+      }, estimatedDuration);
+      return;
+    }
+
+    const segmentNumber = this.currentSegmentIndex + 1;
+    console.log(`Session: Starting browser TTS for segment ${segmentNumber}: "${text.substring(0, 50)}..."`);
+
+    // Cancel any existing speech
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.6;
+    utterance.pitch = 0.7;
+    utterance.volume = 0.9;
+
+    // Find a suitable voice
+    const voices = speechSynthesis.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.includes('Female') || 
+      voice.name.includes('Karen') ||
+      voice.name.includes('Samantha') ||
+      voice.lang.includes('en')
+    ) || voices[0];
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+      console.log(`Session: Using voice "${preferredVoice.name}" for segment ${segmentNumber}`);
+    }
+
+    // Set up event handlers
+    utterance.onstart = () => {
+      console.log(`Session: Browser TTS started for segment ${segmentNumber}`);
+    };
+
+    utterance.onend = () => {
+      console.log(`Session: Browser TTS finished for segment ${segmentNumber}, advancing to next...`);
+      this._handleSegmentEnd();
+    };
+
+    utterance.onerror = (event) => {
+      console.error(`Session: Browser TTS error for segment ${segmentNumber}:`, event.error);
+      if (event.error !== 'interrupted') {
+        console.log(`Session: TTS error, advancing to next segment anyway`);
+        setTimeout(() => {
+          this._handleSegmentEnd();
+        }, 1000);
+      }
+    };
+
+    console.log(`Session: Starting speech synthesis for segment ${segmentNumber}`);
+    window.speechSynthesis.speak(utterance);
+  }
+
+  private _handleSegmentEnd() {
+    const completedSegment = this.currentSegmentIndex + 1;
+    console.log(`Session: Segment ${completedSegment} ended, checking for next segment...`);
+    
+    if (this.currentSegmentIndex < this.segments.length - 1) {
+      this.currentSegmentIndex++;
+      const nextSegment = this.currentSegmentIndex + 1;
+      console.log(`Session: Advancing to segment ${nextSegment} of ${this.segments.length}`);
+      
+      this._updateState({ 
+        currentSegmentIndex: this.currentSegmentIndex,
+        currentSegmentId: this.scriptPlan!.segments[this.currentSegmentIndex]?.id || null
+      });
+      
+      // Small delay between segments for natural flow
+      setTimeout(() => {
+        console.log(`Session: Auto-playing segment ${nextSegment}`);
+        this.play();
+      }, 1000);
+    } else {
+      console.log('Session: All segments completed successfully');
+      this._updateState({ playState: 'stopped' });
+      this._emit('end');
+    }
+  }
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
         console.log(`Session: Playing segment ${this.currentSegmentIndex + 1} (${segment.id}) with provider: ${segment.ttsProvider}`);
@@ -253,21 +382,6 @@ export class SessionManager {
           this._playWithBrowserTTS(segment.text);
         }
       }
-    } else {
-      console.log(`Session: No segment available at index ${this.currentSegmentIndex + 1}, trying to prefetch...`);
-      
-      // Try to prefetch current segment if not available
-      if (this.scriptPlan && this.scriptPlan.segments && this.scriptPlan.segments[this.currentSegmentIndex]) {
-        this._prefetchSegments(this.currentSegmentIndex, 1).then(() => {
-          // Retry playing after prefetch
-          if (this.segments[this.currentSegmentIndex]) {
-            console.log(`Session: Retrying play after prefetch for segment ${this.currentSegmentIndex + 1}`);
-            this.play();
-          }
-        });
-      }
-    }
-  }
 
   pause() {
     if (this._state.playState === 'paused') return;
