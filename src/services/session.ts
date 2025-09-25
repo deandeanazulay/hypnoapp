@@ -375,7 +375,11 @@ export class SessionManager {
     };
 
     utterance.onerror = (event) => {
-      console.error('Browser TTS error:', event.error);
+      if (event.error === 'interrupted') {
+        console.debug('Browser TTS interrupted (normal when skipping/pausing):', event.error);
+      } else {
+        console.error('Browser TTS error:', event.error);
+      }
       // Continue to next segment even on error
       this._handleSegmentEnd();
     };
