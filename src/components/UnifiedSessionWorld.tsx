@@ -531,11 +531,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const speakText = (text: string) => {
     if (!synthRef.current || !isVoiceEnabled) return;
 
-    // Only cancel if not currently speaking important content
-    if (synthRef.current.speaking && !sessionState.isSpeaking) {
-      synthRef.current.cancel();
-    }
-
     // Wait for any pending speech to finish if already speaking
     if (synthRef.current.speaking) {
       console.log('[SPEECH] Already speaking, queuing next utterance');
