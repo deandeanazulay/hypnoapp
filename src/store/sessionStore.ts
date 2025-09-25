@@ -1,4 +1,3 @@
-```typescript
 import { create } from 'zustand';
 import { SessionHandle, SessionState, StartSessionOptions, startSession } from '../services/session';
 
@@ -69,5 +68,3 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     });
   },
 }));
-
-```
