@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import React, { useState, useEffect } from 'react';
 import { Heart, Play, Clock, Star, Trash2, Share2, Pin, Award, TrendingUp, BarChart3, Crown } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
