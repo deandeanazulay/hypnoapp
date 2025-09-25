@@ -128,7 +128,7 @@ export class SessionManager {
 
     if (segmentsToPrefetch.length === 0) return;
 
-    console.log(`Session: Prefetching ${segmentsToPrefetch.length} segments starting from ${startIndex}`);
+    console.log(`Session: Prefetching ${segmentsToPrefetch.length} segments starting from segment ${startIndex + 1}`);
 
     await Promise.all(segmentsToPrefetch.map(async ({ index, segment }) => {
       try {
@@ -139,7 +139,7 @@ export class SessionManager {
           mode: 'pre-gen'
         });
 
-        console.log(`Session: Segment ${index} (${segment.id}) synthesized with provider: ${voiceResult.provider}`);
+        console.log(`Session: Segment ${index + 1} (${segment.id}) synthesized with provider: ${voiceResult.provider}`);
 
         // Handle different TTS providers
         let playableSegment: PlayableSegment;
@@ -149,6 +149,7 @@ export class SessionManager {
           
           // Preload the audio
           audioElement.preload = 'auto';
+          audioElement.load(); // Force loading
           
           // Don't set global handlers here - they'll be set when playing
           
@@ -175,12 +176,12 @@ export class SessionManager {
         this._emit('segment-ready', segment.id);
         track('segment_buffered', { 
           segmentId: segment.id, 
-          index: index, 
+          index: index + 1, 
           provider: voiceResult.provider 
         });
 
       } catch (error: any) {
-        console.error(`Session: Failed to prefetch segment ${index}:`, error.message);
+        console.error(`Session: Failed to prefetch segment ${index + 1}:`, error.message);
         
         // Don't fail the entire session - create a text-only segment
         this.segments[index] = {
@@ -196,18 +197,18 @@ export class SessionManager {
     }));
 
     this._updateState({ bufferedAhead: this.segments.filter(s => s !== null).length - this.currentSegmentIndex - 1 });
-    console.log(`Session: Prefetch complete. ${this.segments.filter(s => s !== null).length} segments ready`);
+    console.log(`Session: Prefetch complete. ${this.segments.filter(s => s !== null).length} total segments ready`);
   }
 
   play() {
     if (this._state.playState === 'playing') return;
     
-    console.log(`Session: Playing segment ${this.currentSegmentIndex}`);
+    console.log(`Session: Attempting to play segment ${this.currentSegmentIndex + 1} of ${this.segments.length}`);
     
-    if (this.currentSegmentIndex >= 0 && this.segments[this.currentSegmentIndex]) {
+    if (this.currentSegmentIndex >= 0 && this.currentSegmentIndex < this.segments.length && this.segments[this.currentSegmentIndex]) {
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
-        console.log(`Session: Playing segment ${this.currentSegmentIndex} with provider: ${segment.ttsProvider}`);
+        console.log(`Session: Playing segment ${this.currentSegmentIndex + 1} (${segment.id}) with provider: ${segment.ttsProvider}`);
         
         // Update state to show current segment
         this._updateState({ 
@@ -217,39 +218,50 @@ export class SessionManager {
         });
         this._emit('play');
         
+        // Clean up any previous audio
+        if (this.currentAudioElement) {
+          this.currentAudioElement.pause();
+          this.currentAudioElement.onended = null;
+          this.currentAudioElement.onerror = null;
+        }
+        
         // Handle different TTS providers
         if (segment.ttsProvider === 'elevenlabs' && segment.audio) {
           this.currentAudioElement = segment.audio;
           
-          // Set up audio event handlers for this specific playback
+          // Set up fresh event handlers for this specific playback
           this.currentAudioElement.onended = () => {
-            console.log(`Session: Segment ${this.currentSegmentIndex} audio ended`);
+            console.log(`Session: Segment ${this.currentSegmentIndex + 1} (${segment.id}) audio ended`);
             this._handleSegmentEnd();
           };
           
           this.currentAudioElement.onerror = (error) => {
-            console.error(`Session: Audio error for segment ${this.currentSegmentIndex}:`, error);
+            console.error(`Session: Audio error for segment ${this.currentSegmentIndex + 1}:`, error);
             // Fallback to browser TTS on audio error
             this._playWithBrowserTTS(segment.text);
           };
           
+          console.log(`Session: Starting ElevenLabs audio for segment ${this.currentSegmentIndex + 1}`);
+          this.currentAudioElement.currentTime = 0; // Reset to beginning
           this.currentAudioElement.play().catch(error => {
             console.error('Session: Audio play error:', error);
             this._playWithBrowserTTS(segment.text);
           });
         } else {
           // Use browser TTS
+          console.log(`Session: Using browser TTS for segment ${this.currentSegmentIndex + 1}`);
           this._playWithBrowserTTS(segment.text);
         }
       }
     } else {
-      console.log(`Session: No segment available at index ${this.currentSegmentIndex}, trying to prefetch...`);
+      console.log(`Session: No segment available at index ${this.currentSegmentIndex + 1}, trying to prefetch...`);
       
       // Try to prefetch current segment if not available
       if (this.scriptPlan && this.scriptPlan.segments && this.scriptPlan.segments[this.currentSegmentIndex]) {
         this._prefetchSegments(this.currentSegmentIndex, 1).then(() => {
           // Retry playing after prefetch
           if (this.segments[this.currentSegmentIndex]) {
+            console.log(`Session: Retrying play after prefetch for segment ${this.currentSegmentIndex + 1}`);
             this.play();
           }
         });
@@ -274,20 +286,22 @@ export class SessionManager {
   }
 
   next() {
+    console.log(`Session: Manual next requested, current segment: ${this.currentSegmentIndex + 1}`);
+    
+    // Stop current audio
+    if (this.currentAudioElement) {
+      this.currentAudioElement.pause();
+      this.currentAudioElement.onended = null;
+      this.currentAudioElement.onerror = null;
+      this.currentAudioElement = null;
+    }
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    
     if (this.currentSegmentIndex < this.segments.length - 1) {
-      // Stop current audio
-      if (this.currentAudioElement) {
-        this.currentAudioElement.pause();
-        this.currentAudioElement.onended = null;
-        this.currentAudioElement.onerror = null;
-        this.currentAudioElement = null;
-      }
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-      
       this.currentSegmentIndex++;
-      console.log(`Session: Advanced to segment ${this.currentSegmentIndex}`);
+      console.log(`Session: Manually advanced to segment ${this.currentSegmentIndex + 1}`);
       
       this._updateState({ 
         currentSegmentIndex: this.currentSegmentIndex,
@@ -295,18 +309,17 @@ export class SessionManager {
       });
       
       if (this._state.playState === 'playing') {
-        // Auto-continue playing next segment
         setTimeout(() => {
           this.play();
-        }, 500);
+        }, 200);
       }
       
       // Prefetch next segments
       this._prefetchSegments(this.currentSegmentIndex + 1, AI.voice.preBufferSegments).catch(() => {
-        // Continue without prefetch
+        console.log('Session: Prefetch failed, continuing without');
       });
     } else {
-      console.log('Session: Reached end of segments');
+      console.log('Session: Manual next reached end of segments');
       this._updateState({ playState: 'stopped' });
       this._emit('end');
     }
@@ -379,12 +392,28 @@ export class SessionManager {
   
   private _handleSegmentEnd() {
     // Auto-advance to next segment when current segment finishes
-    console.log(`Session: Segment ${this.currentSegmentIndex} ended, auto-advancing...`);
+    console.log(`Session: Segment ${this.currentSegmentIndex + 1} of ${this.segments.length} ended, auto-advancing...`);
+    
+    // Clean up current audio
+    if (this.currentAudioElement) {
+      this.currentAudioElement.onended = null;
+      this.currentAudioElement.onerror = null;
+      this.currentAudioElement = null;
+    }
     
     if (this.currentSegmentIndex < this.segments.length - 1) {
+      this.currentSegmentIndex++;
+      console.log(`Session: Moving to segment ${this.currentSegmentIndex + 1}`);
+      
+      this._updateState({ 
+        currentSegmentIndex: this.currentSegmentIndex,
+        currentSegmentId: this.scriptPlan!.segments[this.currentSegmentIndex]?.id || null
+      });
+      
       setTimeout(() => {
-        this.next();
-      }, 1000); // Brief pause between segments
+        console.log(`Session: Auto-playing segment ${this.currentSegmentIndex + 1}`);
+        this.play();
+      }, 800); // Brief pause between segments
     } else {
       console.log('Session: All segments completed');
       this._updateState({ playState: 'stopped' });
@@ -396,13 +425,15 @@ export class SessionManager {
     if (!window.speechSynthesis) {
       console.warn('Browser TTS not available');
       // Auto-advance after estimated duration if no TTS
+      const estimatedDuration = Math.max(3000, text.length * 80); // 80ms per character minimum 3s
+      console.log(`Session: No TTS available, auto-advancing after ${estimatedDuration}ms`);
       setTimeout(() => {
         this._handleSegmentEnd();
-      }, text.length * 100); // Rough estimation: 100ms per character
+      }, estimatedDuration);
       return;
     }
 
-    console.log(`Session: Playing with browser TTS: ${text.substring(0, 50)}...`);
+    console.log(`Session: Playing segment ${this.currentSegmentIndex + 1} with browser TTS: ${text.substring(0, 50)}...`);
 
     // Stop any current speech
     window.speechSynthesis.cancel();
@@ -425,24 +456,25 @@ export class SessionManager {
     
     if (preferredVoice) {
       utterance.voice = preferredVoice;
-      console.log(`Session: Using browser voice: ${preferredVoice.name}`);
+      console.log(`Session: Using browser voice: ${preferredVoice.name} for segment ${this.currentSegmentIndex + 1}`);
     }
 
     utterance.onend = () => {
-      console.log('Session: Browser TTS finished');
+      console.log(`Session: Browser TTS finished for segment ${this.currentSegmentIndex + 1}`);
       this._handleSegmentEnd();
     };
 
     utterance.onerror = (event) => {
       if (event.error === 'interrupted') {
-        console.debug('Browser TTS interrupted (normal when skipping/pausing):', event.error);
+        console.log(`Session: Browser TTS interrupted for segment ${this.currentSegmentIndex + 1} (normal when skipping/pausing)`);
       } else {
-        console.error('Browser TTS error:', event.error);
+        console.error(`Session: Browser TTS error for segment ${this.currentSegmentIndex + 1}:`, event.error);
         // Continue to next segment even on error
         this._handleSegmentEnd();
       }
     };
 
+    console.log(`Session: Starting browser TTS for segment ${this.currentSegmentIndex + 1}`);
     window.speechSynthesis.speak(utterance);
   }
 

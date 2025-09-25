@@ -199,6 +199,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   useEffect(() => {
     const initSession = async () => {
       try {
+        console.log('Session: Initializing new session with config:', sessionConfig);
         const manager = new SessionManager();
         setSessionManager(manager);
         
@@ -226,6 +227,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           handleSessionComplete();
         });
         
+        console.log('Session: Calling manager.initialize...');
         await manager.initialize({
           goalId: sessionConfig.goal || 'transformation',
           egoState: sessionConfig.egoState,
@@ -235,12 +237,15 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           streak: user?.session_streak || 0,
           userPrefs: {}
         });
+        console.log('Session: Manager initialized successfully');
 
         // Auto-start session after initialization
         setTimeout(() => {
           console.log('Auto-starting session...');
-          manager.play();
-          setSessionState(prev => ({ ...prev, isPlaying: true, phase: 'induction' }));
+          if (manager) {
+            manager.play();
+            setSessionState(prev => ({ ...prev, isPlaying: true, phase: 'induction' }));
+          }
         }, 1000);
         
       } catch (error) {
@@ -252,6 +257,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     initSession();
 
     return () => {
+      console.log('Session: Cleaning up session manager');
       if (sessionManager) {
         sessionManager.dispose();
       }
@@ -263,7 +269,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
 
   // Session timer
   useEffect(() => {
-    if (sessionManagerState.playState === 'playing' && sessionState.timeRemaining > 0) {
+    if (sessionState.isPlaying && sessionState.timeRemaining > 0) {
       timerRef.current = setInterval(() => {
         setSessionState(prev => {
           const newTimeRemaining = prev.timeRemaining - 1;
@@ -284,7 +290,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [sessionManagerState.playState, sessionState.timeRemaining]);
+  }, [sessionState.isPlaying, sessionState.timeRemaining]);
 
   // Breathing cycle
   useEffect(() => {
@@ -310,7 +316,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     let newDepth = 1;
     let newOrbEnergy = 0.3;
 
-    if (sessionManagerState.playState === 'playing') {
+    if (sessionState.isPlaying) {
       if (progress < 0.1) {
         newPhase = 'preparation';
         newDepth = 1;
@@ -350,7 +356,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
       depth: newDepth,
       orbEnergy: newOrbEnergy
     }));
-  }, [sessionState.timeRemaining, sessionState.totalTime, sessionManagerState.playState]);
+  }, [sessionState.timeRemaining, sessionState.totalTime, sessionState.isPlaying]);
 
   // Listen for segment changes and update conversation
   useEffect(() => {
