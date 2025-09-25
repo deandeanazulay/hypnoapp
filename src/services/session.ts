@@ -129,7 +129,7 @@ class SessionManager implements SessionHandle {
       try {
         const voiceId = AI.voice.defaultVoiceId;
         const voiceModel = AI.voice.model;
-        const cacheKey = `${this.scriptPlan!.hash}-${segment.id}-${voiceId}-${voiceModel}`;
+        const cacheKey = \`${this.scriptPlan!.hash}-${segment.id}-${voiceId}-${voiceModel}`;
           voiceId: AI.voice.defaultVoiceId,
           model: AI.voice.model,
           cacheKey: cacheKey,
@@ -143,8 +143,8 @@ class SessionManager implements SessionHandle {
         track('segment_buffered', { segmentId: segment.id, index: index });
         this._updateBufferedAhead();
       } catch (error: any) {
-        console.error(`Session: Failed to prefetch segment ${index}:`, error);
-        this._emit('error', new Error(`Failed to load audio for segment ${segment.id}: ${error.message}`));
+        console.error(\`Session: Failed to prefetch segment ${index}:`, error);
+        this._emit('error', new Error(\`Failed to load audio for segment ${segment.id}: ${error.message}`));
         track('segment_buffer_error', { segmentId: segment.id, index: index, error: error.message });
         // Fallback to text captions if audio fails
         this.segments[index] = { ...segment, audio: new Audio(), text: `[Audio unavailable] ${segment.text}` }; // Placeholder audio
@@ -169,14 +169,14 @@ class SessionManager implements SessionHandle {
     const playableSegment = this.segments[index];
 
     if (!playableSegment || !playableSegment.audio) {
-      console.warn(`Session: Segment ${index} not ready, attempting to re-prefetch and wait.`);
+      console.warn(\`Session: Segment ${index} not ready, attempting to re-prefetch and wait.`);
       this._updateState({ playState: 'loading' });
       this._prefetchSegments(index, 1).then(() => {
         if (this._state.playState === 'loading') { // Only proceed if still in loading state from this call
           this._playSegment(index);
         }
       }).catch(error => {
-        console.error(`Session: Failed to load segment ${index} for playback:`, error);
+        console.error(\`Session: Failed to load segment ${index} for playback:`, error);
         this._updateState({ playState: 'stopped', error: error });
         this._emit('error', error);
       });
@@ -199,14 +199,14 @@ class SessionManager implements SessionHandle {
       this._updateState({ playState: 'playing' });
       this._emit('play');
       track('segment_play_start', { segmentId: playableSegment.id, index: index });
-      console.log(`Session: Playing segment ${index}: ${playableSegment.id}`);
+      console.log(\`Session: Playing segment ${index}: ${playableSegment.id}`);
       
       // Prefetch next segments in background
       this._prefetchSegments(index + 1, AI.voice.preBufferSegments);
     }).catch(error => {
-      console.error(`Session: Failed to play audio for segment ${index}: ${error.message}`);
+      console.error(\`Session: Failed to play audio for segment ${index}: ${error.message}`);
       this._updateState({ playState: 'stopped', error: error });
-      this._emit('error', new Error(`Audio playback failed for segment ${playableSegment.id}: ${error.message}`));
+      this._emit('error', new Error(\`Audio playback failed for segment ${playableSegment.id}: ${error.message}`));
       track('segment_play_error', { segmentId: playableSegment.id, index: index, error: error.message });
     });
   }
