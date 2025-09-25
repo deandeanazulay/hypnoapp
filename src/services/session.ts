@@ -143,7 +143,6 @@ class SessionManager implements SessionHandle {
         this._emit('segment-ready', segment.id);
         track('segment_buffered', { segmentId: segment.id, index: index });
         this._updateBufferedAhead();
-      } catch (error: any) {
         console.error(\`Session: Failed to prefetch segment ${index}:`, error);
         this._emit('error', new Error(\`Failed to load audio for segment ${segment.id}: ${error.message}`));
         track('segment_buffer_error', { segmentId: segment.id, index: index, error: error.message });
