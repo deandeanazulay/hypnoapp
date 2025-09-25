@@ -170,14 +170,8 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
  * Makes the actual API call to ElevenLabs
  */
 async function callElevenLabsAPI(text: string, opts: SynthesizeSegmentOptions): Promise<AudioBlob> {
-  // Check if we should use serverless proxy or direct API
-  const useProxy = import.meta.env.VITE_USE_ELEVENLABS_PROXY === 'true';
-  
-  if (useProxy) {
-    return await callViaServerlessProxy(text, opts);
-  } else {
-    return await callDirectAPI(text, opts);
-  }
+  // Always use serverless proxy to avoid CORS issues
+  return await callViaServerlessProxy(text, opts);
 }
 
 /**
