@@ -75,6 +75,26 @@ function FixationCue({ breathing, isVisible, showAIMessage, orbSize }: FixationC
   
   return (
     <div 
+      className={`absolute z-[120] pointer-events-none transition-all duration-1000 ${
+        shouldFlipAbove ? 'bottom-full mb-8' : 'top-full mt-8'
+      }`}
+      style={{
+        left: '50%',
+        transform: 'translateX(-50%)',
+        opacity: getBreathingOpacity(),
+        maxWidth: '320px',
+        textAlign: 'center'
+      }}
+    >
+      <p 
+        className="text-sm font-medium leading-relaxed"
+        style={{ 
+          color: LIBERO_BRAND.colors.textSecondary,
+          fontFamily: LIBERO_BRAND.typography.bodyM.fontFamily || 'Inter, sans-serif'
+        }}
+      >
+        {getFixationText()}
+      </p>
     </div>
   );
 }
