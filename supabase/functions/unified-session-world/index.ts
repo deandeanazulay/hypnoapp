@@ -1,8 +1,18 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-// Import prompt templates
-import systemPromptTemplate from '../../src/prompts/sessionScript.system.txt?raw'
-import userPromptTemplate from '../../src/prompts/sessionScript.user.template.txt?raw'
+// Prompt templates embedded directly (Edge Functions can't access external files)
+const systemPromptTemplate = `You are Libero, a supportive hypnotherapy guide. Produce short, paced segments (10–45s), with breath and pause markers. Avoid clinical claims. If user appears distressed, include a gentle stop suggestion.`
+
+const userPromptTemplate = `Generate a hypnotherapy script for the following session:
+Goal: {{goalId}}
+Ego State: {{egoState}}
+Length: {{lengthSec}} seconds
+User Level: {{level}}
+Session Streak: {{streak}}
+Locale: {{locale}}
+User Preferences: {{userPrefs}}
+
+Output should be a JSON object with an array of segments, an outline, safety notes, a version, and a hash. Each segment should have an 'id', 'text', 'approxSec', and optional 'markers' (type: 'breath'|'pause'|'affirm', t: time in seconds within segment).`
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
