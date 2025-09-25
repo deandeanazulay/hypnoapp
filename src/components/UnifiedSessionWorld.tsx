@@ -393,9 +393,20 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     setIsThinking(true);
 
     try {
+      // Check if Supabase is configured
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
       if (!supabaseUrl) {
-        throw new Error('Supabase URL not configured');
+        console.warn('Supabase not configured, using local fallback');
+        const fallbackMessage = getLocalFallbackResponse(input, sessionConfig.egoState);
+        const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
+        setConversation(prev => [...prev, aiMessage]);
+        
+        if (isVoiceEnabled) {
+          speakText(fallbackMessage);
+        }
+        return;
       }
       
       const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
@@ -403,7 +414,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
       const response = await fetch(`${baseUrl}/functions/v1/ai-hypnosis`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -413,7 +424,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             phase: sessionState.phase,
             depth: sessionState.depth,
             breathing: sessionState.breathing,
-            userProfile: user || {},
+            userProfile: user || { level: 1 },
             conversationHistory: conversation.map(msg => ({
               role: msg.role === 'ai' ? 'assistant' : 'user',
               content: msg.content
@@ -423,6 +434,10 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           requestType: 'guidance'
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${await response.text()}`);
+      }
 
       const data = await response.json();
       
@@ -437,12 +452,12 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         if (isVoiceEnabled) {
           speakText(data.response);
         }
+      } else {
+        throw new Error('No response from AI');
       }
     } catch (error) {
       console.error('AI conversation error:', error);
-      const fallbackMessage = "I'm here with you. Continue breathing and trust the process.";
-      const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
-      setConversation(prev => [...prev, aiMessage]);
+      const fallbackMessage = getLocalFallbackResponse(input, sessionConfig.egoState);
       
       if (isVoiceEnabled) {
         speakText(fallbackMessage);
@@ -540,6 +555,38 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     return `${currentEgoState.name} Session`;
   };
 
+  // Local fallback responses for when API is not available
+  const getLocalFallbackResponse = (input: string, egoState: string) => {
+    const inputLower = input.toLowerCase();
+    
+    // Context-aware responses based on input
+    if (inputLower.includes('stress') || inputLower.includes('anxious') || inputLower.includes('worried')) {
+      return "Feel your breath naturally slowing down. With each exhale, stress flows away like water. You are safe and protected here.";
+    }
+    
+    if (inputLower.includes('relax') || inputLower.includes('calm') || inputLower.includes('peace')) {
+      return "Yes, let that relaxation deepen now. Feel it spreading through every muscle, every fiber of your being. Perfect.";
+    }
+    
+    if (inputLower.includes('confident') || inputLower.includes('strong') || inputLower.includes('powerful')) {
+      return "Feel that confidence growing stronger within you. You carry this strength in every cell of your body. Trust in your power.";
+    }
+    
+    if (inputLower.includes('ready') || inputLower.includes('begin') || inputLower.includes('start')) {
+      return "Excellent. You're ready for this transformation. Close your eyes and let your breathing become natural and deep.";
+    }
+    
+    // Ego state specific responses
+    const egoResponses: { [key: string]: string } = {
+      guardian: "You are completely safe and protected. Trust in your inner guardian as you continue this journey deeper.",
+      rebel: "Feel your power to break free from what no longer serves you. Each breath is an act of liberation.",
+      healer: "Healing energy flows through you now. Feel it reaching every part that needs restoration and renewal.",
+      explorer: "What a wonderful discovery you're making. Keep exploring these new territories within yourself.",
+      mystic: "Connect with the infinite wisdom within you. You are tapping into something much greater than yourself."
+    };
+    
+    return egoResponses[egoState] || "I'm here with you. Continue breathing naturally and trust the process. You're doing perfectly.";
+  };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (textInput.trim() && !isThinking) {

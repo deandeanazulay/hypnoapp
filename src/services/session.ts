@@ -43,7 +43,6 @@ export class SessionManager {
   private eventListeners: Record<string, Function[]> = {};
   private currentSegmentIndex = 0;
   private scriptPlan: any = null;
-  private autoPlayEnabled = true;
 
   async initialize(userContext: any) {
     console.log('Session: Initializing with context:', userContext);
@@ -87,11 +86,13 @@ export class SessionManager {
         title: "Mindful Session",
         segments: [
           { id: "intro", text: "Welcome to your mindful session. Take a deep breath and relax.", approxSec: 15 },
-          { id: "induction", text: "Close your eyes gently and feel your body beginning to relax with each breath.", approxSec: 30 },
-          { id: "deepening", text: "Going deeper now, feeling more and more relaxed with each breath you take.", approxSec: 45 },
-          { id: "body", text: "Feel the tension leaving your body with each exhale. You are completely relaxed and peaceful.", approxSec: 60 },
-          { id: "integration", text: "These feelings of peace and calm are becoming part of you now.", approxSec: 30 },
-          { id: "outro", text: "In a moment, I'll count from 1 to 5. On 5, you'll open your eyes feeling refreshed and renewed. 1... 2... 3... 4... 5... eyes open, fully alert.", approxSec: 25 }
+          { id: "induction", text: "Close your eyes gently and feel your body beginning to relax with each breath. Let go of any tension you're holding.", approxSec: 20 },
+          { id: "deepening", text: "Going deeper now, feeling more and more relaxed with each breath you take. Each exhale releases more stress and tension.", approxSec: 25 },
+          { id: "exploration", text: "In this peaceful state, you can explore new possibilities for yourself. Your mind is open to positive change.", approxSec: 30 },
+          { id: "transformation", text: "Feel the transformation happening within you now. You are becoming the person you want to be, naturally and easily.", approxSec: 25 },
+          { id: "integration", text: "These positive changes are becoming part of you now. They integrate into every aspect of your being.", approxSec: 20 },
+          { id: "conclusion", text: "You have everything you need within you. Trust in your ability to continue growing and transforming.", approxSec: 20 },
+          { id: "emergence", text: "Now it's time to return. Count with me from 1 to 5. One, becoming more aware. Two, energy returning. Three, feeling refreshed. Four, nearly ready. Five, eyes open, fully alert and refreshed.", approxSec: 25 }
         ]
       };
       
@@ -149,15 +150,7 @@ export class SessionManager {
           // Preload the audio
           audioElement.preload = 'auto';
           
-          // Handle audio events
-          audioElement.onended = () => {
-            console.log(`Session: Audio ended for segment ${index}`);
-            this._handleSegmentEnd();
-          };
-          
-          audioElement.onerror = (e) => {
-            console.error(`Session: Audio error for segment ${index}:`, e);
-          };
+          // Don't set global handlers here - they'll be set when playing
           
           playableSegment = {
             id: segment.id,
@@ -216,11 +209,19 @@ export class SessionManager {
       if (segment) {
         console.log(`Session: Playing segment ${this.currentSegmentIndex} with provider: ${segment.ttsProvider}`);
         
+        // Update state to show current segment
+        this._updateState({ 
+          playState: 'playing',
+          currentSegmentIndex: this.currentSegmentIndex,
+          currentSegmentId: segment.id
+        });
+        this._emit('play');
+        
         // Handle different TTS providers
         if (segment.ttsProvider === 'elevenlabs' && segment.audio) {
           this.currentAudioElement = segment.audio;
           
-          // Set up audio event handlers
+          // Set up audio event handlers for this specific playback
           this.currentAudioElement.onended = () => {
             console.log(`Session: Segment ${this.currentSegmentIndex} audio ended`);
             this._handleSegmentEnd();
@@ -240,9 +241,6 @@ export class SessionManager {
           // Use browser TTS
           this._playWithBrowserTTS(segment.text);
         }
-        
-        this._updateState({ playState: 'playing' });
-        this._emit('play');
       }
     } else {
       console.log(`Session: No segment available at index ${this.currentSegmentIndex}, trying to prefetch...`);
@@ -383,12 +381,12 @@ export class SessionManager {
     // Auto-advance to next segment when current segment finishes
     console.log(`Session: Segment ${this.currentSegmentIndex} ended, auto-advancing...`);
     
-    if (this.autoPlayEnabled && this.currentSegmentIndex < this.segments.length - 1) {
+    if (this.currentSegmentIndex < this.segments.length - 1) {
       setTimeout(() => {
         this.next();
       }, 1000); // Brief pause between segments
     } else {
-      console.log('Session: All segments completed or auto-play disabled');
+      console.log('Session: All segments completed');
       this._updateState({ playState: 'stopped' });
       this._emit('end');
     }
@@ -448,8 +446,4 @@ export class SessionManager {
     window.speechSynthesis.speak(utterance);
   }
 
-  setAutoPlay(enabled: boolean) {
-    this.autoPlayEnabled = enabled;
-    console.log(`Session: Auto-play ${enabled ? 'enabled' : 'disabled'}`);
-  }
 }
