@@ -4,10 +4,9 @@ import Orb from './Orb';
 import GlassCard from './ui/GlassCard';
 import { useGameState } from './GameStateManager';
 import { useAppStore, getEgoState } from '../store';
+import { useSessionStore } from '../store/sessionStore';
 import { getEgoColor } from '../config/theme';
 import { useSimpleAuth } from '../hooks/useSimpleAuth';
-import { scriptGenerator } from '../utils/scriptGenerator';
-import { HypnosisProtocol } from '../data/protocols';
 
 interface SessionConfig {
   egoState: string;
@@ -26,60 +25,60 @@ interface UnifiedSessionWorldProps {
   sessionConfig: SessionConfig;
 }
 
-interface SessionState {
-  depth: number;
-  breathing: 'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale';
-  phase: string;
-  isListening: boolean;
-  isSpeaking: boolean;
-  isPaused: boolean;
-  timeElapsed: number;
-  totalDuration: number;
-  breathingCount: number;
-  breathingCycle: number;
-}
-
 export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfig }: UnifiedSessionWorldProps) {
   const { user, updateUser, addExperience, incrementStreak } = useGameState();
   const { activeEgoState, showToast, openEgoModal } = useAppStore();
   const { isAuthenticated } = useSimpleAuth();
+  const { sessionHandle, sessionState, startNewSession, play, pause, nextSegment, prevSegment, disposeSession } = useSessionStore();
   
-  const [sessionState, setSessionState] = useState<SessionState>({
-    depth: 1,
-    breathing: 'inhale',
-    phase: 'preparation',
-    isListening: false,
-    isSpeaking: false,
-    isPaused: false,
-    timeElapsed: 0,
-    totalDuration: sessionConfig.customProtocol?.duration * 60 || 15 * 60,
-    breathingCount: 4,
-    breathingCycle: 1
-  });
-
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
   const [textInput, setTextInput] = useState('');
   const [conversation, setConversation] = useState<Array<{role: 'ai' | 'user', content: string, timestamp: number}>>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [chatHeight, setChatHeight] = useState(80); // Default chat height in pixels
-  const [autoProgressEnabled, setAutoProgressEnabled] = useState(true);
-  const [currentScriptPhase, setCurrentScriptPhase] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartY, setDragStartY] = useState(0);
   const [dragStartHeight, setDragStartHeight] = useState(0);
 
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const orbRef = useRef<any>(null);
-  const breathingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const scriptProgressRef = useRef<NodeJS.Timeout | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [micPermission, setMicPermission] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking');
 
   const egoState = getEgoState(activeEgoState);
   const egoColor = getEgoColor(activeEgoState);
+
+  // Initialize session when component mounts or config changes
+  useEffect(() => {
+    const initializeSession = async () => {
+      try {
+        await startNewSession({
+          goalId: sessionConfig.goal?.id || sessionConfig.action?.id || 'general-transformation',
+          egoState: sessionConfig.egoState,
+          lengthSec: (sessionConfig.duration || 15) * 60,
+          locale: 'en-US',
+          level: user?.level || 1,
+          streak: user?.session_streak || 0,
+          userPrefs: {
+            voiceEnabled: isVoiceEnabled,
+            experience: user?.experience || 0,
+            customProtocol: sessionConfig.customProtocol
+          }
+        });
+      } catch (error) {
+        console.error('[SESSION] Failed to initialize session:', error);
+        showToast({ type: 'error', message: 'Failed to start session' });
+      }
+    };
+
+    initializeSession();
+
+    return () => {
+      disposeSession();
+    };
+  }, [sessionConfig]);
 
   // Initialize speech systems
   useEffect(() => {
@@ -122,7 +121,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
           recognitionRef.current.onstart = () => {
             console.log('Speech recognition started');
-            setSessionState(prev => ({ ...prev, isListening: true }));
           };
 
           recognitionRef.current.onresult = (event: any) => {
@@ -133,7 +131,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
           recognitionRef.current.onerror = (event: any) => {
             console.error('Speech recognition error:', event.error);
-            setSessionState(prev => ({ ...prev, isListening: false }));
             
             // Handle specific errors
             if (event.error === 'not-allowed') {
@@ -152,7 +149,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
           recognitionRef.current.onend = () => {
             console.log('Speech recognition ended');
-            setSessionState(prev => ({ ...prev, isListening: false }));
           };
 
           console.log('Speech recognition initialized successfully');
@@ -168,281 +164,29 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
     initializeSpeechRecognition();
   }, [showToast]);
 
-  // Auto-start session
-  useEffect(() => {
-    if (conversation.length === 0) {
-      setTimeout(() => {
-        startHypnotherapySession();
-      }, 2000);
-    }
-  }, [sessionConfig, isVoiceEnabled]);
-
-  // Auto-progression for hypnotherapy protocols
-  useEffect(() => {
-    const hasProtocol = sessionConfig.protocol || sessionConfig.customProtocol || sessionConfig.method?.protocol;
-    if (autoProgressEnabled && hasProtocol && conversation.length > 0) {
-      console.log('[SESSION] Starting auto-guided progression');
-      startScriptProgression();
-    }
-    
-    return () => {
-      if (scriptProgressRef.current) {
-        clearTimeout(scriptProgressRef.current);
-      }
-    };
-  }, [autoProgressEnabled, sessionConfig.protocol, sessionConfig.customProtocol, sessionConfig.method?.protocol, conversation.length]);
-
-  const startHypnotherapySession = () => {
-    let welcomeMessage = '';
-    let sessionContext = {
-      egoState: sessionConfig.egoState,
-      userProfile: {
-        experience_level: 'some' as const,
-        preferred_imagery: 'nature' as const,
-        voice_tone: 'gentle' as const
-      },
-      customGoals: sessionConfig.goal ? [sessionConfig.goal.name] : undefined
-    };
-    
-    if (sessionConfig.protocol) {
-      // This is a protocol session - start with induction
-      const protocol = sessionConfig.protocol;
-      const personalizedProtocol = scriptGenerator.generatePersonalizedScript(protocol, sessionContext);
-      
-      welcomeMessage = `Welcome to your ${protocol.name} session. Find a comfortable position and close your eyes when you're ready. We'll begin with some deep, calming breaths.`;
-      
-      // Set session state for protocol
-      setSessionState(prev => ({ 
-        ...prev, 
-        phase: 'preparation',
-        totalDuration: protocol.duration * 60 
-      }));
-      
-    } else if (sessionConfig.customProtocol?.name) {
-      // Generate personalized script for custom protocol
-      const personalizedProtocol = scriptGenerator.generatePersonalizedScript(
-        sessionConfig.customProtocol,
-        sessionContext
-      );
-      welcomeMessage = `Welcome to your custom ${sessionConfig.customProtocol.name} session. Find a comfortable position and prepare for transformation.`;
-      
-    } else if (sessionConfig.method?.protocol) {
-      // Use the selected method's protocol with personalization
-      const personalizedProtocol = scriptGenerator.generatePersonalizedScript(
-        sessionConfig.method.protocol,
-        sessionContext
-      );
-      welcomeMessage = `Welcome to your ${sessionConfig.method.protocol.name} session. Let's begin your transformation journey.`;
-      
-    } else {
-      // Interactive session - requires user input
-      welcomeMessage = `Welcome to your ${sessionConfig.egoState} session. I'm Libero, and I'll be guiding you through this transformation journey. Take a deep breath and let me know - what would you like to work on today?`;
-      setAutoProgressEnabled(false); // Disable auto-progression for interactive sessions
-    }
-    
-    const aiMessage = { role: 'ai' as const, content: welcomeMessage, timestamp: Date.now() };
-    setConversation([aiMessage]);
-    
-    if (isVoiceEnabled) {
-      speakText(welcomeMessage);
-    }
-  };
-
-  const startScriptProgression = () => {
-    const protocol = sessionConfig.protocol || sessionConfig.customProtocol || sessionConfig.method?.protocol;
-    if (!protocol) {
-      console.log('[SESSION] No protocol found for auto-progression');
-      return;
-    }
-
-    console.log('[SESSION] Starting script progression for protocol:', protocol.name);
-
-    const sessionContext = {
-      egoState: sessionConfig.egoState,
-      userProfile: {
-        experience_level: 'some' as const,
-        preferred_imagery: 'nature' as const,
-        voice_tone: 'gentle' as const
-      },
-      customGoals: sessionConfig.goal ? [sessionConfig.goal.name] : undefined
-    };
-
-    const personalizedProtocol = scriptGenerator.generatePersonalizedScript(protocol, sessionContext);
-    const scriptPhases = [
-      { 
-        name: 'induction', 
-        content: personalizedProtocol.script.induction, 
-        duration: Math.floor(protocol.duration * 0.25),
-        phase: 'induction'
-      },
-      { 
-        name: 'deepening', 
-        content: personalizedProtocol.script.deepening, 
-        duration: Math.floor(protocol.duration * 0.3),
-        phase: 'deepening'
-      },
-      { 
-        name: 'suggestions', 
-        content: personalizedProtocol.script.suggestions, 
-        duration: Math.floor(protocol.duration * 0.35),
-        phase: 'transformation'
-      },
-      { 
-        name: 'emergence', 
-        content: personalizedProtocol.script.emergence, 
-        duration: Math.floor(protocol.duration * 0.1),
-        phase: 'completion'
-      }
-    ];
-
-    const progressToNextPhase = (phaseIndex: number) => {
-      if (phaseIndex >= scriptPhases.length) {
-        console.log('[SESSION] All phases completed, ending session');
-        handleSessionComplete();
-        return;
-      }
-
-      const currentPhase = scriptPhases[phaseIndex];
-      console.log('[SESSION] Progressing to phase:', currentPhase.name, 'duration:', currentPhase.duration, 'minutes');
-      
-      // Update session state
-      setSessionState(prev => ({ 
-        ...prev, 
-        phase: currentPhase.phase,
-        depth: Math.min(phaseIndex + 1, 5)
-      }));
-      
-      // Add AI message for this phase
-      const aiMessage = { 
-        role: 'ai' as const, 
-        content: currentPhase.content, 
-        timestamp: Date.now() 
-      };
-      setConversation(prev => [...prev, aiMessage]);
-      
-      // Speak the content
-      if (isVoiceEnabled) {
-        speakText(currentPhase.content);
-      }
-      
-      // Schedule next phase
-      scriptProgressRef.current = setTimeout(() => {
-        console.log('[SESSION] Timer fired for phase:', currentPhase.name);
-        progressToNextPhase(phaseIndex + 1);
-      }, currentPhase.duration * 60 * 1000); // Convert minutes to milliseconds
-    };
-
-    // Start the progression after initial welcome
-    console.log('[SESSION] Starting phase progression in 5 seconds');
-    setTimeout(() => {
-      progressToNextPhase(0);
-    }, 5000); // Give 5 seconds after welcome message
-  };
-
-  // Breathing cycle management
-  useEffect(() => {
-    const startBreathingTimer = () => {
-      breathingTimerRef.current = setInterval(() => {
-        setSessionState(prev => {
-          // Don't update if paused
-          if (prev.isPaused) return prev;
-          
-          let newCount = prev.breathingCount - 1;
-          let newBreathing = prev.breathing;
-          let newCycle = prev.breathingCycle;
-
-          if (newCount <= 0) {
-            // Move to next breathing phase
-            switch (prev.breathing) {
-              case 'inhale':
-                newBreathing = 'hold-inhale';
-                newCount = 4; // Hold for 4 seconds
-                break;
-              case 'hold-inhale':
-                newBreathing = 'exhale';
-                newCount = 6; // Exhale for 6 seconds
-                break;
-              case 'exhale':
-                newBreathing = 'hold-exhale';
-                newCount = 4; // Hold empty for 4 seconds
-                break;
-              case 'hold-exhale':
-                newBreathing = 'inhale';
-                newCount = 4; // Inhale for 4 seconds
-                newCycle = prev.breathingCycle + 1;
-                break;
-              default:
-                // Reset to inhale if somehow in invalid state
-                newBreathing = 'inhale';
-                newCount = 4;
-                break;
-            }
-          }
-
-          return {
-            ...prev,
-            breathingCount: newCount,
-            breathing: newBreathing,
-            breathingCycle: newCycle
-          };
-        });
-      }, 1000);
-    };
-
-    // Clear any existing timer first
-    if (breathingTimerRef.current) {
-      clearInterval(breathingTimerRef.current);
-      breathingTimerRef.current = null;
-    }
-
-    // Start timer if not paused
-    if (!sessionState.isPaused) {
-      startBreathingTimer();
-    }
-
-    return () => {
-      if (breathingTimerRef.current) {
-        clearInterval(breathingTimerRef.current);
-        breathingTimerRef.current = null;
-      }
-    };
-  }, [sessionState.isPaused]);
-  // Timer
-  useEffect(() => {
-    if (!sessionState.isPaused) {
-      timerRef.current = setInterval(() => {
-        setSessionState(prev => {
-          const newElapsed = prev.timeElapsed + 1;
-          if (newElapsed >= prev.totalDuration) {
-            handleSessionComplete();
-            return prev;
-          }
-          return { ...prev, timeElapsed: newElapsed };
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      if (breathingTimerRef.current) {
-        clearInterval(breathingTimerRef.current);
-      }
-      if (scriptProgressRef.current) {
-        clearTimeout(scriptProgressRef.current);
-      }
-    };
-  }, [sessionState.isPaused]);
-
   // Update orb state
   useEffect(() => {
     if (orbRef.current) {
-      orbRef.current.updateState(sessionState);
-      orbRef.current.setSpeaking(sessionState.isSpeaking);
-      orbRef.current.setListening(sessionState.isListening);
+      orbRef.current.updateState({
+        depth: sessionState.currentSegmentIndex + 1,
+        breathing: 'inhale', // Default breathing state
+        phase: sessionState.scriptPlan ? 'active' : 'loading'
+      });
+      orbRef.current.setSpeaking(sessionState.playState === 'playing');
+      orbRef.current.setListening(false); // Voice input handled separately
     }
   }, [sessionState]);
+
+  // Handle session state changes
+  useEffect(() => {
+    if (sessionState.playState === 'stopped' && sessionState.error === null && sessionState.currentSegmentIndex > 0) {
+      // Session completed naturally
+      handleSessionComplete();
+    }
+    if (sessionState.error) {
+      showToast({ type: 'error', message: sessionState.error.message });
+    }
+  }, [sessionState.playState, sessionState.error]);
 
   const handleUserInput = async (input: string) => {
     if (!input.trim()) return;
@@ -470,9 +214,9 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           message: input,
           sessionContext: {
             egoState: sessionConfig.egoState,
-            phase: sessionState.phase,
-            depth: sessionState.depth,
-            breathing: sessionState.breathing,
+            phase: sessionState.scriptPlan ? 'active' : 'preparation',
+            depth: Math.min(sessionState.currentSegmentIndex + 1, 5),
+            breathing: 'inhale',
             userProfile: user,
             customProtocol: sessionConfig.customProtocol,
             goal: sessionConfig.goal,
@@ -491,10 +235,6 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       if (data.response) {
         const aiMessage = { role: 'ai' as const, content: data.response, timestamp: Date.now() };
         setConversation(prev => [...prev, aiMessage]);
-        
-        if (data.sessionUpdates && Object.keys(data.sessionUpdates).length > 0) {
-          setSessionState(prev => ({ ...prev, ...data.sessionUpdates }));
-        }
         
         if (isVoiceEnabled) {
           speakText(data.response);
@@ -570,17 +310,14 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
 
     utterance.onstart = () => {
       console.log('[SPEECH] Speech started');
-      setSessionState(prev => ({ ...prev, isSpeaking: true }));
     };
 
     utterance.onend = () => {
       console.log('[SPEECH] Speech ended');
-      setSessionState(prev => ({ ...prev, isSpeaking: false }));
     };
 
     utterance.onerror = (event) => {
       console.error('[SPEECH] Speech synthesis error:', event.error);
-      setSessionState(prev => ({ ...prev, isSpeaking: false }));
     };
 
     utterance.onpause = () => {
@@ -597,50 +334,44 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const toggleListening = async () => {
     if (!recognitionRef.current || !isMicEnabled) return;
 
-    if (sessionState.isListening) {
-      console.log('Stopping speech recognition');
-      recognitionRef.current.stop();
-    } else {
-      try {
-        // Request microphone permission if needed
-        if (micPermission === 'prompt' || micPermission === 'checking') {
-          try {
-            await navigator.mediaDevices.getUserMedia({ audio: true });
-            setMicPermission('granted');
-          } catch (permError: any) {
-            console.error('Microphone permission denied:', permError);
-            setMicPermission('denied');
-            showToast({
-              type: 'error',
-              message: 'Microphone access is required for voice input. Please allow microphone access and try again.'
-            });
-            return;
-          }
-        }
-
-        if (micPermission === 'denied') {
+    try {
+      // Request microphone permission if needed
+      if (micPermission === 'prompt' || micPermission === 'checking') {
+        try {
+          await navigator.mediaDevices.getUserMedia({ audio: true });
+          setMicPermission('granted');
+        } catch (permError: any) {
+          console.error('Microphone permission denied:', permError);
+          setMicPermission('denied');
           showToast({
             type: 'error',
-            message: 'Microphone access denied. Please enable it in your browser settings.'
+            message: 'Microphone access is required for voice input. Please allow microphone access and try again.'
           });
           return;
         }
+      }
 
-        // Stop any current speech before listening
-        if (synthRef.current) {
-          synthRef.current.cancel();
-          setSessionState(prev => ({ ...prev, isSpeaking: false }));
-        }
-        
-        console.log('Starting speech recognition');
-        recognitionRef.current.start();
-      } catch (error) {
-        console.error('Error starting speech recognition:', error);
+      if (micPermission === 'denied') {
         showToast({
           type: 'error',
-          message: 'Could not start voice recognition. Please try again.'
+          message: 'Microphone access denied. Please enable it in your browser settings.'
         });
+        return;
       }
+
+      // Stop any current speech before listening
+      if (synthRef.current) {
+        synthRef.current.cancel();
+      }
+      
+      console.log('Starting speech recognition');
+      recognitionRef.current.start();
+    } catch (error) {
+      console.error('Error starting speech recognition:', error);
+      showToast({
+        type: 'error',
+        message: 'Could not start voice recognition. Please try again.'
+      });
     }
   };
 
@@ -702,216 +433,56 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       });
     }
     
+    disposeSession();
     showToast({ type: 'success', message: 'Session completed! +20 XP earned.' });
     onComplete();
   };
 
-  const togglePause = () => {
-    const newPausedState = !sessionState.isPaused;
-    setSessionState(prev => ({ ...prev, isPaused: newPausedState }));
-    
-    // Handle speech pause/resume properly
-    if (synthRef.current) {
-      if (newPausedState) {
-        console.log('[SESSION] Pausing speech and timers');
-        synthRef.current.pause();
-        // Pause any script progression
-        if (scriptProgressRef.current) {
-          clearTimeout(scriptProgressRef.current);
-        }
-      } else {
-        console.log('[SESSION] Resuming speech and timers');
-        synthRef.current.resume();
-        // Resume script progression if it was active
-        if (autoProgressEnabled) {
-          // Calculate remaining time and continue
-          const protocol = sessionConfig.protocol || sessionConfig.customProtocol || sessionConfig.method?.protocol;
-          if (protocol) {
-            console.log('[SESSION] Resuming auto-progression after pause');
-            // Continue from current phase
-            continueScriptProgression();
-          }
-        }
-      }
+  const togglePlayPause = () => {
+    if (sessionState.playState === 'playing') {
+      pause();
+    } else if (sessionState.playState === 'paused') {
+      play();
     }
   };
 
-  const continueScriptProgression = () => {
-    // Resume script progression from current state
-    const protocol = sessionConfig.protocol || sessionConfig.customProtocol || sessionConfig.method?.protocol;
-    if (!protocol) return;
+  const handleSessionCancel = () => {
+    disposeSession();
+    onCancel();
+  };
 
-    const sessionContext = {
-      egoState: sessionConfig.egoState,
-      userProfile: {
-        experience_level: 'some' as const,
-        preferred_imagery: 'nature' as const,
-        voice_tone: 'gentle' as const
-      },
-      customGoals: sessionConfig.goal ? [sessionConfig.goal.name] : undefined
-    };
-
-    const personalizedProtocol = scriptGenerator.generatePersonalizedScript(protocol, sessionContext);
+  const getPhaseTitle = () => {
+    if (!sessionState.scriptPlan) return 'Preparing Session...';
     
-    // Determine current phase and continue from there
-    const timeElapsed = sessionState.timeElapsed;
-    const totalDuration = protocol.duration * 60;
-    const progress = timeElapsed / totalDuration;
-    
-    let nextPhaseIndex = 0;
-    let timeUntilNext = 0;
-    
-    if (progress < 0.25) {
-      nextPhaseIndex = 1; // deepening
-      timeUntilNext = (totalDuration * 0.25) - timeElapsed;
-    } else if (progress < 0.55) {
-      nextPhaseIndex = 2; // suggestions  
-      timeUntilNext = (totalDuration * 0.55) - timeElapsed;
-    } else if (progress < 0.9) {
-      nextPhaseIndex = 3; // emergence
-      timeUntilNext = (totalDuration * 0.9) - timeElapsed;
-    } else {
-      // Session should end soon
-      handleSessionComplete();
-      return;
+    const currentSegment = sessionState.scriptPlan.segments[sessionState.currentSegmentIndex];
+    if (currentSegment) {
+      return `Segment ${sessionState.currentSegmentIndex + 1} of ${sessionState.totalSegments}`;
     }
-    
-    if (timeUntilNext > 0) {
-      scriptProgressRef.current = setTimeout(() => {
-        progressToNextPhase(nextPhaseIndex);
-      }, timeUntilNext * 1000);
+    return 'Session Active';
+  };
+
+  const getBreathingInstruction = () => {
+    // Simple breathing pattern for visual guidance
+    const breathingCycle = Math.floor(Date.now() / 8000) % 4;
+    switch (breathingCycle) {
+      case 0: return 'Inhale';
+      case 1: return 'Hold';
+      case 2: return 'Exhale';
+      case 3: return 'Hold';
+      default: return 'Breathe';
     }
   };
 
-  const progressToNextPhase = (phaseIndex: number) => {
-    const protocol = sessionConfig.protocol || sessionConfig.customProtocol || sessionConfig.method?.protocol;
-    if (!protocol) return;
-
-    const sessionContext = {
-      egoState: sessionConfig.egoState,
-      userProfile: {
-        experience_level: 'some' as const,
-        preferred_imagery: 'nature' as const,
-        voice_tone: 'gentle' as const
-      },
-      customGoals: sessionConfig.goal ? [sessionConfig.goal.name] : undefined
-    };
-
-    const personalizedProtocol = scriptGenerator.generatePersonalizedScript(protocol, sessionContext);
-    
-    const scriptPhases = [
-      { 
-        name: 'induction', 
-        content: personalizedProtocol.script.induction, 
-        duration: Math.floor(protocol.duration * 0.25),
-        phase: 'induction'
-      },
-      { 
-        name: 'deepening', 
-        content: personalizedProtocol.script.deepening, 
-        duration: Math.floor(protocol.duration * 0.3),
-        phase: 'deepening'
-      },
-      { 
-        name: 'suggestions', 
-        content: personalizedProtocol.script.suggestions, 
-        duration: Math.floor(protocol.duration * 0.35),
-        phase: 'transformation'
-      },
-      { 
-        name: 'emergence', 
-        content: personalizedProtocol.script.emergence, 
-        duration: Math.floor(protocol.duration * 0.1),
-        phase: 'completion'
-      }
-    ];
-
-    if (phaseIndex >= scriptPhases.length) {
-      console.log('[SESSION] All phases completed, ending session');
-      handleSessionComplete();
-      return;
-    }
-
-    const currentPhase = scriptPhases[phaseIndex];
-    console.log('[SESSION] Progressing to phase:', currentPhase.name, 'duration:', currentPhase.duration, 'minutes');
-    
-    // Update session state
-    setSessionState(prev => ({ 
-      ...prev, 
-      phase: currentPhase.phase,
-      depth: Math.min(phaseIndex + 2, 5) // Start at depth 2, increase with phases
-    }));
-    
-    // Add AI message for this phase
-    const aiMessage = { 
-      role: 'ai' as const, 
-      content: currentPhase.content, 
-      timestamp: Date.now() 
-    };
-    setConversation(prev => [...prev, aiMessage]);
-    
-    // Speak the content continuously
-    if (isVoiceEnabled && !sessionState.isPaused) {
-      speakText(currentPhase.content);
-    }
-    
-    // Schedule next phase (convert minutes to milliseconds)
-    if (phaseIndex < scriptPhases.length - 1) {
-      scriptProgressRef.current = setTimeout(() => {
-        console.log('[SESSION] Timer fired for phase:', currentPhase.name, 'moving to next phase');
-        progressToNextPhase(phaseIndex + 1);
-      }, currentPhase.duration * 60 * 1000);
-    } else {
-      // Last phase - end session after duration
-      scriptProgressRef.current = setTimeout(() => {
-        console.log('[SESSION] Final phase completed, ending session');
-        handleSessionComplete();
-      }, currentPhase.duration * 60 * 1000);
-    }
+  const getBreathingScale = () => {
+    // Smooth breathing animation based on time
+    const breathingTime = (Date.now() % 8000) / 8000; // 8 second cycle
+    return 1 + 0.1 * Math.sin(breathingTime * Math.PI * 2);
   };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const progress = (sessionState.timeElapsed / sessionState.totalDuration) * 100;
-
-  const getPhaseTitle = () => {
-    switch (sessionState.phase) {
-      case 'preparation': return 'Getting Comfortable And Centered';
-      case 'induction': return 'Entering The Trance State';
-      case 'deepening': return 'Going Deeper Into Relaxation';
-      case 'transformation': return 'Creating Positive Changes';
-      case 'integration': return 'Integrating New Patterns';
-      default: return 'Completing The Journey';
-    }
-  };
-
-  const getBreathingInstruction = () => {
-    switch (sessionState.breathing) {
-      case 'inhale': return 'Inhale';
-      case 'hold-inhale': return 'Hold';
-      case 'exhale': return 'Exhale';
-      case 'hold-exhale': return 'Hold';
-      default: return 'Breathe';
-    }
-  };
-
-  const getBreathingScale = () => {
-    switch (sessionState.breathing) {
-      case 'inhale': 
-        return 1 + (0.2 * (1 - sessionState.breathingCount / 4)); // Gradually expand from 1.0 to 1.2
-      case 'hold-inhale': 
-        return 1.2; // Hold expanded state
-      case 'exhale': 
-        return 1.2 - (0.2 * (1 - sessionState.breathingCount / 6)); // Gradually contract from 1.2 to 1.0
-      case 'hold-exhale': 
-        return 1; // Stay contracted
-      default: 
-        return 1;
-    }
   };
 
   return (
@@ -934,18 +505,23 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
               <h2 className="text-white font-semibold text-sm">
                 {sessionConfig.customProtocol?.name || `${egoState.name} Session`}
               </h2>
-              <p className="text-white/70 text-xs">Transformation Journey</p>
+              <p className="text-white/70 text-xs">{getPhaseTitle()}</p>
             </div>
           </div>
           
           {/* Time Display */}
           <div className="flex items-center space-x-4">
             <div className="text-right">
-              <div className="text-white font-medium text-sm">{formatTime(sessionState.timeElapsed)}</div>
-              <div className="text-white/60 text-xs">{formatTime(sessionState.totalDuration)}</div>
+              <div className="text-white font-medium text-sm">
+                {sessionState.currentSegmentIndex + 1}/{sessionState.totalSegments}
+              </div>
+              <div className="text-white/60 text-xs">
+                {sessionState.playState === 'loading' ? 'Loading...' : 
+                 sessionState.bufferedAhead > 0 ? `${sessionState.bufferedAhead} buffered` : 'Ready'}
+              </div>
             </div>
             <button 
-              onClick={onCancel} 
+              onClick={handleSessionCancel} 
               className="text-white/60 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
             >
               <X size={20} />
@@ -959,7 +535,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             <div 
               className="h-full rounded-full transition-all duration-1000"
               style={{
-                width: `${progress}%`,
+                width: `${sessionState.totalSegments > 0 ? ((sessionState.currentSegmentIndex + 1) / sessionState.totalSegments) * 100 : 0}%`,
                 background: `linear-gradient(90deg, ${egoColor.accent}, ${egoColor.accent}cc)`
               }}
             />
@@ -977,11 +553,11 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                   <div
                     key={level}
                     className={`w-2 h-2 rounded-full transition-all duration-500 ${
-                      level <= sessionState.depth ? 'opacity-100 shadow-lg' : 'opacity-30'
+                      level <= Math.min(sessionState.currentSegmentIndex + 1, 5) ? 'opacity-100 shadow-lg' : 'opacity-30'
                     }`}
                     style={{
                       backgroundColor: egoColor.accent,
-                      boxShadow: level <= sessionState.depth ? `0 0 10px ${egoColor.accent}60` : 'none'
+                      boxShadow: level <= Math.min(sessionState.currentSegmentIndex + 1, 5) ? `0 0 10px ${egoColor.accent}60` : 'none'
                     }}
                   />
                 ))}
@@ -1015,27 +591,28 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                   backgroundColor: egoColor.accent + '20'
                 }}
               >
-                {sessionState.phase.charAt(0).toUpperCase() + sessionState.phase.slice(1)}
+                {sessionState.playState.charAt(0).toUpperCase() + sessionState.playState.slice(1)}
               </div>
             </div>
           </div>
         </div>
         
-        {/* Auto-Progress Toggle */}
+        {/* Session Status */}
         <div className="mt-3 flex items-center justify-center">
-          <button
-            onClick={() => setAutoProgressEnabled(!autoProgressEnabled)}
-            className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all hover:scale-105 ${
-              autoProgressEnabled 
-                ? 'bg-green-500/20 border border-green-500/40 text-green-400' 
-                : 'bg-white/10 border border-white/20 text-white/60'
-            }`}
-          >
-            <Play size={14} />
-            <span className="text-xs font-medium">
-              {autoProgressEnabled ? 'Auto-guided session' : 'Interactive session'}
+          <div className="flex items-center space-x-2 px-3 py-2 bg-black/30 border border-white/20 rounded-lg">
+            <div className={`w-2 h-2 rounded-full ${
+              sessionState.playState === 'playing' ? 'bg-green-400 animate-pulse' :
+              sessionState.playState === 'paused' ? 'bg-yellow-400' :
+              sessionState.playState === 'loading' ? 'bg-blue-400 animate-spin' :
+              'bg-gray-400'
+            }`} />
+            <span className="text-xs font-medium text-white/80">
+              {sessionState.playState === 'playing' ? 'Guided session active' :
+               sessionState.playState === 'paused' ? 'Session paused' :
+               sessionState.playState === 'loading' ? 'Preparing session...' :
+               'Session ready'}
             </span>
-          </button>
+          </div>
         </div>
       </header>
 
@@ -1057,7 +634,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             className="transition-transform duration-300 ease-in-out relative"
             style={{ 
               transform: `scale(${getBreathingScale()})`,
-              filter: sessionState.depth > 3 
+              filter: Math.min(sessionState.currentSegmentIndex + 1, 5) > 3 
                 ? `drop-shadow(0 0 60px ${egoColor.accent}60) drop-shadow(0 0 120px ${egoColor.accent}30)` 
                 : `drop-shadow(0 0 30px ${egoColor.accent}40)`,
               transformOrigin: 'center center'
@@ -1065,10 +642,10 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
           >
             <Orb
               ref={orbRef}
-              onTap={togglePause}
+              onTap={togglePlayPause}
               egoState={activeEgoState}
               size={320}
-              afterglow={sessionState.depth > 3}
+              afterglow={Math.min(sessionState.currentSegmentIndex + 1, 5) > 3}
             />
             
             {/* Premium Eye Fixation Dot */}
@@ -1078,7 +655,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 borderColor: `${egoColor.accent}cc`,
                 backgroundColor: egoColor.accent,
                 boxShadow: `0 0 30px ${egoColor.accent}90, 0 0 60px ${egoColor.accent}50, inset 0 0 10px rgba(255,255,255,0.3)`,
-                animation: sessionState.breathing === 'inhale' || sessionState.breathing === 'exhale' ? 'none' : 'pulse 2s ease-in-out infinite'
+                animation: getBreathingInstruction() === 'inhale' || getBreathingInstruction() === 'exhale' ? 'none' : 'pulse 2s ease-in-out infinite'
               }}
             />
           </div>
@@ -1164,25 +741,33 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
         
         {/* Controls Section */}
         <div className="px-4 py-3 bg-black/95 backdrop-blur-xl">
-          {/* Auto-Progress Info */}
-          {autoProgressEnabled && (
+          {/* Session Status Info */}
+          {sessionState.playState === 'playing' && (
             <div className="mb-3 p-2 bg-green-500/10 border border-green-500/30 rounded-lg text-center">
               <p className="text-green-400 text-xs font-medium">
-                🎵 Auto-guided session in progress - just relax and listen
+                🎵 Guided session in progress - interact anytime or just listen
+              </p>
+            </div>
+          )}
+          
+          {sessionState.playState === 'loading' && (
+            <div className="mb-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg text-center">
+              <p className="text-blue-400 text-xs font-medium">
+                ⏳ Preparing your personalized session...
               </p>
             </div>
           )}
           
           {/* Communication Input Row */}
-          <form onSubmit={handleSubmit} className={autoProgressEnabled ? 'opacity-50' : ''}>
+          <form onSubmit={handleSubmit}>
             <div className="flex items-center space-x-3">
               {/* Voice Record Button */}
               <button
                 type="button"
                 onClick={toggleListening}
-                disabled={!isMicEnabled || isThinking || micPermission === 'denied' || autoProgressEnabled}
+                disabled={!isMicEnabled || isThinking || micPermission === 'denied'}
                 className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 backdrop-blur-sm border-2 ${
-                  sessionState.isListening 
+                  false // sessionState.isListening - using local listening state for chat
                     ? 'bg-red-500/20 border-red-500/60 text-red-400 animate-pulse shadow-lg shadow-red-500/30' 
                     : micPermission === 'denied'
                     ? 'bg-gray-500/20 border-gray-500/40 text-gray-400'
@@ -1191,7 +776,7 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                 title={
                   micPermission === 'denied' 
                     ? 'Microphone access denied' 
-                    : sessionState.isListening 
+                    : false // sessionState.isListening
                     ? 'Stop listening' 
                     : 'Start voice input'
                 }
@@ -1206,16 +791,15 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   placeholder={
-                    autoProgressEnabled ? "Auto-guided session - just relax..." :
-                    sessionState.isListening ? "Listening..." : 
+                    false ? "Listening..." : // sessionState.isListening - using local state
                     "Share what's happening for you..."
                   }
-                  disabled={sessionState.isListening || isThinking || autoProgressEnabled}
+                  disabled={false || isThinking} // sessionState.isListening - using local state
                   className="w-full bg-white/15 border border-white/30 rounded-2xl px-6 py-3 pr-16 text-white placeholder-white/60 focus:outline-none focus:border-teal-500/60 focus:bg-white/20 focus:shadow-lg focus:shadow-teal-500/20 transition-all disabled:opacity-50 backdrop-blur-sm"
                 />
                 <button
                   type="submit"
-                  disabled={!textInput.trim() || isThinking || autoProgressEnabled}
+                  disabled={!textInput.trim() || isThinking}
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-teal-500/30 border border-teal-500/50 text-teal-400 hover:bg-teal-500/40 hover:shadow-lg hover:shadow-teal-500/30 transition-all disabled:opacity-50 hover:scale-110 backdrop-blur-sm"
                 >
                   <Send size={16} className="ml-0.5" />
@@ -1224,17 +808,13 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
             </div>
           </form>
           
-          {/* Mode Toggle */}
-          {!autoProgressEnabled && (
-            <div className="mt-3 text-center">
-              <button
-                onClick={() => setAutoProgressEnabled(true)}
-                className="text-xs text-teal-400 hover:text-teal-300 font-medium transition-colors"
-              >
-                Switch to auto-guided mode →
-              </button>
-            </div>
-          )}
+          {/* Session Progress Info */}
+          <div className="mt-3 text-center">
+            <p className="text-xs text-white/60">
+              Session progress: {sessionState.currentSegmentIndex + 1} of {sessionState.totalSegments} segments
+              {sessionState.bufferedAhead > 0 && ` • ${sessionState.bufferedAhead} buffered ahead`}
+            </p>
+          </div>
         </div>
       </div>
       
@@ -1259,14 +839,32 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 space-y-3">
         {/* Pause/Play */}
         <button
-          onClick={togglePause}
+          onClick={togglePlayPause}
           className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg ${
-            sessionState.isPaused 
+            sessionState.playState === 'paused'
               ? 'bg-green-500/20 border-green-500/40 text-green-400 shadow-green-500/30' 
               : 'bg-red-500/20 border-red-500/40 text-red-400 shadow-red-500/30'
           }`}
         >
-          {sessionState.isPaused ? <Play size={18} className="ml-0.5" /> : <Pause size={18} />}
+          {sessionState.playState === 'paused' ? <Play size={18} className="ml-0.5" /> : <Pause size={18} />}
+        </button>
+        
+        {/* Previous Segment */}
+        <button
+          onClick={prevSegment}
+          disabled={sessionState.currentSegmentIndex <= 0}
+          className="w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg bg-white/10 border-white/30 text-white/60 hover:bg-white/20 disabled:opacity-30"
+        >
+          <span className="text-sm">‹</span>
+        </button>
+        
+        {/* Next Segment */}
+        <button
+          onClick={nextSegment}
+          disabled={sessionState.currentSegmentIndex >= sessionState.totalSegments - 1}
+          className="w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg bg-white/10 border-white/30 text-white/60 hover:bg-white/20 disabled:opacity-30"
+        >
+          <span className="text-sm">›</span>
         </button>
         
         {/* Volume Control */}
