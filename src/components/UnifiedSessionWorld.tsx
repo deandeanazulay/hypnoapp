@@ -201,6 +201,9 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     if (initRef.current) return;
     initRef.current = true;
     
+    if (initRef.current) return;
+    initRef.current = true;
+    
     const initSession = async () => {
       try {
         console.log('Session: Initializing new session with config:', sessionConfig);
@@ -236,9 +239,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           streak: user?.session_streak || 0,
           userPrefs: {}
         });
-
-        // Auto-start session immediately after initialization
-        setSessionState(prev => ({ ...prev, isPlaying: true, phase: 'induction' }));
+        console.log('Auto-starting session...');
         manager.play();
         
       } catch (error) {
@@ -252,7 +253,10 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     return () => {
       initRef.current = false;
       
+      initRef.current = false;
+      
       if (sessionManager) {
+        console.log('Session: Cleaning up session manager');
         sessionManager.dispose();
       }
       if (timerRef.current) {
@@ -360,8 +364,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
       );
       
       if (currentSegment && currentSegment.text) {
-        console.log('Adding current segment to conversation:', currentSegment.text);
-        
         // Add current segment text to conversation
         const aiMessage = { 
           role: 'ai' as const, 
@@ -506,6 +508,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   };
 
   const handleSessionComplete = async () => {
+    console.log('Session: Completing session');
     if (user) {
       const baseXP = Math.floor(sessionConfig.duration * 2);
       const bonusXP = sessionState.depth * 5;
@@ -527,22 +530,18 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const togglePlayPause = () => {
     if (sessionManager) {
       if (sessionManagerState.playState === 'playing') {
-        console.log('Pausing session');
         sessionManager.pause();
       } else {
-        console.log('Playing session');
         sessionManager.play();
       }
     }
   };
 
   const skipForward = () => {
-    console.log('Skipping to next segment');
     sessionManager?.next();
   };
   
   const skipBack = () => {
-    console.log('Skipping to previous segment');
     sessionManager?.prev();
   };
 

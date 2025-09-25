@@ -266,13 +266,6 @@ export class SessionManager {
 
     // Cancel any existing speech
     window.speechSynthesis.cancel();
-
-    // Wait a moment after canceling before starting new speech
-    setTimeout(() => {
-      this._startSpeechSynthesis(text, segmentNumber);
-    }, 100);
-  }
-
   private _startSpeechSynthesis(text: string, segmentNumber: number) {
     // Check if speech synthesis is available
     if (!window.speechSynthesis) {
@@ -280,82 +273,45 @@ export class SessionManager {
       setTimeout(() => this._handleSegmentEnd(), 3000);
       return;
     }
-
     if (!text?.trim()) {
-      console.error('Session: No valid text to speak');
-      setTimeout(() => this._handleSegmentEnd(), 1000);
+      console.error('Session: No valid text to speak for segment', segmentNumber);
+      setTimeout(() => this._handleSegmentEnd(), 500);
       return;
     }
-
-    // Cancel any existing speech first
+    
     if (window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
     }
-
+      window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.8;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    // Set up event handlers first
-    utterance.onstart = () => {
-      console.log(`Session: TTS started for segment ${segmentNumber}`);
-    };
-
-    utterance.onend = () => {
-      console.log(`Session: TTS finished for segment ${segmentNumber}`);
+    // Backup timeout in case TTS events don't fire
+    const backupTimeout = setTimeout(() => {
+      console.log(`Session: TTS timeout for segment ${segmentNumber}, advancing`);
       this._handleSegmentEnd();
+    }, Math.max(8000, text.length * 80));
+    
+    // Clear timeout when utterance completes
+    const originalOnEnd = utterance.onend;
+    utterance.onend = () => {
+      clearTimeout(backupTimeout);
+      if (originalOnEnd) originalOnEnd();
     };
-
+    
+    const originalOnError = utterance.onerror;
     utterance.onerror = (event) => {
-      if (event.error === 'interrupted') {
-        // Normal interruption - don't log as error
-      } else {
-        console.error(`Session: TTS error for segment ${segmentNumber}:`, event.error);
-      }
-      // Always advance on any error
-      setTimeout(() => this._handleSegmentEnd(), 500);
+      clearTimeout(backupTimeout);
+      if (originalOnError) originalOnError(event);
     };
-
-    // Simple voice selection
-    const voices = speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      const voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
-      if (voice) {
-        utterance.voice = voice;
-      }
-    }
-
+    
     // Start speaking
     try {
-      window.speechSynthesis.speak(utterance);
-      
-      // Add a timeout as backup in case onstart/onend never fire
-      const backupTimeout = setTimeout(() => {
-        console.log(`Session: TTS timeout for segment ${segmentNumber}, advancing`);
-        this._handleSegmentEnd();
-      }, Math.max(10000, text.length * 100)); // At least 10 seconds or based on text length
-      
-      // Clear timeout if utterance ends normally
-      const originalOnEnd = utterance.onend;
-      utterance.onend = () => {
-        clearTimeout(backupTimeout);
-        if (originalOnEnd) originalOnEnd(null as any);
-      };
-      
-      const originalOnError = utterance.onerror;
-      utterance.onerror = (event) => {
-        clearTimeout(backupTimeout);
-        if (originalOnError) originalOnError(event);
-      };
-      
+      console.log(`Session: Started TTS for segment ${segmentNumber}`);
     } catch (error) {
-      console.error(`Session: Failed to start speech for segment ${segmentNumber}:`, error);
-      // Fallback - advance after a delay
+      console.error(`Session: Failed to start TTS for segment ${segmentNumber}:`, error);
+      clearTimeout(backupTimeout);
       setTimeout(() => this._handleSegmentEnd(), 3000);
     }
-  }
-
   private _handleSegmentEnd() {
     const completedSegment = this.currentSegmentIndex + 1;
     console.log(`Session: Segment ${completedSegment} ended, checking for next segment...`);
