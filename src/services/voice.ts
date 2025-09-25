@@ -101,7 +101,9 @@ const MODEL_MAP = {
  */
 export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOptions): Promise<AudioBlob> {
   const startTime = Date.now();
-  console.log('ElevenLabs: Synthesizing segment:', text.substring(0, 50) + '...', 'with opts:', opts);
+  if (import.meta.env.DEV) {
+    console.log('ElevenLabs: Synthesizing segment:', text.substring(0, 50) + '...', 'with opts:', opts);
+  }
   
   // Track synthesis attempt
   track('tts_synthesis_start', {
