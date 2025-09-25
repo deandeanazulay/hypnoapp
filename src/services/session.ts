@@ -298,12 +298,10 @@ export class SessionManager {
 
     utterance.onerror = (event) => {
       console.error(`Session: Browser TTS error for segment ${segmentNumber}:`, event.error);
-      if (event.error !== 'interrupted') {
-        console.log(`Session: TTS error, advancing to next segment anyway`);
-        setTimeout(() => {
-          this._handleSegmentEnd();
-        }, 1000);
-      }
+      console.log(`Session: TTS error (${event.error}), advancing to next segment anyway`);
+      setTimeout(() => {
+        this._handleSegmentEnd();
+      }, 1000);
     };
 
     console.log(`Session: Starting speech synthesis for segment ${segmentNumber}`);
