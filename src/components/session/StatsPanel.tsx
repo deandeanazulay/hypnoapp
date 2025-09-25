@@ -42,8 +42,7 @@ export default function StatsPanel({ timeRemaining, depth, orbEnergy, progress, 
   };
 
   return (
-    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30">
-      <div className="space-y-3">
+    <div className="space-y-4">
         {/* Time Remaining */}
         <div className="bg-gradient-to-br from-black/90 to-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-white/20 text-center shadow-2xl min-w-[80px] hover:border-white/30 transition-all">
           <Clock size={16} className="text-white/60 mx-auto mb-2" />
@@ -84,7 +83,5 @@ export default function StatsPanel({ timeRemaining, depth, orbEnergy, progress, 
           <div className="text-cyan-400 text-xl font-bold">{Math.round(progress * 100)}%</div>
           <div className="text-white/60 text-xs">Progress</div>
         </div>
-      </div>
-    </div>
   );
 }

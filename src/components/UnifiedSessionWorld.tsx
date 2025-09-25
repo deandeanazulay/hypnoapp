@@ -427,17 +427,22 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           onClose={onCancel}
         />
 
-        {/* Status Bar */}
-        <StatusBar
-          isPlaying={sessionState.isPlaying}
-          currentSegment={sessionManagerState.currentSegmentIndex + 1}
-          totalSegments={sessionManagerState.scriptPlan?.segments?.length || 5}
-        />
+        {/* Main 3-Column Layout */}
+        <div className="flex-1 min-h-0 grid grid-cols-3 gap-6 px-6 py-4">
+          {/* Left Column: Controller Buttons */}
+          <div className="flex flex-col justify-center">
+            <FloatingControls
+              isPlaying={sessionState.isPlaying}
+              isVoiceEnabled={isVoiceEnabled}
+              onPlayPause={togglePlayPause}
+              onSkipBack={skipBack}
+              onSkipForward={skipForward}
+              onToggleVoice={() => setIsVoiceEnabled(!isVoiceEnabled)}
+            />
+          </div>
 
-        {/* Main Content Area - Central Orb */}
-        <div className="flex-1 relative min-h-0">
-          {/* Central Orb */}
-          <div className="absolute inset-0 flex items-center justify-center">
+          {/* Center Column: Orb */}
+          <div className="flex items-center justify-center">
             <Orb
               ref={orbRef}
               onTap={() => {}}
@@ -448,28 +453,20 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             />
           </div>
 
-          {/* Floating Controls - Left */}
-          <FloatingControls
-            isPlaying={sessionState.isPlaying}
-            isVoiceEnabled={isVoiceEnabled}
-            onPlayPause={togglePlayPause}
-            onSkipBack={skipBack}
-            onSkipForward={skipForward}
-            onToggleVoice={() => setIsVoiceEnabled(!isVoiceEnabled)}
-          />
-
-          {/* Stats Panel - Right (includes breathing and phase) */}
-          <StatsPanel
-            timeRemaining={sessionState.timeRemaining}
-            depth={sessionState.depth}
-            orbEnergy={sessionState.orbEnergy}
-            progress={progress}
-            breathing={sessionState.breathing}
-            phase={sessionState.isPlaying ? sessionState.phase : 'paused'}
-          />
+          {/* Right Column: Indicators */}
+          <div className="flex flex-col justify-center">
+            <StatsPanel
+              timeRemaining={sessionState.timeRemaining}
+              depth={sessionState.depth}
+              orbEnergy={sessionState.orbEnergy}
+              progress={progress}
+              breathing={sessionState.breathing}
+              phase={sessionState.isPlaying ? sessionState.phase : 'paused'}
+            />
+          </div>
         </div>
 
-        {/* Bottom Chat Interface */}
+        {/* Bottom Dock */}
         <div className="flex-shrink-0">
           <ChatInterface
             conversation={conversation}
