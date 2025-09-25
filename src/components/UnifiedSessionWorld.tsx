@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, Send, ArrowLeft } from 'lucide-react';
 import { useAppStore } from "../store";
 import { SessionManager } from '../services/session';
-import { useToast } from '../hooks/useToast';
 
 interface UnifiedSessionWorldProps {
   sessionConfig: {
@@ -11,11 +10,12 @@ interface UnifiedSessionWorldProps {
     method?: string;
     customProtocol?: any;
   };
-  onBack: () => void;
+  onComplete: () => void;
+  onCancel: () => void;
 }
 
-export default function UnifiedSessionWorld({ sessionConfig, onBack }: UnifiedSessionWorldProps) {
-  const { user, showToast } = useAppStore();
+export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCancel }: UnifiedSessionWorldProps) {
+  const { showToast } = useAppStore();
   
   const [conversation, setConversation] = useState<Array<{
     role: 'user' | 'ai';
@@ -52,7 +52,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onBack }: UnifiedSe
 
     // Initialize speech recognition
     if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       
       if (recognitionRef.current) {
@@ -65,7 +65,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onBack }: UnifiedSe
           setIsListening(true);
         };
 
-        recognitionRef.current.onresult = (event) => {
+        recognitionRef.current.onresult = (event: any) => {
           const transcript = event.results[0]?.transcript;
           if (transcript) {
             console.log('Session: Speech recognized:', transcript);
@@ -79,7 +79,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onBack }: UnifiedSe
           setIsListening(false);
         };
 
-        recognitionRef.current.onerror = (event) => {
+        recognitionRef.current.onerror = (event: any) => {
           console.error('Session: Speech recognition error:', event.error);
           setIsListening(false);
           
@@ -115,7 +115,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onBack }: UnifiedSe
         recognitionRef.current.abort();
       }
     };
-  }, []);
+  }, [showToast]);
 
   // Initialize session when component mounts
   useEffect(() => {
@@ -134,7 +134,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onBack }: UnifiedSe
           goal: sessionConfig.goal,
           method: sessionConfig.method,
           customProtocol: sessionConfig.customProtocol,
-          userProfile: user
+          userProfile: {}
         });
         
         // Start with a welcome message
@@ -166,7 +166,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onBack }: UnifiedSe
         sessionManager.dispose();
       }
     };
-  }, []);
+  }, [sessionConfig, isVoiceEnabled, showToast]);
 
   const handleUserInput = async (input: string) => {
     if (!input.trim()) return;
@@ -197,7 +197,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onBack }: UnifiedSe
             phase: sessionState.scriptPlan ? 'active' : 'preparation',
             depth: Math.min(sessionState.currentSegmentIndex + 1, 5),
             breathing: 'inhale',
-            userProfile: user,
+            userProfile: {},
             customProtocol: sessionConfig.customProtocol,
             goal: sessionConfig.goal,
             method: sessionConfig.method,
@@ -389,7 +389,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onBack }: UnifiedSe
         {/* Header */}
         <header className="flex items-center justify-between p-4 border-b border-white/10 backdrop-blur-sm">
           <button
-            onClick={onBack}
+            onClick={onCancel}
             className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
