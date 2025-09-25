@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Coins, Gift, Zap, Plus, ShoppingBag, Star } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
 import { useAppStore } from '../../store';

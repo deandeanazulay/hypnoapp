@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Crown, Check, Zap, Users, Brain, Mic, Star, X } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
 import { useAppStore } from '../../store';

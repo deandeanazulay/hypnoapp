@@ -199,4 +199,6 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
       >
         <div className="space-y-4">
           <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-4 border border-teal-500/20">
-            <h3 className="text-white font-semibold mb
+            <h3 className="text-white font-semibold mb-3">Hypnosis Protocol Guide</h3>
+          </div>
+        </div>
