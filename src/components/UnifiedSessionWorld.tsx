@@ -531,39 +531,69 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   const speakText = (text: string) => {
     if (!synthRef.current || !isVoiceEnabled) return;
 
-    // Wait for voices to be available
-    const voices = synthRef.current.getVoices();
-    if (voices.length === 0) {
-      // Retry after voices load
-      setTimeout(() => speakText(text), 100);
+    // Only cancel if not currently speaking important content
+    if (synthRef.current.speaking && !sessionState.isSpeaking) {
+      synthRef.current.cancel();
+    }
+
+    // Wait for any pending speech to finish if already speaking
+    if (synthRef.current.speaking) {
+      console.log('[SPEECH] Already speaking, queuing next utterance');
+      setTimeout(() => speakText(text), 500);
       return;
     }
 
-    synthRef.current.cancel();
+    // Wait for voices to be available
+    const voices = synthRef.current.getVoices();
+    if (voices.length === 0) {
+      console.log('[SPEECH] Waiting for voices to load...');
+      synthRef.current.addEventListener('voiceschanged', () => speakText(text), { once: true });
+      return;
+    }
+
+    console.log('[SPEECH] Starting to speak:', text.substring(0, 50) + '...');
+
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.7;
-    utterance.pitch = 0.8;
+    utterance.rate = 0.6; // Slower for hypnotherapy
+    utterance.pitch = 0.7; // Lower, more soothing
     utterance.volume = 0.9;
 
+    // Find the most soothing voice available
     const preferredVoice = voices.find(voice => 
       voice.name.includes('Female') || 
       voice.name.includes('Samantha') ||
-      voice.name.includes('Alex') ||
+      voice.name.includes('Karen') ||
       voice.name.includes('Victoria') ||
+      voice.name.includes('Moira') ||
       voice.lang.includes('en')
     ) || voices[0];
     
     if (preferredVoice) {
       utterance.voice = preferredVoice;
-      console.log('Using voice:', preferredVoice.name);
+      console.log('[SPEECH] Using voice:', preferredVoice.name);
     }
 
     utterance.onstart = () => {
+      console.log('[SPEECH] Speech started');
       setSessionState(prev => ({ ...prev, isSpeaking: true }));
     };
 
     utterance.onend = () => {
+      console.log('[SPEECH] Speech ended');
       setSessionState(prev => ({ ...prev, isSpeaking: false }));
+    };
+
+    utterance.onerror = (event) => {
+      console.error('[SPEECH] Speech synthesis error:', event.error);
+      setSessionState(prev => ({ ...prev, isSpeaking: false }));
+    };
+
+    utterance.onpause = () => {
+      console.log('[SPEECH] Speech paused');
+    };
+
+    utterance.onresume = () => {
+      console.log('[SPEECH] Speech resumed');
     };
 
     synthRef.current.speak(utterance);
@@ -682,13 +712,166 @@ export default function UnifiedSessionWorld({ onComplete, onCancel, sessionConfi
   };
 
   const togglePause = () => {
-    setSessionState(prev => ({ ...prev, isPaused: !prev.isPaused }));
+    const newPausedState = !sessionState.isPaused;
+    setSessionState(prev => ({ ...prev, isPaused: newPausedState }));
+    
+    // Handle speech pause/resume properly
     if (synthRef.current) {
-      if (sessionState.isPaused) {
-        synthRef.current.resume();
-      } else {
+      if (newPausedState) {
+        console.log('[SESSION] Pausing speech and timers');
         synthRef.current.pause();
+        // Pause any script progression
+        if (scriptProgressRef.current) {
+          clearTimeout(scriptProgressRef.current);
+        }
+      } else {
+        console.log('[SESSION] Resuming speech and timers');
+        synthRef.current.resume();
+        // Resume script progression if it was active
+        if (autoProgressEnabled) {
+          // Calculate remaining time and continue
+          const protocol = sessionConfig.protocol || sessionConfig.customProtocol || sessionConfig.method?.protocol;
+          if (protocol) {
+            console.log('[SESSION] Resuming auto-progression after pause');
+            // Continue from current phase
+            continueScriptProgression();
+          }
+        }
       }
+    }
+  };
+
+  const continueScriptProgression = () => {
+    // Resume script progression from current state
+    const protocol = sessionConfig.protocol || sessionConfig.customProtocol || sessionConfig.method?.protocol;
+    if (!protocol) return;
+
+    const sessionContext = {
+      egoState: sessionConfig.egoState,
+      userProfile: {
+        experience_level: 'some' as const,
+        preferred_imagery: 'nature' as const,
+        voice_tone: 'gentle' as const
+      },
+      customGoals: sessionConfig.goal ? [sessionConfig.goal.name] : undefined
+    };
+
+    const personalizedProtocol = scriptGenerator.generatePersonalizedScript(protocol, sessionContext);
+    
+    // Determine current phase and continue from there
+    const timeElapsed = sessionState.timeElapsed;
+    const totalDuration = protocol.duration * 60;
+    const progress = timeElapsed / totalDuration;
+    
+    let nextPhaseIndex = 0;
+    let timeUntilNext = 0;
+    
+    if (progress < 0.25) {
+      nextPhaseIndex = 1; // deepening
+      timeUntilNext = (totalDuration * 0.25) - timeElapsed;
+    } else if (progress < 0.55) {
+      nextPhaseIndex = 2; // suggestions  
+      timeUntilNext = (totalDuration * 0.55) - timeElapsed;
+    } else if (progress < 0.9) {
+      nextPhaseIndex = 3; // emergence
+      timeUntilNext = (totalDuration * 0.9) - timeElapsed;
+    } else {
+      // Session should end soon
+      handleSessionComplete();
+      return;
+    }
+    
+    if (timeUntilNext > 0) {
+      scriptProgressRef.current = setTimeout(() => {
+        progressToNextPhase(nextPhaseIndex);
+      }, timeUntilNext * 1000);
+    }
+  };
+
+  const progressToNextPhase = (phaseIndex: number) => {
+    const protocol = sessionConfig.protocol || sessionConfig.customProtocol || sessionConfig.method?.protocol;
+    if (!protocol) return;
+
+    const sessionContext = {
+      egoState: sessionConfig.egoState,
+      userProfile: {
+        experience_level: 'some' as const,
+        preferred_imagery: 'nature' as const,
+        voice_tone: 'gentle' as const
+      },
+      customGoals: sessionConfig.goal ? [sessionConfig.goal.name] : undefined
+    };
+
+    const personalizedProtocol = scriptGenerator.generatePersonalizedScript(protocol, sessionContext);
+    
+    const scriptPhases = [
+      { 
+        name: 'induction', 
+        content: personalizedProtocol.script.induction, 
+        duration: Math.floor(protocol.duration * 0.25),
+        phase: 'induction'
+      },
+      { 
+        name: 'deepening', 
+        content: personalizedProtocol.script.deepening, 
+        duration: Math.floor(protocol.duration * 0.3),
+        phase: 'deepening'
+      },
+      { 
+        name: 'suggestions', 
+        content: personalizedProtocol.script.suggestions, 
+        duration: Math.floor(protocol.duration * 0.35),
+        phase: 'transformation'
+      },
+      { 
+        name: 'emergence', 
+        content: personalizedProtocol.script.emergence, 
+        duration: Math.floor(protocol.duration * 0.1),
+        phase: 'completion'
+      }
+    ];
+
+    if (phaseIndex >= scriptPhases.length) {
+      console.log('[SESSION] All phases completed, ending session');
+      handleSessionComplete();
+      return;
+    }
+
+    const currentPhase = scriptPhases[phaseIndex];
+    console.log('[SESSION] Progressing to phase:', currentPhase.name, 'duration:', currentPhase.duration, 'minutes');
+    
+    // Update session state
+    setSessionState(prev => ({ 
+      ...prev, 
+      phase: currentPhase.phase,
+      depth: Math.min(phaseIndex + 2, 5) // Start at depth 2, increase with phases
+    }));
+    
+    // Add AI message for this phase
+    const aiMessage = { 
+      role: 'ai' as const, 
+      content: currentPhase.content, 
+      timestamp: Date.now() 
+    };
+    setConversation(prev => [...prev, aiMessage]);
+    
+    // Speak the content continuously
+    if (isVoiceEnabled && !sessionState.isPaused) {
+      speakText(currentPhase.content);
+    }
+    
+    // Schedule next phase (convert minutes to milliseconds)
+    if (phaseIndex < scriptPhases.length - 1) {
+      scriptProgressRef.current = setTimeout(() => {
+        console.log('[SESSION] Timer fired for phase:', currentPhase.name, 'moving to next phase');
+        progressToNextPhase(phaseIndex + 1);
+      }, currentPhase.duration * 60 * 1000);
+    } else {
+      // Last phase - end session after duration
+      scriptProgressRef.current = setTimeout(() => {
+        console.log('[SESSION] Final phase completed, ending session');
+        handleSessionComplete();
+      }, currentPhase.duration * 60 * 1000);
     }
   };
 
