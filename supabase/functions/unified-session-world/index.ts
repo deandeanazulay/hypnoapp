@@ -1,5 +1,9 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
+// Import prompt templates
+import systemPromptTemplate from '../../src/prompts/sessionScript.system.txt?raw'
+import userPromptTemplate from '../../src/prompts/sessionScript.user.template.txt?raw'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -19,7 +23,16 @@ interface SessionContext {
 interface HypnosisRequest {
   message: string
   sessionContext: SessionContext
-  requestType: 'guidance' | 'response' | 'induction' | 'deepening'
+  requestType: 'guidance' | 'response' | 'induction' | 'deepening' | 'script_generation'
+  scriptParams?: {
+    goalId: string
+    egoState: string
+    lengthSec: number
+    level: number
+    streak: number
+    locale: string
+    userPrefs: any
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -31,7 +44,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { message, sessionContext, requestType }: HypnosisRequest = await req.json()
+    const { message, sessionContext, requestType, scriptParams }: HypnosisRequest = await req.json()
 
     console.log('Full session context received:', JSON.stringify(sessionContext, null, 2))
 
@@ -39,6 +52,27 @@ Deno.serve(async (req: Request) => {
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
     if (!geminiApiKey) {
       console.error('GEMINI_API_KEY environment variable not set')
+      
+      // For script generation, return proper JSON structure
+      if (requestType === 'script_generation') {
+        const mockScript = getMockScript(scriptParams)
+        return new Response(
+          JSON.stringify({
+            response: JSON.stringify(mockScript),
+            sessionUpdates: {},
+            error: 'API key not configured - using mock script',
+            timestamp: Date.now()
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
+          }
+        )
+      }
+      
       const fallbackResponse = getFallbackResponse(requestType)
       return new Response(
         JSON.stringify({
@@ -59,24 +93,50 @@ Deno.serve(async (req: Request) => {
 
     console.log('Processing request:', { requestType, egoState: sessionContext.egoState })
 
-    // Build system prompt based on ego state and session context
-    const systemPrompt = buildHypnosisPrompt(sessionContext, requestType, message)
+    let conversation: any[]
     
-    // Prepare conversation for Gemini
-    const conversation = [
-      {
-        role: 'user',
-        parts: [{ text: systemPrompt }]
-      },
-      ...sessionContext.conversationHistory.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
-      })),
-      {
-        role: 'user',
-        parts: [{ text: message }]
-      }
-    ]
+    // Handle script generation differently
+    if (requestType === 'script_generation' && scriptParams) {
+      // Use specific prompts for script generation
+      const userPrompt = userPromptTemplate
+        .replace('{{goalId}}', scriptParams.goalId)
+        .replace('{{egoState}}', scriptParams.egoState)
+        .replace('{{lengthSec}}', scriptParams.lengthSec.toString())
+        .replace('{{level}}', scriptParams.level.toString())
+        .replace('{{streak}}', scriptParams.streak.toString())
+        .replace('{{locale}}', scriptParams.locale)
+        .replace('{{userPrefs}}', JSON.stringify(scriptParams.userPrefs || {}))
+      
+      conversation = [
+        {
+          role: 'user',
+          parts: [{ text: systemPromptTemplate }]
+        },
+        {
+          role: 'user',
+          parts: [{ text: userPrompt }]
+        }
+      ]
+    } else {
+      // Build system prompt based on ego state and session context for regular conversations
+      const systemPrompt = buildHypnosisPrompt(sessionContext, requestType, message)
+      
+      // Prepare conversation for Gemini
+      conversation = [
+        {
+          role: 'user',
+          parts: [{ text: systemPrompt }]
+        },
+        ...sessionContext.conversationHistory.map(msg => ({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }]
+        })),
+        {
+          role: 'user',
+          parts: [{ text: message }]
+        }
+      ]
+    }
 
     console.log('Calling Gemini API...')
 
@@ -94,7 +154,7 @@ Deno.serve(async (req: Request) => {
             temperature: 0.7,
             topK: 40,
             topP: 0.95,
-            maxOutputTokens: 1024,
+            maxOutputTokens: requestType === 'script_generation' ? 2048 : 1024,
           },
           safetySettings: [
             {
@@ -119,6 +179,26 @@ Deno.serve(async (req: Request) => {
     } catch (fetchError) {
       console.error('Network error calling Gemini API:', fetchError)
       
+      // For script generation, return proper JSON structure
+      if (requestType === 'script_generation') {
+        const mockScript = getMockScript(scriptParams)
+        return new Response(
+          JSON.stringify({
+            response: JSON.stringify(mockScript),
+            sessionUpdates: {},
+            error: 'Network access limited - using mock script',
+            timestamp: Date.now()
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
+          }
+        )
+      }
+      
       // Return a contextual fallback based on the session state
       const contextualResponse = getContextualFallback(sessionContext, message, requestType)
       return new Response(
@@ -141,6 +221,26 @@ Deno.serve(async (req: Request) => {
     if (!response.ok) {
       const errorData = await response.text()
       console.error('Gemini API error:', errorData)
+      
+      // For script generation, return proper JSON structure
+      if (requestType === 'script_generation') {
+        const mockScript = getMockScript(scriptParams)
+        return new Response(
+          JSON.stringify({
+            response: JSON.stringify(mockScript),
+            sessionUpdates: {},
+            error: `API error: ${response.status} - using mock script`,
+            timestamp: Date.now()
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
+          }
+        )
+      }
       
       const contextualResponse = getContextualFallback(sessionContext, message, requestType)
       return new Response(
@@ -165,6 +265,27 @@ Deno.serve(async (req: Request) => {
 
     if (!aiResponse) {
       console.error('No response content from Gemini AI')
+      
+      // For script generation, return proper JSON structure
+      if (requestType === 'script_generation') {
+        const mockScript = getMockScript(scriptParams)
+        return new Response(
+          JSON.stringify({
+            response: JSON.stringify(mockScript),
+            sessionUpdates: {},
+            error: 'No AI response - using mock script',
+            timestamp: Date.now()
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
+          }
+        )
+      }
+      
       const contextualResponse = getContextualFallback(sessionContext, message, requestType)
       return new Response(
         JSON.stringify({
@@ -185,7 +306,32 @@ Deno.serve(async (req: Request) => {
 
     console.log('Successfully generated AI response')
 
-    // Parse any session updates from the AI response
+    // For script generation, ensure response is valid JSON
+    if (requestType === 'script_generation') {
+      let scriptResponse: any
+      try {
+        scriptResponse = JSON.parse(aiResponse)
+      } catch {
+        console.warn('AI returned non-JSON script, using mock')
+        scriptResponse = getMockScript(scriptParams)
+      }
+      
+      return new Response(
+        JSON.stringify({
+          response: JSON.stringify(scriptResponse),
+          sessionUpdates: {},
+          timestamp: Date.now()
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
+
+    // Parse any session updates from the AI response for regular conversations
     const sessionUpdates = parseSessionUpdates(aiResponse, sessionContext)
 
     return new Response(
@@ -204,6 +350,26 @@ Deno.serve(async (req: Request) => {
 
   } catch (error: any) {
     console.error('Unified Session World error:', error)
+    
+    // For script generation, return proper JSON structure
+    if (requestType === 'script_generation') {
+      const mockScript = getMockScript(scriptParams)
+      return new Response(
+        JSON.stringify({
+          response: JSON.stringify(mockScript),
+          sessionUpdates: {},
+          error: error.message || 'Unknown error - using mock script',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
     
     // Fallback response for errors
     const fallbackResponse = getFallbackResponse(requestType || 'guidance')
@@ -404,4 +570,73 @@ function getContextualFallback(context: SessionContext, userMessage: string, req
   const modifier = depthModifiers[Math.min(depth - 1, 4)] || ""
   
   return modifier + response
+}
+
+function getMockScript(scriptParams: any): any {
+  const egoState = scriptParams?.egoState || 'guardian'
+  const goalId = scriptParams?.goalId || 'relaxation'
+  const lengthSec = scriptParams?.lengthSec || 900
+  
+  return {
+    segments: [
+      {
+        id: "intro",
+        text: `Welcome to your ${egoState} session. We'll work on ${goalId} together. Find a comfortable position and let's begin.`,
+        approxSec: 15,
+        markers: [
+          { type: "breath", t: 10 }
+        ]
+      },
+      {
+        id: "induction",
+        text: "Close your eyes gently and take a deep breath in... and slowly let it out. With each breath, feel your body becoming more and more relaxed.",
+        approxSec: 30,
+        markers: [
+          { type: "breath", t: 8 },
+          { type: "pause", t: 15 },
+          { type: "breath", t: 25 }
+        ]
+      },
+      {
+        id: "deepening",
+        text: "Now, imagine yourself going deeper into relaxation. Count backwards from 10, and with each number, feel yourself sinking into a peaceful state.",
+        approxSec: 45,
+        markers: [
+          { type: "pause", t: 20 },
+          { type: "breath", t: 35 }
+        ]
+      },
+      {
+        id: "transformation",
+        text: `As your ${egoState} energy awakens, feel the transformation beginning. You are releasing what no longer serves you and embracing your true potential.`,
+        approxSec: 60,
+        markers: [
+          { type: "affirm", t: 30 },
+          { type: "breath", t: 50 }
+        ]
+      },
+      {
+        id: "integration",
+        text: "These changes are becoming part of you. Feel them integrating into every cell of your being, creating lasting transformation.",
+        approxSec: 45,
+        markers: [
+          { type: "pause", t: 20 },
+          { type: "affirm", t: 35 }
+        ]
+      },
+      {
+        id: "awakening",
+        text: "Now it's time to return. Count from 1 to 5, and with each number, feel yourself becoming more alert and aware. 5... fully awake, refreshed, and transformed.",
+        approxSec: 30,
+        markers: [
+          { type: "pause", t: 15 },
+          { type: "breath", t: 25 }
+        ]
+      }
+    ],
+    outline: "Progressive relaxation with ego state integration",
+    safetyNotes: "Gentle awakening included. User can stop at any time.",
+    version: "1.0.0",
+    hash: "mock_" + Date.now()
+  }
 }
