@@ -359,24 +359,23 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         (s: any) => s.id === sessionManagerState.currentSegmentId
       );
       
-        // Add current segment text to conversation
-        const aiMessage = { 
-          role: 'ai' as const, 
-          content: currentSegment.text, 
-          timestamp: Date.now() 
-        };
-        
-        setConversation(prev => {
-          // Only add if it's not already the last message
-          const lastMessage = prev[prev.length - 1];
-          if (!lastMessage || lastMessage.content !== currentSegment.text) {
-            return [...prev, aiMessage];
-          }
-          return prev;
-        });
-        
-        setShowCoachBubble(true);
-      }
+      // Add current segment text to conversation
+      const aiMessage = { 
+        role: 'ai' as const, 
+        content: currentSegment.text, 
+        timestamp: Date.now() 
+      };
+      
+      setConversation(prev => {
+        // Only add if it's not already the last message
+        const lastMessage = prev[prev.length - 1];
+        if (!lastMessage || lastMessage.content !== currentSegment.text) {
+          return [...prev, aiMessage];
+        }
+        return prev;
+      });
+      
+      setShowCoachBubble(true);
     }
   }, [sessionManagerState.currentSegmentId, sessionManagerState.scriptPlan]);
 
