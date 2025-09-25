@@ -5,7 +5,7 @@ import { useGameState } from './GameStateManager';
 import { SessionManager } from '../services/session';
 import { 
   X, MessageCircle, Play, Pause, SkipBack, SkipForward, 
-  Volume2, VolumeX, Mic, Send, Brain, Loader 
+  Volume2, VolumeX, Mic, Send, Brain, Loader, Activity, Clock, Zap
 } from 'lucide-react';
 
 interface UnifiedSessionWorldProps {
@@ -434,31 +434,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getBreathingDisplay = () => {
-    const displays = {
-      'inhale': { text: 'Inhale', color: 'bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-teal-400/50 text-teal-200' },
-      'hold-inhale': { text: 'Hold', color: 'bg-gradient-to-br from-amber-500/30 to-yellow-500/20 border-amber-400/50 text-amber-200' },
-      'exhale': { text: 'Exhale', color: 'bg-gradient-to-br from-emerald-500/30 to-green-500/20 border-emerald-400/50 text-emerald-200' },
-      'hold-exhale': { text: 'Hold', color: 'bg-gradient-to-br from-amber-500/30 to-yellow-500/20 border-amber-400/50 text-amber-200' },
-      'rest': { text: 'Rest', color: 'bg-white/10 border-white/30 text-white/70' }
-    };
-    return displays[sessionState.breathing] || displays.rest;
-  };
-
-  const getPhaseDisplay = () => {
-    const displays = {
-      'paused': { text: 'Paused', color: 'bg-gradient-to-br from-slate-500/30 to-gray-500/20 border-slate-400/50 text-slate-200' },
-      'preparation': { text: 'Preparing', color: 'bg-gradient-to-br from-blue-500/30 to-cyan-500/20 border-blue-400/50 text-blue-200' },
-      'induction': { text: 'Guiding', color: 'bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-teal-400/50 text-teal-200' },
-      'deepening': { text: 'Deepening', color: 'bg-gradient-to-br from-purple-500/30 to-indigo-500/20 border-purple-400/50 text-purple-200' },
-      'exploration': { text: 'Exploring', color: 'bg-gradient-to-br from-yellow-500/30 to-amber-500/20 border-yellow-400/50 text-yellow-200' },
-      'transformation': { text: 'Transforming', color: 'bg-gradient-to-br from-orange-500/30 to-red-500/20 border-orange-400/50 text-orange-200' },
-      'integration': { text: 'Integrating', color: 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/50 text-green-200' },
-      'completion': { text: 'Complete', color: 'bg-gradient-to-br from-white/30 to-gray-300/20 border-white/50 text-white' }
-    };
-    return displays[sessionState.phase] || displays.paused;
-  };
-
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -500,27 +475,25 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const bufferedAhead = sessionManagerState.bufferedAhead;
   const latestAiMessage = conversation.filter(msg => msg.role === 'ai').slice(-1)[0];
 
-  // Set CSS custom properties for layout tokens
-  useEffect(() => {
-    const root = document.documentElement.style;
-    root.setProperty('--session-header-h', '64px');
-    root.setProperty('--session-dock-h', '96px');
-    root.setProperty('--session-rail-w', '72px');
-    root.setProperty('--session-gutter', window.innerWidth >= 1280 ? '24px' : window.innerWidth >= 768 ? '16px' : '12px');
-  }, []);
-
   return (
     <div className="session-world h-screen bg-black text-white relative overflow-hidden">
-      {/* Custom CSS Variables and Styles */}
+      {/* CSS Custom Properties */}
       <style jsx>{`
         .session-world {
           --header-h: 64px;
-          --dock-h: 96px;
-          --rail-w: 72px;
+          --dock-h: 72px;
+          --rail-w: 80px;
           --gutter: 24px;
         }
         
         @media (max-width: 1279px) {
+          .session-world {
+            --rail-w: 72px;
+            --gutter: 20px;
+          }
+        }
+        
+        @media (max-width: 1023px) {
           .session-world {
             --rail-w: 64px;
             --gutter: 16px;
@@ -529,18 +502,19 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         
         @media (max-width: 767px) {
           .session-world {
+            --header-h: 56px;
+            --dock-h: 64px;
             --rail-w: 56px;
             --gutter: 12px;
-            --dock-h: 88px;
           }
         }
         
         .content-frame {
           position: fixed;
           top: var(--header-h);
+          bottom: var(--dock-h);
           left: 0;
           right: 0;
-          bottom: var(--dock-h);
           pointer-events: none;
         }
         
@@ -548,19 +522,20 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           pointer-events: auto;
         }
         
-        .rail-left, .rail-right {
+        .rail-left {
           position: absolute;
+          left: var(--gutter);
           top: 50%;
           transform: translateY(-50%);
           width: var(--rail-w);
         }
         
-        .rail-left {
-          left: var(--gutter);
-        }
-        
         .rail-right {
+          position: absolute;
           right: var(--gutter);
+          top: 50%;
+          transform: translateY(-50%);
+          width: var(--rail-w);
         }
         
         .stage {
@@ -595,7 +570,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         }
       `}</style>
 
-      {/* Premium Cosmic Background */}
+      {/* Cosmic Background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-950/30 to-teal-950/30" />
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-400/8 to-cyan-400/4 rounded-full blur-3xl" />
@@ -618,18 +593,18 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         ))}
       </div>
 
-      {/* Layer 1: Header (Fixed, 64px) */}
-      <header className="fixed top-0 left-0 right-0 z-[200] h-16 bg-black/95 backdrop-blur-xl border-b border-white/10 shadow-lg">
+      {/* 1. Header (Fixed) */}
+      <header className="fixed top-0 left-0 right-0 z-[200] h-16 bg-black/95 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/20">
         <div className="h-full px-6 flex items-center justify-between">
           {/* Left: Title + Subtitle */}
           <div>
-            <h1 className="text-white text-lg font-medium">{getSessionTitle()}</h1>
+            <h1 className="text-white text-lg font-semibold">{getSessionTitle()}</h1>
             <p className="text-white/60 text-sm">Segment {currentSegment} of {totalSegments}</p>
           </div>
 
           {/* Center: Progress Bar */}
           <div className="flex-1 max-w-md mx-8">
-            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full transition-all duration-700"
                 style={{ width: `${progress * 100}%` }}
@@ -640,13 +615,13 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           {/* Right: Stats + Close */}
           <div className="flex items-center space-x-4">
             <div className="text-right">
-              <div className="text-white/80 text-sm font-medium">{currentSegment}/{totalSegments}</div>
+              <div className="text-white text-sm font-semibold">{currentSegment}/{totalSegments}</div>
               <div className="text-white/50 text-xs">Queued: {bufferedAhead}</div>
             </div>
             <button
               onClick={onCancel}
               title="Close Session"
-              className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 hover:scale-105"
+              className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200 hover:scale-105"
             >
               <X size={18} className="text-white/80" />
             </button>
@@ -654,20 +629,20 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         </div>
       </header>
 
-      {/* Layer 2: Content Frame (3-Column Layout) */}
+      {/* 2. Content Frame (3-Column Layout) */}
       <div className="content-frame">
-        {/* Left Rail: Controllers */}
+        {/* Left Rail: Controls */}
         <div className="rail-left z-[150]">
-          <div className="flex flex-col items-center space-y-3">
+          <div className="flex flex-col items-center space-y-4">
             
             {/* Play/Pause (Primary) */}
             <button
               onClick={togglePlayPause}
               title={`${sessionState.isPlaying ? 'Pause' : 'Play'} (Space)`}
-              className={`w-14 h-14 rounded-full backdrop-blur-xl border-2 transition-all duration-300 hover:scale-95 flex items-center justify-center shadow-xl ${
+              className={`w-14 h-14 rounded-full backdrop-blur-xl border-2 transition-all duration-200 hover:scale-95 flex items-center justify-center shadow-xl ${
                 sessionState.isPlaying 
-                  ? 'bg-gradient-to-br from-orange-500/30 to-red-500/20 border-orange-400/60 text-orange-200 shadow-orange-400/30' 
-                  : 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-200 shadow-green-400/30'
+                  ? 'bg-gradient-to-br from-orange-500/30 to-red-500/20 border-orange-400/60 text-orange-200 shadow-orange-400/20' 
+                  : 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-200 shadow-green-400/20'
               }`}
             >
               {sessionState.isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
@@ -677,9 +652,9 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             <button
               onClick={toggleCoachBubble}
               title="Chat with Libero (C)"
-              className={`w-12 h-12 rounded-full backdrop-blur-xl border transition-all duration-300 hover:scale-95 flex items-center justify-center shadow-lg ${
+              className={`w-12 h-12 rounded-full backdrop-blur-xl border transition-all duration-200 hover:scale-95 flex items-center justify-center shadow-lg ${
                 showCoachBubble 
-                  ? 'bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-teal-400/60 text-teal-200 shadow-teal-400/30' 
+                  ? 'bg-gradient-to-br from-teal-500/30 to-cyan-500/20 border-teal-400/60 text-teal-200 shadow-teal-400/20' 
                   : 'bg-white/10 border-white/30 text-white/70 hover:bg-white/20'
               }`}
             >
@@ -690,7 +665,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             <button
               onClick={skipBack}
               title="Previous Segment (←)"
-              className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-95 transition-all duration-300 shadow-lg text-white/70"
+              className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-95 transition-all duration-200 shadow-lg text-white/70"
             >
               <SkipBack size={16} />
             </button>
@@ -699,19 +674,19 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             <button
               onClick={skipForward}
               title="Next Segment (→)"
-              className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-95 transition-all duration-300 shadow-lg text-white/70"
+              className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/30 flex items-center justify-center hover:bg-white/20 hover:scale-95 transition-all duration-200 shadow-lg text-white/70"
             >
               <SkipForward size={16} />
             </button>
 
-            {/* Volume (NO MIC - removed duplication) */}
+            {/* Volume */}
             <button
               onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
               title="Toggle Volume (M)"
-              className={`w-12 h-12 rounded-full backdrop-blur-xl border transition-all duration-300 hover:scale-95 flex items-center justify-center shadow-lg ${
+              className={`w-12 h-12 rounded-full backdrop-blur-xl border transition-all duration-200 hover:scale-95 flex items-center justify-center shadow-lg ${
                 isVoiceEnabled 
-                  ? 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-200 shadow-green-400/30' 
-                  : 'bg-gradient-to-br from-red-500/30 to-orange-500/20 border-red-400/60 text-red-200 shadow-red-400/30'
+                  ? 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border-green-400/60 text-green-200 shadow-green-400/20' 
+                  : 'bg-gradient-to-br from-red-500/30 to-orange-500/20 border-red-400/60 text-red-200 shadow-red-400/20'
               }`}
             >
               {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
@@ -719,63 +694,80 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           </div>
         </div>
 
-        {/* Right Rail: Indicators */}
+        {/* Right Rail: Indicators (Card Style) */}
         <div className="rail-right z-[150]">
           <div className="flex flex-col items-center space-y-3">
             
-            {/* Breathing Indicator */}
-            <div className={`w-16 h-12 rounded-2xl backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center text-center ${
-              sessionState.isPlaying ? 'animate-gentle-pulse' : ''
-            } ${getBreathingDisplay().color}`}>
-              <div className="text-xs font-bold">💨</div>
-              <div className="text-xs font-medium">{getBreathingDisplay().text}</div>
+            {/* Breathing Phase Card */}
+            <div className={`w-20 h-12 rounded-xl backdrop-blur-xl border transition-all duration-300 flex items-center justify-center ${
+              sessionState.breathing === 'inhale' ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/15 border-teal-400/40 text-teal-200' :
+              sessionState.breathing === 'exhale' ? 'bg-gradient-to-br from-emerald-500/20 to-green-500/15 border-emerald-400/40 text-emerald-200' :
+              sessionState.breathing.includes('hold') ? 'bg-gradient-to-br from-amber-500/20 to-yellow-500/15 border-amber-400/40 text-amber-200' :
+              'bg-white/10 border-white/30 text-white/70'
+            } ${sessionState.isPlaying ? 'animate-gentle-pulse' : ''}`}>
+              <div className="text-center">
+                <div className="text-xs font-bold capitalize leading-tight">
+                  {sessionState.breathing.replace('-', ' ')}
+                </div>
+              </div>
             </div>
 
-            {/* Phase Badge */}
-            <div className={`w-16 h-12 rounded-2xl backdrop-blur-xl border transition-all duration-300 flex flex-col items-center justify-center text-center ${getPhaseDisplay().color}`}>
-              <div className="text-xs font-bold">⚡</div>
-              <div className="text-xs font-medium">{getPhaseDisplay().text}</div>
+            {/* Status/Phase Card */}
+            <div className={`w-20 h-12 rounded-xl backdrop-blur-xl border transition-all duration-300 flex items-center justify-center ${
+              sessionState.phase === 'paused' ? 'bg-gradient-to-br from-slate-500/20 to-gray-500/15 border-slate-400/40 text-slate-200' :
+              sessionState.isPlaying ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/15 border-green-400/40 text-green-200' :
+              'bg-white/10 border-white/30 text-white/70'
+            }`}>
+              <div className="text-center">
+                <div className="text-xs font-bold leading-tight">
+                  {sessionState.isPlaying ? 'Playing' : 'Paused'}
+                </div>
+              </div>
             </div>
 
-            {/* Depth Level */}
-            <div className="w-16 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/30 transition-all duration-300 flex flex-col items-center justify-center text-center">
-              <div className="text-teal-400 text-xs font-bold">📊</div>
-              <div className="text-white text-xs font-medium">Level {sessionState.depth}</div>
+            {/* Depth Level Card */}
+            <div className="w-20 h-12 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 transition-all duration-300 flex items-center justify-center">
+              <div className="text-center">
+                <Activity size={14} className="text-teal-400 mx-auto mb-0.5" />
+                <div className="text-white text-xs font-bold">L{sessionState.depth}</div>
+              </div>
             </div>
 
-            {/* Timer */}
-            <div className="w-16 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/30 transition-all duration-300 flex flex-col items-center justify-center text-center">
-              <div className="text-white/60 text-xs font-bold">⏱</div>
-              <div className="text-white text-xs font-medium">{formatTime(sessionState.timeRemaining)}</div>
+            {/* Timer Card */}
+            <div className="w-20 h-12 rounded-xl bg-white/10 backdrop-blur-xl border border-white/30 transition-all duration-300 flex items-center justify-center">
+              <div className="text-center">
+                <Clock size={14} className="text-white/60 mx-auto mb-0.5" />
+                <div className="text-white text-xs font-bold">{formatTime(sessionState.timeRemaining)}</div>
+              </div>
             </div>
 
             {/* Status Callout (Auto-dismiss) */}
             {showStatusCallout && (
-              <div className="w-16 h-12 rounded-2xl bg-yellow-500/20 backdrop-blur-xl border border-yellow-500/40 transition-all duration-300 flex flex-col items-center justify-center text-center animate-fade-in">
+              <div className="w-24 h-10 rounded-xl bg-yellow-500/20 backdrop-blur-xl border border-yellow-500/40 transition-all duration-300 flex items-center justify-center animate-fade-in">
                 <div className="text-yellow-200 text-xs font-medium text-center leading-tight">
-                  Session {sessionState.isPlaying ? 'active' : 'paused'}
+                  {sessionState.isPlaying ? 'Active' : 'Paused'}
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Center Stage: Orb + Optional Chat Bubble */}
+        {/* Center Stage: Orb + Chat Bubble */}
         <div className="stage z-[100]">
           {/* Chat Bubble (Above Orb) */}
           {showCoachBubble && latestAiMessage && (
             <div 
-              className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-6 z-[170]"
+              className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-8 z-[170]"
               style={{ maxWidth: '720px', width: '90vw' }}
             >
-              <div className="bg-gradient-to-br from-teal-500/25 to-cyan-500/15 backdrop-blur-xl rounded-3xl p-6 border border-teal-500/30 shadow-2xl">
+              <div className="glass-card bg-gradient-to-br from-teal-500/15 to-cyan-500/10 border-teal-500/30 p-6 shadow-2xl shadow-teal-400/10">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-400 border border-teal-400/60 flex items-center justify-center flex-shrink-0">
                     <Brain size={18} className="text-black" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-3">
-                      <span className="text-teal-100 text-lg font-medium">Libero</span>
+                      <span className="text-teal-100 text-lg font-semibold">Libero</span>
                       {isThinking && (
                         <div className="flex items-center space-x-2">
                           <Loader size={14} className="text-teal-300 animate-spin" />
@@ -804,34 +796,33 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             onTap={() => {}}
             egoState={activeEgoState}
             afterglow={sessionState.orbEnergy > 0.7}
-            size={Math.min(560, window.innerWidth * 0.4, window.innerHeight * 0.5)}
+            size={Math.min(560, window.innerWidth * 0.35, window.innerHeight * 0.4)}
             variant="webgl"
           />
         </div>
       </div>
 
-      {/* Layer 3: Progress Guide (Above Dock) */}
-      <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-[160]">
-        <div className="bg-black/80 backdrop-blur-xl rounded-2xl px-4 py-2 border border-white/20 shadow-lg">
+      {/* 3. Progress Guide (Above Dock) */}
+      <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-[160]">
+        <div className="glass-card bg-black/60 px-4 py-2 text-center">
           <span className="text-white/60 text-sm">
             Session progress: {currentSegment} of {totalSegments} segments • {bufferedAhead} buffered ahead
           </span>
         </div>
       </div>
 
-      {/* Layer 4: Bottom Dock (Clean, No Extra Actions) */}
-      <div className="fixed bottom-0 left-0 right-0 z-[180] h-24 bg-black/95 backdrop-blur-xl border-t border-white/10 shadow-2xl shadow-black/50">
-        <div className="h-full px-6 py-4 flex flex-col justify-center">
-          
-          {/* Main Input Row */}
-          <form onSubmit={handleSubmit} className="flex items-center space-x-4 mb-3">
-            {/* Mic Button (Far Left, Large) */}
+      {/* 4. Bottom Dock (Clean - Mic/Input/Send Only) */}
+      <div className="fixed bottom-0 left-0 right-0 z-[180] h-18 bg-black/95 backdrop-blur-xl border-t border-white/10 shadow-2xl shadow-black/30">
+        <div className="h-full px-6 py-4 flex items-center justify-center">
+          <form onSubmit={handleSubmit} className="flex items-center space-x-4 w-full max-w-4xl">
+            
+            {/* Mic Button (Far Left) */}
             <button
               type="button"
               onClick={toggleListening}
               disabled={isThinking}
               title="Talk to Libero"
-              className={`w-12 h-12 rounded-full transition-all duration-300 hover:scale-110 disabled:opacity-50 shadow-xl flex-shrink-0 ${
+              className={`w-12 h-12 rounded-full transition-all duration-200 hover:scale-110 disabled:opacity-50 shadow-xl flex-shrink-0 ${
                 isListening 
                   ? 'bg-gradient-to-br from-red-500/40 to-red-600/30 border-2 border-red-400/80 text-red-200 animate-pulse' 
                   : 'bg-gradient-to-br from-blue-500/40 to-cyan-500/30 border-2 border-blue-400/80 text-blue-200'
@@ -840,47 +831,26 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
               <Mic size={18} />
             </button>
 
-            {/* Text Input (Center, Wide) */}
+            {/* Text Input (Center) */}
             <input
               type="text"
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               placeholder={isListening ? "Listening..." : "Type your message or use voice..."}
               disabled={isListening || isThinking}
-              className="flex-1 bg-white/8 backdrop-blur-xl border border-white/20 rounded-full px-6 py-3 text-white text-base placeholder-white/50 focus:outline-none focus:border-teal-400/60 focus:bg-white/12 transition-all disabled:opacity-50"
+              className="flex-1 glass-input bg-white/8 border-white/20 rounded-full px-6 py-3 text-white text-base placeholder-white/50 focus:border-teal-400/60 focus:bg-white/12 transition-all disabled:opacity-50"
             />
 
-            {/* Send Button (Right of Input) */}
+            {/* Send Button (Right) */}
             <button
               type="submit"
               disabled={!textInput.trim() || isThinking}
               title="Send Message"
-              className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500/40 to-cyan-500/30 border-2 border-teal-400/80 text-teal-200 hover:scale-110 transition-all duration-300 disabled:opacity-50 shadow-xl flex items-center justify-center flex-shrink-0"
+              className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500/40 to-cyan-500/30 border-2 border-teal-400/80 text-teal-200 hover:scale-110 transition-all duration-200 disabled:opacity-50 shadow-xl flex items-center justify-center flex-shrink-0"
             >
               <Send size={18} />
             </button>
           </form>
-
-          {/* Quick Suggestions (Below Input) */}
-          {conversation.length <= 1 && (
-            <div className="flex justify-center space-x-3">
-              {[
-                'I feel stressed',
-                'Help me focus', 
-                'I want to relax',
-                'I need confidence'
-              ].map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => handleUserInput(suggestion)}
-                  disabled={isThinking}
-                  className="px-4 py-2 bg-white/8 backdrop-blur-sm hover:bg-white/15 border border-white/20 rounded-full text-white/70 text-sm font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 hover:border-teal-400/40"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>
