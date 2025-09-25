@@ -12,6 +12,7 @@ interface UnifiedSessionWorldProps {
     customProtocol?: any;
   };
   onBack: () => void;
+}
 
 export default function UnifiedSessionWorld({ sessionConfig, onBack }: UnifiedSessionWorldProps) {
   const { user, showToast } = useAppStore();
