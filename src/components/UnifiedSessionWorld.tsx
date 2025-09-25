@@ -418,7 +418,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
 
       {/* Session Layout */}
       <div className="relative z-10 flex flex-col h-full">
-        {/* 1. Top Header */}
+        {/* Session Header */}
         <SessionHeader
           sessionTitle={getSessionTitle()}
           currentSegment={sessionManagerState.currentSegmentIndex + 1}
@@ -435,14 +435,14 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           phase={sessionState.isPlaying ? sessionState.phase : 'paused'}
         />
 
-        {/* 3. Status Bar */}
+        {/* Status Bar */}
         <StatusBar
           isPlaying={sessionState.isPlaying}
           currentSegment={sessionManagerState.currentSegmentIndex + 1}
           totalSegments={sessionManagerState.scriptPlan?.segments?.length || 5}
         />
 
-        {/* 4. Main Content Area - Central Orb */}
+        {/* Main Content Area - Central Orb */}
         <div className="flex-1 relative min-h-0">
           {/* Central Orb */}
           <div className="absolute inset-0 flex items-center justify-center">
@@ -475,8 +475,8 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
           />
         </div>
 
-        {/* 5. Bottom Chat Interface */}
-        <div className="flex-shrink-0 pb-6">
+        {/* Bottom Chat Interface */}
+        <div className="flex-shrink-0">
           <ChatInterface
             conversation={conversation}
             onUserInput={handleUserInput}
@@ -488,6 +488,9 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
             onToggleListening={toggleListening}
             onToggleVoice={() => setIsVoiceEnabled(!isVoiceEnabled)}
             onToggleMic={() => setIsMicEnabled(!isMicEnabled)}
+            currentSegment={sessionManagerState.currentSegmentIndex + 1}
+            totalSegments={sessionManagerState.scriptPlan?.segments?.length || 5}
+            bufferedAhead={sessionManagerState.bufferedAhead}
           />
         </div>
       </div>
