@@ -1,4 +1,3 @@
-```typescript
 // src/services/session.ts
 
 import { getSessionScript, ScriptPlan, ScriptSegment } from './gemini';
@@ -129,7 +128,105 @@ class SessionManager implements SessionHandle {
       try {
         const voiceId = AI.voice.defaultVoiceId;
         const voiceModel = AI.voice.model;
-        const cacheKey = \`${this.scriptPlan!.hash}-${segment.id}-${voiceId}-${voiceModel}`;
+        const cacheKey = this.scriptPlan!.hash + '-' + segment.id + '-' + voiceId + '-' + voiceModel;
         const audioBlob = await synthesizeSegment(segment.text, {
           voiceId: voiceId,
           model: voiceModel,
+          cacheKey: cacheKey,
+          mode: 'pre-gen'
+        });
+
+        const audioElement = new Audio(URL.createObjectURL(audioBlob));
+        this.segments[index] = { ...segment, audio: audioElement };
+        console.log('Session: Prefetched segment ' + index + ': ' + segment.id);
+        this._emit('segment-ready', segment.id);
+        track('segment_buffered', { segmentId: segment.id, index: index });
+
+      } catch (error: any) {
+        console.error('Session: Failed to prefetch segment ' + index + ':', error);
+        track('segment_buffer_error', { segmentId: segment.id, error: error.message });
+      }
+    }));
+
+    this._updateState({ bufferedAhead: this.segments.filter(s => s !== null).length - this.currentSegmentIndex - 1 });
+  }
+
+  play() {
+    if (this._state.playState === 'playing') return;
+    
+    if (this.currentSegmentIndex >= 0 && this.segments[this.currentSegmentIndex]) {
+      const segment = this.segments[this.currentSegmentIndex];
+      if (segment) {
+        this.currentAudioElement = segment.audio;
+        this.currentAudioElement.play();
+        this._updateState({ playState: 'playing' });
+        this._emit('play');
+      }
+    }
+  }
+
+  pause() {
+    if (this._state.playState === 'paused') return;
+    
+    if (this.currentAudioElement) {
+      this.currentAudioElement.pause();
+    }
+    this._updateState({ playState: 'paused' });
+    this._emit('pause');
+  }
+
+  next() {
+    if (this.currentSegmentIndex < this.segments.length - 1) {
+      this.currentSegmentIndex++;
+      this._updateState({ 
+        currentSegmentIndex: this.currentSegmentIndex,
+        currentSegmentId: this.scriptPlan!.segments[this.currentSegmentIndex]?.id 
+      });
+      
+      if (this._state.playState === 'playing') {
+        this.play();
+      }
+    }
+  }
+
+  prev() {
+    if (this.currentSegmentIndex > 0) {
+      this.currentSegmentIndex--;
+      this._updateState({ 
+        currentSegmentIndex: this.currentSegmentIndex,
+        currentSegmentId: this.scriptPlan!.segments[this.currentSegmentIndex]?.id 
+      });
+      
+      if (this._state.playState === 'playing') {
+        this.play();
+      }
+    }
+  }
+
+  dispose() {
+    if (this.currentAudioElement) {
+      this.currentAudioElement.pause();
+      this.currentAudioElement = null;
+    }
+    this.eventListeners = {};
+    this._updateState({ playState: 'stopped' });
+  }
+
+  on(event: string, listener: Function) {
+    if (!this.eventListeners[event]) {
+      this.eventListeners[event] = [];
+    }
+    this.eventListeners[event].push(listener);
+  }
+
+  getCurrentState(): SessionState {
+    return { ...this._state };
+  }
+}
+
+/**
+ * Creates and returns a new session handle.
+ */
+export function startSession(options: StartSessionOptions): SessionHandle {
+  return new SessionManager(options);
+}
