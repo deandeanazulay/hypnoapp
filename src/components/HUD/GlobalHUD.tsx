@@ -217,9 +217,9 @@ export default function GlobalHUD() {
         {/* Right Controls */}
         <div className="flex items-center space-x-2">
           <button 
-            onClick={() => openModal('geminiChat')}
+            onClick={() => openModal('chatgptChat')}
             className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110"
-            title="Test Gemini API & Get Help"
+            title="Test ChatGPT API & Get Help"
           >
             <MessageCircle size={16} className="text-purple-400" />
           </button>

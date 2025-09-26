@@ -58,28 +58,28 @@ Deno.serve(async (req: Request) => {
   try {
     const { message, knowledgeBase, conversationHistory }: ChatRequest = await req.json();
 
-    console.log('Gemini Chat: Processing message:', message);
-    console.log('Gemini Chat: Knowledge base keys:', Object.keys(knowledgeBase || {}));
+    console.log('ChatGPT Chat: Processing message:', message);
+    console.log('ChatGPT Chat: Knowledge base keys:', Object.keys(knowledgeBase || {}));
 
-    // Get Gemini API key
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!geminiApiKey) {
-      console.error('GEMINI_API_KEY not configured');
+    // Get OpenAI API key
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      console.error('OPENAI_API_KEY not configured');
       return new Response(
         JSON.stringify({
-          response: `❌ **GEMINI_API_KEY Not Configured**
+          response: `❌ **OPENAI_API_KEY Not Configured**
 
-The Gemini API key is missing from your Supabase Edge Functions environment variables.
+The OpenAI API key is missing from your Supabase Edge Functions environment variables.
 
 **To fix this:**
 1. Go to your Supabase Dashboard
 2. Navigate to Edge Functions → Settings
-3. Add environment variable: \`GEMINI_API_KEY\` = your Google API key
+3. Add environment variable: \`OPENAI_API_KEY\` = your OpenAI API key
 4. Redeploy your functions
 
-**Get a free Gemini API key:**
-- Visit: https://makersuite.google.com/app/apikey
-- Sign in with Google account
+**Get an OpenAI API key:**
+- Visit: https://platform.openai.com/api-keys
+- Sign in to your OpenAI account
 - Create new API key
 - Copy and paste into Supabase
 
@@ -89,11 +89,11 @@ The Gemini API key is missing from your Supabase Edge Functions environment vari
 - Plan: ${knowledgeBase?.currentUser?.plan || 'N/A'}
 
 Without the API key, script generation will fail and you'll get 0 segments in sessions.`,
-          error: 'GEMINI_API_KEY not configured',
+          error: 'OPENAI_API_KEY not configured',
           timestamp: Date.now()
         }),
         {
-          status: 200, // Don't fail the chat, provide helpful error info
+          status: 200,
           headers: {
             'Content-Type': 'application/json',
             ...corsHeaders,
@@ -102,55 +102,47 @@ Without the API key, script generation will fail and you'll get 0 segments in se
       );
     }
 
-    // Build conversation for Gemini
-    const conversation = [
+    // Build messages for OpenAI format
+    const messages = [
       {
-        role: 'user',
-        parts: [{ 
-          text: `${LIBERO_SYSTEM_PROMPT}
+        role: 'system',
+        content: `${LIBERO_SYSTEM_PROMPT}
 
 CURRENT USER CONTEXT:
-${JSON.stringify(knowledgeBase, null, 2)}
-
-User's message: ${message}` 
-        }]
+${JSON.stringify(knowledgeBase, null, 2)}`
       },
       ...conversationHistory.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
-      }))
+        role: msg.role,
+        content: msg.content
+      })),
+      {
+        role: 'user',
+        content: message
+      }
     ];
 
-    // Call Gemini API
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${geminiApiKey}`, {
+    // Call OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiApiKey}`,
       },
       body: JSON.stringify({
-        contents: conversation,
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
-        safetySettings: [
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
-        ]
+        model: 'gpt-4o',
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 1024,
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Gemini API error:', response.status, errorText);
+      console.error('OpenAI API error:', response.status, errorText);
       
       return new Response(
         JSON.stringify({
-          response: `🔌 **Gemini API Error (${response.status})**
+          response: `🔌 **OpenAI API Error (${response.status})**
 
 The API key is configured but the call failed.
 
@@ -166,8 +158,8 @@ ${errorText}
 • Network connectivity issues
 
 **Check Your Setup:**
-1. Verify GEMINI_API_KEY is correct
-2. Test the key at: https://makersuite.google.com/
+1. Verify OPENAI_API_KEY is correct
+2. Test the key at: https://platform.openai.com/playground
 3. Check API quotas and billing
 4. Try again in a few moments
 
@@ -188,12 +180,12 @@ ${errorText}
     }
 
     const data = await response.json();
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const aiResponse = data.choices?.[0]?.message?.content;
 
     if (!aiResponse) {
       return new Response(
         JSON.stringify({
-          response: `🤖 **No Response from Gemini**
+          response: `🤖 **No Response from ChatGPT**
 
 The API call succeeded but no content was returned.
 
@@ -221,7 +213,7 @@ Try rephrasing your question or ask something simpler to test the connection.`,
       );
     }
 
-    console.log('Gemini Chat: Successfully generated response');
+    console.log('ChatGPT Chat: Successfully generated response');
 
     return new Response(
       JSON.stringify({
@@ -238,7 +230,7 @@ Try rephrasing your question or ask something simpler to test the connection.`,
     );
 
   } catch (error: any) {
-    console.error('Gemini Chat error:', error);
+    console.error('ChatGPT Chat error:', error);
     
     return new Response(
       JSON.stringify({
@@ -265,7 +257,7 @@ This error suggests a deeper technical issue beyond just API configuration.`,
         timestamp: Date.now()
       }),
       {
-        status: 200, // Don't break the chat UI
+        status: 200,
         headers: {
           'Content-Type': 'application/json',
           ...corsHeaders,

@@ -13,12 +13,12 @@ interface ChatMessage {
   error?: boolean;
 }
 
-interface GeminiChatWidgetProps {
+interface ChatGPTChatWidgetProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function GeminiChatWidget({ isOpen, onClose }: GeminiChatWidgetProps) {
+export default function ChatGPTChatWidget({ isOpen, onClose }: ChatGPTChatWidgetProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -74,7 +74,7 @@ export default function GeminiChatWidget({ isOpen, onClose }: GeminiChatWidgetPr
         description: protocol.description
       })),
       appFeatures: [
-        'AI-generated hypnosis scripts using Gemini',
+        'AI-generated hypnosis scripts using ChatGPT',
         'Voice synthesis with ElevenLabs', 
         'Multiple ego state guides',
         'Custom protocol creation',
@@ -84,7 +84,7 @@ export default function GeminiChatWidget({ isOpen, onClose }: GeminiChatWidgetPr
       technicalSetup: {
         framework: 'React + TypeScript + Vite',
         database: 'Supabase',
-        ai: 'Google Gemini Flash',
+        ai: 'OpenAI ChatGPT',
         voice: 'ElevenLabs TTS',
         deployment: 'Supabase Edge Functions'
       }
@@ -115,7 +115,7 @@ export default function GeminiChatWidget({ isOpen, onClose }: GeminiChatWidgetPr
 
       const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
       
-      const response = await fetch(`${baseUrl}/functions/v1/gemini-chat`, {
+      const response = await fetch(`${baseUrl}/functions/v1/chatgpt-chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -158,7 +158,7 @@ export default function GeminiChatWidget({ isOpen, onClose }: GeminiChatWidgetPr
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `❌ **API Connection Failed**\n\n${error.message}\n\n**Possible Solutions:**\n• Check GEMINI_API_KEY in Supabase Edge Functions\n• Verify internet connection\n• Try again in a few moments`,
+        content: `❌ **API Connection Failed**\n\n${error.message}\n\n**Possible Solutions:**\n• Check OPENAI_API_KEY in Supabase Edge Functions\n• Verify internet connection\n• Try again in a few moments`,
         timestamp: new Date(),
         error: true
       };
@@ -168,7 +168,7 @@ export default function GeminiChatWidget({ isOpen, onClose }: GeminiChatWidgetPr
       
       showToast({
         type: 'error',
-        message: 'Failed to connect to Gemini API'
+        message: 'Failed to connect to ChatGPT API'
       });
     } finally {
       setIsLoading(false);
@@ -196,7 +196,7 @@ export default function GeminiChatWidget({ isOpen, onClose }: GeminiChatWidgetPr
     <ModalShell
       isOpen={isOpen}
       onClose={onClose}
-      title="Gemini API Test Chat"
+      title="ChatGPT API Test Chat"
       className="max-w-2xl h-[80vh]"
       footer={
         <div className="flex items-center justify-between">
@@ -235,7 +235,7 @@ export default function GeminiChatWidget({ isOpen, onClose }: GeminiChatWidgetPr
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4 border border-teal-500/30">
                 <Bot size={24} className="text-teal-400" />
               </div>
-              <h3 className="text-white font-medium mb-2">Test Gemini API Connection</h3>
+              <h3 className="text-white font-medium mb-2">Test ChatGPT API Connection</h3>
               <p className="text-white/70 text-sm">Ask questions about Libero or test the API functionality</p>
             </div>
           )}
@@ -256,7 +256,7 @@ export default function GeminiChatWidget({ isOpen, onClose }: GeminiChatWidgetPr
                     <Bot size={14} className={message.error ? "text-red-400" : "text-white/60"} />
                   )}
                   <span className="text-xs font-medium opacity-80">
-                    {message.role === 'user' ? 'You' : 'Gemini'}
+                    {message.role === 'user' ? 'You' : 'ChatGPT'}
                   </span>
                   <span className="text-xs opacity-60">
                     {message.timestamp.toLocaleTimeString()}
@@ -282,7 +282,7 @@ export default function GeminiChatWidget({ isOpen, onClose }: GeminiChatWidgetPr
               <div className="bg-white/10 border border-white/20 rounded-2xl p-4 max-w-[80%]">
                 <div className="flex items-center space-x-2 mb-2">
                   <Bot size={14} className="text-white/60" />
-                  <span className="text-xs font-medium opacity-80">Gemini</span>
+                  <span className="text-xs font-medium opacity-80">ChatGPT</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
@@ -321,7 +321,7 @@ export default function GeminiChatWidget({ isOpen, onClose }: GeminiChatWidgetPr
           <div className="flex flex-wrap gap-2 mt-3">
             {[
               'Test API connection',
-              'How do I set up GEMINI_API_KEY?',
+              'How do I set up OPENAI_API_KEY?',
               'Explain ego states',
               'Why are scripts not generating?',
               'Show available protocols'

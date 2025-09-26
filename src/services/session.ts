@@ -1,5 +1,5 @@
 import { track } from './analytics';
-import { SessionScript, getSessionScript } from './gemini';
+import { SessionScript, getSessionScript } from './chatgpt';
 import { synthesizeSegment } from './voice';
 import { AI } from '../config/ai';
 

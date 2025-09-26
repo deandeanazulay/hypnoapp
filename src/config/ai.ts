@@ -4,9 +4,9 @@
  * Configuration for AI and voice services.
  */
 export const AI = {
-  geminiModel: 'gemini-1.5-flash', // Start with 'gemini-1.5-flash', upgrade path 'gemini-1.5-pro'
-  geminiTimeoutMs: 8000,           // Hard timeout for Gemini API calls
-  geminiMaxRetries: 2,             // Max retries for transient Gemini errors
+  chatgptModel: 'gpt-4o',         // OpenAI ChatGPT model - 'gpt-4o' for best quality, 'gpt-3.5-turbo' for speed
+  chatgptTimeoutMs: 8000,         // Hard timeout for ChatGPT API calls
+  chatgptMaxRetries: 2,           // Max retries for transient ChatGPT errors
   elevenLabsBaseUrl: 'https://api.elevenlabs.io/v1', // ElevenLabs API base URL
   voice: {
     defaultVoiceId: 'pNInz6obpgDQGcFmaJgB', // Adam - calm, deep male voice perfect for hypnosis

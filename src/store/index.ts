@@ -28,6 +28,7 @@ interface AppState {
     auth: boolean;
     plan: boolean;
     tokens: boolean;
+    chatgptChat: boolean;
   };
   
   // Toasts
@@ -59,7 +60,7 @@ export const useAppStore = create<AppState>()(
         auth: false,
         plan: false,
         tokens: false,
-        geminiChat: false
+        chatgptChat: false
       },
       toasts: [],
 

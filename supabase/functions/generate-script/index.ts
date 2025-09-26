@@ -217,43 +217,44 @@ Deno.serve(async (req) => {
   try {
     const { userCtx, templates } = await req.json();
 
-    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) {
-      console.warn("GEMINI_API_KEY not configured, using mock script");
+      console.warn("OPENAI_API_KEY not configured, using mock script");
       const mockScript = getMockScript(userCtx);
       return new Response(JSON.stringify(mockScript), {
         headers: { "content-type": "application/json", ...corsHeaders },
       });
     }
 
-    // Google Gemini endpoint (key on query string)
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${apiKey}`;
+    // OpenAI ChatGPT endpoint
+    const url = 'https://api.openai.com/v1/chat/completions';
 
     const body = {
-      generationConfig: { 
-        temperature: 0.3,
-        topP: 0.9, 
-        maxOutputTokens: 2048,
-        responseMimeType: "application/json"
-      },
-      contents: [
-        { role: "user", parts: [{ text: SYSTEM_RULES }] },
-        { role: "user", parts: [{ text: JSON.stringify({ userCtx, templates }) }] }
-      ]
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: SYSTEM_RULES },
+        { role: 'user', content: JSON.stringify({ userCtx, templates }) }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.3,
+      max_tokens: 2048
     };
 
     const res = await fetch(url, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { 
+        "content-type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
       body: JSON.stringify(body),
     });
 
     if (!res.ok) {
-      console.warn(`Gemini API error ${res.status}, using mock script`);
+      console.warn(`OpenAI API error ${res.status}, using mock script`);
       return new Response(JSON.stringify({ 
-        error: `Gemini API error: ${res.status}`,
+        error: `OpenAI API error: ${res.status}`,
         reason: 'API_ERROR',
-        suggestion: 'Check GEMINI_API_KEY configuration'
+        suggestion: 'Check OPENAI_API_KEY configuration'
       }), {
         status: 500,
         headers: { "content-type": "application/json", ...corsHeaders },
@@ -262,14 +263,14 @@ Deno.serve(async (req) => {
 
     const raw = await res.text();
 
-    // Unwrap candidates → JSON text → parse
+    // Unwrap OpenAI response → JSON text → parse
     let payload: any;
     try {
       const j = JSON.parse(raw);
-      const text = j.candidates?.[0]?.content?.parts?.[0]?.text ?? j.output_text ?? raw;
+      const text = j.choices?.[0]?.message?.content ?? raw;
       payload = typeof text === "string" ? extractJson(text) : extractJson(JSON.stringify(text));
     } catch {
-      console.warn("Failed to extract JSON from Gemini response, using mock script");
+      console.warn("Failed to extract JSON from ChatGPT response, using mock script");
       return new Response(JSON.stringify({ 
         error: 'Failed to parse AI response',
         reason: 'PARSE_ERROR',
@@ -357,7 +358,7 @@ function getEmergencyScript(userCtx: any): any {
       style: "emergency_mode",
       isEmergency: true,
       sessionId: sessionId,
-      error: "GEMINI_API_KEY not configured or API call failed"
+      error: "OPENAI_API_KEY not configured or API call failed"
     }
   };
 }

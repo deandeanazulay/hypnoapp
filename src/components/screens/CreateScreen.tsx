@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft, Wand2, Target, Brain, Heart, Clock, Plus, Sparkl
 import PageShell from '../layout/PageShell';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useAppStore } from '../../store';
+import { supabase } from '../../lib/supabase';
 
 interface CreateScreenProps {
   onProtocolCreate: (protocol: any) => void;

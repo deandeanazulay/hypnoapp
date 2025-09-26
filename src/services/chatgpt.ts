@@ -15,7 +15,7 @@ export interface SessionScript {
 
 export async function getSessionScript(userContext: any): Promise<SessionScript> {
   try {
-    console.log('Gemini: Generating script for:', userContext.goalName, 'with', userContext.egoState);
+    console.log('ChatGPT: Generating script for:', userContext.goalName, 'with', userContext.egoState);
     
     // Add timestamp and randomness for unique scripts
     const enhancedContext = {
@@ -33,7 +33,7 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn('Gemini: Supabase not configured, using fallback');
+      console.warn('ChatGPT: Supabase not configured, using fallback');
       throw new Error('Supabase configuration missing');
     }
     
@@ -56,7 +56,7 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.warn('Gemini: API error, using fallback:', errorText);
+      console.warn('ChatGPT: API error, using fallback:', errorText);
       throw new Error(`API Error: ${response.status} - ${errorText}`);
     }
 
@@ -67,7 +67,7 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
     }
 
     if (import.meta.env.DEV) {
-      console.log(`Gemini: Generated ${result.segments.length} segments`);
+      console.log(`ChatGPT: Generated ${result.segments.length} segments`);
     }
     return result;
     
@@ -90,4 +90,39 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
     console.warn('All AI attempts failed, using final emergency script');
     return createEmergencyScript(enhancedContext);
   }
+}
+
+async function generateScriptDirectly(userContext: any): Promise<SessionScript> {
+  // This would be a direct call to OpenAI API if needed as fallback
+  throw new Error('Direct API call not implemented');
+}
+
+function createEmergencyScript(userContext: any): SessionScript {
+  const egoState = String(userContext.egoState || 'guardian');
+  const goalName = String(userContext.goalName || 'personal transformation');
+  
+  return {
+    title: `Emergency ${egoState} Session`,
+    segments: [
+      {
+        id: 'emergency-intro',
+        text: `Welcome to your emergency ${egoState} session for ${goalName}. Close your eyes and breathe deeply.`,
+        approxSec: 15
+      },
+      {
+        id: 'emergency-relax',
+        text: 'Take three slow, deep breaths. Feel your body beginning to relax with each exhale.',
+        approxSec: 30
+      },
+      {
+        id: 'emergency-end',
+        text: 'Count from 1 to 5 and open your eyes feeling refreshed and calm.',
+        approxSec: 15
+      }
+    ],
+    metadata: {
+      isEmergency: true,
+      source: 'fallback'
+    }
+  };
 }
