@@ -178,13 +178,47 @@ export function trackPerformance(metric: string, value: number, unit: string = '
 /**
  * Tracks errors with context
  */
-export function trackError(error: Error, context: Record<string, any> = {}): void {
-  track('error', {
+export function trackError(
+  error: Error, 
+  context: Record<string, any> = {}
+): void {
+  // Enhanced error context for better debugging
+  const errorContext = {
+    // Basic error information
     message: error.message,
     stack: error.stack,
     name: error.name,
+    
+    // Browser environment
+    userAgent: navigator.userAgent,
+    url: window.location.href,
+    timestamp: new Date().toISOString(),
+    
+    // Performance context
+    memory: (performance as any).memory ? {
+      usedJSHeapSize: (performance as any).memory.usedJSHeapSize,
+      totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
+      jsHeapSizeLimit: (performance as any).memory.jsHeapSizeLimit,
+    } : undefined,
+    
+    // Custom context
     ...context
+  };
+
+  track('error', {
+    errorType: 'javascript_error',
+    severity: context.severity || 'error',
+    ...errorContext
   });
+
+  // Also log to console with structured format for development
+  if (import.meta.env.DEV) {
+    console.group(`🔥 Error: ${error.name}`);
+    console.error('Message:', error.message);
+    console.error('Stack:', error.stack);
+    console.table(context);
+    console.groupEnd();
+  }
 }
 
 /**

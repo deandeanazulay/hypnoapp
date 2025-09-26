@@ -1,3 +1,4 @@
+import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../utils/apiErrorHandler';
 import { track } from './analytics';
 
 export interface VoiceResult {
@@ -40,31 +41,36 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       console.log('Voice: Calling TTS function at:', `${baseUrl}/functions/v1/tts`);
     }
     
-    const response = await fetch(`${baseUrl}/functions/v1/tts`, {
-      method: "POST",
-      headers: { 
-        "content-type": "application/json",
-        "Authorization": `Bearer ${supabaseAnonKey}`,
-        "x-client-info": "libero-app"
+    const response = await safeFetch(
+      `${baseUrl}/functions/v1/tts`,
+      {
+        method: "POST",
+        headers: { 
+          "content-type": "application/json",
+          "Authorization": `Bearer ${supabaseAnonKey}`,
+          "x-client-info": "libero-app"
+        },
+        body: JSON.stringify({ 
+          text: text.trim(), 
+          voice: opts.voiceId || "ash",
+          model: opts.model || "gpt-4o-mini-tts",
+          speed: 1.0,
+          response_format: "wav"
+        }),
       },
-      body: JSON.stringify({ 
-        text: text.trim(), 
-        voice: opts.voiceId || "ash",
-        model: opts.model || "gpt-4o-mini-tts",
-        speed: 1.0,
-        response_format: "wav"
-      }),
-    });
+      {
+        operation: 'Text-to-Speech',
+        additionalContext: {
+          textLength: text.length,
+          voiceId: opts.voiceId,
+          model: opts.model
+        }
+      }
+    );
 
     if (import.meta.env.DEV) {
       console.log('Voice: TTS response status:', response.status);
       console.log('Voice: TTS response content-type:', response.headers.get("content-type"));
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Voice: OpenAI TTS function error:', response.status, errorText);
-      throw new Error(`TTS function returned ${response.status}: ${errorText}`);
     }
 
     const contentType = response.headers.get("content-type") || "";
@@ -75,7 +81,7 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       if (import.meta.env.DEV) {
         console.log('Voice: OpenAI TTS returned fallback data:', fallbackData);
       }
-      return { provider: "browser-tts", error: fallbackData.reason };
+      return { provider: "browser-tts", error: fallbackData.details || fallbackData.error };
     }
 
     // Check if response is audio
@@ -97,13 +103,22 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     }
 
     // Unexpected content type
-    console.error('Voice: Unexpected content type from OpenAI TTS:', contentType);
-    throw new Error(`Unexpected content type: ${contentType}`);
+    throw new ApiError(
+      'Unexpected response format from TTS service',
+      500,
+      'UNEXPECTED_CONTENT_TYPE',
+      `Received content type: ${contentType}`,
+      'Try again or check TTS service configuration'
+    );
 
   } catch (error: any) {
-    console.error('Voice: Error calling OpenAI TTS function:', error.message);
+    if (error instanceof ApiError) {
+      console.error('Voice: TTS error:', getUserFriendlyErrorMessage(error));
+    } else {
+      console.error('Voice: Unexpected TTS error:', error.message);
+    }
     // Always fall back to browser TTS on error
-    return { provider: 'browser-tts', error: error.message };
+    return { provider: 'browser-tts', error: error.message || 'TTS service unavailable' };
   }
 }
 

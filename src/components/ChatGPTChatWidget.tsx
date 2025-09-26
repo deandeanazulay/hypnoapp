@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, MessageCircle, X, Zap, AlertCircle, CheckCircle, Copy } from 'lucide-react';
+import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../utils/apiErrorHandler';
 import ModalShell from './layout/ModalShell';
 import { useAppStore, EGO_STATES } from '../store';
 import { useGameState } from './GameStateManager';
@@ -110,36 +111,53 @@ export default function ChatGPTChatWidget({ isOpen, onClose }: ChatGPTChatWidget
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       if (!supabaseUrl || !supabaseAnonKey) {
-        throw new Error('Supabase configuration missing');
+        throw new ApiError(
+          'Chat service not configured',
+          500,
+          'MISSING_CONFIG',
+          'Supabase URL or API key missing',
+          'Check environment variables'
+        );
       }
 
       const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
       
-      const response = await fetch(`${baseUrl}/functions/v1/chatgpt-chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseAnonKey}`
+      const response = await safeFetch(
+        `${baseUrl}/functions/v1/chatgpt-chat`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`
+          },
+          body: JSON.stringify({
+            message: message,
+            knowledgeBase: buildKnowledgeBase(),
+            conversationHistory: messages.map(msg => ({
+              role: msg.role,
+              content: msg.content
+            }))
+          })
         },
-        body: JSON.stringify({
-          message: message,
-          knowledgeBase: buildKnowledgeBase(),
-          conversationHistory: messages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }))
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error ${response.status}: ${errorText}`);
-      }
+        {
+          operation: 'ChatGPT Chat',
+          additionalContext: {
+            messageLength: message.length,
+            conversationLength: messages.length
+          }
+        }
+      );
 
       const data = await response.json();
       
       if (!data.response) {
-        throw new Error('No response from API');
+        throw new ApiError(
+          'No response from chat service',
+          500,
+          'NO_RESPONSE',
+          'Chat API returned empty response',
+          'Try again or rephrase your message'
+        );
       }
 
       const aiMessage: ChatMessage = {
@@ -153,12 +171,19 @@ export default function ChatGPTChatWidget({ isOpen, onClose }: ChatGPTChatWidget
       setApiStatus('working');
 
     } catch (error: any) {
-      console.error('Chat error:', error);
+      let errorMessage = 'Failed to connect to ChatGPT API';
+      
+      if (error instanceof ApiError) {
+        errorMessage = getUserFriendlyErrorMessage(error);
+        console.error('Chat API error:', errorMessage);
+      } else {
+        console.error('Chat unexpected error:', error);
+      }
       
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `❌ **API Connection Failed**\n\n${error.message}\n\n**Possible Solutions:**\n• Check OPENAI_API_KEY in Supabase Edge Functions\n• Verify internet connection\n• Try again in a few moments`,
+        content: `❌ **API Connection Failed**\n\n${errorMessage}\n\n${error instanceof ApiError && error.suggestion ? `**Suggestion:** ${error.suggestion}` : '**Possible Solutions:**\n• Check OPENAI_API_KEY in Supabase Edge Functions\n• Verify internet connection\n• Try again in a few moments'}`,
         timestamp: new Date(),
         error: true
       };
@@ -168,7 +193,7 @@ export default function ChatGPTChatWidget({ isOpen, onClose }: ChatGPTChatWidget
       
       showToast({
         type: 'error',
-        message: 'Failed to connect to ChatGPT API'
+        message: errorMessage
       });
     } finally {
       setIsLoading(false);
