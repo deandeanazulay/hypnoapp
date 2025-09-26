@@ -76,7 +76,7 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                size={200}
               </div>
               <span className="text-sm text-white/80 font-medium">Libero is thinking...</span>
             </div>
