@@ -1,10 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, MessageCircle, Copy, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MessageCircle } from 'lucide-react';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useAppStore, EGO_STATES } from '../../store';
 import { useGameState } from '../GameStateManager';
 import PageShell from '../layout/PageShell';
 import Orb from '../Orb';
+import ChatMessages from '../chat/ChatMessages';
+import ChatSuggestions from '../chat/ChatSuggestions';
+import ChatInput from '../chat/ChatInput';
 import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../../utils/apiErrorHandler';
 import { HYPNOSIS_PROTOCOLS, PROTOCOL_CATEGORIES } from '../../data/protocols';
 
@@ -25,15 +28,6 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   // Send welcome message when screen loads and user is authenticated
   useEffect(() => {
@@ -234,7 +228,12 @@ export default function ChatScreen() {
     }, 100);
   };
 
-  const currentEgoState = EGO_STATES.find(s => s.id === activeEgoState) || EGO_STATES[0];
+  const suggestions = [
+    'What ego state should I use today?',
+    'Recommend a stress relief protocol',
+    'How do I create a custom protocol?',
+    'Explain hypnotherapy basics'
+  ];
 
   if (!isAuthenticated) {
     return (
@@ -286,169 +285,35 @@ export default function ChatScreen() {
               />
             </div>
 
-            {/* Messages Area - Improved */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
-              <div className="max-w-3xl mx-auto space-y-6">
-                {messages.map((message) => (
-                  <div key={message.id} className={`flex items-start gap-4 ${
-                    message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                  }`}>
-                    {/* Avatar */}
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border-2 shadow-lg ${
-                      message.role === 'user'
-                        ? 'bg-gradient-to-br from-teal-400 to-cyan-400 border-teal-300'
-                        : message.error
-                        ? 'bg-gradient-to-br from-red-400 to-orange-400 border-red-300'
-                        : 'bg-gradient-to-br from-purple-400 to-indigo-400 border-purple-300'
-                    }`}>
-                      {message.role === 'user' ? (
-                        <User size={16} className="text-black" />
-                      ) : (
-                        <Bot size={16} className="text-black" />
-                      )}
-                    </div>
-                    
-                    {/* Message Content */}
-                    <div className={`max-w-[70%] rounded-2xl p-4 backdrop-blur-xl border relative group shadow-xl ${
-                      message.role === 'user'
-                        ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-500/30 text-white'
-                        : message.error
-                        ? 'bg-gradient-to-br from-red-500/20 to-orange-500/20 border-red-500/30 text-white'
-                        : message.isLoading
-                        ? 'bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border-purple-500/20 text-white'
-                        : 'bg-gradient-to-br from-purple-500/15 to-indigo-500/15 border-purple-500/30 text-white'
-                    }`}>
-                      {/* Message Header */}
-                      {!message.isLoading && (
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs font-semibold text-white/90">
-                              {message.role === 'user' ? 'You' : 'Libero'}
-                            </span>
-                            <span className="text-xs text-white/60">
-                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => copyMessage(message.content)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-black/20 rounded-lg transition-all hover:scale-110"
-                          >
-                            <Copy size={12} className="text-white/50 hover:text-white/80" />
-                          </button>
-                        </div>
-                      )}
-                      
-                      {/* Message Content */}
-                      {message.isLoading ? (
-                        <div className="flex items-center space-x-3">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                          </div>
-                          <span className="text-sm text-white/80 font-medium">Libero is thinking...</span>
-                        </div>
-                      ) : (
-                        <div className="text-sm leading-relaxed whitespace-pre-wrap text-white/95">
-                          {message.content}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-            </div>
+            {/* Messages Area */}
+            <ChatMessages 
+              messages={messages}
+              onCopyMessage={copyMessage}
+            />
 
-            {/* Quick Suggestions - Floating Above Input */}
-            {messages.length <= 1 && (
-              <div className="absolute bottom-32 left-4 right-4 z-30">
-                <div className="max-w-3xl mx-auto">
-                  <div className="flex gap-2 justify-center overflow-x-auto scrollbar-hide pb-2">
-                    {[
-                      'What ego state should I use today?',
-                      'Recommend a stress relief protocol',
-                      'How do I create a custom protocol?',
-                      'Explain hypnotherapy basics'
-                    ].map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        onClick={() => setInputText(suggestion)}
-                        disabled={isLoading}
-                        className="flex-shrink-0 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 rounded-xl text-white/70 hover:text-white/90 text-sm transition-all hover:scale-105 disabled:opacity-50"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Fixed Bottom Input Area */}
-            <div className="fixed bottom-0 left-0 right-0 bg-black/98 backdrop-blur-xl border-t border-white/20 px-4 py-4 z-40" 
-                 style={{ paddingBottom: 'calc(var(--total-nav-height, 128px) + 1rem)' }}>
-              <div className="px-4">
-                <div className="max-w-3xl mx-auto">
-                  <div className="bg-gradient-to-br from-white/10 to-white/15 backdrop-blur-xl rounded-2xl border border-white/25 p-3 shadow-2xl">
-                    <form onSubmit={handleSubmit} className="flex items-center gap-3">
-                      <input
-                        type="text"
-                        value={inputText}
-                        onChange={(e) => setInputText(e.target.value)}
-                        placeholder="Ask Libero about protocols, ego states, or transformation techniques..."
-                        disabled={isLoading}
-                        className="flex-1 bg-transparent text-white placeholder-white/60 focus:outline-none text-base disabled:opacity-50 py-3 px-2"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSubmit(e);
-                          }
-                        }}
-                      />
-                      
-                      {/* Control Buttons */}
-                      <div className="flex items-center space-x-2">
-                        {/* Audio Control */}
-                        <button
-                          type="button"
-                          onClick={() => setIsMuted(!isMuted)}
-                          className={`p-2.5 rounded-xl transition-all hover:scale-110 border ${
-                            isMuted 
-                              ? 'bg-red-500/20 border-red-500/40 text-red-400 hover:bg-red-500/30' 
-                              : 'bg-green-500/20 border-green-500/40 text-green-400 hover:bg-green-500/30'
-                          }`}
-                        >
-                          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                        </button>
-                        
-                        {/* Clear Chat Button */}
-                        {messages.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={clearChat}
-                            className="p-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white/70 hover:text-white/90 transition-all hover:scale-110"
-                          >
-                            <RotateCcw size={16} />
-                          </button>
-                        )}
-                        
-                        {/* Send Button */}
-                        <button
-                          type="submit"
-                          disabled={!inputText.trim() || isLoading}
-                          className="p-2.5 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-110 transition-all disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-teal-400/25 flex-shrink-0"
-                        >
-                          <Send size={16} />
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
+            {/* Suggestions - Above Input Area */}
+            <div className="absolute bottom-32 left-0 right-0 z-30">
+              <ChatSuggestions
+                suggestions={suggestions}
+                onSuggestionClick={setInputText}
+                isLoading={isLoading}
+                show={messages.length <= 1}
+              />
             </div>
           </div>
         }
+      />
+
+      {/* Chat Input - Fixed at Bottom */}
+      <ChatInput
+        inputText={inputText}
+        onInputChange={setInputText}
+        onSubmit={handleSubmit}
+        onClearChat={clearChat}
+        onToggleMute={() => setIsMuted(!isMuted)}
+        isLoading={isLoading}
+        isMuted={isMuted}
+        hasMessages={messages.length > 1}
       />
     </div>
   );
