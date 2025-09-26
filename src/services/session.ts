@@ -317,12 +317,9 @@ export class SessionManager {
       });
 
       if (result.provider === 'elevenlabs' && result.audioUrl) {
-        this._playElevenLabsAudio(result.audioUrl);
         return;
       }
 
-      this._playWithBrowserTTS(text);
-    } catch (error) {
       this._playWithBrowserTTS(text);
     }
   }
@@ -447,6 +444,7 @@ export class SessionManager {
 
   private async _selectBestVoice(utterance: SpeechSynthesisUtterance) {
     // Ensure voices are loaded
+    await this.voicesLoadedPromise;
     
     const voices = window.speechSynthesis.getVoices();
     

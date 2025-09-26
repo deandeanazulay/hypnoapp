@@ -372,8 +372,11 @@ export class SessionManager {
       }
       this._playWithBrowserTTS(text);
     } catch (error) {
-      console.error(`🎵 TTS: ❌ Error with ElevenLabs for segment ${this.currentSegmentIndex + 1}:`, error);
-      this._playWithBrowserTTS(text);
+      console.error(`🎵 TTS: ❌ Error with ElevenLabs for segment ${this.currentSegmentIndex
+      )
     }
+    }
+  }
+}
   }
 }
