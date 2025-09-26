@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, MessageCircle, Sparkles, Brain, Copy, RotateCcw, Mic, VolumeX, Volume2 } from 'lucide-react';
+import { Send, Bot, User, MessageCircle, Sparkles, Brain, Copy, RotateCcw, VolumeX, Volume2 } from 'lucide-react';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useAppStore, EGO_STATES } from '../../store';
 import { useGameState } from '../GameStateManager';
@@ -282,12 +282,12 @@ export default function ChatScreen() {
                 onTap={() => {}}
                 egoState={activeEgoState}
                 size={200}
-                variant="css"
+                variant="webgl"
               />
             </div>
 
-            {/* Messages Area - Optimized */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
+            {/* Messages Area */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-4">
               <div className="space-y-3 pb-4">
                 {messages.map((message) => (
                   <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -300,7 +300,7 @@ export default function ChatScreen() {
                         ? 'bg-white/10 border-white/20 text-white'
                         : 'bg-white/8 border-white/15 text-white'
                     }`}>
-                      {/* Message Header - Compact */}
+                      {/* Message Header */}
                       <div className="flex items-center space-x-2 mb-2">
                         {message.role === 'user' ? (
                           <User size={12} className="text-teal-400" />
@@ -319,7 +319,6 @@ export default function ChatScreen() {
                         <span className="text-xs opacity-60">
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
-                        {/* Copy Button */}
                         {!message.isLoading && (
                           <button
                             onClick={() => copyMessage(message.content)}
@@ -350,10 +349,12 @@ export default function ChatScreen() {
               </div>
             </div>
 
-            {/* Input Area - Compact and Modern */}
-            <div className="flex-shrink-0 px-4 pb-6" style={{ paddingBottom: 'calc(var(--total-nav-height, 128px) + 1rem)' }}>
+            {/* Fixed Bottom Input Area */}
+            <div className="flex-shrink-0 fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 px-4 py-4 z-40" 
+                 style={{ paddingBottom: 'calc(var(--total-nav-height, 88px) + 1rem)' }}>
+              
               {/* Audio Controls - Above input */}
-              <div className="flex items-center justify-center space-x-3 mb-4">
+              <div className="flex items-center justify-center space-x-3 mb-3">
                 <button
                   onClick={() => setIsMuted(!isMuted)}
                   className={`p-2 rounded-lg transition-all hover:scale-110 ${
@@ -372,24 +373,23 @@ export default function ChatScreen() {
                 )}
               </div>
               
+              {/* Input Form */}
               <div className="bg-gradient-to-br from-white/8 to-white/12 backdrop-blur-xl rounded-2xl border border-white/20 p-3">
-                <form onSubmit={handleSubmit} className="flex items-end gap-3">
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      value={inputText}
-                      onChange={(e) => setInputText(e.target.value)}
-                      placeholder="Ask about protocols, ego states, or transformation techniques..."
-                      disabled={isLoading}
-                      className="w-full bg-transparent text-white placeholder-white/50 focus:outline-none text-sm resize-none disabled:opacity-50"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSubmit(e);
-                        }
-                      }}
-                    />
-                  </div>
+                <form onSubmit={handleSubmit} className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder="Ask about protocols, ego states, or transformation techniques..."
+                    disabled={isLoading}
+                    className="flex-1 bg-transparent text-white placeholder-white/50 focus:outline-none text-sm disabled:opacity-50"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmit(e);
+                      }
+                    }}
+                  />
                   <button
                     type="submit"
                     disabled={!inputText.trim() || isLoading}
@@ -399,12 +399,12 @@ export default function ChatScreen() {
                   </button>
                 </form>
                 
-                {/* Quick Suggestions - Only show when conversation is new */}
+                {/* Quick Suggestions */}
                 {messages.length <= 1 && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {[
-                      'What ego state should I use?',
-                      'Recommend a stress relief protocol',
+                      'What ego state should I use today?',
+                      'Recommend a protocol for stress relief',
                       'How do I create a custom protocol?',
                       'Explain hypnotherapy basics'
                     ].map((suggestion) => (
@@ -415,13 +415,12 @@ export default function ChatScreen() {
                         className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-white/70 text-xs transition-all hover:scale-105 disabled:opacity-50"
                       >
                         {suggestion}
-            <Orb
-              onTap={() => {}}
-              egoState={activeEgoState}
-              afterglow={false}
-              size={200}
-              variant="webgl"
-            />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         }
       />
