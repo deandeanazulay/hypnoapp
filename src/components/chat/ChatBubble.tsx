@@ -50,7 +50,7 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
             <Orb
               onTap={() => {}}
               egoState={activeEgoState}
-             size={150}
+             size={200}
              variant="webgl"
               className="orb-avatar"
             />
