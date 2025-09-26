@@ -33,7 +33,7 @@ export default function ChatBubble({ message, onCopy, activeEgoState, showOrbAsL
           <Orb
             onTap={() => {}}
             egoState={activeEgoState}
-            size={140}
+            size={300}
             variant="webgl"
             className="flex-shrink-0"
           />
