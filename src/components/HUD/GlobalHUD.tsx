@@ -35,28 +35,22 @@ export default function GlobalHUD() {
           
           <h1 className="text-white text-lg font-light">Libero</h1>
           
-          <button 
-            onClick={() => openModal('settings')}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
-          >
-            <Settings size={16} className="text-white/80" />
-          </button>
-          
-          <button 
-            onClick={() => openModal('geminiChat')}
-            className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110"
-            title="Test Gemini API"
-          >
-            <MessageCircle size={16} className="text-purple-400" />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const egoState = getEgoState(activeEgoState);
-  const egoColor = getEgoColor(activeEgoState);
-  
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => openModal('geminiChat')}
+              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110"
+              title="Test Gemini API"
+            >
+              <MessageCircle size={16} className="text-purple-400" />
+            </button>
+            
+            <button 
+              onClick={() => openModal('settings')}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+            >
+              <Settings size={16} className="text-white/80" />
+            </button>
+          </div>
   // Calculate XP progress
   const xpProgress = (user.experience % 100) / 100;
   const sessionsLeft = user.plan === 'free' ? Math.max(0, 1 - user.daily_sessions_used) : '∞';
@@ -211,6 +205,24 @@ export default function GlobalHUD() {
             <span className="text-teal-400 font-medium">{sessionsLeft}</span>
             <span className="text-white/60 hidden sm:inline">Left</span>
           </div>
+        </div>
+        
+        {/* Right Controls */}
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={() => openModal('geminiChat')}
+            className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110"
+            title="Test Gemini API & Get Help"
+          >
+            <MessageCircle size={16} className="text-purple-400" />
+          </button>
+          
+          <button 
+            onClick={() => openModal('settings')}
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+          >
+            <Settings size={16} className="text-white/80" />
+          </button>
         </div>
       </div>
     </div>
