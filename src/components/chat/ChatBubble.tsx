@@ -64,8 +64,6 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
       
       {/* Message Bubble */}
       <div className={`max-w-[70%] ${message.role === 'user' ? '' : 'flex-1'} flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
-        <div className={`rounded-2xl p-4 backdrop-blur-xl border relative group shadow-lg ${
-          message.role === 'user'
             ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-500/30 text-white rounded-tr-md'
             : message.error
             ? 'bg-gradient-to-br from-red-500/20 to-orange-500/20 border-red-500/30 text-white rounded-tl-md'
