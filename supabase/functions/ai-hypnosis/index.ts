@@ -121,7 +121,7 @@ CRITICAL REQUIREMENTS:
 - Create 6-8 segments with realistic timing
 - Each segment should be ${Math.floor((scriptParams.targetWords || Math.floor(scriptParams.lengthSec * 2.5)) / 7)} words on average
 - Use ${scriptParams.egoState} archetypal energy throughout
-- Focus on goal: ${scriptParams.goalId}
+- Focus on goal: ${scriptParams.goalName || scriptParams.goalId}
 ${scriptParams.userPrefs?.customProtocol ? `
 - This is a CUSTOM PROTOCOL: "${scriptParams.userPrefs.customProtocol.name}"
 - Specific goals: ${scriptParams.userPrefs.customProtocol.goals?.join(', ') || 'transformation'}
@@ -711,14 +711,15 @@ function getContextualFallback(context: SessionContext, userMessage: string, req
 
 function getMockScript(scriptParams: any): any {
   const egoState = String(scriptParams?.egoState || 'guardian')
-  const goalId = String(scriptParams?.goalId || scriptParams?.goalName || 'transformation')
+  const goalName = String(scriptParams?.goalName || scriptParams?.goalId || 'personal transformation')
+  const actionName = String(scriptParams?.actionName || 'transformation work')
   const lengthSec = scriptParams?.lengthSec || 900
   
   return {
     segments: [
       {
         id: "intro",
-        text: `Welcome to your ${egoState} session. We'll work on ${goalId} together. Find a comfortable position and let's begin.`,
+        text: `Welcome to your ${egoState} session. We'll work on ${goalName} together. Find a comfortable position and let's begin.`,
         approxSec: 15,
         markers: [
           { type: "breath", t: 10 }

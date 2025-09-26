@@ -78,7 +78,9 @@ function getMockScript(userCtx: any): any {
   const wordsPerMinute = 150;
   const totalWords = Math.floor(totalMinutes * wordsPerMinute);
   const egoState = String(userCtx?.egoState || 'guardian');
-  const goalId = String(userCtx?.goalId || userCtx?.goalName || 'transformation');
+  const goalName = String(userCtx?.goalName || userCtx?.goalId || 'personal transformation');
+  const actionName = String(userCtx?.actionName || 'transformation work');
+  const protocolName = String(userCtx?.protocolName || 'custom session');
   const variation = userCtx?.variation || 1;
   const sessionId = userCtx?.sessionId || Date.now();
   
@@ -86,46 +88,46 @@ function getMockScript(userCtx: any): any {
   const segmentTimings = [0.08, 0.25, 0.20, 0.30, 0.12, 0.05]; // percentages
   
   return {
-    title: `${egoState} Power Protocol: ${goalId} (v${variation})`,
+    title: `${egoState} Protocol: ${goalName}`,
     segments: [
       {
         id: "welcome",
-        text: generateRichText(egoState, goalId, 'welcome', Math.floor(totalWords * segmentTimings[0]), sessionId),
+        text: generateRichText(egoState, goalName, actionName, 'welcome', Math.floor(totalWords * segmentTimings[0]), sessionId),
         mood: "welcoming",
         voice: "female",
         sfx: "ambient"
       },
       {
         id: "induction",
-        text: generateRichText(egoState, goalId, 'induction', Math.floor(totalWords * segmentTimings[1]), sessionId),
+        text: generateRichText(egoState, goalName, actionName, 'induction', Math.floor(totalWords * segmentTimings[1]), sessionId),
         mood: "calming",
         voice: "female",
         sfx: "deep_tone"
       },
       {
         id: "deepening",
-        text: generateRichText(egoState, goalId, 'deepening', Math.floor(totalWords * segmentTimings[2]), sessionId),
+        text: generateRichText(egoState, goalName, actionName, 'deepening', Math.floor(totalWords * segmentTimings[2]), sessionId),
         mood: "hypnotic",
         voice: "female",
         sfx: "resonance"
       },
       {
         id: "core_work",
-        text: generateRichText(egoState, goalId, 'transformation', Math.floor(totalWords * segmentTimings[3]), sessionId),
+        text: generateRichText(egoState, goalName, actionName, 'transformation', Math.floor(totalWords * segmentTimings[3]), sessionId),
         mood: "transformative",
         voice: "female", 
         sfx: "energy"
       },
       {
         id: "integration",
-        text: generateRichText(egoState, goalId, 'integration', Math.floor(totalWords * segmentTimings[4]), sessionId),
+        text: generateRichText(egoState, goalName, actionName, 'integration', Math.floor(totalWords * segmentTimings[4]), sessionId),
         mood: "anchoring",
         voice: "female",
         sfx: "crystallize"
       },
       {
         id: "emergence",
-        text: generateRichText(egoState, goalId, 'emergence', Math.floor(totalWords * segmentTimings[5]), sessionId),
+        text: generateRichText(egoState, goalName, actionName, 'emergence', Math.floor(totalWords * segmentTimings[5]), sessionId),
         mood: "energizing",
         voice: "female",
         sfx: "awakening"
@@ -142,7 +144,7 @@ function getMockScript(userCtx: any): any {
   };
 }
 
-function generateRichText(egoState: string, goalId: string, phase: string, targetWords: number, sessionId: number): string {
+function generateRichText(egoState: string, goalName: string, actionName: string, phase: string, targetWords: number, sessionId: number): string {
   // Add variation based on session ID and time
   const timeVariation = Math.floor(Date.now() / 1000) % 5;
   const sessionVariation = sessionId % 3;
@@ -150,7 +152,8 @@ function generateRichText(egoState: string, goalId: string, phase: string, targe
   
   // Ensure parameters are strings
   const safeEgoState = String(egoState || 'guardian');
-  const safeGoalId = String(goalId || 'transformation');
+  const safeGoalName = String(goalName || 'personal transformation');
+  const safeActionName = String(actionName || 'transformation work');
   
   // Dynamic metaphors and phrases
   const metaphorSets = [
@@ -170,12 +173,12 @@ function generateRichText(egoState: string, goalId: string, phase: string, targe
   
   // Generate substantial text content for each phase
   const templates = {
-    welcome: `Welcome to your ${safeEgoState} transformation session in this moment of ${timeContext}. Like ${selectedMetaphor}, this session will flow uniquely for you. Today we're focusing specifically on ${safeGoalId}, and I want you to know that you're in exactly the right place at exactly the right time for this powerful work. Your ${safeEgoState} energy is already beginning to awaken, preparing to guide you through this profound journey of change. Feel the ${timeContext} supporting your transformation as you settle into this space like ${selectedMetaphor} finding its natural state.`,
+    welcome: `Welcome to your ${safeEgoState} transformation session in this moment of ${timeContext}. Like ${selectedMetaphor}, this session will flow uniquely for you. Today we're focusing specifically on ${safeGoalName}, and I want you to know that you're in exactly the right place at exactly the right time for this powerful work. Your ${safeEgoState} energy is already beginning to awaken, preparing to guide you through this profound journey of change. Feel the ${timeContext} supporting your transformation as you settle into this space like ${selectedMetaphor} finding its natural state.`,
     induction: `Close your eyes gently now and take your first conscious breath of this unique ${timeContext} session. Like ${selectedMetaphor}, let your breathing flow naturally and deeply. Breathe in slowly and completely... and as you exhale, feel the first wave of relaxation beginning to flow through your body. With each breath you take, you're moving deeper into a state of profound relaxation and receptivity. Your ${safeEgoState} energy is guiding this process, ensuring that you feel completely safe and supported as you let go. Notice how with each exhale, tension leaves your body like ${selectedMetaphor}... with each inhale, the peaceful energy of ${timeContext} flows in.`,
-    deepening: `You're going deeper now, much deeper into this peaceful, receptive state of ${timeContext}. Your ${safeEgoState} energy is creating the perfect inner environment for change. Like ${selectedMetaphor}, allow yourself to naturally descend into deeper levels of consciousness. I want you to imagine yourself slowly descending a beautiful staircase bathed in the energy of ${timeContext}, each step taking you deeper into your inner wisdom. With each step down, you feel twice as relaxed, twice as open to positive change around ${safeGoalId}. Your ${safeEgoState} consciousness is expanding like ${selectedMetaphor}, opening to new possibilities in this perfect moment.`,
-    transformation: `Your ${safeEgoState} energy is now fully activated and focused on your ${safeGoalId} in this sacred time of ${timeContext}. Like ${selectedMetaphor}, feel this powerful archetypal force flowing through every level of your being, creating the exact changes you desire. These transformations are happening now, in this very moment, at the cellular level, at the neurological level, at the quantum level of your existence. Your ${safeEgoState} wisdom knows exactly what needs to change and how to change it. Feel these positive shifts occurring throughout your entire system like ${selectedMetaphor} - naturally, powerfully, perfectly, supported by the energy of ${timeContext}.`,
-    integration: `These profound changes are now integrating into every aspect of who you are, like ${selectedMetaphor} becoming part of the landscape in this perfect moment of ${timeContext}. Your ${safeEgoState} energy is ensuring that these transformations become a permanent part of your identity, your daily experience, your automatic responses. Feel these changes locking in at the deepest levels, becoming as natural as breathing, as automatic as your heartbeat. When you encounter situations related to ${safeGoalId} in your daily life, these new patterns will activate automatically, guided by your ${safeEgoState} wisdom like ${selectedMetaphor} carrying the essence of ${timeContext}.`,
-    emergence: `It's time now to return to full awareness, bringing all these powerful changes with you like ${selectedMetaphor} carrying its essence wherever it goes in this beautiful ${timeContext}. Your ${safeEgoState} energy will continue working on your ${safeGoalId} long after this session ends. I'll count from 1 to 5, and on the count of 5, you'll open your eyes feeling completely refreshed, energized, and transformed. 1... feeling energy beginning to return to your body like ${selectedMetaphor} in the ${timeContext}... 2... becoming more aware of your surroundings... 3... feeling wonderful, feeling powerful, feeling transformed... 4... almost ready to open your eyes... and 5... eyes open! Fully alert, completely refreshed, and permanently changed for the better.`
+    deepening: `You're going deeper now, much deeper into this peaceful, receptive state of ${timeContext}. Your ${safeEgoState} energy is creating the perfect inner environment for change. Like ${selectedMetaphor}, allow yourself to naturally descend into deeper levels of consciousness. I want you to imagine yourself slowly descending a beautiful staircase bathed in the energy of ${timeContext}, each step taking you deeper into your inner wisdom. With each step down, you feel twice as relaxed, twice as open to positive change around ${safeGoalName}. Your ${safeEgoState} consciousness is expanding like ${selectedMetaphor}, opening to new possibilities in this perfect moment.`,
+    transformation: `Your ${safeEgoState} energy is now fully activated and focused on ${safeGoalName} in this sacred time of ${timeContext}. Like ${selectedMetaphor}, feel this powerful archetypal force flowing through every level of your being, creating the exact changes you desire. These transformations are happening now, in this very moment, at the cellular level, at the neurological level, at the quantum level of your existence. Your ${safeEgoState} wisdom knows exactly what needs to change and how to change it. Feel these positive shifts occurring throughout your entire system like ${selectedMetaphor} - naturally, powerfully, perfectly, supported by the energy of ${timeContext}.`,
+    integration: `These profound changes are now integrating into every aspect of who you are, like ${selectedMetaphor} becoming part of the landscape in this perfect moment of ${timeContext}. Your ${safeEgoState} energy is ensuring that these transformations become a permanent part of your identity, your daily experience, your automatic responses. Feel these changes locking in at the deepest levels, becoming as natural as breathing, as automatic as your heartbeat. When you encounter situations related to ${safeGoalName} in your daily life, these new patterns will activate automatically, guided by your ${safeEgoState} wisdom like ${selectedMetaphor} carrying the essence of ${timeContext}.`,
+    emergence: `It's time now to return to full awareness, bringing all these powerful changes with you like ${selectedMetaphor} carrying its essence wherever it goes in this beautiful ${timeContext}. Your ${safeEgoState} energy will continue working on ${safeGoalName} long after this session ends. I'll count from 1 to 5, and on the count of 5, you'll open your eyes feeling completely refreshed, energized, and transformed. 1... feeling energy beginning to return to your body like ${selectedMetaphor} in the ${timeContext}... 2... becoming more aware of your surroundings... 3... feeling wonderful, feeling powerful, feeling transformed... 4... almost ready to open your eyes... and 5... eyes open! Fully alert, completely refreshed, and permanently changed for the better.`
   };
   
   let baseText = templates[phase as keyof typeof templates] || templates.welcome;

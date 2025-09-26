@@ -15,26 +15,17 @@ export interface SessionScript {
 
 export async function getSessionScript(userContext: any): Promise<SessionScript> {
   try {
-    if (import.meta.env.DEV) {
-      console.log('Gemini: Generating script for:', {
-        egoState: userContext.egoState,
-        goalId: userContext.goalId,
-        duration: userContext.lengthSec
-      });
-    }
+    console.log('Gemini: Generating script for:', userContext.goalName, 'with', userContext.egoState);
     
     // Add timestamp and randomness for unique scripts
     const enhancedContext = {
       ...userContext,
-      currentTime: new Date().toISOString(),
-      sessionUniqueId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      promptVariation: Math.floor(Math.random() * 5) + 1,
-      // Ensure all values are strings for script generation
+      // Ensure all critical fields are clean strings
       egoState: String(userContext.egoState || 'guardian'),
-      goalId: String(userContext.goalId || 'transformation'),
-      actionName: String(userContext.actionName || 'transformation'),
-      goalName: String(userContext.goalName || 'personal growth'),
-      methodName: String(userContext.methodName || 'guided relaxation')
+      goalName: String(userContext.goalName || 'personal transformation'),
+      actionName: String(userContext.actionName || 'transformation work'),
+      methodName: String(userContext.methodName || 'guided relaxation'),
+      protocolName: String(userContext.protocolName || 'custom session')
     };
     
     
