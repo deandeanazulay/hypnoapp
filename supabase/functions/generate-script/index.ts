@@ -319,10 +319,6 @@ function getEmergencyScript(userCtx: any): any {
   const duration = Number(userCtx?.lengthSec) || 600;
   const sessionId = userCtx?.sessionUniqueId || Date.now();
   
-  if (Deno.env.get('NODE_ENV') === 'development') {
-    console.log('Emergency script params:', { egoState, goalName, actionName, duration });
-  }
-  
   return {
     title: `Emergency Session: ${goalName}`,
     segments: [

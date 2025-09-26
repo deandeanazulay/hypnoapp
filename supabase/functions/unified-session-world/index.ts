@@ -56,7 +56,6 @@ Deno.serve(async (req: Request) => {
   try {
     const { message, sessionContext, requestType, scriptParams }: HypnosisRequest = await req.json()
 
-    console.log('Full session context received:', JSON.stringify(sessionContext, null, 2))
 
     // Get OpenAI API key from environment
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
@@ -101,7 +100,6 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    console.log('Processing request:', { requestType, egoState: sessionContext.egoState })
 
     let conversation: any[]
     
@@ -142,7 +140,6 @@ Return ONLY the JSON object - no other text.`
           }
         ];
 
-        console.log('Calling ChatGPT for script generation with JSON-only rules...')
         const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -179,7 +176,6 @@ Return ONLY the JSON object - no other text.`
             
             // Validate basic structure
             if (scriptResponse.segments && Array.isArray(scriptResponse.segments)) {
-              console.log('Script generation successful via ChatGPT API');
               return new Response(
                 JSON.stringify({
                   response: JSON.stringify(scriptResponse),
@@ -234,7 +230,6 @@ Return ONLY the JSON object - no other text.`
       ]
     }
 
-    console.log('Calling ChatGPT API...')
 
     // Call ChatGPT API
     let response: Response

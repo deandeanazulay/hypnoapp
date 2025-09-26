@@ -32,10 +32,6 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    if (Deno.env.get('NODE_ENV') === 'development') {
-      console.log('TTS: Function called');
-    }
-    
     const apiKey = Deno.env.get('ELEVENLABS_API_KEY');
     if (!apiKey) {
       console.error('TTS: ELEVENLABS_API_KEY environment variable not set');
@@ -56,11 +52,9 @@ Deno.serve(async (req: Request) => {
     }
 
     const requestData: TTSRequest = await req.json();
-    console.log('TTS: Processing request for voice:', requestData.voiceId, 'text length:', requestData.text.length);
     
     // Validate request
     if (!requestData.text || !requestData.voiceId) {
-      console.error('TTS: Missing required fields');
       return new Response(
         JSON.stringify({ 
           error: 'Missing required fields: text, voiceId',
@@ -78,7 +72,6 @@ Deno.serve(async (req: Request) => {
 
     // Validate text length
     if (requestData.text.length > 5000) {
-      console.error('TTS: Text too long:', requestData.text.length);
       return new Response(
         JSON.stringify({ 
           error: 'Text too long (max 5000 characters)',
@@ -107,9 +100,6 @@ Deno.serve(async (req: Request) => {
       output_format: 'mp3_44100_128'
     };
 
-    if (Deno.env.get('NODE_ENV') === 'development') {
-      console.log('TTS: Calling ElevenLabs API...');
-    }
 
     // Call ElevenLabs API
     const elevenLabsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${requestData.voiceId}`, {
@@ -122,9 +112,6 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify(elevenLabsRequest)
     });
 
-    if (Deno.env.get('NODE_ENV') === 'development') {
-      console.log('TTS: ElevenLabs response status:', elevenLabsResponse.status);
-    }
 
     if (!elevenLabsResponse.ok) {
       let errorMessage = `ElevenLabs API error: ${elevenLabsResponse.status}`;
@@ -157,16 +144,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    if (Deno.env.get('NODE_ENV') === 'development') {
-      console.log('TTS: Successfully received audio from ElevenLabs');
-    }
 
     // Stream audio response back to client
     const audioBlob = await elevenLabsResponse.blob();
-    
-    if (Deno.env.get('NODE_ENV') === 'development') {
-      console.log('TTS: Audio blob size:', audioBlob.size);
-    }
     
     if (audioBlob.size === 0) {
       return new Response(

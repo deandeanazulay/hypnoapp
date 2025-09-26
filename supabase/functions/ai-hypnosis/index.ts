@@ -41,9 +41,6 @@ Deno.serve(async (req: Request) => {
   try {
     const { message, sessionContext, requestType, scriptParams }: HypnosisRequest = await req.json()
 
-    if (Deno.env.get('NODE_ENV') === 'development') {
-      console.log('Full session context received:', JSON.stringify(sessionContext, null, 2))
-    }
 
     // Get OpenAI API key from environment
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
@@ -88,9 +85,6 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    if (Deno.env.get('NODE_ENV') === 'development') {
-      console.log('Processing request:', { requestType, egoState: sessionContext.egoState })
-    }
 
     let messages: any[]
     
@@ -150,9 +144,6 @@ Return ONLY the JSON object above - no markdown, no explanations.`
           }
         ];
 
-        if (Deno.env.get('NODE_ENV') === 'development') {
-          console.log('Calling ChatGPT for script generation with JSON-only rules...')
-        }
         const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -189,9 +180,6 @@ Return ONLY the JSON object above - no markdown, no explanations.`
             
             // Validate basic structure
             if (scriptResponse.segments && Array.isArray(scriptResponse.segments)) {
-              if (Deno.env.get('NODE_ENV') === 'development') {
-                console.log('Script generation successful via ChatGPT API');
-              }
               return new Response(
                 JSON.stringify({
                   response: JSON.stringify(scriptResponse),
@@ -246,7 +234,6 @@ Return ONLY the JSON object above - no markdown, no explanations.`
       ];
     }
 
-    console.log('Calling OpenAI API...')
 
     // Call OpenAI API
     let response: Response
@@ -393,9 +380,6 @@ Return ONLY the JSON object above - no markdown, no explanations.`
       )
     }
 
-    if (Deno.env.get('NODE_ENV') === 'development') {
-      console.log('Successfully generated AI response')
-    }
 
     // For script generation, ensure response is valid JSON
     if (requestType === 'script_generation') {
