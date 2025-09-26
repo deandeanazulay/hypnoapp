@@ -266,6 +266,13 @@ export default function ChatScreen() {
 
   // Check if we have any real messages (excluding loading states)
   const hasRealMessages = messages.some(msg => !msg.isLoading);
+
+  return (
+    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
+      <div className="absolute inset-0">
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
+      </div>
+
       <div className="relative z-10 h-full overflow-hidden">
         {/* Conditional Orb - Show at top when no messages */}
         {!hasRealMessages && (
