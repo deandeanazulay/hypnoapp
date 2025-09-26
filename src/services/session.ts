@@ -593,7 +593,7 @@ export class SessionManager {
     
     const voices = window.speechSynthesis.getVoices();
     
-    let selectedVoice;
+    let selectedVoice = null;
     const preferredVoices = [
       'Google US English', 
       'Microsoft Aria', 
