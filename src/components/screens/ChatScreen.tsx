@@ -360,35 +360,34 @@ export default function ChatScreen() {
               </div>
             </div>
 
-            {/* Fixed Bottom Input Area - Improved */}
-            <div className="fixed bottom-0 left-0 right-0 bg-black/98 backdrop-blur-xl border-t border-white/20 px-4 py-4 z-40" 
-                 style={{ paddingBottom: 'calc(var(--total-nav-height, 128px) + 1rem)' }}>
-              {/* Quick Suggestions - Floating Above Input */}
-              {messages.length <= 1 && (
-                <div className="absolute bottom-32 left-4 right-4 z-30">
-                  <div className="max-w-3xl mx-auto">
-                    <div className="flex gap-2 justify-center overflow-x-auto scrollbar-hide pb-2">
-                      {[
-                        'What ego state should I use today?',
-                        'Recommend a stress relief protocol',
-                        'How do I create a custom protocol?',
-                        'Explain hypnotherapy basics'
-                      ].map((suggestion) => (
-                        <button
-                          key={suggestion}
-                          onClick={() => setInputText(suggestion)}
-                          disabled={isLoading}
-                          className="flex-shrink-0 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 rounded-xl text-white/70 hover:text-white/90 text-sm transition-all hover:scale-105 disabled:opacity-50"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
+            {/* Quick Suggestions - Floating Above Input */}
+            {messages.length <= 1 && (
+              <div className="absolute bottom-32 left-4 right-4 z-30">
+                <div className="max-w-3xl mx-auto">
+                  <div className="flex gap-2 justify-center overflow-x-auto scrollbar-hide pb-2">
+                    {[
+                      'What ego state should I use today?',
+                      'Recommend a stress relief protocol',
+                      'How do I create a custom protocol?',
+                      'Explain hypnotherapy basics'
+                    ].map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => setInputText(suggestion)}
+                        disabled={isLoading}
+                        className="flex-shrink-0 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 rounded-xl text-white/70 hover:text-white/90 text-sm transition-all hover:scale-105 disabled:opacity-50"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              )}
-              
-              {/* Bottom Input Dock */}
+              </div>
+            )}
+
+            {/* Fixed Bottom Input Area */}
+            <div className="fixed bottom-0 left-0 right-0 bg-black/98 backdrop-blur-xl border-t border-white/20 px-4 py-4 z-40" 
+                 style={{ paddingBottom: 'calc(var(--total-nav-height, 128px) + 1rem)' }}>
               <div className="px-4">
                 <div className="max-w-3xl mx-auto">
                   <div className="bg-gradient-to-br from-white/10 to-white/15 backdrop-blur-xl rounded-2xl border border-white/25 p-3 shadow-2xl">
@@ -447,7 +446,6 @@ export default function ChatScreen() {
                   </div>
                 </div>
               </div>
-            </div>
             </div>
           </div>
         }
