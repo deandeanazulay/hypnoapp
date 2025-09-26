@@ -353,5 +353,5 @@ function getEmergencyScript(userCtx: any): any {
       style: "emergency_fallback",
       isEmergency: true
     }
-  }
-});
+  };
+}
