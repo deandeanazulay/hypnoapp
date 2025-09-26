@@ -14,30 +14,15 @@ export interface SynthesizeSegmentOptions {
 }
 
 export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOptions = {}): Promise<VoiceResult> {
-  const startTime = Date.now();
-  
   // Check character limit for ElevenLabs Flash v2.5 (3000 chars)
   if (text.length > 3000) {
     text = text.substring(0, 2900) + '...'; // Leave some buffer
   }
   
-  track('tts_synthesis_start', {
-    textLength: text.length,
-    voiceId: opts.voiceId,
-    model: opts.model,
-    mode: opts.mode
-  });
-
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
   if (!supabaseUrl || !supabaseAnonKey) {
-    track('tts_synthesis_success', {
-      textLength: text.length,
-      provider: 'browser-tts',
-      duration: Date.now() - startTime,
-      reason: 'no-config'
-    });
     return { provider: 'browser-tts' };
   }
 
@@ -52,7 +37,11 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       },
       body: JSON.stringify({ 
         text: text.trim(), 
-        voiceId: opts.voiceId || "pNInz6obpgDQGcFmaJgB" // Adam voice - calm male
+        voiceId: opts.voiceId || "pNInz6obpgDQGcFmaJgB",
+        model: "eleven_v3",
+        stability: 0.5,
+        similarity: 0.75,
+        style: 0.0
       }),
     });
 
@@ -66,14 +55,6 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     // Check if response is JSON (fallback signal)
     if (contentType.includes("application/json")) {
       const fallbackData = await response.json();
-      
-      track('tts_synthesis_success', {
-        textLength: text.length,
-        provider: 'browser-tts',
-        duration: Date.now() - startTime,
-        reason: fallbackData.reason || 'api-fallback'
-      });
-      
       return { provider: "browser-tts", error: fallbackData.reason };
     }
 
@@ -86,14 +67,6 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       }
       
       const audioUrl = URL.createObjectURL(audioBlob);
-      
-      track('tts_synthesis_success', {
-        textLength: text.length,
-        provider: 'elevenlabs',
-        duration: Date.now() - startTime,
-        audioSize: audioBlob.size
-      });
-      
       return { provider: "elevenlabs", audioUrl };
     }
 
@@ -101,14 +74,6 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     throw new Error(`Unexpected content type: ${contentType}`);
 
   } catch (error: any) {
-    
-    track('tts_synthesis_error', {
-      error: error.message,
-      textLength: text.length,
-      cacheKey: opts.cacheKey,
-      duration: Date.now() - startTime
-    });
-    
     // Always fall back to browser TTS on error
     return { provider: 'browser-tts', error: error.message };
   }
@@ -124,8 +89,6 @@ export function synthesizeWithBrowserTTS(
       return;
     }
 
-    console.log(`🗣️ Voice: Using browser TTS for: ${text.substring(0, 50)}...`);
-
     // Cancel any existing speech
     window.speechSynthesis.cancel();
 
@@ -137,7 +100,6 @@ export function synthesizeWithBrowserTTS(
     // Wait for voices to load if needed
     const setVoiceAndSpeak = () => {
       const voices = speechSynthesis.getVoices();
-      console.log(`🗣️ Voice: Found ${voices.length} browser voices`);
       
       // Find the most suitable voice for hypnotherapy
       const preferredVoice = voices.find(voice => 
@@ -151,20 +113,16 @@ export function synthesizeWithBrowserTTS(
       
       if (preferredVoice) {
         utterance.voice = preferredVoice;
-        console.log(`🗣️ Voice: Using browser voice: ${preferredVoice.name}`);
       }
 
-      utterance.onstart = () => {
-        console.log('🗣️ Voice: Browser TTS started');
-      };
+      utterance.onstart = () => {};
 
       utterance.onend = () => {
-        console.log('🗣️ Voice: Browser TTS finished');
         resolve();
       };
 
       utterance.onerror = (event) => {
-        console.error('🗣️ Voice: Browser TTS error:', event.error);
+        console.error('Browser TTS error:', event.error);
         reject(new Error(`Browser TTS failed: ${event.error}`));
       };
 
@@ -181,13 +139,10 @@ export function synthesizeWithBrowserTTS(
 }
 
 export async function getAvailableVoices(): Promise<Array<{id: string, name: string, category: string}>> {
-  console.log('Voice: Getting available voices');
-  
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Voice: Supabase not configured for voice listing');
     return [];
   }
 
@@ -202,14 +157,12 @@ export async function getAvailableVoices(): Promise<Array<{id: string, name: str
     });
 
     if (!response.ok) {
-      console.warn('Voice: Could not fetch ElevenLabs voices');
       return [];
     }
 
     const data = await response.json();
     return data.voices || [];
   } catch (error) {
-    console.error('Voice: Error fetching voices:', error);
     return [];
   }
 }
