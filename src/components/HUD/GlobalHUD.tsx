@@ -51,6 +51,8 @@ export default function GlobalHUD() {
               <Settings size={16} className="text-white/80" />
             </button>
           </div>
+        </div>
+      </div>
     );
   }
 
@@ -61,8 +63,6 @@ export default function GlobalHUD() {
   const egoColor = getEgoColor(activeEgoState);
 
   const handleEgoStateClick = () => {
-            }
-    )
     openEgoModal();
   };
 
@@ -234,6 +234,4 @@ export default function GlobalHUD() {
       </div>
     </div>
   );
-}
-}
 }
