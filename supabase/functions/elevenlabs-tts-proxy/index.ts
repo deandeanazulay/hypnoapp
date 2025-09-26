@@ -17,7 +17,7 @@ interface TTSRequest {
 }
 
 const MODEL_MAP = {
-  'flash-v2.5': 'eleven_flash_v2_5',
+  'flash-v2.5': 'eleven_flash_v2_5', 
   'v3': 'eleven_multilingual_v2'
 } as const;
 
