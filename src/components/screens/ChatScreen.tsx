@@ -4,6 +4,7 @@ import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useAppStore, EGO_STATES } from '../../store';
 import { useGameState } from '../GameStateManager';
 import PageShell from '../layout/PageShell';
+import Orb from '../Orb';
 import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../../utils/apiErrorHandler';
 import { HYPNOSIS_PROTOCOLS, PROTOCOL_CATEGORIES } from '../../data/protocols';
 
@@ -274,43 +275,19 @@ export default function ChatScreen() {
 
       <PageShell
         body={
-          <div className="relative z-10 h-full flex flex-col" style={{ paddingTop: '20px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 1rem)' }}>
-            {/* Chat Header - Compact */}
-            <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20 mx-4 mb-4 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-purple-400 border-2 border-teal-500/40 flex items-center justify-center">
-                    <span className="text-lg">{currentEgoState.icon}</span>
-                  </div>
-                  <div>
-                    <h2 className="text-white text-lg font-medium">Chat with Libero</h2>
-                    <p className="text-white/70 text-sm">Your {currentEgoState.name} guide</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => setIsMuted(!isMuted)}
-                    className={`p-2 rounded-lg transition-all hover:scale-110 ${
-                      isMuted ? 'bg-red-500/20 border border-red-500/40 text-red-400' : 'bg-green-500/20 border border-green-500/40 text-green-400'
-                    }`}
-                  >
-                    {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                  </button>
-                  {messages.length > 1 && (
-                    <button
-                      onClick={clearChat}
-                      className="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white/70 transition-all hover:scale-110"
-                    >
-                      <RotateCcw size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
+          <div className="relative z-10 h-full flex flex-col">
+            {/* Orb Header */}
+            <div className="flex-shrink-0 flex justify-center pt-8 pb-4">
+              <Orb
+                onTap={() => {}}
+                egoState={activeEgoState}
+                size={200}
+                variant="css"
+              />
             </div>
 
             {/* Messages Area - Optimized */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-4">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
               <div className="space-y-3 pb-4">
                 {messages.map((message) => (
                   <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -374,7 +351,27 @@ export default function ChatScreen() {
             </div>
 
             {/* Input Area - Compact and Modern */}
-            <div className="flex-shrink-0 p-4">
+            <div className="flex-shrink-0 px-4 pb-6" style={{ paddingBottom: 'calc(var(--total-nav-height, 128px) + 1rem)' }}>
+              {/* Audio Controls - Above input */}
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <button
+                  onClick={() => setIsMuted(!isMuted)}
+                  className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                    isMuted ? 'bg-red-500/20 border border-red-500/40 text-red-400' : 'bg-green-500/20 border border-green-500/40 text-green-400'
+                  }`}
+                >
+                  {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                </button>
+                {messages.length > 1 && (
+                  <button
+                    onClick={clearChat}
+                    className="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white/70 transition-all hover:scale-110"
+                  >
+                    <RotateCcw size={16} />
+                  </button>
+                )}
+              </div>
+              
               <div className="bg-gradient-to-br from-white/8 to-white/12 backdrop-blur-xl rounded-2xl border border-white/20 p-3">
                 <form onSubmit={handleSubmit} className="flex items-end gap-3">
                   <div className="flex-1">
