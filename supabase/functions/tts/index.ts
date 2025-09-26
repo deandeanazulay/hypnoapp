@@ -371,8 +371,10 @@ export class SessionManager {
         console.log(`🎵 TTS: ElevenLabs error reason: ${result.error}`);
       }
       this._playWithBrowserTTS(text);
+    }
+  }
     } catch (error) {
-      console.error(`🎵 TTS: ❌ Error with ElevenLabs for segment ${this.currentSegmentIndex
+      console.error(`TTS: Error with ElevenLabs for segment ${this.currentSegmentIndex + 1}:`, error);
       )
     }
     }
