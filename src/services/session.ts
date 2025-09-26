@@ -14,7 +14,7 @@ export interface ScriptSegment {
 
 export interface PlayableSegment extends ScriptSegment {
   audio: HTMLAudioElement | null;
-  ttsProvider: 'elevenlabs' | 'browser-tts' | 'none';
+  ttsProvider: 'openai-tts' | 'browser-tts' | 'none';
   isBuffered: boolean;
   bufferPromise?: Promise<void>;
 }
@@ -183,11 +183,11 @@ export class SessionManager {
         mode: 'pre-gen'
       });
       
-      if (result.provider === 'elevenlabs' && result.audioUrl) {
+      if (result.provider === 'openai-tts' && result.audioUrl) {
         // Create audio element for pre-buffered content
         segment.audio = new Audio(result.audioUrl);
         segment.audio.preload = 'auto';
-        segment.ttsProvider = 'elevenlabs';
+        segment.ttsProvider = 'openai-tts';
         segment.isBuffered = true;
       } else {
         // For browser TTS, we can't pre-buffer, so mark as ready
@@ -301,17 +301,17 @@ export class SessionManager {
       return;
     }
     
-    // Try pre-buffered ElevenLabs first
-    if (segment.ttsProvider === 'elevenlabs' && segment.audio) {
+    // Try pre-buffered OpenAI TTS first
+    if (segment.ttsProvider === 'openai-tts' && segment.audio) {
       this._playPreBufferedAudio(segment.audio);
       return;
     }
     
-    // Try live ElevenLabs
-    this._tryElevenLabsLive(segment.text);
+    // Try live OpenAI TTS
+    this._tryOpenAITTSLive(segment.text);
   }
 
-  private async _tryElevenLabsLive(text: string) {
+  private async _tryOpenAITTSLive(text: string) {
     try {
       const result = await synthesizeSegment(text, {
         voiceId: AI.voice.defaultVoiceId,
@@ -319,8 +319,8 @@ export class SessionManager {
         mode: 'live'
       });
 
-      if (result.provider === 'elevenlabs' && result.audioUrl) {
-        this._playElevenLabsAudio(result.audioUrl);
+      if (result.provider === 'openai-tts' && result.audioUrl) {
+        this._playOpenAITTSAudio(result.audioUrl);
         return;
       }
 
@@ -359,8 +359,8 @@ export class SessionManager {
     });
   }
 
-  private _playElevenLabsAudio(audioUrl: string) {
-    // Create audio element for ElevenLabs
+  private _playOpenAITTSAudio(audioUrl: string) {
+    // Create audio element for OpenAI TTS
     this.currentAudioElement = new Audio(audioUrl);
     this.currentAudioElement.volume = 1.0;
     

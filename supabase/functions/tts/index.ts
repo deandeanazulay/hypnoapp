@@ -8,11 +8,10 @@ const corsHeaders = {
 
 interface TTSRequest {
   text: string;
-  voiceId: string;
+  voice: string;
   model: string;
-  stability?: number;
-  similarity?: number;
-  style?: number;
+  speed?: number;
+  response_format?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -32,13 +31,13 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const apiKey = Deno.env.get('ELEVENLABS_API_KEY');
+    const apiKey = Deno.env.get('OPENAI_API_KEY');
     if (!apiKey) {
-      console.error('TTS: ELEVENLABS_API_KEY environment variable not set');
+      console.error('OPENAI_API_KEY environment variable not set');
       return new Response(
         JSON.stringify({ 
-          error: 'ElevenLabs API key not configured',
-          reason: 'ELEVENLABS_API_KEY not found in environment variables. Please add it in Supabase Edge Functions settings.',
+          error: 'OpenAI API key not configured',
+          reason: 'OPENAI_API_KEY not found in environment variables. Please add it in Supabase Edge Functions settings.',
           provider: 'browser-tts'
         }),
         {
@@ -54,10 +53,10 @@ Deno.serve(async (req: Request) => {
     const requestData: TTSRequest = await req.json();
     
     // Validate request
-    if (!requestData.text || !requestData.voiceId) {
+    if (!requestData.text || !requestData.voice) {
       return new Response(
         JSON.stringify({ 
-          error: 'Missing required fields: text, voiceId',
+          error: 'Missing required fields: text, voice',
           provider: 'browser-tts'
         }),
         {
@@ -71,10 +70,10 @@ Deno.serve(async (req: Request) => {
     }
 
     // Validate text length
-    if (requestData.text.length > 5000) {
+    if (requestData.text.length > 4096) {
       return new Response(
         JSON.stringify({ 
-          error: 'Text too long (max 5000 characters)',
+          error: 'Text too long (max 4096 characters)',
           provider: 'browser-tts'
         }),
         {
@@ -87,51 +86,44 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Prepare ElevenLabs request
-    const elevenLabsRequest = {
-      text: requestData.text.trim(),
-      model_id: requestData.model || "eleven_multilingual_v2",
-      voice_settings: {
-        stability: requestData.stability ?? 0.5,
-        similarity_boost: requestData.similarity ?? 0.75,
-        style: requestData.style ?? 0.0,
-        use_speaker_boost: true
-      },
-      output_format: 'mp3_44100_128'
+    // Prepare OpenAI TTS request
+    const openaiRequest = {
+      model: requestData.model || "tts-1",
+      input: requestData.text.trim(),
+      voice: requestData.voice,
+      response_format: requestData.response_format || "wav",
+      speed: requestData.speed || 1.0
     };
 
-
-    // Call ElevenLabs API
-    const elevenLabsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${requestData.voiceId}`, {
+    // Call OpenAI TTS API
+    const openaiResponse = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
-        'xi-api-key': apiKey,
-        'Content-Type': 'application/json',
-        'Accept': 'audio/mpeg'
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(elevenLabsRequest)
+      body: JSON.stringify(openaiRequest)
     });
 
-
-    if (!elevenLabsResponse.ok) {
-      let errorMessage = `ElevenLabs API error: ${elevenLabsResponse.status}`;
+    if (!openaiResponse.ok) {
+      let errorMessage = `OpenAI TTS API error: ${openaiResponse.status}`;
       
       try {
-        const errorData = await elevenLabsResponse.json();
-        console.error('TTS: ElevenLabs error data:', errorData);
-        if (errorData.detail?.message) {
-          errorMessage = errorData.detail.message;
+        const errorData = await openaiResponse.json();
+        console.error('OpenAI TTS error data:', errorData);
+        if (errorData.error?.message) {
+          errorMessage = errorData.error.message;
         }
       } catch {
         // Error response wasn't JSON
       }
       
-      console.error('TTS: ElevenLabs API error:', errorMessage);
+      console.error('OpenAI TTS API error:', errorMessage);
       
       return new Response(
         JSON.stringify({ 
           error: errorMessage,
-          reason: `ElevenLabs API returned ${elevenLabsResponse.status}. Check your API key and voice ID.`,
+          reason: `OpenAI TTS API returned ${openaiResponse.status}. Check your API key and request parameters.`,
           provider: 'browser-tts'
         }),
         {
@@ -144,15 +136,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-
-    // Stream audio response back to client
-    const audioBlob = await elevenLabsResponse.blob();
+    // Get audio response from OpenAI
+    const audioBlob = await openaiResponse.blob();
     
     if (audioBlob.size === 0) {
       return new Response(
         JSON.stringify({ 
           error: 'Received empty audio response',
-          reason: 'ElevenLabs returned empty audio. This might be a voice ID issue or API limit.',
+          reason: 'OpenAI TTS returned empty audio. This might be a voice parameter or API issue.',
           provider: 'browser-tts'
         }),
         {
@@ -168,14 +159,14 @@ Deno.serve(async (req: Request) => {
     return new Response(audioBlob, {
       status: 200,
       headers: {
-        'Content-Type': 'audio/mpeg',
+        'Content-Type': 'audio/wav',
         'Content-Length': audioBlob.size.toString(),
         ...corsHeaders,
       },
     });
 
   } catch (error: any) {
-    console.error('TTS: Unexpected error:', error);
+    console.error('OpenAI TTS: Unexpected error:', error);
     
     return new Response(
       JSON.stringify({ 

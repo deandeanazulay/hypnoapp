@@ -2,21 +2,21 @@ import { track } from './analytics';
 
 export interface VoiceResult {
   audioUrl?: string;
-  provider: 'elevenlabs' | 'browser-tts' | 'none';
+  provider: 'openai-tts' | 'browser-tts' | 'none';
   error?: string;
 }
 
 export interface SynthesizeSegmentOptions {
   voiceId?: string;
-  model?: 'flash-v2.5' | 'v3';
+  model?: 'tts-1' | 'tts-1-hd';
   cacheKey?: string;
   mode?: 'live' | 'pre-gen';
 }
 
 export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOptions = {}): Promise<VoiceResult> {
-  // Check character limit for ElevenLabs Flash v2.5 (3000 chars)
-  if (text.length > 3000) {
-    text = text.substring(0, 2900) + '...'; // Leave some buffer
+  // Check character limit for OpenAI TTS (4096 chars)
+  if (text.length > 4096) {
+    text = text.substring(0, 4000) + '...'; // Leave some buffer
   }
   
   if (import.meta.env.DEV) {
@@ -49,20 +49,21 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       },
       body: JSON.stringify({ 
         text: text.trim(), 
-        voiceId: opts.voiceId || "pNInz6obpgDQGcFmaJgB",
-        model: "eleven_multilingual_v2",
-        stability: 0.5,
-        similarity: 0.75,
-        style: 0.0
+        voice: opts.voiceId || "alloy",
+        model: opts.model || "tts-1",
+        speed: 1.0,
+        response_format: "wav"
       }),
     });
 
-    console.log('Voice: TTS response status:', response.status);
-    console.log('Voice: TTS response content-type:', response.headers.get("content-type"));
+    if (import.meta.env.DEV) {
+      console.log('Voice: TTS response status:', response.status);
+      console.log('Voice: TTS response content-type:', response.headers.get("content-type"));
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Voice: TTS function error:', response.status, errorText);
+      console.error('Voice: OpenAI TTS function error:', response.status, errorText);
       throw new Error(`TTS function returned ${response.status}: ${errorText}`);
     }
 
@@ -72,7 +73,7 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     if (contentType.includes("application/json")) {
       const fallbackData = await response.json();
       if (import.meta.env.DEV) {
-        console.log('Voice: TTS returned fallback data:', fallbackData);
+        console.log('Voice: OpenAI TTS returned fallback data:', fallbackData);
       }
       return { provider: "browser-tts", error: fallbackData.reason };
     }
@@ -83,24 +84,24 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       
       if (audioBlob.size === 0) {
         if (import.meta.env.DEV) {
-          console.log('Voice: Received empty audio blob');
+          console.log('Voice: Received empty audio blob from OpenAI TTS');
         }
         return { provider: 'browser-tts' };
       }
       
       const audioUrl = URL.createObjectURL(audioBlob);
       if (import.meta.env.DEV) {
-        console.log('Voice: Successfully received ElevenLabs audio, size:', audioBlob.size);
+        console.log('Voice: Successfully received OpenAI TTS audio, size:', audioBlob.size);
       }
-      return { provider: "elevenlabs", audioUrl };
+      return { provider: "openai-tts", audioUrl };
     }
 
     // Unexpected content type
-    console.error('Voice: Unexpected content type:', contentType);
+    console.error('Voice: Unexpected content type from OpenAI TTS:', contentType);
     throw new Error(`Unexpected content type: ${contentType}`);
 
   } catch (error: any) {
-    console.error('Voice: Error calling TTS function:', error.message);
+    console.error('Voice: Error calling OpenAI TTS function:', error.message);
     // Always fall back to browser TTS on error
     return { provider: 'browser-tts', error: error.message };
   }
@@ -163,66 +164,4 @@ export function synthesizeWithBrowserTTS(
       setVoiceAndSpeak();
     }
   });
-}
-
-export async function getAvailableVoices(): Promise<Array<{id: string, name: string, category: string}>> {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return [];
-  }
-
-  try {
-    const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
-    
-    const response = await fetch(`${baseUrl}/functions/v1/elevenlabs-voices`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${supabaseAnonKey}`
-      }
-    });
-
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = await response.json();
-    return data.voices || [];
-  } catch (error) {
-    return [];
-  }
-}
-
-export async function getUsageInfo(): Promise<{charactersUsed: number, charactersLimit: number} | null> {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return null;
-  }
-
-  try {
-    const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
-    
-    const response = await fetch(`${baseUrl}/functions/v1/elevenlabs-usage`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${supabaseAnonKey}`
-      }
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    return {
-      charactersUsed: data.character_count || 0,
-      charactersLimit: data.character_limit || 10000
-    };
-  } catch (error) {
-    console.error('Voice: Error fetching usage info:', error);
-    return null;
-  }
 }

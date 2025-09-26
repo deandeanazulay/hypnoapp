@@ -7,13 +7,13 @@ export const AI = {
   chatgptModel: 'gpt-4o',         // OpenAI ChatGPT model - 'gpt-4o' for best quality, 'gpt-3.5-turbo' for speed
   chatgptTimeoutMs: 8000,         // Hard timeout for ChatGPT API calls
   chatgptMaxRetries: 2,           // Max retries for transient ChatGPT errors
-  elevenLabsBaseUrl: 'https://api.elevenlabs.io/v1', // ElevenLabs API base URL
+  openaiTtsBaseUrl: 'https://api.openai.com/v1/audio/speech', // OpenAI TTS API base URL
   voice: {
-    defaultVoiceId: 'pNInz6obpgDQGcFmaJgB', // Adam - calm, deep male voice perfect for hypnosis
-    model: 'v3' as 'flash-v2.5' | 'v3', // 'flash-v2.5' for low latency, 'v3' for expressive quality
+    defaultVoiceId: 'alloy', // Alloy - calm, deep male voice perfect for hypnosis
+    model: 'tts-1', // 'tts-1' for standard quality, 'tts-1-hd' for higher quality
     preBufferSegments: 2,          // Number of audio segments to pre-buffer ahead of current playback
     maxCacheMB: 120,               // Maximum size for audio cache in MB
-    maxCharactersPerRequest: 3000  // Character limit for eleven_flash_v2_5 (ultra-low latency)
+    maxCharactersPerRequest: 4096  // Character limit for OpenAI TTS
   },
   // Add other AI-related configurations here
 };
