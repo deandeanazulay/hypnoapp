@@ -79,30 +79,24 @@ export class SessionManager {
   private voicesLoadedPromise: Promise<void>;
 
   constructor() {
-    console.log('Session: Initializing session manager...');
     this.voicesLoadedPromise = this._ensureVoicesLoaded();
   }
 
   async initialize(userContext: any) {
     if (this._initializationPromise) {
-      console.log('Session: Already initializing, waiting...');
       return this._initializationPromise;
     }
     
-    console.log('Session: Starting new initialization...');
     this._initializationPromise = this._doInitialization(userContext);
     return this._initializationPromise;
   }
   
   private async _doInitialization(userContext: any) {
     if (this._isDisposed) {
-      console.log('Session: Disposed during initialization');
       return;
     }
 
     try {
-      console.log('Session: Starting initialization with dynamic script generation...');
-      
       // Generate script through API only - NO HARDCODED FALLBACKS
       await this._initializeSession(userContext);
       
@@ -116,7 +110,6 @@ export class SessionManager {
       this._isInitialized = true;
       this._updateState({ isInitialized: true });
       
-      console.log('Session: Initialization complete, ready to play');
     } catch (error) {
       console.error('Session: Failed to initialize:', error);
       this._updateState({ error: `Initialization failed: ${error.message}` });
@@ -125,25 +118,18 @@ export class SessionManager {
   }
 
   private async _initializeSession(userContext: any) {
-    console.log('📝 Session: _initializeSession called with context:', userContext);
-    
     try {
-      console.log('📝 Session: Calling getSessionScript (API ONLY)...');
       this.scriptPlan = await getSessionScript(userContext);
-      console.log('📝 Session: getSessionScript returned:', this.scriptPlan ? 'success' : 'null');
       
       if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
         throw new Error('Script generation failed - no segments returned from API');
       }
 
-      console.log(`Session: Using AI-generated script with ${this.scriptPlan.segments.length} segments`);
     } catch (error: any) {
       console.error('Session: Script generation FAILED - NO FALLBACK:', error.message);
       throw new Error(`Script generation failed: ${error.message}. Please check API configuration.`);
     }
 
-    console.log(`📝 Session: Final script has ${this.scriptPlan.segments.length} segments`);
-    
     // Initialize segments array
     this.segments = this.scriptPlan.segments.map((segment: any) => ({
       ...segment,
@@ -155,8 +141,6 @@ export class SessionManager {
       isBuffered: false
     }));
     
-    console.log(`📝 Session: Segments array created with ${this.segments.length} items`);
-    
     // Update state with total segments
     this._updateState({
       totalSegments: this.segments.length,
@@ -164,25 +148,18 @@ export class SessionManager {
       currentSegmentId: this.segments[0]?.id || null
     });
 
-    console.log(`Session: Ready with ${this.segments.length} segments (NO HARDCODED CONTENT)`);
   }
 
   private async _prebufferFirstSegment() {
-    console.log('🚀 Session: Pre-buffering first segment for instant start...');
-    
     if (!this.segments || this.segments.length === 0) {
-      console.log('🚀 Session: No segments to pre-buffer');
       return;
     }
     
     const firstSegment = this.segments[0];
     if (firstSegment) {
-      console.log('🚀 Session: Pre-buffering first segment...');
       try {
         await this._bufferSegmentAudio(0);
-        console.log('🚀 Session: First segment ready!');
       } catch (error) {
-        console.warn('🚀 Session: First segment pre-buffer failed:', error);
         // Mark as browser TTS so it can still play
         firstSegment.ttsProvider = 'browser-tts';
         firstSegment.isBuffered = true;
@@ -195,8 +172,6 @@ export class SessionManager {
     if (!segment || segment.isBuffered) {
       return;
     }
-    
-    console.log(`🔄 Buffer: Starting buffer for segment ${segmentIndex + 1}`);
     
     try {
       const result = await synthesizeSegment(segment.text, {
@@ -211,15 +186,12 @@ export class SessionManager {
         segment.audio.preload = 'auto';
         segment.ttsProvider = 'elevenlabs';
         segment.isBuffered = true;
-        console.log(`🔄 Buffer: ✅ ElevenLabs segment ${segmentIndex + 1} buffered`);
       } else {
         // For browser TTS, we can't pre-buffer, so mark as ready
         segment.ttsProvider = 'browser-tts';
         segment.isBuffered = true;
-        console.log(`🔄 Buffer: ⚠️ Browser TTS will be used for segment ${segmentIndex + 1} - Reason: ${result.error || 'API not available'}`);
       }
     } catch (error) {
-      console.warn(`🔄 Buffer: Failed to buffer segment ${segmentIndex + 1}:`, error);
       segment.ttsProvider = 'browser-tts';
       segment.isBuffered = true;
     }
@@ -240,7 +212,6 @@ export class SessionManager {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
         this.voicesLoaded = true;
-        console.log(`TTS: Already loaded ${voices.length} browser voices`);
         resolve();
         return;
       }
@@ -249,7 +220,6 @@ export class SessionManager {
         const voices = window.speechSynthesis.getVoices();
         if (voices.length > 0) {
           this.voicesLoaded = true;
-          console.log(`TTS: Loaded ${voices.length} browser voices`);
           window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
           resolve();
         }
@@ -261,7 +231,6 @@ export class SessionManager {
       setTimeout(() => {
         window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
         this.voicesLoaded = true;
-        console.log('TTS: Voice loading timeout, proceeding anyway');
         resolve();
       }, 2000);
     });
@@ -274,16 +243,12 @@ export class SessionManager {
   }
 
   async play() {
-    console.log('🎮 Session: play() called');
-    
     if (this._isDisposed) {
-      console.log('Session: Cannot play - session disposed');
       return;
     }
 
     // Wait for initialization if needed
     if (!this._isInitialized && this._initializationPromise) {
-      console.log('Session: Waiting for initialization to complete...');
       try {
         await this._initializationPromise;
       } catch (error) {
@@ -308,12 +273,9 @@ export class SessionManager {
     
     const segment = this.segments[this.currentSegmentIndex];
     if (!segment) {
-      console.error('Session: No segment available');
+      console.error('No segment available');
       return;
     }
-    
-    console.log(`Session: Starting segment ${this.currentSegmentIndex + 1}/${this.segments.length}`);
-    console.log(`Session: Segment text preview: "${segment.text.substring(0, 100)}..."`);
     
     // Update state to show current segment
     this._updateState({ 
@@ -324,7 +286,7 @@ export class SessionManager {
     this._emit('play');
     
     // Clear any previous TTS before starting new segment
-    this._cancelCurrentTTS();
+    this._stopCurrentAudio();
     
     // Start playing audio immediately
     this._playCurrentSegment();
@@ -333,22 +295,16 @@ export class SessionManager {
   private _playCurrentSegment() {
     const segment = this.segments[this.currentSegmentIndex];
     if (!segment) {
-      console.error('No segment to play');
       return;
     }
     
-    console.log(`🎵 Session: About to play segment ${this.currentSegmentIndex + 1}`);
-    console.log(`🎵 TTS: Segment text: "${segment.text.substring(0, 100)}..."`);
-    
     // Try pre-buffered ElevenLabs first
     if (segment.ttsProvider === 'elevenlabs' && segment.audio) {
-      console.log(`🎵 TTS: ✅ Using pre-buffered ElevenLabs for segment ${this.currentSegmentIndex + 1}`);
       this._playPreBufferedAudio(segment.audio);
       return;
     }
     
     // Try live ElevenLabs
-    console.log(`🎵 TTS: Attempting live ElevenLabs for segment ${this.currentSegmentIndex + 1}`);
     this._tryElevenLabsLive(segment.text);
   }
 
@@ -361,24 +317,17 @@ export class SessionManager {
       });
 
       if (result.provider === 'elevenlabs' && result.audioUrl) {
-        console.log(`🎵 TTS: ✅ Using live ElevenLabs for segment ${this.currentSegmentIndex + 1}`);
         this._playElevenLabsAudio(result.audioUrl);
         return;
       }
 
-      console.log(`🎵 TTS: ⚠️ ElevenLabs not available for segment ${this.currentSegmentIndex + 1}, using browser TTS`);
-      if (result.error) {
-        console.log(`🎵 TTS: ElevenLabs error reason: ${result.error}`);
-      }
       this._playWithBrowserTTS(text);
     } catch (error) {
-      console.error(`🎵 TTS: ❌ Error with ElevenLabs for segment ${this.currentSegmentIndex + 1}, falling back to browser:`, error);
       this._playWithBrowserTTS(text);
     }
   }
 
   private _playPreBufferedAudio(audioElement: HTMLAudioElement) {
-    
     // Clone to avoid conflicts
     const clonedAudio = audioElement.cloneNode() as HTMLAudioElement;
     this.currentAudioElement = clonedAudio;
@@ -408,7 +357,6 @@ export class SessionManager {
   }
 
   private _playElevenLabsAudio(audioUrl: string) {
-    
     // Create audio element for ElevenLabs
     this.currentAudioElement = new Audio(audioUrl);
     this.currentAudioElement.volume = 1.0;
@@ -439,7 +387,6 @@ export class SessionManager {
   }
 
   private async _playWithBrowserTTS(text: string) {
-    
     if (!window.speechSynthesis) {
       console.error('Session: speechSynthesis not available');
       setTimeout(() => {
@@ -453,7 +400,6 @@ export class SessionManager {
     
     // Wait for voices to load
     await this.voicesLoadedPromise;
-    
     
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.7;  // Slower for hypnotic effect
@@ -537,7 +483,6 @@ export class SessionManager {
   }
 
   private _handleSegmentEnd() {
-    
     if (this._isDisposed) {
       return;
     }
@@ -567,13 +512,13 @@ export class SessionManager {
   pause() {
     if (this._state.playState === 'paused') return;
     
-    this._cancelCurrentTTS();
+    this._stopCurrentAudio();
     this._updateState({ playState: 'paused' });
     this._emit('pause');
   }
 
   next() {
-    this._cancelCurrentTTS();
+    this._stopCurrentAudio();
     
     if (this.currentSegmentIndex < this.segments.length - 1) {
       this.currentSegmentIndex++;
@@ -595,7 +540,7 @@ export class SessionManager {
   }
 
   prev() {
-    this._cancelCurrentTTS();
+    this._stopCurrentAudio();
     
     if (this.currentSegmentIndex > 0) {
       this.currentSegmentIndex--;
@@ -613,8 +558,7 @@ export class SessionManager {
     }
   }
 
-  private _cancelCurrentTTS() {
-    
+  private _stopCurrentAudio() {
     if (this.currentAudioElement) {
       this.currentAudioElement.pause();
       this.currentAudioElement.onended = null;
@@ -631,7 +575,7 @@ export class SessionManager {
   
   dispose() {
     this._isDisposed = true;
-    this._cancelCurrentTTS();
+    this._stopCurrentAudio();
     
     // Clean up audio URLs to prevent memory leaks
     this.segments.forEach(segment => {
