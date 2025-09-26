@@ -9,7 +9,7 @@ export const AI = {
   geminiMaxRetries: 2,             // Max retries for transient Gemini errors
   elevenLabsBaseUrl: 'https://api.elevenlabs.io/v1', // ElevenLabs API base URL
   voice: {
-    defaultVoiceId: 'EXAVITQu4vr4xnSDxMaL', // Placeholder: Replace with an actual ElevenLabs voice ID
+    defaultVoiceId: 'pNInz6obpgDQGcFmaJgB', // Adam - calm, deep male voice perfect for hypnosis
     model: 'flash-v2.5' as 'flash-v2.5' | 'v3', // 'flash-v2.5' for low latency, 'v3' for expressive
     preBufferSegments: 2,          // Number of audio segments to pre-buffer ahead of current playback
     maxCacheMB: 120                // Maximum size for audio cache in MB

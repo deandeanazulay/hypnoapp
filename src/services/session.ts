@@ -459,40 +459,41 @@ export class SessionManager {
 
   private async _speakSegmentWithFallback(text: string) {
     try {
-      console.log('TTS: Attempting ElevenLabs synthesis...');
+      console.log(`TTS: Attempting ElevenLabs synthesis for segment ${this.currentSegmentIndex + 1}...`);
       
       // Try ElevenLabs first
       const result = await synthesizeSegment(text, {
-        voiceId: 'EXAVITQu4vr4xnSDxMaL',
+        voiceId: 'pNInz6obpgDQGcFmaJgB', // Adam - calm, deep male voice
         cacheKey: `segment-${this.currentSegmentIndex}`,
         mode: 'live'
       });
 
       if (result.provider === 'elevenlabs' && result.audioUrl) {
-        console.log('TTS: Using ElevenLabs audio');
+        console.log(`TTS: Using ElevenLabs audio for segment ${this.currentSegmentIndex + 1}`);
         this._playAudioUrl(result.audioUrl);
         return;
       }
 
-      console.log('TTS: ElevenLabs not available, using browser TTS');
+      console.log(`TTS: ElevenLabs not available for segment ${this.currentSegmentIndex + 1}, using browser TTS. Reason:`, result.error || 'Unknown');
       await this._speakSegmentNow(text);
     } catch (error) {
-      console.error('TTS: Error with ElevenLabs, falling back to browser:', error);
+      console.error(`TTS: Error with ElevenLabs for segment ${this.currentSegmentIndex + 1}, falling back to browser:`, error);
       await this._speakSegmentNow(text);
     }
   }
 
   private _playAudioUrl(audioUrl: string) {
     // Create audio element for ElevenLabs
+    this.ttsLock = true;
     this.currentAudioElement = new Audio(audioUrl);
     this.currentAudioElement.volume = 1.0;
     
     this.currentAudioElement.onloadeddata = () => {
-      console.log('TTS: ElevenLabs audio loaded, starting playback');
+      console.log(`TTS: ElevenLabs audio loaded for segment ${this.currentSegmentIndex + 1}, starting playback`);
     };
     
     this.currentAudioElement.onended = () => {
-      console.log(`TTS: ElevenLabs segment ${this.currentSegmentIndex + 1} completed`);
+      console.log(`TTS: ElevenLabs segment ${this.currentSegmentIndex + 1} completed successfully`);
       this.ttsLock = false;
       this.currentAudioElement = null;
       
@@ -502,18 +503,26 @@ export class SessionManager {
     };
     
     this.currentAudioElement.onerror = (event) => {
-      console.error('TTS: ElevenLabs audio error:', event);
+      console.error(`TTS: ElevenLabs audio error for segment ${this.currentSegmentIndex + 1}:`, event);
       this.ttsLock = false;
       this.currentAudioElement = null;
       
       // Fall back to browser TTS on audio error
-      this._speakSegmentNow(text);
+      const segment = this.segments[this.currentSegmentIndex];
+      if (segment) {
+        this._speakSegmentNow(segment.text);
+      }
     };
     
     // Start playback
     this.currentAudioElement.play().catch(error => {
-      console.error('TTS: Failed to play ElevenLabs audio:', error);
-      this._speakSegmentNow(text);
+      console.error(`TTS: Failed to play ElevenLabs audio for segment ${this.currentSegmentIndex + 1}:`, error);
+      this.ttsLock = false;
+      this.currentAudioElement = null;
+      const segment = this.segments[this.currentSegmentIndex];
+      if (segment) {
+        this._speakSegmentNow(segment.text);
+      }
     });
   }
 
@@ -521,17 +530,22 @@ export class SessionManager {
     if (!window.speechSynthesis) {
       console.error('Session: speechSynthesis not available');
       setTimeout(() => {
+        this.ttsLock = false;
         this._handleSegmentEnd();
       }, 3000);
       return;
     }
 
+    // Set TTS lock for browser TTS too
+    this.ttsLock = true;
+    
     // Wait for voices to load
     await this.voicesLoadedPromise;
     
     // Double-check if we were cancelled while waiting
     if (this.wasCanceledByUs) {
       console.log('TTS: Cancelled while waiting for voices');
+      this.ttsLock = false;
       return;
     }
     
@@ -541,8 +555,8 @@ export class SessionManager {
     this.wasCanceledByUs = false;
     
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9;
-    utterance.pitch = 1.0;
+    utterance.rate = 0.7; // Slower for hypnosis
+    utterance.pitch = 0.8; // Lower pitch for male voice
     utterance.volume = 1.0;
     
     // Voice selection (handle async loading properly)
