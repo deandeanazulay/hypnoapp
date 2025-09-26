@@ -50,8 +50,8 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
             <Orb
               onTap={() => {}}
               egoState={activeEgoState}
-             size={200}
-             variant="webgl"
+              size={200}
+              variant="webgl"
               className="orb-avatar"
             />
           </div>
@@ -64,12 +64,13 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
       
       {/* Message Bubble */}
       <div className={`max-w-[70%] ${message.role === 'user' ? '' : 'flex-1'} flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
-            ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-500/30 text-white rounded-tr-md'
-      }`}>
         <div className={`rounded-2xl p-4 border group relative ${
+          message.role === 'user'
+            ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-500/30 text-white rounded-tr-md'
             : message.isLoading
             ? 'bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border-purple-500/20 text-white rounded-tl-md'
             : 'bg-gradient-to-br from-purple-500/15 to-indigo-500/15 border-purple-500/30 text-white rounded-tl-md'
+        }`}>
           {/* Loading State */}
           {message.isLoading ? (
             <div className="flex items-center space-x-3">
