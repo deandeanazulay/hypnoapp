@@ -156,6 +156,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   const [isListening, setIsListening] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [showFixationCue, setShowFixationCue] = useState(true);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
   
   // Session management
   const [sessionManager, setSessionManager] = useState<SessionManager | null>(null);
@@ -211,6 +212,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     const initSession = async () => {
       try {
         console.log('Session: Initializing session manager...');
+        setIsLoadingSession(true);
         const manager = new SessionManager();
         setSessionManager(manager);
         
@@ -248,9 +250,11 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         
         await manager.initialize(scriptContext);
         console.log('Session: Manager initialized successfully');
+        setIsLoadingSession(false);
         
       } catch (error) {
         console.error('Session initialization failed:', error);
+        setIsLoadingSession(false);
         showToast({ type: 'error', message: 'Failed to start session' });
       }
     };
@@ -389,6 +393,120 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     }
   }, [sessionManagerState.currentSegmentId, sessionManagerState.scriptPlan]);
 
+  const progress = (sessionState.totalTime - sessionState.timeRemaining) / sessionState.totalTime;
+  const currentSegment = (sessionManagerState.currentSegmentIndex || 0) + 1;
+  const totalSegments = sessionManagerState.scriptPlan?.segments?.length || 0;
+  const bufferedAhead = sessionManagerState.bufferedAhead;
+  const latestAiMessage = conversation.filter(msg => msg.role === 'ai').slice(-1)[0];
+
+  // Show loading screen while generating script
+  if (isLoadingSession) {
+    return (
+      <div 
+        className="h-screen flex items-center justify-center text-white overflow-hidden"
+        style={{ 
+          background: LIBERO_BRAND.colors.midnight,
+          fontFamily: LIBERO_BRAND.typography.bodyM.fontFamily || 'Inter, sans-serif'
+        }}
+      >
+        {/* Cosmic Background */}
+        <div className="absolute inset-0 z-0">
+          <div 
+            className="absolute inset-0"
+            style={{ 
+              background: `linear-gradient(135deg, ${LIBERO_BRAND.colors.midnight} 0%, ${LIBERO_BRAND.colors.deepSpace} 50%, ${LIBERO_BRAND.colors.midnight} 100%)`
+            }}
+          />
+          
+          <div 
+            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-35"
+            style={{ background: LIBERO_BRAND.gradients.brandAura }}
+          />
+          <div 
+            className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl opacity-25"
+            style={{ 
+              background: `radial-gradient(circle at center, ${LIBERO_BRAND.colors.iris}15 0%, transparent 70%)`
+            }}
+          />
+        </div>
+
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-8">
+          <div className="text-center max-w-md">
+            <div className="mb-8">
+              <Orb
+                onTap={() => {}}
+                egoState={activeEgoState}
+                size={200}
+                variant="css"
+                afterglow={false}
+              />
+            </div>
+            
+            <div className="space-y-4">
+              <h2 className="text-white text-2xl font-light mb-2">
+                Libero is creating your custom session
+              </h2>
+              
+              <div className="space-y-3">
+                {/* Ego State */}
+                {currentEgoState && (
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl">{currentEgoState.icon}</span>
+                      <div>
+                        <div className="text-white font-medium">Channeling {currentEgoState.name}</div>
+                        <div className="text-white/60 text-sm">{currentEgoState.description}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Duration */}
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center space-x-3">
+                    <Clock size={20} className="text-teal-400" />
+                    <div>
+                      <div className="text-white font-medium">{sessionConfig.duration} Minutes</div>
+                      <div className="text-white/60 text-sm">Deep transformation time</div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Focus */}
+                {(sessionConfig.customProtocol?.name || sessionConfig.protocol?.name || sessionConfig.goal) && (
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center space-x-3">
+                      <Brain size={20} className="text-purple-400" />
+                      <div>
+                        <div className="text-white font-medium">
+                          {sessionConfig.customProtocol?.name || sessionConfig.protocol?.name || sessionConfig.goal || 'Transformation'}
+                        </div>
+                        <div className="text-white/60 text-sm">Your transformation focus</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Loading Indicators */}
+              <div className="mt-8 space-y-4">
+                <div className="flex justify-center space-x-2">
+                  <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+                </div>
+              </div>
+              
+              <p className="text-white/50 text-sm">
+                This may take 10-20 seconds as Libero crafts your personalized experience...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Event handlers
   const handleUserInput = async (input: string) => {
     if (!input.trim()) return;
@@ -461,7 +579,10 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
         throw new Error('No response from AI');
       }
     } catch (error) {
+      console.error('AI conversation error:', error);
       const fallbackMessage = getLocalFallbackResponse(input, sessionConfig.egoState);
+      const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
+      setConversation(prev => [...prev, aiMessage]);
       
       if (isVoiceEnabled) {
         speakText(fallbackMessage);
@@ -646,12 +767,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [sessionManagerState.playState, isVoiceEnabled, showFixationCue]);
-
-  const progress = (sessionState.totalTime - sessionState.timeRemaining) / sessionState.totalTime;
-  const currentSegment = (sessionManagerState.currentSegmentIndex || 0) + 1;
-  const totalSegments = sessionManagerState.scriptPlan?.segments?.length || 0;
-  const bufferedAhead = sessionManagerState.bufferedAhead;
-  const latestAiMessage = conversation.filter(msg => msg.role === 'ai').slice(-1)[0];
 
   return (
     <div 
