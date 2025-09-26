@@ -53,9 +53,12 @@ export class SessionManager {
   private voicesLoaded = false;
   private voicesLoadedPromise: Promise<void>;
   private voicesLoadedPromise: Promise<void>;
+  private voicesLoadedPromise: Promise<void>;
 
   async initialize(userContext: any) {
     try {
+      // Initialize voices loading promise
+      this.voicesLoadedPromise = this._ensureVoicesLoaded();
       // Initialize voices loading promise
       this.voicesLoadedPromise = this._ensureVoicesLoaded();
       // Initialize voices loading promise
@@ -448,6 +451,41 @@ export class SessionManager {
     });
   }
 
+  private _ensureVoicesLoaded(): Promise<void> {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined' || !window.speechSynthesis) {
+        resolve();
+        return;
+      }
+
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        this.voicesLoaded = true;
+        resolve();
+        return;
+      }
+
+      const handleVoicesChanged = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          this.voicesLoaded = true;
+          console.log(`TTS: Loaded ${voices.length} browser voices`);
+          window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+          resolve();
+        }
+      };
+
+      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+      
+      // Fallback timeout in case voiceschanged never fires
+      setTimeout(() => {
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+        this.voicesLoaded = true;
+        resolve();
+      }, 3000);
+    });
+  }
+
   private _emit(event: string, data?: any) {
     if (this.eventListeners[event]) {
       this.eventListeners[event].forEach(listener => listener(data));
@@ -615,6 +653,66 @@ export class SessionManager {
     });
   }
 
+  private async _speakSegmentWithFallback(text: string) {
+    try {
+      console.log('TTS: Attempting ElevenLabs synthesis...');
+      
+      // Try ElevenLabs first
+      const result = await synthesizeSegment(text, {
+        voiceId: 'EXAVITQu4vr4xnSDxMaL',
+        cacheKey: `segment-${this.currentSegmentIndex}`,
+        mode: 'live'
+      });
+
+      if (result.provider === 'elevenlabs' && result.audioUrl) {
+        console.log('TTS: Using ElevenLabs audio');
+        this._playAudioUrl(result.audioUrl);
+        return;
+      }
+
+      console.log('TTS: ElevenLabs not available, using browser TTS');
+      await this._speakSegmentNow(text);
+    } catch (error) {
+      console.error('TTS: Error with ElevenLabs, falling back to browser:', error);
+      await this._speakSegmentNow(text);
+    }
+  }
+
+  private _playAudioUrl(audioUrl: string) {
+    // Create audio element for ElevenLabs
+    this.currentAudioElement = new Audio(audioUrl);
+    this.currentAudioElement.volume = 1.0;
+    
+    this.currentAudioElement.onloadeddata = () => {
+      console.log('TTS: ElevenLabs audio loaded, starting playback');
+    };
+    
+    this.currentAudioElement.onended = () => {
+      console.log(`TTS: ElevenLabs segment ${this.currentSegmentIndex + 1} completed`);
+      this.ttsLock = false;
+      this.currentAudioElement = null;
+      
+      if (!this.wasCanceledByUs) {
+        this._handleSegmentEnd();
+      }
+    };
+    
+    this.currentAudioElement.onerror = (event) => {
+      console.error('TTS: ElevenLabs audio error:', event);
+      this.ttsLock = false;
+      this.currentAudioElement = null;
+      
+      // Fall back to browser TTS on audio error
+      this._speakSegmentNow(text);
+    };
+    
+    // Start playback
+    this.currentAudioElement.play().catch(error => {
+      console.error('TTS: Failed to play ElevenLabs audio:', error);
+      this._speakSegmentNow(text);
+    });
+  }
+
   private async _speakSegmentNow(text: string) {
     if (!window.speechSynthesis) {
       console.error('Session: speechSynthesis not available');
@@ -626,6 +724,12 @@ export class SessionManager {
 
     // Wait for voices to load
     await this.voicesLoadedPromise;
+    
+    // Double-check if we were cancelled while waiting
+    if (this.wasCanceledByUs) {
+      console.log('TTS: Cancelled while waiting for voices');
+      return;
+    }
     
     // Double-check if we were cancelled while waiting
     if (this.wasCanceledByUs) {
@@ -698,6 +802,9 @@ export class SessionManager {
     // Ensure voices are loaded
     await this.voicesLoadedPromise;
     
+    // Ensure voices are loaded
+    await this.voicesLoadedPromise;
+    
     const voices = window.speechSynthesis.getVoices();
     
     ];
@@ -712,7 +819,6 @@ export class SessionManager {
       'Karen',
       'Daniel'
     ];
-    let selectedVoice = null;
     for (const voiceName of preferredVoices) {
       selectedVoice = voices.find(voice => voice.name.includes(voiceName));
       if (selectedVoice) break;
@@ -725,6 +831,8 @@ export class SessionManager {
     if (selectedVoice) {
       utterance.voice = selectedVoice;
       console.log(`TTS: Selected voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+    } else {
+      console.log(`TTS: Using default voice from ${voices.length} available voices`);
     } else {
       console.log(`TTS: Using default voice from ${voices.length} available voices`);
     } else {
