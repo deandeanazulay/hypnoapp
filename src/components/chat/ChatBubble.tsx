@@ -15,9 +15,10 @@ interface ChatBubbleProps {
   message: ChatMessage;
   onCopy: (content: string) => void;
   activeEgoState: string;
+  showOrbAsLiberoAvatar?: boolean;
 }
 
-export default function ChatBubble({ message, onCopy, activeEgoState }: ChatBubbleProps) {
+export default function ChatBubble({ message, onCopy, activeEgoState, showOrbAsLiberoAvatar = false }: ChatBubbleProps) {
   return (
     <div className={`flex items-start gap-4 mb-4 animate-slide-up ${
       message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
@@ -25,21 +26,26 @@ export default function ChatBubble({ message, onCopy, activeEgoState }: ChatBubb
       {/* Avatar */}
       <div className="flex-shrink-0">
         {message.role === 'user' ? (
-          <Orb
-            onTap={() => {}}
-            egoState={activeEgoState}
-            size={40}
-            variant="css"
-            className="border-2 border-white/20"
-          />
-        ) : (
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-lg ${
-            message.error
-              ? 'bg-gradient-to-br from-red-400 to-orange-400 border-red-300'
-              : 'bg-gradient-to-br from-purple-400 to-indigo-400 border-purple-300'
-          }`}>
-            <Bot size={16} className="text-black" />
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500/30 to-cyan-500/30 border-2 border-teal-400/50 flex items-center justify-center">
+            <User size={16} className="text-teal-400" />
           </div>
+        ) : (
+          showOrbAsLiberoAvatar ? (
+            <Orb
+              onTap={() => {}}
+              egoState={activeEgoState}
+              size={40}
+              variant="css"
+            />
+          ) : (
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-lg ${
+              message.error
+                ? 'bg-gradient-to-br from-red-400 to-orange-400 border-red-300'
+                : 'bg-gradient-to-br from-purple-400 to-indigo-400 border-purple-300'
+            }`}>
+              <Bot size={16} className="text-black" />
+            </div>
+          )
         )}
       </div>
       

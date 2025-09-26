@@ -264,34 +264,36 @@ export default function ChatScreen() {
     );
   }
 
-  return (
-    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <PageShell
-        body={
-          <div className="relative z-10 h-full overflow-hidden">
-            {/* Orb - Top aligned, responsive */}
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 pointer-events-auto">
-              <Orb
-                onTap={() => {}}
-                egoState={activeEgoState}
-                size={window.innerWidth < 768 ? 200 : 350}
-              >
-                <ChatMessages 
-                  messages={messages}
-                  onCopyMessage={copyMessage}
-                  activeEgoState={activeEgoState}
-                />
-              </Orb>
-            </div>
+  // Check if we have any real messages (excluding loading states)
+  const hasRealMessages = messages.some(msg => !msg.isLoading);
+      <div className="relative z-10 h-full overflow-hidden">
+        {/* Conditional Orb - Show at top when no messages */}
+        {!hasRealMessages && (
+          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20 pointer-events-auto">
+            <Orb
+              onTap={() => {}}
+              egoState={activeEgoState}
+              size={window.innerWidth < 768 ? 200 : 350}
+            />
           </div>
-        }
-      />
+        )}
+
+        {/* Messages Area */}
+        <div 
+          className="relative z-30 h-full overflow-y-auto"
+          style={{ 
+            paddingTop: hasRealMessages ? '80px' : (window.innerWidth < 768 ? '240px' : '390px'),
+            paddingBottom: '200px'
+          }}
+        >
+          <ChatMessages 
+            messages={messages}
+            onCopyMessage={copyMessage}
+            activeEgoState={activeEgoState}
+            showOrbAsLiberoAvatar={hasRealMessages}
+          />
+        </div>
+      </div>
 
       {/* Suggestions - Above Input Area */}
       <div className="fixed bottom-32 left-0 right-0 z-40">

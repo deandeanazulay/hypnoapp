@@ -14,9 +14,10 @@ interface ChatMessagesProps {
   messages: ChatMessage[];
   onCopyMessage: (content: string) => void;
   activeEgoState: string;
+  showOrbAsLiberoAvatar?: boolean;
 }
 
-export default function ChatMessages({ messages, onCopyMessage, activeEgoState }: ChatMessagesProps) {
+export default function ChatMessages({ messages, onCopyMessage, activeEgoState, showOrbAsLiberoAvatar = false }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -28,14 +29,15 @@ export default function ChatMessages({ messages, onCopyMessage, activeEgoState }
   }, [messages]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 bg-transparent">
-      <div className="max-w-3xl mx-auto py-8 space-y-4">
+    <div className="w-full px-4">
+      <div className="max-w-3xl mx-auto space-y-4">
         {messages.map((message, index) => (
           <div key={message.id} style={{ animationDelay: `${index * 100}ms` }}>
             <ChatBubble 
               message={message} 
               onCopy={onCopyMessage}
               activeEgoState={activeEgoState}
+              showOrbAsLiberoAvatar={showOrbAsLiberoAvatar}
             />
           </div>
         ))}
