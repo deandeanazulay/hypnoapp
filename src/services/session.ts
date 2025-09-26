@@ -115,35 +115,25 @@ export class SessionManager {
   }
 
   private async _initializeSession(userContext: any) {
-    // Add randomness to prevent identical scripts
-    const dynamicContext = {
-      ...userContext,
-      sessionId: `session_${Date.now()}`,
-      randomSeed: Math.random(),
-      timestamp: new Date().toISOString(),
-      variation: Math.floor(Math.random() * 3) + 1 // 1-3 for script variations
-    };
-    
     try {
-      console.log('Session: Requesting dynamic script from Gemini...');
-      this.scriptPlan = await getSessionScript(dynamicContext);
+      this.scriptPlan = await getSessionScript(userContext);
       
       // Only use fallback if Gemini completely failed
       if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
         console.log('Session: Gemini failed, using local fallback script');
-        this.scriptPlan = this._createProtocolBasedScript(dynamicContext);
+        this.scriptPlan = this._createProtocolBasedScript(userContext);
       } else {
         console.log(`Session: Using Gemini-generated script with ${this.scriptPlan.segments.length} segments`);
       }
     } catch (error: any) {
       console.log('Session: Script generation error, using fallback:', error.message);
-      this.scriptPlan = this._createProtocolBasedScript(dynamicContext);
+      this.scriptPlan = this._createProtocolBasedScript(userContext);
     }
 
     // Final validation - ensure segments exist
     if (!this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
       console.warn('Session: No segments after all attempts, creating emergency fallback');
-      this.scriptPlan = this._createEmergencyFallback(dynamicContext);
+      this.scriptPlan = this._createEmergencyFallback(userContext);
     }
 
     // Initialize segments array
@@ -152,9 +142,7 @@ export class SessionManager {
       text: segment.text,
       approxSec: segment.approxSec || 30,
       audio: null,
-      ttsProvider: 'browser-tts' as const,
-      isBuffered: false,
-      bufferPromise: undefined
+      ttsProvider: 'browser-tts' as const
     }));
     
     // Update state with total segments
@@ -316,12 +304,47 @@ export class SessionManager {
     return segments;
   }
 
-  private _adaptInductionMethod(method: string, goal: string): string {
+  private _getDynamicElements(variation: any, randomSeed: number) {
+    const timeOfDay = new Date().getHours();
+    const isEvening = timeOfDay >= 18 || timeOfDay <= 6;
+    
+    const openingPhrases = [
+      "Your transformation awaits in this sacred moment.",
+      "Feel the power of change flowing through this space.",
+      "This is your time for profound inner evolution.",
+      "Allow yourself to embrace the transformation ahead."
+    ];
+    
+    const transitionPhrases = [
+      "And now, going even deeper...",
+      "Feel yourself moving into the next phase...",
+      "As we continue this journey together...",
+      "Allow this transformation to deepen..."
+    ];
+    
+    const metaphors = [
+      isEvening ? "like the gentle descent of evening" : "like the rising of dawn",
+      "like roots growing deep into fertile earth",
+      "like light flowing through crystal",
+      "like waves washing over smooth stones"
+    ];
+    
+    const seedIndex = Math.floor(randomSeed * openingPhrases.length);
+    
+    return {
+      openingPhrase: openingPhrases[seedIndex],
+      transitionPhrase: transitionPhrases[seedIndex],
+      metaphor: metaphors[seedIndex],
+      timeContext: isEvening ? "evening" : "day"
+    };
+  }
+  
+  private _adaptInductionMethod(method: string, goal: string, dynamicElements?: any): string {
     const methods = {
-      progressive: `Let's begin with progressive relaxation. Starting with your toes, feel them relaxing completely. Now your feet, your ankles, your calves... Let this wave of relaxation flow up through your entire body as we work on ${goal}.`,
-      rapid: `Close your eyes now and take a deep breath. Hold it... and as you exhale, let your body drop into complete relaxation. With each word I speak, you go deeper, preparing your mind for transformation around ${goal}.`,
-      breath: `Focus on your breathing now. Breathe in slowly for 4 counts... hold for 4... exhale for 6... Feel your breath naturally guiding you into a receptive state for working on ${goal}.`,
-      visualization: `Imagine yourself in a place of perfect peace and safety. See it clearly in your mind... feel yourself there completely... This is your sanctuary for transformation around ${goal}.`
+      progressive: `Let's begin with progressive relaxation. ${dynamicElements?.transitionPhrase || 'Moving gently forward...'} Starting with your toes, feel them relaxing completely. Now your feet, your ankles, your calves... Let this wave of relaxation flow up through your entire body ${dynamicElements?.metaphor || 'like gentle waves'} as we work on ${goal}.`,
+      rapid: `Close your eyes now and take a deep breath. ${dynamicElements?.transitionPhrase || 'Going deeper now...'} Hold it... and as you exhale, let your body drop into complete relaxation. With each word I speak, you go deeper, preparing your mind for transformation around ${goal}.`,
+      breath: `Focus on your breathing now. ${dynamicElements?.transitionPhrase || 'Allow your breath to guide you...'} Breathe in slowly for 4 counts... hold for 4... exhale for 6... Feel your breath naturally guiding you into a receptive state for working on ${goal}.`,
+      visualization: `Imagine yourself in a place of perfect peace and safety. ${dynamicElements?.transitionPhrase || 'Feel yourself settling in...'} See it clearly in your mind... feel yourself there completely... This is your sanctuary for transformation around ${goal}.`
     };
     return methods[method as keyof typeof methods] || methods.progressive;
   }
@@ -432,6 +455,11 @@ export class SessionManager {
       ]
     };
   }
+
+  private async _prebufferInitialSegments() {
+    // Placeholder for prebuffering logic
+  }
+
   private _updateState(updates: Partial<SessionState>) {
     this._state = { ...this._state, ...updates };
     this._emit('state-change', this._state);
@@ -685,8 +713,7 @@ export class SessionManager {
         console.log(`TTS: Speaking segment ${this.currentSegmentIndex + 1} with browser TTS`);
         window.speechSynthesis.speak(utterance);
       }
-      }
-    )
+    }, 100);
   }
 
   private async _selectBestVoice(utterance: SpeechSynthesisUtterance) {
@@ -854,37 +881,4 @@ export class SessionManager {
   getCurrentState(): SessionState {
     return { ...this._state };
   }
-}
-
-// Factory function to create and start a session
-export function startSession(options: StartSessionOptions): SessionHandle {
-  const manager = new SessionManager();
-  
-  // Convert options to userContext format
-  const userContext = {
-    egoState: options.egoState,
-    goalId: options.goalId || options.goal?.name || 'transformation',
-    lengthSec: (options.lengthSec || 15 * 60), // Default 15 minutes
-    customProtocol: options.customProtocol,
-    protocol: options.protocol,
-    userPrefs: options.userPrefs,
-    action: options.action,
-    goal: options.goal,
-    method: options.method
-  };
-  
-  // Start initialization immediately
-  manager.initialize(userContext).catch(error => {
-    console.error('Session: Failed to initialize session:', error);
-  });
-  
-  return {
-    play: () => manager.play(),
-    pause: () => manager.pause(),
-    next: () => manager.next(),
-    prev: () => manager.prev(),
-    dispose: () => manager.dispose(),
-    on: (event: string, listener: Function) => manager.on(event, listener),
-    getCurrentState: () => manager.getCurrentState()
-  };
 }
