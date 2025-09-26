@@ -8,6 +8,7 @@ interface ChatMessage {
   timestamp: Date;
   isLoading?: boolean;
   error?: boolean;
+  audioUrl?: string;
 }
 
 interface ChatMessagesProps {
@@ -29,7 +30,7 @@ export default function ChatMessages({ messages, onCopyMessage, activeEgoState }
 
   return (
     <div className="w-full px-4 py-4">
-      <div className="max-w-3xl mx-auto space-y-4">
+      <div className="max-w-3xl mx-auto space-y-1">
         {messages.map((message, index) => (
           <div key={message.id} style={{ animationDelay: `${index * 100}ms` }}>
             <ChatBubble 

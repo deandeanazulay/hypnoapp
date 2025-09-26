@@ -18,6 +18,7 @@ interface ChatMessage {
   timestamp: Date;
   isLoading?: boolean;
   error?: boolean;
+  audioUrl?: string;
 }
 
 // Local storage key for chat persistence
@@ -57,6 +58,8 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecording, setHasRecording] = useState(false);
   const [isPlayingRecording, setIsPlayingRecording] = useState(false);
@@ -129,13 +132,15 @@ export default function ChatScreen() {
   // Send welcome message when screen loads and user is authenticated
   useEffect(() => {
     if (isAuthenticated && messages.length === 0 && loadMessagesFromStorage().length === 0) {
-      const welcomeMessage: ChatMessage = {
-        id: 'welcome-' + Date.now(),
-        role: 'libero',
-        content: `Hello! I'm Libero, your consciousness guide. I can help you with hypnotherapy sessions, ego state exploration, and transformation techniques.\n\nWhat would you like to explore today?`,
-        timestamp: new Date()
-      };
-      setMessages([welcomeMessage]);
+      setTimeout(() => {
+        const welcomeMessage: ChatMessage = {
+          id: 'welcome-' + Date.now(),
+          role: 'libero',
+          content: `Hello! I'm Libero, your consciousness guide. I can help you with hypnotherapy sessions, ego state exploration, and transformation techniques.\n\nWhat would you like to explore today?`,
+          timestamp: new Date()
+        };
+        setMessages([welcomeMessage]);
+      }, 1000);
     }
   }, [isAuthenticated, messages.length]);
 
@@ -217,6 +222,10 @@ export default function ChatScreen() {
       URL.revokeObjectURL(audio.src);
     };
     
+    audio.onerror = () => {
+      setIsPlayingRecording(false);
+    };
+    
     audio.play();
   };
 
@@ -224,25 +233,38 @@ export default function ChatScreen() {
     setHasRecording(false);
     setRecordedBlob(null);
     setRecordingDuration(0);
+    
+    // Stop recording if currently recording
+    if (isRecording && mediaRecorder) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      if (recordingTimer) {
+        clearInterval(recordingTimer);
+        setRecordingTimer(null);
+      }
+    }
   };
 
   const sendRecording = async () => {
     if (!recordedBlob) return;
     
     try {
-      // TODO: Implement voice transcription using OpenAI Whisper
-      // For now, send a placeholder message
+      // TODO: Implement OpenAI Whisper transcription
+      // For now, send a placeholder message with audio
       const transcribedText = `[Voice Message - ${formatTime(recordingDuration)}]`;
+      
+      // Create audio URL for playback
+      const audioUrl = URL.createObjectURL(recordedBlob);
       
       // Clear recording state
       deleteRecording();
       
-      // Send as regular message
-      await sendMessage(transcribedText);
+      // Send message with audio
+      await sendMessage(transcribedText, audioUrl);
       
       showToast({
         type: 'info',
-        message: 'Voice transcription coming soon - message sent as placeholder'
+        message: 'Voice transcription coming soon - audio saved with message'
       });
     } catch (error) {
       console.error('Failed to send voice message:', error);
@@ -259,14 +281,15 @@ export default function ChatScreen() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const sendMessage = async (message: string) => {
+  const sendMessage = async (message: string, audioUrl?: string) => {
     if (!message.trim()) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
       content: message,
-      timestamp: new Date()
+      timestamp: new Date(),
+      audioUrl
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -407,14 +430,16 @@ export default function ChatScreen() {
         timestamp: new Date()
       };
       setMessages([welcomeMessage]);
-    }, 100);
+    }, 500);
   };
 
   const suggestions = [
     'What ego state should I use today?',
     'Recommend a stress relief protocol',
     'How do I create a custom protocol?',
-    'Explain hypnotherapy basics'
+    'Explain hypnotherapy basics',
+    'Help me with confidence building',
+    'Show me sleep improvement techniques'
   ];
 
   if (!isAuthenticated) {
@@ -457,8 +482,8 @@ export default function ChatScreen() {
 
       <div className="relative z-10 h-full flex flex-col">
         {/* Center Orb - Show at top when no real conversation yet */}
-        <div className={`${!hasRealMessages ? 'flex-1 flex items-center justify-center' : 'flex-shrink-0 py-8 flex justify-center'} relative`}>
-          {!hasRealMessages && (
+        {!hasRealMessages && (
+          <div className="flex-1 flex items-center justify-center relative">
             <div className="text-center">
               <Orb
                 onTap={() => {}}
@@ -472,16 +497,19 @@ export default function ChatScreen() {
                 <p className="text-white/70 text-sm">Your consciousness guide is ready to help</p>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Messages Area - Only show when we have real messages */}
         {hasRealMessages && (
-          <div className="flex-1 flex flex-col min-h-0">
-            <ChatMessages
-              messages={messages}
-              onCopyMessage={copyMessage}
-            />
+          <div className="flex-1 flex flex-col min-h-0" style={{ paddingTop: '60px', paddingBottom: '200px' }}>
+            <div className="flex-1 overflow-y-auto">
+              <ChatMessages
+                messages={messages}
+                onCopyMessage={copyMessage}
+                activeEgoState={activeEgoState}
+              />
+            </div>
           </div>
         )}
       </div>
