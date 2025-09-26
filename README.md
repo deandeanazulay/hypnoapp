@@ -1,6 +1,8 @@
 # Libero - The Hypnotist That Frees Minds
 
-A lightweight hypnosis and consciousness transformation app built with React, Supabase, and modern web technologies.
+Transform limiting beliefs through archetypal hypnosis. Channel ancient wisdom. Unlock your authentic power.
+
+Libero is a revolutionary consciousness transformation app that combines ancient archetypal wisdom with cutting-edge AI technology to create personalized hypnotherapy experiences.
 
 ## 🎯 Project Philosophy: Lightweight Principles
 
