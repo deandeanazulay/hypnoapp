@@ -623,6 +623,8 @@ export class SessionManager {
         console.log(`TTS: Speaking segment ${this.currentSegmentIndex + 1} with browser TTS`);
         window.speechSynthesis.speak(utterance);
       }
+      }
+    )
   }
 
   private async _selectBestVoice(utterance: SpeechSynthesisUtterance) {
