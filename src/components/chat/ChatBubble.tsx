@@ -1,7 +1,6 @@
 import React from 'react';
 import { Bot, User, Copy } from 'lucide-react';
 import Orb from '../Orb';
-import Orb from '../Orb';
 
 interface ChatMessage {
   id: string;
