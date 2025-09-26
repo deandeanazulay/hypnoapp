@@ -40,11 +40,11 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
   };
 
   return (
-    <div className={`flex items-start gap-3 mb-4 animate-slide-up px-4 ${
-      message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+    <div className={`flex w-full mb-4 animate-slide-up px-4 ${
+      message.role === 'user' ? 'justify-end' : 'justify-start'
     }`}>
       {/* Avatar */}
-      <div className="flex-shrink-0 self-start">
+      <div className={`flex-shrink-0 ${message.role === 'user' ? 'order-2 ml-3' : 'order-1 mr-3'}`}>
         {message.role === 'libero' ? (
           <div className={`transition-all duration-300 ${isSpeaking ? 'animate-pulse' : ''}`}>
             <Orb
@@ -56,14 +56,14 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
             />
           </div>
         ) : (
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500/30 to-cyan-500/30 border-2 border-teal-400/50 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500/30 to-cyan-500/30 border-2 border-teal-400/50 flex items-center justify-center self-end">
             <User size={18} className="text-teal-400" />
           </div>
         )}
       </div>
       
       {/* Message Bubble */}
-      <div className={`max-w-[70%] ${
+      <div className={`max-w-[70%] flex flex-col ${message.role === 'user' ? 'order-1 items-end' : 'order-2 items-start'}`}>
         message.role === 'user' ? 'items-end' : 'items-start'
       } flex flex-col`}>
         <div className={`rounded-2xl p-4 border group relative ${
@@ -120,6 +120,8 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
         
         {/* Timestamp */}
         <div className={`text-xs text-white/50 mt-1 px-2 ${
+          message.role === 'user' ? 'text-right' : 'text-left'
+        }`}>
           message.role === 'user' ? 'text-right' : 'text-left'
         }`}>
           <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
