@@ -1,9 +1,5 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-// Import prompt templates
-import systemPromptTemplate from '../../src/prompts/sessionScript.system.txt?raw'
-import userPromptTemplate from '../../src/prompts/sessionScript.user.template.txt?raw'
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
