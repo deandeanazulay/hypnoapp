@@ -15,7 +15,9 @@ export interface SessionScript {
 
 export async function getSessionScript(userContext: any): Promise<SessionScript> {
   try {
-    console.log('ChatGPT: Generating script for:', userContext.goalName, 'with', userContext.egoState);
+    if (import.meta.env.DEV) {
+      console.log('ChatGPT: Generating script for:', userContext.goalName, 'with', userContext.egoState);
+    }
     
     // Add timestamp and randomness for unique scripts
     const enhancedContext = {

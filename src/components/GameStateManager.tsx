@@ -30,7 +30,9 @@ export function GameStateProvider({ children }: GameStateProviderProps) {
   // Fetch user profile data
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('[GAME_STATE] Fetching user profile for ID:', userId);
+      if (import.meta.env.DEV) {
+        console.log('[GAME_STATE] Fetching user profile for ID:', userId);
+      }
       setIsLoading(true);
       setError(null);
       
@@ -43,7 +45,9 @@ export function GameStateProvider({ children }: GameStateProviderProps) {
       if (error) {
         if (error.code === 'PGRST116') {
           // User profile doesn't exist, create it
-          console.log('[GAME_STATE] User profile not found, creating new profile');
+          if (import.meta.env.DEV) {
+            console.log('[GAME_STATE] User profile not found, creating new profile');
+          }
           await createUserProfile(userId);
           return;
         } else {
@@ -54,7 +58,9 @@ export function GameStateProvider({ children }: GameStateProviderProps) {
         }
       }
 
-      console.log('[GAME_STATE] User profile fetched successfully:', data);
+      if (import.meta.env.DEV) {
+        console.log('[GAME_STATE] User profile fetched successfully:', data);
+      }
       setUser(data);
       setIsLoading(false);
     } catch (err) {
@@ -67,7 +73,9 @@ export function GameStateProvider({ children }: GameStateProviderProps) {
   // Create new user profile
   const createUserProfile = async (userId: string) => {
     try {
-      console.log('[GAME_STATE] Creating user profile for ID:', userId);
+      if (import.meta.env.DEV) {
+        console.log('[GAME_STATE] Creating user profile for ID:', userId);
+      }
       
       const newProfile: Partial<UserProfile> = {
         id: userId,
@@ -130,7 +138,9 @@ export function GameStateProvider({ children }: GameStateProviderProps) {
     if (!user || !authUser?.id) return;
     
     try {
-      console.log('[GAME_STATE] Updating user profile:', updates);
+      if (import.meta.env.DEV) {
+        console.log('[GAME_STATE] Updating user profile:', updates);
+      }
       
       const { data, error } = await supabase
         .from('user_profiles')
@@ -175,7 +185,9 @@ export function GameStateProvider({ children }: GameStateProviderProps) {
     
     // Only increment if it's a new day
     if (lastSessionDate === today) {
-      console.log('[GAME_STATE] Session already completed today, not incrementing streak');
+      if (import.meta.env.DEV) {
+        console.log('[GAME_STATE] Session already completed today, not incrementing streak');
+      }
       return;
     }
 

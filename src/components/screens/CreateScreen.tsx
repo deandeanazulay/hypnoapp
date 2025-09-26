@@ -86,7 +86,9 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
         return;
       }
 
-      console.log('[CREATE] Protocol saved successfully:', data);
+      if (import.meta.env.DEV) {
+        console.log('[CREATE] Protocol saved successfully:', data);
+      }
       
       // Call the callback with the saved protocol data
       onProtocolCreate(data);

@@ -18,7 +18,9 @@ export function useSimpleAuth() {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('[AUTH] Initial session check:', { session, error });
+      if (import.meta.env.DEV) {
+        console.log('[AUTH] Initial session check:', { session, error });
+      }
       setState({
         user: session?.user ?? null,
         loading: false,
@@ -35,7 +37,9 @@ export function useSimpleAuth() {
 
     // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('[AUTH] Auth state changed:', { session });
+      if (import.meta.env.DEV) {
+        console.log('[AUTH] Auth state changed:', { session });
+      }
       setState(prev => ({
         ...prev,
         user: session?.user ?? null,

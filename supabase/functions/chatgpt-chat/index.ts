@@ -58,8 +58,10 @@ Deno.serve(async (req: Request) => {
   try {
     const { message, knowledgeBase, conversationHistory }: ChatRequest = await req.json();
 
-    console.log('ChatGPT Chat: Processing message:', message);
-    console.log('ChatGPT Chat: Knowledge base keys:', Object.keys(knowledgeBase || {}));
+    if (Deno.env.get('NODE_ENV') === 'development') {
+      console.log('ChatGPT Chat: Processing message:', message);
+      console.log('ChatGPT Chat: Knowledge base keys:', Object.keys(knowledgeBase || {}));
+    }
 
     // Get OpenAI API key
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -213,7 +215,9 @@ Try rephrasing your question or ask something simpler to test the connection.`,
       );
     }
 
-    console.log('ChatGPT Chat: Successfully generated response');
+    if (Deno.env.get('NODE_ENV') === 'development') {
+      console.log('ChatGPT Chat: Successfully generated response');
+    }
 
     return new Response(
       JSON.stringify({

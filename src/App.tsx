@@ -80,16 +80,22 @@ export default function App() {
 
   // Update landing page visibility when auth state changes
   useEffect(() => {
-    console.log('[APP] Auth effect triggered:', { authLoading, isAuthenticated });
+    if (import.meta.env.DEV) {
+      console.log('[APP] Auth effect triggered:', { authLoading, isAuthenticated });
+    }
     if (!authLoading) {
-      console.log('[APP] Setting showLanding to:', !isAuthenticated);
+      if (import.meta.env.DEV) {
+        console.log('[APP] Setting showLanding to:', !isAuthenticated);
+      }
       setShowLanding(!isAuthenticated);
     }
   }, [isAuthenticated, authLoading]);
 
   // Show loading screen while auth is loading
   if (authLoading) {
-    console.log('[APP] Auth loading state - showing spinner');
+    if (import.meta.env.DEV) {
+      console.log('[APP] Auth loading state - showing spinner');
+    }
     return (
       <div className="h-screen w-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -102,7 +108,9 @@ export default function App() {
 
   // Show landing page first
   if (showLanding) {
-    console.log('[APP] Showing landing page');
+    if (import.meta.env.DEV) {
+      console.log('[APP] Showing landing page');
+    }
     return (
       <div style={{ height: '100vh', overflow: 'hidden' }}>
         <LandingPage
@@ -113,7 +121,9 @@ export default function App() {
     );
   }
 
-  console.log('[APP] Showing main app');
+  if (import.meta.env.DEV) {
+    console.log('[APP] Showing main app');
+  }
 
   // Render current tab content
   const renderCurrentTab = () => {
@@ -155,36 +165,48 @@ export default function App() {
 
   // Event Handlers
   function handleEnterApp() {
-    console.log('[APP] handleEnterApp called');
+    if (import.meta.env.DEV) {
+      console.log('[APP] handleEnterApp called');
+    }
     setShowLanding(false);
   }
 
   function handleShowAuth() {
-    console.log('[APP] handleShowAuth called');
+    if (import.meta.env.DEV) {
+      console.log('[APP] handleShowAuth called');
+    }
     openModal('auth');
   }
 
   function handleOrbTap() {
-    console.log('[APP] Orb tapped, opening goal picker');
+    if (import.meta.env.DEV) {
+      console.log('[APP] Orb tapped, opening goal picker');
+    }
     setShowGoalPicker(true);
   }
 
   function handleGoalSelect(goal: any) {
-    console.log('[APP] Goal selected:', goal);
+    if (import.meta.env.DEV) {
+      console.log('[APP] Goal selected:', goal);
+    }
     setSelectedGoal(goal);
     setShowGoalPicker(false);
     setShowMethodPicker(true);
   }
 
   function handleMethodSelect(method: any) {
-    console.log('[APP] Method selected:', method);
+    if (import.meta.env.DEV) {
+      console.log('[APP] Method selected:', method);
+    }
     setSelectedMethod(method);
     setShowMethodPicker(false);
     setShowModePicker(true);
   }
 
   function handleModeSelect({ mode, duration }: any) {
-    console.log('[APP] Mode selected:', { mode, duration });
+    if (import.meta.env.DEV) {
+      console.log('[APP] Mode selected:', { mode, duration });
+    }
     
     const config = {
       egoState: activeEgoState,
@@ -230,10 +252,14 @@ export default function App() {
   }
 
   function handleProtocolCreate(protocol: any) {
-    console.log('[APP] Protocol created:', protocol);
+    if (import.meta.env.DEV) {
+      console.log('[APP] Protocol created:', protocol);
+    }
     
     if (!isAuthenticated) {
-      console.log('[APP] Not authenticated, showing auth modal');
+      if (import.meta.env.DEV) {
+        console.log('[APP] Not authenticated, showing auth modal');
+      }
       openModal('auth');
       showToast({
         type: 'warning',
@@ -254,10 +280,14 @@ export default function App() {
   }
 
   function handleFavoriteSelect(session: any) {
-    console.log('[APP] Favorite selected:', session);
+    if (import.meta.env.DEV) {
+      console.log('[APP] Favorite selected:', session);
+    }
     
     if (!isAuthenticated) {
-      console.log('[APP] Not authenticated, showing auth modal');
+      if (import.meta.env.DEV) {
+        console.log('[APP] Not authenticated, showing auth modal');
+      }
       openModal('auth');
       showToast({
         type: 'warning',
@@ -278,7 +308,9 @@ export default function App() {
   }
 
   function handleSessionComplete() {
-    console.log('[APP] Session completed');
+    if (import.meta.env.DEV) {
+      console.log('[APP] Session completed');
+    }
     setShowSessionWorld(false);
     setSelectedGoal(null);
     setSelectedMethod(null);
@@ -287,7 +319,9 @@ export default function App() {
   }
 
   function handleSessionCancel() {
-    console.log('[APP] Session cancelled');
+    if (import.meta.env.DEV) {
+      console.log('[APP] Session cancelled');
+    }
     setShowSessionWorld(false);
     setSelectedGoal(null);
     setSelectedMethod(null);

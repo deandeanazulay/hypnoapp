@@ -39,8 +39,9 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   const handlePointerDown = () => setIsPressed(true);
   const handlePointerUp = () => {
     setIsPressed(false);
-    console.log('[CSS-ORB] Tap detected, calling onTap');
-    console.log('[CSS-ORB] Tap detected, calling onTap');
+    if (import.meta.env.DEV) {
+      console.log('[CSS-ORB] Tap detected, calling onTap');
+    }
     onTap();
   };
   const handlePointerEnter = () => setIsHovering(true);
@@ -53,14 +54,18 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('[CSS-ORB] Click event triggered, calling onTap');
+    if (import.meta.env.DEV) {
+      console.log('[CSS-ORB] Click event triggered, calling onTap');
+    }
     onTap();
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('[CSS-ORB] Touch end event triggered, calling onTap');
+    if (import.meta.env.DEV) {
+      console.log('[CSS-ORB] Touch end event triggered, calling onTap');
+    }
     onTap();
   };
   // Calculate responsive sizing

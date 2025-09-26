@@ -73,7 +73,9 @@ class AnalyticsQueue {
 
     try {
       if (synchronous) {
-        // Use sendBeacon for synchronous sending (more reliable on page unload)
+            if (import.meta.env.DEV) {
+              console.log('Cache: Evicted ' + entry.key + ', freed ' + (entry.size / (1024 * 1024)).toFixed(2) + 'MB');
+            }
         if (navigator.sendBeacon) {
           const data = JSON.stringify({ events: eventsToSend });
           navigator.sendBeacon('/api/analytics', data);
@@ -82,8 +84,12 @@ class AnalyticsQueue {
         // Regular fetch for asynchronous sending
         await this.sendEvents(eventsToSend);
       }
-      
-      console.log('Analytics: Flushed ' + eventsToSend.length + ' events');
+        if (import.meta.env.DEV) {
+          console.log('Cache: Eviction complete. Freed ' + removedSize.toFixed(2) + 'MB');
+        }
+      if (import.meta.env.DEV) {
+        console.log('Analytics: Flushed ' + eventsToSend.length + ' events');
+      }
     } catch (error) {
       console.error('Analytics: Failed to send events:', error);
       // Re-add events to front of queue for retry

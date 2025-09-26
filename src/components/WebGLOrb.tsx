@@ -101,7 +101,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     initializeOrb();
     
     return () => {
-      console.log('[ORB] Component unmounting - cleaning up');
+      if (import.meta.env.DEV) {
+        console.log('[ORB] Component unmounting - cleaning up');
+      }
       disposeScene();
     };
   }, [webglSupported]); // Only depend on WebGL support
@@ -111,7 +113,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const canvas = rendererRef.current?.domElement;
     if (!canvas) return;
     
-    console.log('[ORB] Attaching event handlers to canvas, canvas pointer events:', canvas.style.pointerEvents);
+    if (import.meta.env.DEV) {
+      console.log('[ORB] Attaching event handlers to canvas, canvas pointer events:', canvas.style.pointerEvents);
+    }
     
     // Ensure canvas can receive events
     canvas.style.pointerEvents = 'auto';
@@ -204,7 +208,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const canvas = renderer.domElement;
     canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
-      console.log('[ORB] WebGL context lost');
+      if (import.meta.env.DEV) {
+        console.log('[ORB] WebGL context lost');
+      }
       setContextLost(true);
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
@@ -238,7 +244,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
     try {
       container.appendChild(canvas);
-      console.log('[ORB] Canvas appended to container');
+      if (import.meta.env.DEV) {
+        console.log('[ORB] Canvas appended to container');
+      }
     } catch (error) {
       console.error('[ORB] Error appending canvas:', error);
       return;
@@ -250,7 +258,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     // Start animation with delay to ensure everything is ready
     setTimeout(() => {
       if (isActiveRef.current && !contextLost) {
-        console.log('[ORB] Starting animation loop');
+        if (import.meta.env.DEV) {
+          console.log('[ORB] Starting animation loop');
+        }
         animate();
       }
     }, 50);
@@ -331,13 +341,17 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     // Store references for animation
     orbMesh.userData = { glowMesh1, pulseMesh, sphereGeometry, wireframeGeometry };
 
-    console.log('[ORB] Geometry initialized successfully');
+    if (import.meta.env.DEV) {
+      console.log('[ORB] Geometry initialized successfully');
+    }
   };
 
   const animate = () => {
     // Guard against inactive state
     if (!isActiveRef.current) {
-      console.log('[ORB] Animation stopped - component inactive');
+      if (import.meta.env.DEV) {
+        console.log('[ORB] Animation stopped - component inactive');
+      }
       return;
     }
     
@@ -522,7 +536,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   }, [egoState]);
 
   const disposeScene = () => {
-    console.log('[ORB] Disposing scene');
+    if (import.meta.env.DEV) {
+      console.log('[ORB] Disposing scene');
+    }
     
     // Stop animation
     isActiveRef.current = false;

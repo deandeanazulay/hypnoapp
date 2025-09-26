@@ -159,7 +159,9 @@ async function enforceCacheLimits(): Promise<void> {
  * Retrieves an item from the cache.
  */
 export async function get(key: string): Promise<{ data: Blob | string, meta: CacheMetadata } | null> {
-  console.log('Cache: Attempting to get key:', key);
+  if (import.meta.env.DEV) {
+    console.log('Cache: Attempting to get key:', key);
+  }
   
   try {
     const cache = await caches.open(CACHE_NAME);
@@ -188,7 +190,9 @@ export async function get(key: string): Promise<{ data: Blob | string, meta: Cac
  * Stores an item in the cache.
  */
 export async function set(key: string, data: Blob | string, meta: CacheMetadata): Promise<void> {
-  console.log('Cache: Setting key:', key, 'with data size:', meta.size);
+  if (import.meta.env.DEV) {
+    console.log('Cache: Setting key:', key, 'with data size:', meta.size);
+  }
   
   try {
     const cache = await caches.open(CACHE_NAME);
@@ -248,7 +252,9 @@ export async function clear(): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = store.clear();
       request.onsuccess = () => {
-        console.log('Cache: Cleared all cached items');
+        if (import.meta.env.DEV) {
+          console.log('Cache: Cleared all cached items');
+        }
         resolve();
       };
       request.onerror = () => reject(new Error('Failed to clear metadata'));

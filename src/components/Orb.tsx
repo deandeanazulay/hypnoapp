@@ -25,26 +25,36 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
 
   // Debug wrapper for onTap
   const debugOnTap = () => {
-    console.log('[ORB-WRAPPER] Orb tapped, calling onTap function');
-    console.log('[ORB-WRAPPER] onTap function exists:', typeof props.onTap);
+    if (import.meta.env.DEV) {
+      console.log('[ORB-WRAPPER] Orb tapped, calling onTap function');
+      console.log('[ORB-WRAPPER] onTap function exists:', typeof props.onTap);
+    }
     props.onTap();
   };
 
   // Detect WebGL support once and never change
   useEffect(() => {
-    console.log('[ORB-WRAPPER] Detecting WebGL support, variant:', variant);
+    if (import.meta.env.DEV) {
+      console.log('[ORB-WRAPPER] Detecting WebGL support, variant:', variant);
+    }
     
     if (variant === 'css') {
-      console.log('[ORB-WRAPPER] Forced CSS mode');
+      if (import.meta.env.DEV) {
+        console.log('[ORB-WRAPPER] Forced CSS mode');
+      }
       setUseWebGL(false);
     } else if (variant === 'webgl') {
       const supported = supportsWebGL();
-      console.log('[ORB-WRAPPER] Forced WebGL mode, supported:', supported);
+      if (import.meta.env.DEV) {
+        console.log('[ORB-WRAPPER] Forced WebGL mode, supported:', supported);
+      }
       setUseWebGL(supported);
     } else {
       // Auto: prefer WebGL if supported
       const supported = supportsWebGL();
-      console.log('[ORB-WRAPPER] Auto mode, WebGL supported:', supported);
+      if (import.meta.env.DEV) {
+        console.log('[ORB-WRAPPER] Auto mode, WebGL supported:', supported);
+      }
       setUseWebGL(supported);
     }
   }, []); // No dependencies - detect once only
