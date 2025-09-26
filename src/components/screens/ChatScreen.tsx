@@ -21,20 +21,18 @@ interface ChatMessage {
   audioUrl?: string;
 }
 
-// Local storage key for chat persistence
+// Local storage for chat persistence
 const CHAT_STORAGE_KEY = 'libero-chat-messages';
 
-// Save messages to local storage
 const saveMessagesToStorage = (messages: ChatMessage[]) => {
   try {
-    const messagesToSave = messages.filter(msg => !msg.isLoading); // Don't save loading states
+    const messagesToSave = messages.filter(msg => !msg.isLoading);
     localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messagesToSave));
   } catch (error) {
-    console.error('Failed to save chat messages to local storage:', error);
+    console.error('Failed to save chat messages:', error);
   }
 };
 
-// Load messages from local storage
 const loadMessagesFromStorage = (): ChatMessage[] => {
   try {
     const saved = localStorage.getItem(CHAT_STORAGE_KEY);
@@ -46,7 +44,7 @@ const loadMessagesFromStorage = (): ChatMessage[] => {
       }));
     }
   } catch (error) {
-    console.error('Failed to load chat messages from local storage:', error);
+    console.error('Failed to load chat messages:', error);
   }
   return [];
 };
@@ -58,6 +56,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -68,7 +67,7 @@ export default function ChatScreen() {
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // Load messages from local storage on mount
+  // Load messages from storage
   useEffect(() => {
     if (isAuthenticated) {
       const savedMessages = loadMessagesFromStorage();
@@ -78,7 +77,7 @@ export default function ChatScreen() {
     }
   }, [isAuthenticated]);
 
-  // Save messages to local storage whenever messages change
+  // Save messages to storage
   useEffect(() => {
     if (isAuthenticated && messages.length > 0) {
       saveMessagesToStorage(messages);
@@ -89,6 +88,11 @@ export default function ChatScreen() {
   useEffect(() => {
     const initializeRecorder = async () => {
       try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          console.warn('Media recording not supported');
+          return;
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const recorder = new MediaRecorder(stream);
         
@@ -111,22 +115,12 @@ export default function ChatScreen() {
         setMediaRecorder(recorder);
       } catch (error) {
         console.warn('Media recorder initialization failed:', error);
-        // Don't throw the error, just handle it gracefully
-        showToast({
-          type: 'error',
-          message: 'Microphone access denied. Please enable microphone permissions.'
-        });
-        // Set media recorder to null to indicate it's not available
         setMediaRecorder(null);
       }
     };
 
-    // Only try to initialize if authenticated and navigator.mediaDevices is available
-    if (isAuthenticated && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    if (isAuthenticated) {
       initializeRecorder();
-    } else if (isAuthenticated) {
-      console.warn('Media recording not supported in this browser');
-      setMediaRecorder(null);
     }
 
     return () => {
@@ -136,7 +130,7 @@ export default function ChatScreen() {
     };
   }, [isAuthenticated]);
 
-  // Send welcome message when screen loads and user is authenticated
+  // Send welcome message
   useEffect(() => {
     if (isAuthenticated && messages.length === 0 && loadMessagesFromStorage().length === 0) {
       setTimeout(() => {
@@ -189,6 +183,7 @@ export default function ChatScreen() {
     };
   };
 
+  // Voice recording functions
   const startRecording = () => {
     if (!mediaRecorder || isRecording) return;
     
@@ -197,7 +192,6 @@ export default function ChatScreen() {
     setHasRecording(false);
     setRecordedBlob(null);
     
-    // Start recording timer
     const timer = setInterval(() => {
       setRecordingDuration(prev => prev + 1);
     }, 1000);
@@ -241,7 +235,6 @@ export default function ChatScreen() {
     setRecordedBlob(null);
     setRecordingDuration(0);
     
-    // Stop recording if currently recording
     if (isRecording && mediaRecorder) {
       mediaRecorder.stop();
       setIsRecording(false);
@@ -257,21 +250,15 @@ export default function ChatScreen() {
     
     try {
       // TODO: Implement OpenAI Whisper transcription
-      // For now, send a placeholder message with audio
       const transcribedText = `[Voice Message - ${formatTime(recordingDuration)}]`;
-      
-      // Create audio URL for playback
       const audioUrl = URL.createObjectURL(recordedBlob);
       
-      // Clear recording state
       deleteRecording();
-      
-      // Send message with audio
       await sendMessage(transcribedText, audioUrl);
       
       showToast({
         type: 'info',
-        message: 'Voice transcription coming soon - audio saved with message'
+        message: 'Voice transcription coming soon - audio saved'
       });
     } catch (error) {
       console.error('Failed to send voice message:', error);
@@ -303,7 +290,7 @@ export default function ChatScreen() {
     setInputText('');
     setIsLoading(true);
 
-    // Add typing indicator
+    // Show typing indicator
     const typingMessage: ChatMessage = {
       id: 'typing-' + Date.now(),
       role: 'libero',
@@ -322,12 +309,15 @@ export default function ChatScreen() {
           'Chat service not configured',
           500,
           'MISSING_CONFIG',
-          'Supabase URL or API key missing',
+          'Supabase configuration missing',
           'Check environment variables'
         );
       }
 
       const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
+      
+      // Set speaking state for orb animation
+      setIsSpeaking(true);
       
       const response = await safeFetch(
         `${baseUrl}/functions/v1/chatgpt-chat`,
@@ -383,11 +373,9 @@ export default function ChatScreen() {
       setMessages(prev => [...prev, aiMessage]);
 
     } catch (error: any) {
-      // Remove typing indicator
       setMessages(prev => prev.filter(msg => !msg.isLoading));
       
       let userFriendlyMessage = 'Connection temporarily unavailable';
-      
       if (error instanceof ApiError) {
         userFriendlyMessage = getUserFriendlyErrorMessage(error);
       }
@@ -401,13 +389,10 @@ export default function ChatScreen() {
       };
 
       setMessages(prev => [...prev, errorResponse]);
-      
-      showToast({
-        type: 'error',
-        message: userFriendlyMessage
-      });
+      showToast({ type: 'error', message: userFriendlyMessage });
     } finally {
       setIsLoading(false);
+      setIsSpeaking(false);
     }
   };
 
@@ -424,11 +409,9 @@ export default function ChatScreen() {
   };
 
   const clearChat = () => {
-    // Clear from both state and local storage
     setMessages([]);
     localStorage.removeItem(CHAT_STORAGE_KEY);
     
-    // Re-add welcome message
     setTimeout(() => {
       const welcomeMessage: ChatMessage = {
         id: 'welcome-' + Date.now(),
@@ -478,7 +461,6 @@ export default function ChatScreen() {
     );
   }
 
-  // Check if we have any real messages (excluding loading states)
   const hasRealMessages = messages.some(msg => !msg.isLoading);
 
   return (
@@ -488,9 +470,9 @@ export default function ChatScreen() {
       </div>
 
       <div className="relative z-10 h-full flex flex-col">
-        {/* Center Orb - Show at top when no real conversation yet */}
+        {/* Welcome Orb - Show when no conversation */}
         {!hasRealMessages && (
-          <div className="flex-1 flex items-center justify-center relative">
+          <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <Orb
                 onTap={() => {}}
@@ -507,21 +489,20 @@ export default function ChatScreen() {
           </div>
         )}
 
-        {/* Messages Area - Only show when we have real messages */}
+        {/* Chat Messages */}
         {hasRealMessages && (
           <div className="flex-1 flex flex-col min-h-0" style={{ paddingTop: '60px', paddingBottom: '200px' }}>
-            <div className="flex-1 overflow-y-auto">
-              <ChatMessages
-                messages={messages}
-                onCopyMessage={copyMessage}
-                activeEgoState={activeEgoState}
-              />
-            </div>
+            <ChatMessages
+              messages={messages}
+              onCopyMessage={copyMessage}
+              activeEgoState={activeEgoState}
+              isSpeaking={isSpeaking}
+            />
           </div>
         )}
       </div>
 
-      {/* Suggestions - Above Input Area */}
+      {/* Quick Reply Suggestions */}
       <div className="fixed left-0 right-0 z-40" style={{ bottom: 'calc(var(--total-nav-height, 128px) + 140px)' }}>
         <ChatSuggestions
           suggestions={suggestions}
@@ -531,7 +512,7 @@ export default function ChatScreen() {
         />
       </div>
 
-      {/* Chat Input - Fixed at Bottom */}
+      {/* Chat Input */}
       <ChatInput
         inputText={inputText}
         onInputChange={setInputText}
