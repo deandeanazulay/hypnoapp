@@ -40,7 +40,7 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
   };
 
   return (
-    <div className={`flex gap-3 mb-4 animate-slide-up ${
+    <div className={`flex items-start gap-3 mb-4 animate-slide-up px-4 ${
       message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
     }`}>
       {/* Avatar */}
@@ -63,7 +63,7 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
       </div>
       
       {/* Message Bubble */}
-      <div className={`max-w-[75%] flex flex-col ${
+      <div className={`max-w-[70%] ${message.role === 'user' ? '' : 'flex-1'}`}>
         message.role === 'user' ? 'items-end' : 'items-start'
       }`}>
         <div className={`rounded-2xl p-4 backdrop-blur-xl border relative group shadow-lg ${
