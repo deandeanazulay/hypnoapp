@@ -393,7 +393,9 @@ Return ONLY the JSON object above - no markdown, no explanations.`
       )
     }
 
-    console.log('Successfully generated AI response')
+    if (Deno.env.get('NODE_ENV') === 'development') {
+      console.log('Successfully generated AI response')
+    }
 
     // For script generation, ensure response is valid JSON
     if (requestType === 'script_generation') {
