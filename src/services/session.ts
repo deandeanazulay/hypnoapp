@@ -447,7 +447,6 @@ export class SessionManager {
 
   private async _selectBestVoice(utterance: SpeechSynthesisUtterance) {
     // Ensure voices are loaded
-    await this.voicesLoadedPromise;
     
     const voices = window.speechSynthesis.getVoices();
     
