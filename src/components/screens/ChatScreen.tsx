@@ -274,9 +274,9 @@ export default function ChatScreen() {
 
       <PageShell
         body={
-          <div className="relative z-10 h-full">
-            {/* Orb - Fixed positioning for visibility */}
-            <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="relative z-10 h-full overflow-hidden">
+            {/* Orb - Top aligned, responsive */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 pointer-events-auto">
               <Orb
                 onTap={() => {}}
                 egoState={activeEgoState}
@@ -285,8 +285,14 @@ export default function ChatScreen() {
               />
             </div>
 
-            {/* Messages Area - With top padding to avoid orb */}
-            <div className="h-full relative z-30" style={{ paddingTop: window.innerWidth < 768 ? '220px' : '370px' }}>
+            {/* Messages Area - Properly spaced below orb */}
+            <div 
+              className="h-full relative z-30 flex flex-col"
+              style={{ 
+                paddingTop: window.innerWidth < 768 ? '220px' : '370px',
+                paddingBottom: '200px' // Space for suggestions + input
+              }}
+            >
               <ChatMessages 
                 messages={messages}
                 onCopyMessage={copyMessage}
@@ -297,7 +303,7 @@ export default function ChatScreen() {
       />
 
       {/* Suggestions - Above Input Area */}
-      <div className="fixed bottom-40 left-0 right-0 z-30">
+      <div className="fixed bottom-32 left-0 right-0 z-40">
         <ChatSuggestions
           suggestions={suggestions}
           onSuggestionClick={setInputText}
