@@ -19,34 +19,44 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     text = text.substring(0, 2900) + '...'; // Leave some buffer
   }
   
+  console.log('Voice: Attempting TTS for text length:', text.length);
+  
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.log('Voice: Supabase not configured, using browser TTS');
     return { provider: 'browser-tts' };
   }
 
   try {
     const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
     
+    console.log('Voice: Calling TTS function at:', `${baseUrl}/functions/v1/tts`);
+    
     const response = await fetch(`${baseUrl}/functions/v1/tts`, {
       method: "POST",
       headers: { 
         "content-type": "application/json",
-        "Authorization": `Bearer ${supabaseAnonKey}`
+        "Authorization": `Bearer ${supabaseAnonKey}`,
+        "x-client-info": "libero-app"
       },
       body: JSON.stringify({ 
         text: text.trim(), 
         voiceId: opts.voiceId || "pNInz6obpgDQGcFmaJgB",
-        model: "eleven_v3",
+        model: "eleven_multilingual_v2",
         stability: 0.5,
         similarity: 0.75,
         style: 0.0
       }),
     });
 
+    console.log('Voice: TTS response status:', response.status);
+    console.log('Voice: TTS response content-type:', response.headers.get("content-type"));
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('Voice: TTS function error:', response.status, errorText);
       throw new Error(`TTS function returned ${response.status}: ${errorText}`);
     }
 
@@ -55,6 +65,7 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     // Check if response is JSON (fallback signal)
     if (contentType.includes("application/json")) {
       const fallbackData = await response.json();
+      console.log('Voice: TTS returned fallback data:', fallbackData);
       return { provider: "browser-tts", error: fallbackData.reason };
     }
 
@@ -63,17 +74,21 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       const audioBlob = await response.blob();
       
       if (audioBlob.size === 0) {
+        console.log('Voice: Received empty audio blob');
         return { provider: 'browser-tts' };
       }
       
       const audioUrl = URL.createObjectURL(audioBlob);
+      console.log('Voice: Successfully received ElevenLabs audio, size:', audioBlob.size);
       return { provider: "elevenlabs", audioUrl };
     }
 
     // Unexpected content type
+    console.error('Voice: Unexpected content type:', contentType);
     throw new Error(`Unexpected content type: ${contentType}`);
 
   } catch (error: any) {
+    console.error('Voice: Error calling TTS function:', error.message);
     // Always fall back to browser TTS on error
     return { provider: 'browser-tts', error: error.message };
   }
