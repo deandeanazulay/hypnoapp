@@ -110,11 +110,25 @@ Deno.serve(async (req) => {
     }
 
     if (!elevenLabsResponse.ok) {
-      const errorText = await elevenLabsResponse.text();
-      console.error(`ElevenLabs API error ${elevenLabsResponse.status}:`, errorText);
+      let errorDetails = '';
+      try {
+        const errorData = await elevenLabsResponse.json();
+        errorDetails = JSON.stringify(errorData);
+        console.error(`ElevenLabs API error ${elevenLabsResponse.status}:`, errorData);
+      } catch {
+        errorDetails = await elevenLabsResponse.text();
+        console.error(`ElevenLabs API error ${elevenLabsResponse.status}:`, errorDetails);
+      }
+      
       return new Response(JSON.stringify({ 
         fallback: "browser-tts",
-        reason: `ElevenLabs API error ${elevenLabsResponse.status}: ${errorText}`
+        reason: `ElevenLabs API error ${elevenLabsResponse.status}: ${errorDetails}`,
+        details: {
+          status: elevenLabsResponse.status,
+          textLength: processedText.length,
+          voiceId: voiceId,
+          model: "eleven_flash_v2_5"
+        }
       }), {
         headers: { "content-type": "application/json", ...corsHeaders },
       });

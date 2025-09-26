@@ -17,6 +17,12 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
   const startTime = Date.now();
   console.log(`Voice: Synthesizing ${text.length} chars with voice ${opts.voiceId || 'default'} for ${opts.cacheKey || 'unknown segment'}`);
   
+  // Check character limit for ElevenLabs Flash v2.5 (3000 chars)
+  if (text.length > 3000) {
+    console.warn(`Voice: Text too long (${text.length} chars) for ElevenLabs Flash v2.5 (max 3000), truncating for ${opts.cacheKey || 'segment'}`);
+    text = text.substring(0, 2900) + '...'; // Leave some buffer
+  }
+  
   track('tts_synthesis_start', {
     textLength: text.length,
     voiceId: opts.voiceId,

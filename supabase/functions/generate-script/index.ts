@@ -280,8 +280,12 @@ Deno.serve(async (req) => {
 
   } catch (error: any) {
     console.error("Generate script error:", error);
-    const mockScript = getMockScript({ egoState: 'Guardian' });
-    return new Response(JSON.stringify(mockScript), {
+    return new Response(JSON.stringify({ 
+      error: "Script generation failed completely",
+      reason: error.message || 'Unknown error',
+      suggestion: "Check all API configurations and network connectivity"
+    }), {
+      status: 500,
       headers: { "content-type": "application/json", ...corsHeaders },
     });
   }

@@ -69,6 +69,7 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
     
   } catch (error) {
     console.warn('Gemini: Failed to generate script:', error);
-    throw error; // Let session.ts handle the fallback
+    // NO FALLBACK - Let caller handle the error
+    throw new Error(`Dynamic script generation failed: ${error.message}. Please check API configuration.`);
   }
 }
