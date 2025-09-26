@@ -297,7 +297,7 @@ export default function ChatScreen() {
       </div>
 
       {/* Suggestions - Above Input Area */}
-      <div className="fixed bottom-32 left-0 right-0 z-40">
+      <div className="fixed left-0 right-0 z-40" style={{ bottom: 'calc(var(--total-nav-height, 128px) + 120px)' }}>
         <ChatSuggestions
           suggestions={suggestions}
           onSuggestionClick={setInputText}
