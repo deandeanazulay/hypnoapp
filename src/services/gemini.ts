@@ -15,17 +15,28 @@ export interface SessionScript {
 
 export async function getSessionScript(userContext: any): Promise<SessionScript> {
   try {
-    console.log('Gemini: Generating dynamic script with context:', userContext);
+    if (import.meta.env.DEV) {
+      console.log('Gemini: Generating script for:', {
+        egoState: userContext.egoState,
+        goalId: userContext.goalId,
+        duration: userContext.lengthSec
+      });
+    }
     
     // Add timestamp and randomness for unique scripts
     const enhancedContext = {
       ...userContext,
       currentTime: new Date().toISOString(),
       sessionUniqueId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      promptVariation: Math.floor(Math.random() * 5) + 1
+      promptVariation: Math.floor(Math.random() * 5) + 1,
+      // Ensure all values are strings for script generation
+      egoState: String(userContext.egoState || 'guardian'),
+      goalId: String(userContext.goalId || 'transformation'),
+      actionName: String(userContext.actionName || 'transformation'),
+      goalName: String(userContext.goalName || 'personal growth'),
+      methodName: String(userContext.methodName || 'guided relaxation')
     };
     
-    console.log('Gemini: Generating script with context:', userContext);
     
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -64,12 +75,13 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
       throw new Error('No segments returned from API');
     }
 
-    console.log(`Gemini: ✅ Generated ${result.segments.length} unique segments`);
+    if (import.meta.env.DEV) {
+      console.log(`Gemini: Generated ${result.segments.length} segments`);
+    }
     return result;
     
   } catch (error) {
-    console.warn('Gemini: Failed to generate script:', error);
     // NO FALLBACK - Let caller handle the error
-    throw new Error(`Dynamic script generation failed: ${error.message}. Please check API configuration.`);
+    throw new Error(`Script generation failed: ${error.message}`);
   }
 }
