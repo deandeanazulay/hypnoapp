@@ -67,20 +67,20 @@ export class SessionManager {
       
       // Ensure we have valid segments
       if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
-        this.scriptPlan = this._createFallbackScript(userContext);
+        this.scriptPlan = this._createProtocolBasedScript(userContext);
       }
     } catch (error: any) {
-      this.scriptPlan = this._createFallbackScript(userContext);
+      this.scriptPlan = this._createProtocolBasedScript(userContext);
     }
 
     // Validate and ensure minimum segments
     if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
-      this.scriptPlan = this._createEmergencyFallback(userContext);
+      this.scriptPlan = this._createProtocolBasedScript(userContext);
     }
 
     // Final validation - must have at least 5 segments
     if (!this.scriptPlan.segments || this.scriptPlan.segments.length < 5) {
-      this.scriptPlan = this._createDeterministicFallback(userContext);
+      this.scriptPlan = this._createProtocolBasedScript(userContext);
     }
 
     // Initialize segments array
@@ -102,16 +102,115 @@ export class SessionManager {
     console.log(`Session: Ready with ${this.segments.length} segments`);
   }
 
-  private _createFallbackScript(userContext: any): any {
+  private _createProtocolBasedScript(userContext: any): any {
     // Advanced hypnosis script based on psychological principles
     const { egoState = 'guardian', goalId = 'transformation', lengthSec = 900 } = userContext;
+    const { customProtocol, protocol, userPrefs } = userContext;
     
     // Calculate timing based on speaking rate (150-200 words per minute for hypnosis)
     const wordsPerMinute = 160;
     const totalMinutes = lengthSec / 60;
     const totalWords = Math.floor(totalMinutes * wordsPerMinute);
     
-    // Sophisticated script structure (7-stage hypnosis protocol)
+    // Use actual protocol content if available
+    let scriptContent;
+    if (customProtocol && customProtocol.name) {
+      scriptContent = this._generateCustomProtocolScript(customProtocol, egoState, lengthSec);
+    } else if (protocol && protocol.script) {
+      scriptContent = this._generateFromProtocol(protocol, egoState, lengthSec);
+    } else {
+      scriptContent = this._generateGenericScript(egoState, goalId, lengthSec);
+    }
+    
+    return {
+      title: customProtocol?.name || protocol?.name || `${egoState} Transformation Protocol: ${goalId}`,
+      segments: scriptContent,
+      metadata: {
+        totalWords: totalWords,
+        avgWordsPerMinute: wordsPerMinute,
+        egoStateActivation: egoState,
+        transformationGoal: goalId,
+        durationSec: lengthSec,
+        techniqueUsed: customProtocol ? 'custom_protocol' : protocol ? 'predefined_protocol' : 'ego_state_integration'
+      }
+    };
+  }
+
+  private _generateCustomProtocolScript(customProtocol: any, egoState: string, lengthSec: number) {
+    // Use custom protocol content with proper timing
+    const segments = [
+      {
+        id: "welcome",
+        text: `Welcome to your ${customProtocol.name}. Today we're focusing on ${customProtocol.goals?.join(' and ') || 'transformation'}. Find a comfortable position and let's begin.`,
+        approxSec: Math.floor(lengthSec * 0.08)
+      },
+      {
+        id: "induction", 
+        text: this._adaptInductionMethod(customProtocol.induction || 'progressive', customProtocol.goals?.[0] || 'transformation'),
+        approxSec: Math.floor(lengthSec * 0.25)
+      },
+      {
+        id: "deepening",
+        text: customProtocol.deepener || this._generateDeepening(egoState, customProtocol.goals?.[0] || 'transformation'),
+        approxSec: Math.floor(lengthSec * 0.20)
+      },
+      {
+        id: "goal_work",
+        text: this._generateGoalSpecificWork(customProtocol.goals || ['transformation'], egoState),
+        approxSec: Math.floor(lengthSec * 0.30)
+      },
+      {
+        id: "integration", 
+        text: this._generateIntegration(egoState, customProtocol.goals?.join(' and ') || 'transformation'),
+        approxSec: Math.floor(lengthSec * 0.12)
+      },
+      {
+        id: "emergence",
+        text: this._generateEmergence(egoState, customProtocol.goals?.join(' and ') || 'transformation'),
+        approxSec: Math.floor(lengthSec * 0.05)
+      }
+    ];
+    return segments;
+  }
+
+  private _generateFromProtocol(protocol: any, egoState: string, lengthSec: number) {
+    // Use predefined protocol script with ego state adaptation
+    const segments = [
+      {
+        id: "welcome",
+        text: `Welcome to ${protocol.name}. ${protocol.description} Let's begin this ${lengthSec / 60}-minute journey.`,
+        approxSec: Math.floor(lengthSec * 0.08)
+      },
+      {
+        id: "induction",
+        text: this._adaptScriptToEgoState(protocol.script.induction, egoState),
+        approxSec: Math.floor(lengthSec * 0.25)
+      },
+      {
+        id: "deepening",
+        text: this._adaptScriptToEgoState(protocol.script.deepening, egoState),
+        approxSec: Math.floor(lengthSec * 0.20)
+      },
+      {
+        id: "suggestions",
+        text: this._adaptScriptToEgoState(protocol.script.suggestions, egoState),
+        approxSec: Math.floor(lengthSec * 0.30)
+      },
+      {
+        id: "integration",
+        text: this._generateIntegration(egoState, protocol.category || 'transformation'),
+        approxSec: Math.floor(lengthSec * 0.12)
+      },
+      {
+        id: "emergence",
+        text: protocol.script.emergence || this._generateEmergence(egoState, protocol.category || 'transformation'),
+        approxSec: Math.floor(lengthSec * 0.05)
+      }
+    ];
+    return segments;
+  }
+
+  private _generateGenericScript(egoState: string, goalId: string, lengthSec: number) {
     const segments = [
       {
         id: "pre_induction",
@@ -149,18 +248,34 @@ export class SessionManager {
         approxSec: Math.floor(lengthSec * 0.08) // 8% - return to consciousness
       }
     ];
-    
-    return {
-      title: `${egoState} Transformation Protocol: ${goalId}`,
-      segments,
-      metadata: {
-        totalWords: totalWords,
-        avgWordsPerMinute: wordsPerMinute,
-        egoStateActivation: egoState,
-        transformationGoal: goalId,
-        techniqueUsed: 'progressive_with_ego_state_integration'
-      }
+    return segments;
+  }
+
+  private _adaptInductionMethod(method: string, goal: string): string {
+    const methods = {
+      progressive: `Let's begin with progressive relaxation. Starting with your toes, feel them relaxing completely. Now your feet, your ankles, your calves... Let this wave of relaxation flow up through your entire body as we work on ${goal}.`,
+      rapid: `Close your eyes now and take a deep breath. Hold it... and as you exhale, let your body drop into complete relaxation. With each word I speak, you go deeper, preparing your mind for transformation around ${goal}.`,
+      breath: `Focus on your breathing now. Breathe in slowly for 4 counts... hold for 4... exhale for 6... Feel your breath naturally guiding you into a receptive state for working on ${goal}.`,
+      visualization: `Imagine yourself in a place of perfect peace and safety. See it clearly in your mind... feel yourself there completely... This is your sanctuary for transformation around ${goal}.`
     };
+    return methods[method as keyof typeof methods] || methods.progressive;
+  }
+
+  private _generateGoalSpecificWork(goals: string[], egoState: string): string {
+    const goalText = goals.join(' and ');
+    return `Your ${egoState} energy is now fully focused on ${goalText}. Feel these positive changes beginning at the deepest levels of your being. With each breath, your transformation around ${goalText} becomes stronger, more permanent, more natural. Your ${egoState} wisdom guides this process perfectly.`;
+  }
+
+  private _adaptScriptToEgoState(originalText: string, egoState: string): string {
+    const egoAdaptations = {
+      guardian: 'Feel completely safe and protected as ',
+      rebel: 'Feel your power to break free as ',
+      healer: 'Feel healing energy flowing as ',
+      explorer: 'Feel excitement for discovery as ',
+      mystic: 'Connect with infinite wisdom as '
+    };
+    const prefix = egoAdaptations[egoState as keyof typeof egoAdaptations] || '';
+    return prefix + originalText.toLowerCase();
   }
 
   // Advanced hypnosis script generation methods

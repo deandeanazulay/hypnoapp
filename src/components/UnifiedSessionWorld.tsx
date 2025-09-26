@@ -362,17 +362,19 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   }, [sessionState.timeRemaining, sessionState.totalTime, sessionState.isPlaying]);
 
   // Listen for segment changes and update conversation
-  useEffect(() => {
+        goalId: sessionConfig.goal?.id || sessionConfig.customProtocol?.goals?.[0] || sessionConfig.protocol?.category || 'transformation',
     if (sessionManagerState.scriptPlan && sessionManagerState.currentSegmentId) {
       const currentSegment = sessionManagerState.scriptPlan.segments?.find(
         (s: any) => s.id === sessionManagerState.currentSegmentId
       );
       
-      // Add current segment text to conversation
-      const aiMessage = { 
-        role: 'ai' as const, 
-        content: currentSegment.text, 
-        timestamp: Date.now() 
+        customProtocol: sessionConfig.customProtocol,
+        protocol: sessionConfig.protocol,
+        userPrefs: {
+          sessionType: sessionConfig.type,
+          selectedGoal: sessionConfig.goal,
+          selectedMethod: sessionConfig.method
+        }
       };
       
       setConversation(prev => {
