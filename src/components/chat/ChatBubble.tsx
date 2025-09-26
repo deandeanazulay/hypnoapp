@@ -42,6 +42,9 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
   return (
     <div className={`flex gap-2 w-full ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
       {/* AvatarCell - Fixed 60x60, no grow/shrink */}
+      {message.role === 'libero' && (
+        <div className="flex-shrink-0 w-[60px] h-[60px] relative">
+          {(message.isLoading || isSpeaking) && (
             <div className="transition-all duration-300" 
                  style={{ transform: 'translateX(-70px) translateY(-30px)' }}>
               <Orb
@@ -51,9 +54,9 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
                 variant="webgl"
               />
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
       
       {/* BubbleCell - Flexible width, max 78% */}
       <div className={`flex-1 max-w-[78%] flex flex-col ${message.role === 'user' ? 'self-end items-end' : 'self-start items-start'}`}>
@@ -72,7 +75,7 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                size={200}
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
               </div>
               <span className="text-sm text-white/80 font-medium">Libero is thinking...</span>
             </div>
