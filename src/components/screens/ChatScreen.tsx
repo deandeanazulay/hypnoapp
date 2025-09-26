@@ -281,13 +281,13 @@ export default function ChatScreen() {
                 onTap={() => {}}
                 egoState={activeEgoState}
                 size={window.innerWidth < 768 ? 200 : 350}
-              }}
-            >
-              <ChatMessages 
-                messages={messages}
-                onCopyMessage={copyMessage}
-                activeEgoState={activeEgoState}
-              />
+              >
+                <ChatMessages 
+                  messages={messages}
+                  onCopyMessage={copyMessage}
+                  activeEgoState={activeEgoState}
+                />
+              </Orb>
             </div>
           </div>
         }
