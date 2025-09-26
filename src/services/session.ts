@@ -1,12 +1,12 @@
 import { track } from './analytics';
-import { getSessionScript } from './gemini';
+import { SessionScript, getSessionScript } from './gemini';
 import { synthesizeSegment } from './voice';
 import { AI } from '../config/ai';
 
 // Debug flag for TTS logging - OFF by default
 const DEBUG_TTS = false;
 
-export interface ScriptSegment {
+export interface ScriptSegment { 
   id: string;
   text: string;
   approxSec?: number;
@@ -18,6 +18,8 @@ export interface ScriptSegment {
 export interface PlayableSegment extends ScriptSegment {
   audio: HTMLAudioElement | null;
   ttsProvider: 'elevenlabs' | 'browser-tts' | 'none';
+  isBuffered: boolean;
+  bufferPromise?: Promise<void>;
 }
 
 export interface SessionState {
@@ -28,6 +30,29 @@ export interface SessionState {
   scriptPlan: any;
   bufferedAhead: number;
   error: string | null;
+  isInitialized: boolean;
+}
+
+export interface StartSessionOptions {
+  egoState: string;
+  goalId?: string;
+  lengthSec?: number;
+  customProtocol?: any;
+  protocol?: any;
+  userPrefs?: any;
+  action?: any;
+  goal?: any;
+  method?: any;
+}
+
+export interface SessionHandle {
+  play: () => void;
+  pause: () => void;
+  next: () => void;
+  prev: () => void;
+  dispose: () => void;
+  on: (event: string, listener: Function) => void;
+  getCurrentState: () => SessionState;
 }
 
 export class SessionManager {
@@ -38,7 +63,8 @@ export class SessionManager {
     totalSegments: 0,
     scriptPlan: null,
     bufferedAhead: 0,
-    error: null
+    error: null,
+    isInitialized: false
   };
 
   private segments: (PlayableSegment | null)[] = [];
@@ -46,6 +72,8 @@ export class SessionManager {
   private eventListeners: Record<string, Function[]> = {};
   private currentSegmentIndex = 0;
   private scriptPlan: any = null;
+  private _initializationPromise: Promise<void> | null = null;
+  private _isInitialized = false;
   // Single-flight guards
   private ttsLock = false;
   private wasCanceledByUs = false;
@@ -54,36 +82,68 @@ export class SessionManager {
   private voicesLoadedPromise: Promise<void>;
 
   async initialize(userContext: any) {
+    if (this._initializationPromise) {
+      return this._initializationPromise;
+    }
+    
+    this._initializationPromise = this._doInitialization(userContext);
+    return this._initializationPromise;
+  }
+  
+  private async _doInitialization(userContext: any) {
     try {
+      console.log('Session: Starting initialization with dynamic script generation...');
+      
       // Initialize voices loading promise
       this.voicesLoadedPromise = this._ensureVoicesLoaded();
+      
+      // Generate dynamic script
       await this._initializeSession(userContext);
+      
+      // Pre-buffer first few segments
+      await this._prebufferInitialSegments();
+      
+      this._isInitialized = true;
+      this._updateState({ isInitialized: true });
+      
+      console.log('Session: Initialization complete, ready to play');
     } catch (error) {
       console.error('Session: Failed to initialize:', error);
+      this._updateState({ error: `Initialization failed: ${error.message}` });
       throw error;
     }
   }
 
   private async _initializeSession(userContext: any) {
+    // Add randomness to prevent identical scripts
+    const dynamicContext = {
+      ...userContext,
+      sessionId: `session_${Date.now()}`,
+      randomSeed: Math.random(),
+      timestamp: new Date().toISOString(),
+      variation: Math.floor(Math.random() * 3) + 1 // 1-3 for script variations
+    };
+    
     try {
-      this.scriptPlan = await getSessionScript(userContext);
+      console.log('Session: Requesting dynamic script from Gemini...');
+      this.scriptPlan = await getSessionScript(dynamicContext);
       
       // Only use fallback if Gemini completely failed
       if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
         console.log('Session: Gemini failed, using local fallback script');
-        this.scriptPlan = this._createProtocolBasedScript(userContext);
+        this.scriptPlan = this._createProtocolBasedScript(dynamicContext);
       } else {
         console.log(`Session: Using Gemini-generated script with ${this.scriptPlan.segments.length} segments`);
       }
     } catch (error: any) {
       console.log('Session: Script generation error, using fallback:', error.message);
-      this.scriptPlan = this._createProtocolBasedScript(userContext);
+      this.scriptPlan = this._createProtocolBasedScript(dynamicContext);
     }
 
     // Final validation - ensure segments exist
     if (!this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
       console.warn('Session: No segments after all attempts, creating emergency fallback');
-      this.scriptPlan = this._createEmergencyFallback(userContext);
+      this.scriptPlan = this._createEmergencyFallback(dynamicContext);
     }
 
     // Initialize segments array
@@ -92,7 +152,9 @@ export class SessionManager {
       text: segment.text,
       approxSec: segment.approxSec || 30,
       audio: null,
-      ttsProvider: 'browser-tts' as const
+      ttsProvider: 'browser-tts' as const,
+      isBuffered: false,
+      bufferPromise: undefined
     }));
     
     // Update state with total segments
@@ -769,11 +831,13 @@ export class SessionManager {
     
     // Clean up audio URLs to prevent memory leaks
     this.segments.forEach(segment => {
-      if (segment?.audio?.src) {
+      if (segment?.audio?.src.startsWith('blob:')) {
         URL.revokeObjectURL(segment.audio.src);
       }
     });
     
+    this._isInitialized = false;
+    this._initializationPromise = null;
     this.ttsLock = false;
     this.wasCanceledByUs = false;
     this.currentUtteranceId = null;
