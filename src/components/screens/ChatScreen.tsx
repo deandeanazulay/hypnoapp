@@ -384,9 +384,9 @@ export default function ChatScreen() {
         onInputChange={setInputText}
         onSubmit={handleSubmit}
         onClearChat={clearChat}
-        onToggleMic={() => setIsMuted(!isMuted)}
+        onToggleMic={() => setIsMicEnabled(!isMicEnabled)}
         isLoading={isLoading}
-        isMicEnabled={!isMuted}
+        isMicEnabled={isMicEnabled}
         isListening={false}
         isListening={isListening}
         hasMessages={messages.length > 1}
