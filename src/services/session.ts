@@ -127,7 +127,10 @@ export class SessionManager {
 
     } catch (error: any) {
       console.error('Session: Script generation FAILED - NO FALLBACK:', error.message);
-      throw new Error(`Script generation failed: ${error.message}. Please check API configuration.`);
+      this._updateState({ 
+        error: `Script generation failed: ${error.message}. Check GEMINI_API_KEY in Supabase settings.` 
+      });
+      throw error;
     }
 
     // Initialize segments array

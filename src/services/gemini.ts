@@ -73,6 +73,7 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
     
   } catch (error) {
     // NO FALLBACK - Let caller handle the error
-    throw new Error(`Script generation failed: ${error.message}`);
+    console.error('Script generation failed completely:', error);
+    throw new Error(`AI script generation failed: ${error.message}. Check GEMINI_API_KEY configuration.`);
   }
 }
