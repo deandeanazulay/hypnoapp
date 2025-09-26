@@ -710,8 +710,8 @@ function getContextualFallback(context: SessionContext, userMessage: string, req
 }
 
 function getMockScript(scriptParams: any): any {
-  const egoState = scriptParams?.egoState || 'guardian'
-  const goalId = scriptParams?.goalId || 'relaxation'
+  const egoState = String(scriptParams?.egoState || 'guardian')
+  const goalId = String(scriptParams?.goalId || scriptParams?.goalName || 'transformation')
   const lengthSec = scriptParams?.lengthSec || 900
   
   return {

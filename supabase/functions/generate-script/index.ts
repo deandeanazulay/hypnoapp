@@ -77,8 +77,8 @@ function getMockScript(userCtx: any): any {
   const totalMinutes = durationSec / 60;
   const wordsPerMinute = 150;
   const totalWords = Math.floor(totalMinutes * wordsPerMinute);
-  const egoState = userCtx?.egoState || 'guardian';
-  const goalId = userCtx?.goalId || 'transformation';
+  const egoState = String(userCtx?.egoState || 'guardian');
+  const goalId = String(userCtx?.goalId || userCtx?.goalName || 'transformation');
   const variation = userCtx?.variation || 1;
   const sessionId = userCtx?.sessionId || Date.now();
   
