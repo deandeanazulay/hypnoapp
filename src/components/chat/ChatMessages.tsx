@@ -14,10 +14,9 @@ interface ChatMessagesProps {
   messages: ChatMessage[];
   onCopyMessage: (content: string) => void;
   activeEgoState: string;
-  showOrbAsLiberoAvatar?: boolean;
 }
 
-export default function ChatMessages({ messages, onCopyMessage, activeEgoState, showOrbAsLiberoAvatar = false }: ChatMessagesProps) {
+export default function ChatMessages({ messages, onCopyMessage, activeEgoState }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -29,7 +28,7 @@ export default function ChatMessages({ messages, onCopyMessage, activeEgoState, 
   }, [messages]);
 
   return (
-    <div className="w-full px-4">
+    <div className="w-full px-4 py-4">
       <div className="max-w-3xl mx-auto space-y-4">
         {messages.map((message, index) => (
           <div key={message.id} style={{ animationDelay: `${index * 100}ms` }}>
@@ -37,7 +36,6 @@ export default function ChatMessages({ messages, onCopyMessage, activeEgoState, 
               message={message} 
               onCopy={onCopyMessage}
               activeEgoState={activeEgoState}
-              showOrbAsLiberoAvatar={showOrbAsLiberoAvatar}
             />
           </div>
         ))}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bot, User, Copy } from 'lucide-react';
 import Orb from '../Orb';
+import Orb from '../Orb';
 
 interface ChatMessage {
   id: string;
@@ -30,22 +31,15 @@ export default function ChatBubble({ message, onCopy, activeEgoState, showOrbAsL
             <User size={16} className="text-teal-400" />
           </div>
         ) : (
-          showOrbAsLiberoAvatar ? (
+          <div className="w-16 h-16 flex items-center justify-center">
             <Orb
               onTap={() => {}}
               egoState={activeEgoState}
-             size={150}
-              variant="css"
+              size={60}
+              variant="webgl"
+              className="orb-avatar"
             />
-          ) : (
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-lg ${
-              message.error
-                ? 'bg-gradient-to-br from-red-400 to-orange-400 border-red-300'
-                : 'bg-gradient-to-br from-purple-400 to-indigo-400 border-purple-300'
-            }`}>
-              <Bot size={16} className="text-black" />
-            </div>
-          )
+          </div>
         )}
       </div>
       

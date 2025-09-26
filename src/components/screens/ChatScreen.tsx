@@ -274,32 +274,26 @@ export default function ChatScreen() {
       </div>
 
       <div className="relative z-10 h-full overflow-hidden">
-        {/* Conditional Orb - Show at top when no messages */}
-        {!hasRealMessages && (
-          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20 pointer-events-auto">
-            <Orb
-              onTap={() => {}}
-              egoState={activeEgoState}
-              size={window.innerWidth < 768 ? 200 : 350}
-            />
-          </div>
-        )}
+        {/* Center Orb - Show at top when no real conversation yet */}
+        <div className="flex-1 flex items-center justify-center relative">
+          {!hasRealMessages && (
+            <div className="text-center">
+              <Orb
+                onTap={() => {}}
+                egoState={activeEgoState}
+                size={window.innerWidth < 768 ? 280 : 420}
+                variant="webgl"
+                afterglow={false}
+              />
+              <div className="mt-6">
+                <h2 className="text-white text-xl font-light mb-2">Chat with Libero</h2>
+                <p className="text-white/70 text-sm">Your consciousness guide is ready to help</p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Messages Area */}
-        <div 
-          className="relative z-30 h-full overflow-y-auto"
-          style={{ 
-            paddingTop: hasRealMessages ? '80px' : (window.innerWidth < 768 ? '240px' : '390px'),
-            paddingBottom: '200px'
-          }}
-        >
-          <ChatMessages 
-            messages={messages}
-            onCopyMessage={copyMessage}
-            activeEgoState={activeEgoState}
-            showOrbAsLiberoAvatar={hasRealMessages}
-          />
-        </div>
       </div>
 
       {/* Suggestions - Above Input Area */}
