@@ -143,7 +143,7 @@ Return ONLY the JSON object above - no markdown, no explanations.` }]
         ];
 
         console.log('Calling Gemini for script generation with JSON-only rules...')
-        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+       response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

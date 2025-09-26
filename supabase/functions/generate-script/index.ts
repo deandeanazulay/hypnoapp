@@ -227,7 +227,7 @@ Deno.serve(async (req) => {
     }
 
     // Google Gemini endpoint (key on query string)
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${apiKey}`;
 
     const body = {
       generationConfig: { 
