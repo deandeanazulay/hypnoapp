@@ -65,22 +65,22 @@ export class SessionManager {
     try {
       this.scriptPlan = await getSessionScript(userContext);
       
-      // Ensure we have valid segments
+      // Only use fallback if Gemini completely failed
       if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
+        console.log('Session: Gemini failed, using local fallback script');
         this.scriptPlan = this._createProtocolBasedScript(userContext);
+      } else {
+        console.log(`Session: Using Gemini-generated script with ${this.scriptPlan.segments.length} segments`);
       }
     } catch (error: any) {
+      console.log('Session: Script generation error, using fallback:', error.message);
       this.scriptPlan = this._createProtocolBasedScript(userContext);
     }
 
-    // Validate and ensure minimum segments
-    if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
-      this.scriptPlan = this._createProtocolBasedScript(userContext);
-    }
-
-    // Final validation - must have at least 5 segments
-    if (!this.scriptPlan.segments || this.scriptPlan.segments.length < 5) {
-      this.scriptPlan = this._createProtocolBasedScript(userContext);
+    // Final validation - ensure segments exist
+    if (!this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
+      console.warn('Session: No segments after all attempts, creating emergency fallback');
+      this.scriptPlan = this._createEmergencyFallback(userContext);
     }
 
     // Initialize segments array

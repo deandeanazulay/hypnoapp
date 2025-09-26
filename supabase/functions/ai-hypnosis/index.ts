@@ -101,15 +101,48 @@ Deno.serve(async (req: Request) => {
         const prompt = [
           {
             role: 'user',
-            parts: [{ text: JSON_ONLY_RULES + `
+          parts: [{ text: `You are a professional hypnotherapist creating a detailed script. Return ONLY a valid JSON object with this structure:
 
-Generate a ${scriptParams.lengthSec / 60}-minute hypnotherapy script:
-- Goal: ${scriptParams.goalId}
-- Ego State: ${scriptParams.egoState}  
-- User Level: ${scriptParams.level}
-- Locale: ${scriptParams.locale}
+{
+  "title": "Session Title",
+  "segments": [
+    {
+      "id": "segment_name", 
+      "text": "Complete hypnosis script text for this segment...",
+      "mood": "calming|deepening|transformative|energizing",
+      "voice": "female",
+      "sfx": "ambient|gentle|energy"
+    }
+  ],
+  "metadata": {
+    "durationSec": ${scriptParams.lengthSec},
+    "style": "hypnosis"
+  }
+}
 
-Return ONLY the JSON object - no other text.` }]
+CRITICAL REQUIREMENTS:
+- Total script must be exactly ${scriptParams.lengthSec / 60} minutes (${scriptParams.targetWords || Math.floor(scriptParams.lengthSec * 2.5)} words total)
+- Create 6-8 segments with realistic timing
+- Each segment should be ${Math.floor((scriptParams.targetWords || Math.floor(scriptParams.lengthSec * 2.5)) / 7)} words on average
+- Use ${scriptParams.egoState} archetypal energy throughout
+- Focus on goal: ${scriptParams.goalId}
+${scriptParams.userPrefs?.customProtocol ? `
+- This is a CUSTOM PROTOCOL: "${scriptParams.userPrefs.customProtocol.name}"
+- Specific goals: ${scriptParams.userPrefs.customProtocol.goals?.join(', ') || 'transformation'}
+- Use ${scriptParams.userPrefs.customProtocol.induction || 'progressive'} induction method
+- Custom notes: ${scriptParams.userPrefs.customProtocol.deepener || 'standard approach'}` : ''}
+
+SEGMENT STRUCTURE:
+1. Welcome (8% of time) - Introduce the session and goal
+2. Induction (25% of time) - Guide into hypnotic state
+3. Deepening (20% of time) - Deepen the trance
+4. Core Work (30% of time) - Main transformation work on the goal
+5. Integration (12% of time) - Lock in the changes
+6. Emergence (5% of time) - Return to full awareness
+
+Make each segment substantial and detailed. No short sentences - create full, rich hypnotic language that fills the time allocation.
+
+Return ONLY the JSON object above - no markdown, no explanations.` }]
           }
         ];
 

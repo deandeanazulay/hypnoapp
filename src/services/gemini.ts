@@ -37,6 +37,7 @@ export async function getSessionScript(params: GetSessionScriptParams): Promise<
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.log('Gemini: No Supabase config, using mock script');
     return getMockScriptPlan(params);
   }
 
@@ -44,33 +45,69 @@ export async function getSessionScript(params: GetSessionScriptParams): Promise<
   try {
     const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
     
-    const res = await fetch(`${baseUrl}/functions/v1/generate-script`, {
+    // Calculate proper word count for duration
+    const totalMinutes = params.lengthSec / 60;
+    const wordsPerMinute = 150; // Slower speaking rate for hypnosis
+    const totalWords = Math.floor(totalMinutes * wordsPerMinute);
+    
+    console.log(`Gemini: Requesting ${totalMinutes}-minute script (${totalWords} words) for ${params.egoState} ego state`);
+    
+    const res = await fetch(`${baseUrl}/functions/v1/ai-hypnosis`, {
       method: "POST",
       headers: { 
         "content-type": "application/json",
         "Authorization": `Bearer ${supabaseAnonKey}`
       },
       body: JSON.stringify({ 
-        userCtx: params, 
-        templates: {
-          induction: "Advanced progressive induction with archetypal activation",
-          deepener: "Multi-layer deepening using fractionation and ego state integration", 
-          emerge: "Confident emergence with transformation anchoring"
+        message: "Generate a complete hypnosis script",
+        sessionContext: {
+          egoState: params.egoState,
+          phase: 'preparation',
+          depth: 1,
+          breathing: 'rest',
+          userProfile: { level: params.level },
+          conversationHistory: [],
+          customProtocol: params.userPrefs?.customProtocol
+        },
+        requestType: 'script_generation',
+        scriptParams: {
+          goalId: params.goalId,
+          egoState: params.egoState,
+          lengthSec: params.lengthSec,
+          level: params.level,
+          streak: params.streak,
+          locale: params.locale,
+          userPrefs: params.userPrefs,
+          targetWords: totalWords,
+          wordsPerMinute: wordsPerMinute
         }
       }),
     });
 
     if (!res.ok) {
+      console.log(`Gemini: API error ${res.status}, using mock script`);
       return getMockScriptPlan(params);
     }
 
-    const json = await res.json();
-    const script = ScriptSchema.parse(json);
+    const data = await res.json();
     
+    if (data.response) {
+      try {
+        const scriptData = JSON.parse(data.response);
+        const script = ScriptSchema.parse(scriptData);
+        console.log(`Gemini: Successfully generated ${script.segments.length} segments`);
+        return script;
+      } catch (parseError) {
+        console.log('Gemini: Failed to parse script response, using mock');
+        return getMockScriptPlan(params);
+      }
+    }
     
-    return script;
+    console.log('Gemini: No response content, using mock script');
+    return getMockScriptPlan(params);
 
   } catch (error: any) {
+    console.log('Gemini: Network error, using mock script:', error.message);
     return getMockScriptPlan(params);
   }
 }
