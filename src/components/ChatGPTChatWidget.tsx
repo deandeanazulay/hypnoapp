@@ -173,27 +173,28 @@ export default function ChatGPTChatWidget({ isOpen, onClose }: ChatGPTChatWidget
     } catch (error: any) {
       let errorMessage = 'Failed to connect to ChatGPT API';
       
+      let userFriendlyErrorMessage = 'Failed to connect to ChatGPT API';
       if (error instanceof ApiError) {
-        errorMessage = getUserFriendlyErrorMessage(error);
-        console.error('Chat API error:', errorMessage);
+        userFriendlyErrorMessage = getUserFriendlyErrorMessage(error);
+        console.error('Chat API error:', userFriendlyErrorMessage);
       } else {
         console.error('Chat unexpected error:', error);
       }
       
-      const errorMessage: ChatMessage = {
+      const chatMessageError: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `❌ **API Connection Failed**\n\n${errorMessage}\n\n${error instanceof ApiError && error.suggestion ? `**Suggestion:** ${error.suggestion}` : '**Possible Solutions:**\n• Check OPENAI_API_KEY in Supabase Edge Functions\n• Verify internet connection\n• Try again in a few moments'}`,
+        content: `❌ **API Connection Failed**\n\n${userFriendlyErrorMessage}\n\n${error instanceof ApiError && error.suggestion ? `**Suggestion:** ${error.suggestion}` : '**Possible Solutions:**\n• Check OPENAI_API_KEY in Supabase Edge Functions\n• Verify internet connection\n• Try again in a few moments'}`,
         timestamp: new Date(),
         error: true
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, chatMessageError]);
       setApiStatus('error');
       
       showToast({
         type: 'error',
-        message: errorMessage
+        message: userFriendlyErrorMessage
       });
     } finally {
       setIsLoading(false);
