@@ -80,11 +80,11 @@ Deno.serve(async (req) => {
     // ElevenLabs API request body
     const elevenLabsBody = { 
       text: processedText,
-      model_id: "eleven_v3", // Latest ElevenLabs v3 model for quality
+      model_id: "eleven_multilingual_v2", // Use v3 model as requested
       voice_settings: {
-        stability: 0.75,     // Optimized for v3
-        similarity_boost: 0.85, // Higher quality for v3  
-        style: 0.4,          // Enhanced expressiveness in v3
+        stability: 0.5,      // Must be 0.0, 0.5, or 1.0 for v3 (0.5 = Natural)
+        similarity_boost: 0.8, // Keep reasonable for v3  
+        style: 0.0,          // Conservative for v3 stability
         use_speaker_boost: true
       },
       output_format: "mp3_44100_128" // High quality output
