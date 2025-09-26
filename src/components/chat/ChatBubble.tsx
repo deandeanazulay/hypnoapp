@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, User, Copy } from 'lucide-react';
+import { User, Copy } from 'lucide-react';
 import Orb from '../Orb';
 
 interface ChatMessage {
@@ -15,27 +15,26 @@ interface ChatBubbleProps {
   message: ChatMessage;
   onCopy: (content: string) => void;
   activeEgoState: string;
-  showOrbAsLiberoAvatar?: boolean;
 }
 
-export default function ChatBubble({ message, onCopy, activeEgoState, showOrbAsLiberoAvatar = false }: ChatBubbleProps) {
+export default function ChatBubble({ message, onCopy, activeEgoState }: ChatBubbleProps) {
   return (
-    <div className={`flex items-start gap-4 mb-4 animate-slide-up ${
+    <div className={`flex items-start gap-3 mb-4 animate-slide-up ${
       message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
     }`}>
       {/* Avatar */}
       <div className="flex-shrink-0">
         {message.role === 'user' ? (
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500/30 to-cyan-500/30 border-2 border-teal-400/50 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500/30 to-cyan-500/30 border-2 border-teal-400/50 flex items-center justify-center">
             <User size={16} className="text-teal-400" />
           </div>
         ) : (
+          /* Libero Orb Avatar - Fixed 60px size */
           <Orb
             onTap={() => {}}
             egoState={activeEgoState}
-            size={250}
+            size={60}
             variant="webgl"
-            className="flex-shrink-0"
           />
         )}
       </div>

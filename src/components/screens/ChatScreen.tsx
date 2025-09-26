@@ -57,8 +57,13 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isMicEnabled, setIsMicEnabled] = useState(true);
-  const [isListening, setIsListening] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [hasRecording, setHasRecording] = useState(false);
+  const [isPlayingRecording, setIsPlayingRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Load messages from local storage on mount
   useEffect(() => {
@@ -76,6 +81,50 @@ export default function ChatScreen() {
       saveMessagesToStorage(messages);
     }
   }, [messages, isAuthenticated]);
+
+  // Initialize media recorder
+  useEffect(() => {
+    const initializeRecorder = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            setRecordedBlob(event.data);
+            setHasRecording(true);
+          }
+        };
+        
+        recorder.onstop = () => {
+          stream.getTracks().forEach(track => track.stop());
+          setIsRecording(false);
+          if (recordingTimer) {
+            clearInterval(recordingTimer);
+            setRecordingTimer(null);
+          }
+        };
+        
+        setMediaRecorder(recorder);
+      } catch (error) {
+        console.error('Failed to initialize media recorder:', error);
+        showToast({
+          type: 'error',
+          message: 'Microphone access denied. Please enable microphone permissions.'
+        });
+      }
+    };
+
+    if (isAuthenticated) {
+      initializeRecorder();
+    }
+
+    return () => {
+      if (recordingTimer) {
+        clearInterval(recordingTimer);
+      }
+    };
+  }, [isAuthenticated]);
 
   // Send welcome message when screen loads and user is authenticated
   useEffect(() => {
@@ -126,6 +175,88 @@ export default function ChatScreen() {
         timeOfDay: new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'
       }
     };
+  };
+
+  const startRecording = () => {
+    if (!mediaRecorder || isRecording) return;
+    
+    setIsRecording(true);
+    setRecordingDuration(0);
+    setHasRecording(false);
+    setRecordedBlob(null);
+    
+    // Start recording timer
+    const timer = setInterval(() => {
+      setRecordingDuration(prev => prev + 1);
+    }, 1000);
+    setRecordingTimer(timer);
+    
+    mediaRecorder.start();
+  };
+
+  const stopRecording = () => {
+    if (!mediaRecorder || !isRecording) return;
+    
+    mediaRecorder.stop();
+    setIsRecording(false);
+    
+    if (recordingTimer) {
+      clearInterval(recordingTimer);
+      setRecordingTimer(null);
+    }
+  };
+
+  const playRecording = () => {
+    if (!recordedBlob) return;
+    
+    const audio = new Audio(URL.createObjectURL(recordedBlob));
+    setIsPlayingRecording(true);
+    
+    audio.onended = () => {
+      setIsPlayingRecording(false);
+      URL.revokeObjectURL(audio.src);
+    };
+    
+    audio.play();
+  };
+
+  const deleteRecording = () => {
+    setHasRecording(false);
+    setRecordedBlob(null);
+    setRecordingDuration(0);
+  };
+
+  const sendRecording = async () => {
+    if (!recordedBlob) return;
+    
+    try {
+      // TODO: Implement voice transcription using OpenAI Whisper
+      // For now, send a placeholder message
+      const transcribedText = `[Voice Message - ${formatTime(recordingDuration)}]`;
+      
+      // Clear recording state
+      deleteRecording();
+      
+      // Send as regular message
+      await sendMessage(transcribedText);
+      
+      showToast({
+        type: 'info',
+        message: 'Voice transcription coming soon - message sent as placeholder'
+      });
+    } catch (error) {
+      console.error('Failed to send voice message:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to send voice message'
+      });
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const sendMessage = async (message: string) => {
@@ -279,18 +410,6 @@ export default function ChatScreen() {
     }, 100);
   };
 
-  const toggleMicrophone = () => {
-    if (isListening) {
-      // Stop listening
-      setIsListening(false);
-      // TODO: Implement speech recognition stop
-    } else {
-      // Start listening
-      setIsListening(true);
-      // TODO: Implement speech recognition start
-    }
-  };
-
   const suggestions = [
     'What ego state should I use today?',
     'Recommend a stress relief protocol',
@@ -357,11 +476,16 @@ export default function ChatScreen() {
         </div>
 
         {/* Messages Area - Only show when we have real messages */}
-        {hasRealMessages && (
+              onStartRecording={startRecording}
+              onStopRecording={stopRecording}
+              onPlayRecording={playRecording}
+              onDeleteRecording={deleteRecording}
+              onSendRecording={sendRecording}
           <div className="flex-1 min-h-0 overflow-y-auto pb-4">
-            <ChatMessages
-              messages={messages}
-              onCopyMessage={copyMessage}
+              isRecording={isRecording}
+              hasRecording={hasRecording}
+              isPlayingRecording={isPlayingRecording}
+              recordingDuration={recordingDuration}
               activeEgoState={activeEgoState}
             />
           </div>
