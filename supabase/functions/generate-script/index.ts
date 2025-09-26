@@ -21,47 +21,6 @@ const Script = z.object({
   }).optional(),
 });
 
-const SYSTEM_RULES = `
-You are a professional hypnotherapist creating detailed, timed hypnosis scripts. 
-
-CRITICAL: Create unique, varied content every time. Never repeat the same phrases or patterns. Use the current timestamp and session context to ensure complete uniqueness.
-
-Return JSON ONLY. No markdown, no code fences, no explanatory text.
-
-Schema:
-{
-  "title": "string",
-  "segments": [
-    {
-      "id": "segment_name",
-      "text": "Complete, unique hypnosis script text that takes the allocated time to speak...",
-      "mood": "calming|deepening|transformative|energizing", 
-      "voice": "female",
-      "sfx": "ambient|gentle|energy"
-    }
-  ],
-  "metadata": {
-    "durationSec": [DURATION],
-    "style": "hypnosis",
-    "wordsPerMinute": 150,
-    "totalWords": [TOTAL_WORDS]
-  }
-}
-
-Constraints:
-- Each segment must have SUBSTANTIAL text (200-500 words) to fill the allocated time
-- Speaking rate is 150 words per minute - calculate text length accordingly
-- Use proper hypnotic language patterns and pacing
-- Include natural pauses, breathing cues, and progression
-- Focus on the specific goals and ego state provided
-- Make the script engaging and transformative, not generic
-- VARY the content based on timestamp, user context, and random elements - NO TWO SCRIPTS SHOULD BE THE SAME
-- Never use identical phrases or structures between sessions
-- Incorporate unique metaphors, imagery, and suggestions each time
-- Use the sessionUniqueId and promptVariation to create completely different content
-- Reference the current time and make the script feel fresh and personalized
-`;
-
 // robust extractor for when APIs wrap output
 function extractJson(raw: string) {
   try { return JSON.parse(raw); } catch {}
@@ -210,6 +169,68 @@ function generateRichText(egoState: string, goalName: string, actionName: string
   return baseText;
 }
 
+// New function to dynamically build the system prompt
+function buildSystemPrompt(userCtx: any): string {
+  const egoState = String(userCtx?.egoState || 'guardian');
+  const goalName = String(userCtx?.goalName || userCtx?.goalId || 'personal transformation');
+  const durationSec = Number(userCtx?.lengthSec) || 600;
+  const totalMinutes = durationSec / 60;
+  const wordsPerMinute = 150;
+  const totalWords = Math.floor(totalMinutes * wordsPerMinute);
+
+  const customProtocolSection = userCtx.customProtocol ? `
+- This is a CUSTOM PROTOCOL: "${userCtx.customProtocol.name}"
+- Specific goals: ${userCtx.customProtocol.goals?.join(', ') || 'transformation'}
+- Use ${userCtx.customProtocol.induction || 'progressive'} induction method
+- Custom notes: ${userCtx.customProtocol.deepener || 'standard approach'}` : '';
+
+  return `You are a professional hypnotherapist creating detailed, timed hypnosis scripts.
+
+CRITICAL: Create unique, varied content every time. Never repeat the same phrases or patterns. Use the current timestamp and session context to ensure complete uniqueness.
+
+Return JSON ONLY. No markdown, no code fences, no explanatory text.
+
+Schema:
+{
+  "title": "string",
+  "segments": [
+    {
+      "id": "segment_name",
+      "text": "Complete, unique hypnosis script text that takes the allocated time to speak...",
+      "mood": "calming|deepening|transformative|energizing",
+      "voice": "female",
+      "sfx": "ambient|gentle|energy"
+    }
+  ],
+  "metadata": {
+    "durationSec": ${durationSec},
+    "style": "hypnosis",
+    "wordsPerMinute": ${wordsPerMinute},
+    "totalWords": ${totalWords}
+  }
+}
+
+Constraints:
+- Total script must be exactly ${totalMinutes} minutes (${totalWords} words total)
+- Create 6-8 segments with realistic timing
+- Each segment should be approximately ${Math.floor(totalWords / 7)} words on average
+- Use ${egoState} archetypal energy throughout
+- Focus on goal: ${goalName}
+${customProtocolSection}
+
+SEGMENT STRUCTURE:
+1. Welcome (8% of time) - Introduce the session and goal
+2. Induction (25% of time) - Guide into hypnotic state
+3. Deepening (20% of time) - Deepen the trance
+4. Core Work (30% of time) - Main transformation work on the goal
+5. Integration (12% of time) - Lock in the changes
+6. Emergence (5% of time) - Return to full awareness
+
+Make each segment substantial and detailed. No short sentences - create full, rich hypnotic language that fills the time allocation.
+
+Return ONLY the JSON object above - no markdown, no explanations.`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { 
@@ -289,11 +310,14 @@ Deno.serve(async (req) => {
     // OpenAI ChatGPT endpoint
     const url = 'https://api.openai.com/v1/chat/completions';
 
+    // Dynamically build the system prompt here
+    const dynamicSystemPrompt = buildSystemPrompt(userCtx);
+
     const body = {
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: SYSTEM_RULES },
-        { role: 'user', content: JSON.stringify({ userCtx, templates }) }
+        { role: 'system', content: dynamicSystemPrompt },
+        { role: 'user', content: `Generate script for: ${userCtx.goalName || userCtx.goalId} using ${userCtx.egoState} energy` }
       ],
       response_format: { type: 'json_object' },
       temperature: 0.3,
