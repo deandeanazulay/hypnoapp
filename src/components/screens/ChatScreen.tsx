@@ -110,16 +110,23 @@ export default function ChatScreen() {
         
         setMediaRecorder(recorder);
       } catch (error) {
-        console.error('Failed to initialize media recorder:', error);
+        console.warn('Media recorder initialization failed:', error);
+        // Don't throw the error, just handle it gracefully
         showToast({
           type: 'error',
           message: 'Microphone access denied. Please enable microphone permissions.'
         });
+        // Set media recorder to null to indicate it's not available
+        setMediaRecorder(null);
       }
     };
 
-    if (isAuthenticated) {
+    // Only try to initialize if authenticated and navigator.mediaDevices is available
+    if (isAuthenticated && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       initializeRecorder();
+    } else if (isAuthenticated) {
+      console.warn('Media recording not supported in this browser');
+      setMediaRecorder(null);
     }
 
     return () => {
