@@ -281,7 +281,7 @@ export default function ChatScreen() {
               <Orb
                 onTap={() => {}}
                 egoState={activeEgoState}
-                size={200}
+                size={350}
                 variant="webgl"
               />
             </div>
