@@ -211,17 +211,77 @@ function generateRichText(egoState: string, goalName: string, actionName: string
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
+  }
+  
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({
+        error: "Method not allowed",
+        code: "METHOD_NOT_ALLOWED",
+        details: "Only POST requests are supported"
+      }), 
+      { 
+        status: 405, 
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      }
+    );
+  }
 
   try {
-    const { userCtx, templates } = await req.json();
+    let requestData;
+    try {
+      requestData = await req.json();
+    } catch (parseError) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid JSON in request body",
+          code: "INVALID_JSON",
+          details: parseError.message
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        }
+      );
+    }
+
+    const { userCtx, templates } = requestData;
+
+    // Validate required fields
+    if (!userCtx) {
+      return new Response(
+        JSON.stringify({
+          error: "Missing required field: userCtx",
+          code: "MISSING_USERCTX",
+          details: "userCtx object is required for script generation"
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        }
+      );
+    }
 
     const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) {
       console.warn("OPENAI_API_KEY not configured, using mock script");
       const mockScript = getMockScript(userCtx);
       return new Response(JSON.stringify(mockScript), {
+        status: 200,
         headers: { "content-type": "application/json", ...corsHeaders },
       });
     }
@@ -252,12 +312,16 @@ Deno.serve(async (req) => {
     if (!res.ok) {
       console.warn(`OpenAI API error ${res.status}, using mock script`);
       return new Response(JSON.stringify({ 
-        error: `OpenAI API error: ${res.status}`,
-        reason: 'API_ERROR',
+        error: "OpenAI API error",
+        code: "OPENAI_API_ERROR",
+        details: `API returned status ${res.status}`,
         suggestion: 'Check OPENAI_API_KEY configuration'
       }), {
         status: 500,
-        headers: { "content-type": "application/json", ...corsHeaders },
+        headers: { 
+          "content-type": "application/json", 
+          ...corsHeaders 
+        },
       });
     }
 
@@ -272,12 +336,16 @@ Deno.serve(async (req) => {
     } catch {
       console.warn("Failed to extract JSON from ChatGPT response, using mock script");
       return new Response(JSON.stringify({ 
-        error: 'Failed to parse AI response',
-        reason: 'PARSE_ERROR',
+        error: "Failed to parse AI response",
+        code: "PARSE_ERROR",
+        details: "AI returned invalid JSON format",
         suggestion: 'AI returned invalid JSON format'
       }), {
         status: 500,
-        headers: { "content-type": "application/json", ...corsHeaders },
+        headers: { 
+          "content-type": "application/json", 
+          ...corsHeaders 
+        },
       });
     }
 
@@ -289,13 +357,16 @@ Deno.serve(async (req) => {
     } catch (validationError) {
       console.warn("Script validation failed, using mock script:", validationError);
       return new Response(JSON.stringify({ 
-        error: 'Script validation failed',
-        reason: 'VALIDATION_ERROR',
+        error: "Script validation failed",
+        code: "VALIDATION_ERROR",
         details: validationError.message,
         suggestion: 'AI response did not match expected script format'
       }), {
         status: 500,
-        headers: { "content-type": "application/json", ...corsHeaders },
+        headers: { 
+          "content-type": "application/json", 
+          ...corsHeaders 
+        },
       });
     }
 
@@ -306,6 +377,7 @@ Deno.serve(async (req) => {
     console.warn("Generate script failed, returning emergency script:", error.message);
     const emergencyScript = getEmergencyScript(userCtx || {});
     return new Response(JSON.stringify(emergencyScript), {
+      status: 200,
       headers: { "content-type": "application/json", ...corsHeaders },
     });
   }

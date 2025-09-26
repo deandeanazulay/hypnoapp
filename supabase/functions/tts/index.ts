@@ -24,10 +24,20 @@ Deno.serve(async (req: Request) => {
   }
 
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', {
-      status: 405,
-      headers: corsHeaders,
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'Method not allowed',
+        code: 'METHOD_NOT_ALLOWED',
+        details: 'Only POST requests are supported'
+      }),
+      {
+        status: 405,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
+      }
+    );
   }
 
   try {
@@ -37,7 +47,9 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ 
           error: 'OpenAI API key not configured',
-          reason: 'OPENAI_API_KEY not found in environment variables. Please add it in Supabase Edge Functions settings.',
+          code: 'MISSING_API_KEY',
+          details: 'OPENAI_API_KEY not found in environment variables',
+          suggestion: 'Add OPENAI_API_KEY in Supabase Edge Functions settings',
           provider: 'browser-tts'
         }),
         {
@@ -50,13 +62,33 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const requestData: TTSRequest = await req.json();
+    let requestData: TTSRequest;
+    try {
+      requestData = await req.json();
+    } catch (parseError) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid JSON in request body',
+          code: 'INVALID_JSON',
+          details: parseError.message
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
     
     // Validate request
     if (!requestData.text || !requestData.voice) {
       return new Response(
         JSON.stringify({ 
-          error: 'Missing required fields: text, voice',
+          error: 'Missing required fields',
+          code: 'MISSING_FIELDS',
+          details: 'text and voice are required',
           provider: 'browser-tts'
         }),
         {
@@ -73,7 +105,10 @@ Deno.serve(async (req: Request) => {
     if (requestData.text.length > 4096) {
       return new Response(
         JSON.stringify({ 
-          error: 'Text too long (max 4096 characters)',
+          error: 'Text too long',
+          code: 'TEXT_TOO_LONG',
+          details: `Text length: ${requestData.text.length}, max: 4096`,
+          suggestion: 'Reduce text length and try again',
           provider: 'browser-tts'
         }),
         {
@@ -123,7 +158,9 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ 
           error: errorMessage,
-          reason: `OpenAI TTS API returned ${openaiResponse.status}. Check your API key and request parameters.`,
+          code: 'OPENAI_TTS_ERROR',
+          details: `API returned status ${openaiResponse.status}`,
+          suggestion: 'Check API key and request parameters',
           provider: 'browser-tts'
         }),
         {
@@ -143,7 +180,9 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ 
           error: 'Received empty audio response',
-          reason: 'OpenAI TTS returned empty audio. This might be a voice parameter or API issue.',
+          code: 'EMPTY_AUDIO',
+          details: 'OpenAI TTS returned empty audio',
+          suggestion: 'Check voice parameters or try again',
           provider: 'browser-tts'
         }),
         {
@@ -171,7 +210,9 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        reason: error.message,
+        code: 'INTERNAL_ERROR',
+        details: error.message,
+        suggestion: 'Try again or contact support if issue persists',
         provider: 'browser-tts'
       }),
       {

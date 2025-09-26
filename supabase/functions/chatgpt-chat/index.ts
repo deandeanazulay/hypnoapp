@@ -49,14 +49,62 @@ Deno.serve(async (req: Request) => {
   }
 
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', {
-      status: 405,
-      headers: corsHeaders,
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'Method not allowed',
+        code: 'METHOD_NOT_ALLOWED',
+        details: 'Only POST requests are supported'
+      }),
+      {
+        status: 405,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
+      }
+    );
   }
 
   try {
-    const { message, knowledgeBase, conversationHistory }: ChatRequest = await req.json();
+    let requestData: ChatRequest;
+    try {
+      requestData = await req.json();
+    } catch (parseError) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid JSON in request body',
+          code: 'INVALID_JSON',
+          details: parseError.message
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
+    const { message, knowledgeBase, conversationHistory } = requestData;
+
+    // Validate required fields
+    if (!message) {
+      return new Response(
+        JSON.stringify({
+          error: 'Missing required field: message',
+          code: 'MISSING_MESSAGE',
+          details: 'message field is required'
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
 
 
     // Get OpenAI API key
@@ -65,29 +113,10 @@ Deno.serve(async (req: Request) => {
       console.error('OPENAI_API_KEY not configured');
       return new Response(
         JSON.stringify({
-          response: `❌ **OPENAI_API_KEY Not Configured**
-
-The OpenAI API key is missing from your Supabase Edge Functions environment variables.
-
-**To fix this:**
-1. Go to your Supabase Dashboard
-2. Navigate to Edge Functions → Settings
-3. Add environment variable: \`OPENAI_API_KEY\` = your OpenAI API key
-4. Redeploy your functions
-
-**Get an OpenAI API key:**
-- Visit: https://platform.openai.com/api-keys
-- Sign in to your OpenAI account
-- Create new API key
-- Copy and paste into Supabase
-
-**Current App Status:**
-- User Level: ${knowledgeBase?.currentUser?.level || 'N/A'}
-- Active Ego State: ${knowledgeBase?.currentUser?.activeEgoState || 'N/A'}
-- Plan: ${knowledgeBase?.currentUser?.plan || 'N/A'}
-
-Without the API key, script generation will fail and you'll get 0 segments in sessions.`,
+          response: `❌ **OPENAI_API_KEY Not Configured**\n\nThe OpenAI API key is missing from your Supabase Edge Functions environment variables.\n\n**To fix this:**\n1. Go to your Supabase Dashboard\n2. Navigate to Edge Functions → Settings\n3. Add environment variable: \`OPENAI_API_KEY\` = your OpenAI API key\n4. Redeploy your functions`,
           error: 'OPENAI_API_KEY not configured',
+          code: 'MISSING_API_KEY',
+          suggestion: 'Configure OPENAI_API_KEY in Supabase settings',
           timestamp: Date.now()
         }),
         {
@@ -140,31 +169,11 @@ ${JSON.stringify(knowledgeBase, null, 2)}`
       
       return new Response(
         JSON.stringify({
-          response: `🔌 **OpenAI API Error (${response.status})**
-
-The API key is configured but the call failed.
-
-**Error Details:**
-\`\`\`
-${errorText}
-\`\`\`
-
-**Possible Solutions:**
-• API key may be invalid or expired
-• Rate limits exceeded
-• Temporary API outage
-• Network connectivity issues
-
-**Check Your Setup:**
-1. Verify OPENAI_API_KEY is correct
-2. Test the key at: https://platform.openai.com/playground
-3. Check API quotas and billing
-4. Try again in a few moments
-
-**Current App Status:**
-- Sessions will fail with 0 segments until this is resolved
-- Browser TTS will be used as fallback for voice`,
-          error: `API Error ${response.status}`,
+          response: `🔌 **OpenAI API Error (${response.status})**\n\nThe API key is configured but the call failed.\n\n**Error Details:**\n\`\`\`\n${errorText}\n\`\`\``,
+          error: 'OpenAI API error',
+          code: 'OPENAI_API_ERROR',
+          details: errorText,
+          suggestion: 'Check API key validity and quotas',
           timestamp: Date.now()
         }),
         {
@@ -183,22 +192,11 @@ ${errorText}
     if (!aiResponse) {
       return new Response(
         JSON.stringify({
-          response: `🤖 **No Response from ChatGPT**
-
-The API call succeeded but no content was returned.
-
-**This usually means:**
-• Safety filters blocked the response
-• Empty or invalid prompt
-• API returned malformed data
-
-**Debug Info:**
-\`\`\`json
-${JSON.stringify(data, null, 2)}
-\`\`\`
-
-Try rephrasing your question or ask something simpler to test the connection.`,
-          error: 'No AI response',
+          response: `🤖 **No Response from ChatGPT**\n\nThe API call succeeded but no content was returned.`,
+          error: 'No response from OpenAI',
+          code: 'NO_AI_RESPONSE',
+          details: JSON.stringify(data, null, 2),
+          suggestion: 'Try rephrasing your question',
           timestamp: Date.now()
         }),
         {
@@ -231,26 +229,11 @@ Try rephrasing your question or ask something simpler to test the connection.`,
     
     return new Response(
       JSON.stringify({
-        response: `💥 **Unexpected Error**
-
-\`\`\`
-${error.message}
-\`\`\`
-
-**Common Causes:**
-• Network connectivity issues
-• Malformed request data
-• Edge Function timeout
-• Invalid JSON in request
-
-**What to Try:**
-1. Check your internet connection
-2. Refresh the page and try again
-3. Check browser console for details
-4. Contact support if issue persists
-
-This error suggests a deeper technical issue beyond just API configuration.`,
-        error: error.message,
+        response: `💥 **Unexpected Error**\n\n\`\`\`\n${error.message}\n\`\`\``,
+        error: 'Unexpected error occurred',
+        code: 'UNEXPECTED_ERROR',
+        details: error.message,
+        suggestion: 'Check network connection and try again',
         timestamp: Date.now()
       }),
       {

@@ -36,14 +36,29 @@ function corsResponse(body: string | object | null, status = 200) {
 Deno.serve(async (req) => {
   try {
     if (req.method === 'OPTIONS') {
-      return corsResponse({}, 204);
+      return corsResponse(null, 204);
     }
 
     if (req.method !== 'POST') {
-      return corsResponse({ error: 'Method not allowed' }, 405);
+      return corsResponse({ 
+        error: 'Method not allowed',
+        code: 'METHOD_NOT_ALLOWED',
+        details: 'Only POST requests are supported'
+      }, 405);
     }
 
-    const { price_id, success_url, cancel_url, mode } = await req.json();
+    let requestData;
+    try {
+      requestData = await req.json();
+    } catch (parseError) {
+      return corsResponse({
+        error: 'Invalid JSON in request body',
+        code: 'INVALID_JSON',
+        details: parseError.message
+      }, 400);
+    }
+
+    const { price_id, success_url, cancel_url, mode } = requestData;
 
     const error = validateParameters(
       { price_id, success_url, cancel_url, mode },
@@ -56,7 +71,11 @@ Deno.serve(async (req) => {
     );
 
     if (error) {
-      return corsResponse({ error }, 400);
+      return corsResponse({ 
+        error: 'Invalid parameters',
+        code: 'INVALID_PARAMETERS',
+        details: error
+      }, 400);
     }
 
     const authHeader = req.headers.get('Authorization')!;
@@ -67,11 +86,19 @@ Deno.serve(async (req) => {
     } = await supabase.auth.getUser(token);
 
     if (getUserError) {
-      return corsResponse({ error: 'Failed to authenticate user' }, 401);
+      return corsResponse({ 
+        error: 'Failed to authenticate user',
+        code: 'AUTH_FAILED',
+        details: getUserError.message
+      }, 401);
     }
 
     if (!user) {
-      return corsResponse({ error: 'User not found' }, 404);
+      return corsResponse({ 
+        error: 'User not found',
+        code: 'USER_NOT_FOUND',
+        details: 'No user associated with provided token'
+      }, 404);
     }
 
     const { data: customer, error: getCustomerError } = await supabase
@@ -84,7 +111,12 @@ Deno.serve(async (req) => {
     if (getCustomerError) {
       console.error('Failed to fetch customer information from the database', getCustomerError);
 
-      return corsResponse({ error: 'Failed to fetch customer information' }, 500);
+      return corsResponse({ 
+        error: 'Failed to fetch customer information',
+        code: 'DATABASE_ERROR',
+        details: getCustomerError.message,
+        suggestion: 'Please try again or contact support'
+      }, 500);
     }
 
     let customerId;
@@ -118,7 +150,12 @@ Deno.serve(async (req) => {
           console.error('Failed to clean up after customer mapping error:', deleteError);
         }
 
-        return corsResponse({ error: 'Failed to create customer mapping' }, 500);
+        return corsResponse({ 
+          error: 'Failed to create customer mapping',
+          code: 'CUSTOMER_MAPPING_ERROR',
+          details: createCustomerError.message,
+          suggestion: 'Please try again or contact support'
+        }, 500);
       }
 
       if (mode === 'subscription') {
@@ -137,7 +174,12 @@ Deno.serve(async (req) => {
             console.error('Failed to delete Stripe customer after subscription creation error:', deleteError);
           }
 
-          return corsResponse({ error: 'Unable to save the subscription in the database' }, 500);
+          return corsResponse({ 
+            error: 'Unable to save the subscription in the database',
+            code: 'SUBSCRIPTION_SAVE_ERROR',
+            details: createSubscriptionError.message,
+            suggestion: 'Please try again or contact support'
+          }, 500);
         }
       }
 
@@ -158,7 +200,12 @@ Deno.serve(async (req) => {
         if (getSubscriptionError) {
           console.error('Failed to fetch subscription information from the database', getSubscriptionError);
 
-          return corsResponse({ error: 'Failed to fetch subscription information' }, 500);
+          return corsResponse({ 
+            error: 'Failed to fetch subscription information',
+            code: 'DATABASE_ERROR',
+            details: getSubscriptionError.message,
+            suggestion: 'Please try again or contact support'
+          }, 500);
         }
 
         if (!subscription) {
@@ -171,7 +218,12 @@ Deno.serve(async (req) => {
           if (createSubscriptionError) {
             console.error('Failed to create subscription record for existing customer', createSubscriptionError);
 
-            return corsResponse({ error: 'Failed to create subscription record for existing customer' }, 500);
+            return corsResponse({ 
+              error: 'Failed to create subscription record for existing customer',
+              code: 'SUBSCRIPTION_CREATE_ERROR',
+              details: createSubscriptionError.message,
+              suggestion: 'Please try again or contact support'
+            }, 500);
           }
         }
       }
@@ -197,7 +249,12 @@ Deno.serve(async (req) => {
     return corsResponse({ sessionId: session.id, url: session.url });
   } catch (error: any) {
     console.error(`Checkout error: ${error.message}`);
-    return corsResponse({ error: error.message }, 500);
+    return corsResponse({ 
+      error: 'Checkout session creation failed',
+      code: 'CHECKOUT_ERROR',
+      details: error.message,
+      suggestion: 'Please try again or contact support'
+    }, 500);
   }
 });
 

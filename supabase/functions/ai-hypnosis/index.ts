@@ -38,8 +38,63 @@ Deno.serve(async (req: Request) => {
     })
   }
 
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({
+        error: 'Method not allowed',
+        code: 'METHOD_NOT_ALLOWED',
+        details: 'Only POST requests are supported'
+      }),
+      {
+        status: 405,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
+      }
+    );
+  }
+
   try {
-    const { message, sessionContext, requestType, scriptParams }: HypnosisRequest = await req.json()
+    let requestData: HypnosisRequest;
+    try {
+      requestData = await req.json();
+    } catch (parseError) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid JSON in request body',
+          code: 'INVALID_JSON',
+          details: parseError.message
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
+    const { message, sessionContext, requestType, scriptParams } = requestData;
+
+    // Validate required fields
+    if (!message || !sessionContext || !requestType) {
+      return new Response(
+        JSON.stringify({
+          error: 'Missing required fields',
+          code: 'MISSING_FIELDS',
+          details: 'message, sessionContext, and requestType are required'
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
 
 
     // Get OpenAI API key from environment
@@ -54,7 +109,10 @@ Deno.serve(async (req: Request) => {
           JSON.stringify({
             response: JSON.stringify(mockScript),
             sessionUpdates: {},
-            error: 'API key not configured - using mock script',
+            error: 'API key not configured',
+            code: 'MISSING_API_KEY',
+            details: 'OPENAI_API_KEY environment variable not set',
+            suggestion: 'Configure OPENAI_API_KEY in Supabase Edge Functions settings',
             timestamp: Date.now()
           }),
           {
@@ -72,7 +130,10 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({
           response: fallbackResponse,
           sessionUpdates: {},
-          error: 'API key not configured - using offline mode',
+          error: 'API key not configured',
+          code: 'MISSING_API_KEY',
+          details: 'OPENAI_API_KEY environment variable not set',
+          suggestion: 'Configure OPENAI_API_KEY in Supabase Edge Functions settings',
           timestamp: Date.now()
         }),
         {
@@ -206,7 +267,9 @@ Return ONLY the JSON object above - no markdown, no explanations.`
         JSON.stringify({
           response: JSON.stringify(mockScript),
           sessionUpdates: {},
-          source: 'mock_fallback',
+          error: 'Script generation failed',
+          code: 'SCRIPT_GENERATION_FAILED',
+          details: 'Using mock script as fallback',
           timestamp: Date.now()
         }),
         {
@@ -262,7 +325,10 @@ Return ONLY the JSON object above - no markdown, no explanations.`
           JSON.stringify({
             response: JSON.stringify(mockScript),
             sessionUpdates: {},
-            error: 'Network access limited - using mock script',
+            error: 'Network error occurred',
+            code: 'NETWORK_ERROR',
+            details: fetchError.message,
+            suggestion: 'Check network connectivity and try again',
             timestamp: Date.now()
           }),
           {
@@ -281,7 +347,10 @@ Return ONLY the JSON object above - no markdown, no explanations.`
         JSON.stringify({
           response: contextualResponse,
           sessionUpdates: {},
-          error: 'Network access limited - using offline guidance',
+          error: 'Network error occurred',
+          code: 'NETWORK_ERROR',
+          details: fetchError.message,
+          suggestion: 'Check network connectivity and try again',
           timestamp: Date.now()
         }),
         {
@@ -305,7 +374,10 @@ Return ONLY the JSON object above - no markdown, no explanations.`
           JSON.stringify({
             response: JSON.stringify(mockScript),
             sessionUpdates: {},
-            error: `API error: ${response.status} - using mock script`,
+            error: 'OpenAI API error',
+            code: 'OPENAI_API_ERROR',
+            details: errorData,
+            suggestion: 'Check API key and quota limits',
             timestamp: Date.now()
           }),
           {
@@ -323,7 +395,10 @@ Return ONLY the JSON object above - no markdown, no explanations.`
         JSON.stringify({
           response: contextualResponse,
           sessionUpdates: {},
-          error: `API error: ${response.status} - using offline guidance`,
+          error: 'OpenAI API error',
+          code: 'OPENAI_API_ERROR',
+          details: errorData,
+          suggestion: 'Check API key and quota limits',
           timestamp: Date.now()
         }),
         {
@@ -349,7 +424,10 @@ Return ONLY the JSON object above - no markdown, no explanations.`
           JSON.stringify({
             response: JSON.stringify(mockScript),
             sessionUpdates: {},
-            error: 'No AI response - using mock script',
+            error: 'No response from OpenAI',
+            code: 'NO_AI_RESPONSE',
+            details: 'OpenAI returned empty response',
+            suggestion: 'Try again or check API service status',
             timestamp: Date.now()
           }),
           {
@@ -367,7 +445,10 @@ Return ONLY the JSON object above - no markdown, no explanations.`
         JSON.stringify({
           response: contextualResponse,
           sessionUpdates: {},
-          error: 'No AI response - using offline guidance',
+          error: 'No response from OpenAI',
+          code: 'NO_AI_RESPONSE',
+          details: 'OpenAI returned empty response',
+          suggestion: 'Try again or check API service status',
           timestamp: Date.now()
         }),
         {
@@ -428,15 +509,19 @@ Return ONLY the JSON object above - no markdown, no explanations.`
     
     // For script generation, return proper JSON structure
     if (requestType === 'script_generation') {
+      const mockScript = getMockScript(scriptParams)
       return new Response(
         JSON.stringify({
-          error: error.message || 'Script generation failed',
-          reason: 'UNKNOWN_ERROR',
-          suggestion: 'Check all configurations and try again',
+          response: JSON.stringify(mockScript),
+          sessionUpdates: {},
+          error: 'Unexpected error occurred',
+          code: 'UNEXPECTED_ERROR',
+          details: error.message,
+          suggestion: 'Try again or contact support if issue persists',
           timestamp: Date.now()
         }),
         {
-          status: 500,
+          status: 200,
           headers: {
             'Content-Type': 'application/json',
             ...corsHeaders,
@@ -452,7 +537,10 @@ Return ONLY the JSON object above - no markdown, no explanations.`
       JSON.stringify({
         response: fallbackResponse,
         sessionUpdates: {},
-        error: error.message || 'Unknown error - using offline mode',
+        error: 'Unexpected error occurred',
+        code: 'UNEXPECTED_ERROR',
+        details: error.message,
+        suggestion: 'Try again or contact support if issue persists',
         timestamp: Date.now()
       }),
       {

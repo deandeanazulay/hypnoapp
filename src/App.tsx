@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { GameStateProvider } from './components/GameStateManager';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useAppStore } from './store';
 import { useSimpleAuth } from './hooks/useSimpleAuth';
 import { useViewportLayout } from './hooks/useViewportLayout';
@@ -343,76 +344,78 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <GameStateProvider>
-        <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
-          {/* Global Header HUD */}
-          <GlobalHUD />
-          
-          {/* Main Body Content - Flex grow */}
-          <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content" style={{ paddingTop: '40px' }}>
-            {/* Current Tab Content */}
-            <div className="relative z-10 h-full">
-              {renderCurrentTab()}
+      <ErrorBoundary>
+        <GameStateProvider>
+          <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
+            {/* Global Header HUD */}
+            <GlobalHUD />
+            
+            {/* Main Body Content - Flex grow */}
+            <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content" style={{ paddingTop: '40px' }}>
+              {/* Current Tab Content */}
+              <div className="relative z-10 h-full">
+                {renderCurrentTab()}
+              </div>
             </div>
+
+            {/* Bottom Navigation */}
+            <NavigationTabs 
+              activeTab={activeTab} 
+              onTabChange={setActiveTab} 
+            />
+
+            {/* Pickers */}
+            {showGoalPicker && (
+              <GoalPicker
+                onSelect={handleGoalSelect}
+                onClose={() => setShowGoalPicker(false)}
+                onNavigateToCreate={() => setActiveTab('create')}
+              />
+            )}
+
+            {showMethodPicker && selectedGoal && (
+              <MethodPicker
+                selectedGoal={selectedGoal}
+                onSelect={handleMethodSelect}
+                onClose={() => setShowMethodPicker(false)}
+              />
+            )}
+
+            {showModePicker && (
+              <ModePicker
+                onSelect={handleModeSelect}
+                onClose={() => setShowModePicker(false)}
+              />
+            )}
+
+            {/* Global Modals */}
+            <AuthModal 
+              isOpen={modals.auth} 
+              onClose={() => closeModal('auth')} 
+            />
+            
+            <EgoStatesModal />
+            
+            <SettingsModal 
+              isOpen={modals.settings} 
+              onClose={() => closeModal('settings')}
+              selectedEgoState={activeEgoState}
+              onEgoStateChange={setActiveEgoState}
+            />
+            
+            <PlanModal />
+            <TokensModal />
+            
+            <ChatGPTChatWidget 
+              isOpen={modals.chatgptChat}
+              onClose={() => closeModal('chatgptChat')}
+            />
+
+            {/* Toast Manager */}
+            <ToastManager />
           </div>
-
-          {/* Bottom Navigation */}
-          <NavigationTabs 
-            activeTab={activeTab} 
-            onTabChange={setActiveTab} 
-          />
-
-          {/* Pickers */}
-          {showGoalPicker && (
-            <GoalPicker
-              onSelect={handleGoalSelect}
-              onClose={() => setShowGoalPicker(false)}
-              onNavigateToCreate={() => setActiveTab('create')}
-            />
-          )}
-
-          {showMethodPicker && selectedGoal && (
-            <MethodPicker
-              selectedGoal={selectedGoal}
-              onSelect={handleMethodSelect}
-              onClose={() => setShowMethodPicker(false)}
-            />
-          )}
-
-          {showModePicker && (
-            <ModePicker
-              onSelect={handleModeSelect}
-              onClose={() => setShowModePicker(false)}
-            />
-          )}
-
-          {/* Global Modals */}
-          <AuthModal 
-            isOpen={modals.auth} 
-            onClose={() => closeModal('auth')} 
-          />
-          
-          <EgoStatesModal />
-          
-          <SettingsModal 
-            isOpen={modals.settings} 
-            onClose={() => closeModal('settings')}
-            selectedEgoState={activeEgoState}
-            onEgoStateChange={setActiveEgoState}
-          />
-          
-          <PlanModal />
-          <TokensModal />
-          
-          <ChatGPTChatWidget 
-            isOpen={modals.chatgptChat}
-            onClose={() => closeModal('chatgptChat')}
-          />
-
-          {/* Toast Manager */}
-          <ToastManager />
-        </div>
-      </GameStateProvider>
+        </GameStateProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

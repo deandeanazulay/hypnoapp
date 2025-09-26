@@ -1,3 +1,5 @@
+import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../utils/apiErrorHandler';
+
 export interface ScriptSegment {
   id: string;
   text: string;
@@ -53,46 +55,69 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
     let validatedUrl: URL;
     try {
       validatedUrl = new URL(`${baseUrl}/functions/v1/generate-script`);
+    
+      const response = await safeFetch(
+        validatedUrl.toString(),
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+          },
+          body: JSON.stringify({
+            userCtx: enhancedContext,
+            templates: {
+              systemPrompt: 'Create a unique, dynamic hypnosis script',
+              requireUnique: true
+            }
+          })
+        },
+        {
+          operation: 'Script Generation',
+          additionalContext: {
+            egoState: enhancedContext.egoState,
+            goalName: enhancedContext.goalName,
+            duration: enhancedContext.lengthSec
+          }
+        }
+      );
+
+      const result = await response.json();
+      
+      if (!result.segments || result.segments.length === 0) {
+        throw new ApiError(
+          'No segments returned from script generation',
+          500,
+          'NO_SEGMENTS',
+          'Script generation API returned empty or invalid response',
+          'Try again or check API configuration'
+        );
+      }
+
+      if (import.meta.env.DEV) {
+        console.log(`ChatGPT: Generated ${result.segments.length} segments`);
+      }
+      return result;
+      
     } catch (urlError) {
       console.error('ChatGPT: Invalid Supabase URL construction');
       console.error('Base URL:', baseUrl);
-      throw new Error(`Invalid Supabase URL: ${baseUrl}. Please verify VITE_SUPABASE_URL is correct.`);
+      throw new ApiError(
+        'Invalid Supabase URL configuration',
+        500,
+        'INVALID_URL',
+        `Base URL: ${baseUrl}`,
+        'Verify VITE_SUPABASE_URL is correct'
+      );
     }
     
-    const response = await fetch(validatedUrl.toString(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseAnonKey}`,
-      },
-      body: JSON.stringify({
-        userCtx: enhancedContext,
-        templates: {
-          systemPrompt: 'Create a unique, dynamic hypnosis script',
-          requireUnique: true
-        }
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn('ChatGPT: API error, using fallback:', errorText);
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
+  } catch (error: any) {
+    if (error instanceof ApiError) {
+      console.error('Script generation failed:', getUserFriendlyErrorMessage(error));
+      throw error;
     }
-
-    const result = await response.json();
     
-    if (!result.segments || result.segments.length === 0) {
-      throw new Error('No segments returned from API');
-    }
-
-    if (import.meta.env.DEV) {
-      console.log(`ChatGPT: Generated ${result.segments.length} segments`);
-    }
-    return result;
-    
-  } catch (error) {
-    console.error('Script generation failed:', error);
+    console.error('Script generation failed with unexpected error:', error);
     
     // Try one more time with a direct API call as final backup
     console.warn('Edge function failed, attempting direct API call...');
