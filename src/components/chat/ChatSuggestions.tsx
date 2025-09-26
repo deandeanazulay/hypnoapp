@@ -18,17 +18,18 @@ export default function ChatSuggestions({
   if (!show) return null;
 
   return (
-    <div className="px-4 relative z-40">
+    <div className="px-4 mb-4">
       <div className="max-w-3xl mx-auto">
-        {/* Gradient Overlays for Fade Effect */}
+        {/* Horizontal Scrolling Container with Fade */}
         <div className="relative">
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black via-black/80 to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black via-black/80 to-transparent z-10 pointer-events-none" />
+          {/* Fade Gradients */}
+          <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-black via-black/80 to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-black via-black/80 to-transparent z-10 pointer-events-none" />
           
           {/* Scrollable Suggestions */}
           <div 
             ref={scrollContainerRef}
-            className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 px-8"
+            className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 px-6"
             style={{ 
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
@@ -40,7 +41,7 @@ export default function ChatSuggestions({
                 key={suggestion}
                 onClick={() => onSuggestionClick(suggestion)}
                 disabled={isLoading}
-                className={`flex-shrink-0 px-4 py-2 bg-gradient-to-br from-white/10 to-white/15 hover:from-white/15 hover:to-white/20 border border-white/25 hover:border-white/40 rounded-full text-white/80 hover:text-white text-sm font-medium transition-all hover:scale-105 disabled:opacity-50 select-none shadow-lg backdrop-blur-sm animate-slide-up`}
+                className={`flex-shrink-0 px-4 py-2.5 bg-gradient-to-br from-white/10 to-white/15 hover:from-white/15 hover:to-white/20 border border-white/25 hover:border-white/40 rounded-full text-white/80 hover:text-white text-sm font-medium transition-all hover:scale-105 disabled:opacity-50 select-none shadow-lg backdrop-blur-sm animate-slide-up`}
                 style={{
                   animationDelay: `${index * 100}ms`,
                   minWidth: 'max-content'
@@ -50,7 +51,7 @@ export default function ChatSuggestions({
               </button>
             ))}
             
-            {/* Spacer for smooth scrolling */}
+            {/* Spacer for smooth edge scrolling */}
             <div className="flex-shrink-0 w-4" />
           </div>
         </div>
