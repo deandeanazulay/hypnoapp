@@ -321,6 +321,8 @@ export class SessionManager {
       }
 
       this._playWithBrowserTTS(text);
+    } catch (error) {
+      this._playWithBrowserTTS(text);
     }
   }
 

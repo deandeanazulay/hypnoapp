@@ -72,6 +72,8 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
 
     // Unexpected content type
     throw new Error(`Unexpected content type: ${contentType}`);
+
+  } catch (error: any) {
     // Always fall back to browser TTS on error
     return { provider: 'browser-tts', error: error.message };
   }
