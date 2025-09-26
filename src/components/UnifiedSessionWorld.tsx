@@ -362,31 +362,26 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
   }, [sessionState.timeRemaining, sessionState.totalTime, sessionState.isPlaying]);
 
   // Listen for segment changes and update conversation
-        goalId: sessionConfig.goal?.id || sessionConfig.customProtocol?.goals?.[0] || sessionConfig.protocol?.category || 'transformation',
+  useEffect(() => {
     if (sessionManagerState.scriptPlan && sessionManagerState.currentSegmentId) {
       const currentSegment = sessionManagerState.scriptPlan.segments?.find(
         (s: any) => s.id === sessionManagerState.currentSegmentId
       );
       
-        customProtocol: sessionConfig.customProtocol,
-        protocol: sessionConfig.protocol,
-        userPrefs: {
-          sessionType: sessionConfig.type,
-          selectedGoal: sessionConfig.goal,
-          selectedMethod: sessionConfig.method
-        }
-      };
-      
-      setConversation(prev => {
-        // Only add if it's not already the last message
-        const lastMessage = prev[prev.length - 1];
-        if (!lastMessage || lastMessage.content !== currentSegment.text) {
-          return [...prev, aiMessage];
-        }
-        return prev;
-      });
-      
-      setShowCoachBubble(true);
+      if (currentSegment?.text) {
+        const aiMessage = { role: 'ai' as const, content: currentSegment.text, timestamp: Date.now() };
+        
+        setConversation(prev => {
+          // Only add if it's not already the last message
+          const lastMessage = prev[prev.length - 1];
+          if (!lastMessage || lastMessage.content !== currentSegment.text) {
+            return [...prev, aiMessage];
+          }
+          return prev;
+        });
+        
+        setShowCoachBubble(true);
+      }
     }
   }, [sessionManagerState.currentSegmentId, sessionManagerState.scriptPlan]);
 
@@ -595,6 +590,7 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     
     return egoResponses[egoState] || "I'm here with you. Continue breathing naturally and trust the process. You're doing perfectly.";
   };
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (textInput.trim() && !isThinking) {
