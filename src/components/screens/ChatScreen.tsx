@@ -288,57 +288,64 @@ export default function ChatScreen() {
 
             {/* Messages Area */}
             <div className="flex-1 min-h-0 overflow-y-auto px-4">
-              <div className="space-y-3 pb-4">
+              <div className="space-y-4 max-w-4xl mx-auto">
                 {messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-2xl p-3 border relative group ${
+                  <div key={message.id} className={`flex items-start gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    {/* Avatar */}
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                       message.role === 'user'
-                        ? 'bg-teal-500/20 border-teal-500/30 text-teal-100'
-                        : message.error
-                        ? 'bg-red-500/20 border-red-500/30 text-red-100'
-                        : message.isLoading
-                        ? 'bg-white/10 border-white/20 text-white'
-                        : 'bg-white/8 border-white/15 text-white'
+                        ? 'bg-teal-500/20 border border-teal-500/40'
+                        : 'bg-purple-500/20 border border-purple-500/40'
                     }`}>
-                      {/* Message Header */}
-                      <div className="flex items-center space-x-2 mb-2">
-                        {message.role === 'user' ? (
-                          <User size={12} className="text-teal-400" />
-                        ) : (
-                          <div className="flex items-center space-x-1">
-                            {message.isLoading ? (
-                              <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse" />
-                            ) : (
-                              <Brain size={12} className={message.error ? "text-red-400" : "text-purple-400"} />
-                            )}
+                      {message.role === 'user' ? (
+                        <User size={14} className="text-teal-400" />
+                      ) : (
+                        <Brain size={14} className={message.error ? "text-red-400" : "text-purple-400"} />
+                      )}
+                    </div>
+                    
+                    {/* Message Content */}
+                    <div className={`max-w-[75%] rounded-2xl p-4 border relative group ${
+                      message.role === 'user'
+                        ? 'bg-teal-500/15 border-teal-500/30 text-white'
+                        : message.error
+                        ? 'bg-red-500/15 border-red-500/30 text-white'
+                        : message.isLoading
+                        ? 'bg-purple-500/10 border-purple-500/30 text-white'
+                        : 'bg-purple-500/10 border-purple-500/30 text-white'
+                    }`}>
+                      {/* Message Header - Compact */}
+                      {!message.isLoading && (
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-medium text-white/80">
+                              {message.role === 'user' ? 'You' : 'Libero'}
+                            </span>
+                            <span className="text-xs text-white/50">
+                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                           </div>
-                        )}
-                        <span className="text-xs font-medium opacity-80">
-                          {message.role === 'user' ? 'You' : 'Libero'}
-                        </span>
-                        <span className="text-xs opacity-60">
-                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        {!message.isLoading && (
                           <button
                             onClick={() => copyMessage(message.content)}
-                            className="ml-auto opacity-0 group-hover:opacity-100 p-1 hover:bg-black/20 rounded transition-all"
+                            className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-black/20 rounded-lg transition-all hover:scale-110"
                           >
                             <Copy size={12} className="text-white/40 hover:text-white/70" />
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                       
                       {/* Message Content */}
                       {message.isLoading ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                          <span className="text-sm text-white/70 ml-2">Thinking...</span>
+                        <div className="flex items-center space-x-3">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                          </div>
+                          <span className="text-sm text-white/70 font-medium">Libero is thinking...</span>
                         </div>
                       ) : (
-                        <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                        <div className="text-sm leading-relaxed whitespace-pre-wrap text-white/90">
                           {message.content}
                         </div>
                       )}
@@ -349,33 +356,88 @@ export default function ChatScreen() {
               </div>
             </div>
 
-            {/* Fixed Bottom Input Area */}
-            <div className="flex-shrink-0 fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 px-4 py-4 z-40" 
+            {/* Enhanced Fixed Bottom Input Area */}
+            <div className="flex-shrink-0 fixed bottom-0 left-0 right-0 bg-black/98 backdrop-blur-xl border-t border-white/20 px-4 py-3 z-40" 
                  style={{ paddingBottom: 'calc(var(--total-nav-height, 88px) + 1rem)' }}>
-              
-              {/* Audio Controls - Above input */}
-              <div className="flex items-center justify-center space-x-3 mb-3">
-                <button
-                  onClick={() => setIsMuted(!isMuted)}
-                  className={`p-2 rounded-lg transition-all hover:scale-110 ${
-                    isMuted ? 'bg-red-500/20 border border-red-500/40 text-red-400' : 'bg-green-500/20 border border-green-500/40 text-green-400'
-                  }`}
-                >
-                  {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                </button>
-                {messages.length > 1 && (
-                  <button
-                    onClick={clearChat}
-                    className="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white/70 transition-all hover:scale-110"
-                  >
-                    <RotateCcw size={16} />
-                  </button>
-                )}
+              <div className="max-w-4xl mx-auto">
+                {/* Input Form */}
+                <div className="bg-gradient-to-br from-white/8 to-white/12 backdrop-blur-xl rounded-2xl border border-white/20 p-3 shadow-2xl">
+                  <form onSubmit={handleSubmit} className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      placeholder="Ask Libero about protocols, ego states, or transformation techniques..."
+                      disabled={isLoading}
+                      className="flex-1 bg-transparent text-white placeholder-white/50 focus:outline-none text-sm disabled:opacity-50 py-1"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSubmit(e);
+                        }
+                      }}
+                    />
+                    
+                    {/* Audio Control - Integrated into input */}
+                    <button
+                      type="button"
+                      onClick={() => setIsMuted(!isMuted)}
+                      className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                        isMuted ? 'bg-red-500/20 border border-red-500/40 text-red-400' : 'bg-green-500/20 border border-green-500/40 text-green-400'
+                      }`}
+                    >
+                      {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                    </button>
+                    
+                    {/* Clear Chat Button - Integrated */}
+                    {messages.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={clearChat}
+                        className="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white/70 transition-all hover:scale-110"
+                      >
+                        <RotateCcw size={16} />
+                      </button>
+                    )}
+                    
+                    <button
+                      type="submit"
+                      disabled={!inputText.trim() || isLoading}
+                      className="p-2.5 bg-teal-500/20 border border-teal-500/40 text-teal-400 rounded-xl hover:bg-teal-500/30 transition-all hover:scale-110 disabled:opacity-50 disabled:hover:scale-100 flex-shrink-0"
+                    >
+                      <Send size={18} />
+                    </button>
+                  </form>
+                  
+                  {/* Quick Suggestions - More Compact */}
+                  {messages.length <= 1 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {[
+                        'What ego state should I use today?',
+                        'Recommend a stress relief protocol',
+                        'How do I create a custom protocol?',
+                        'Explain hypnotherapy basics'
+                      ].map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          onClick={() => setInputText(suggestion)}
+                          disabled={isLoading}
+                          className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/15 rounded-lg text-white/60 hover:text-white/80 text-xs transition-all hover:scale-105 disabled:opacity-50"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              
-              {/* Input Form */}
-              <div className="bg-gradient-to-br from-white/8 to-white/12 backdrop-blur-xl rounded-2xl border border-white/20 p-3">
-                <form onSubmit={handleSubmit} className="flex items-center gap-3">
+            </div>
+          </div>
+        }
+      />
+    </div>
+  );
+}
                   <input
                     type="text"
                     value={inputText}
