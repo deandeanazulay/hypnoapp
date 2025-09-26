@@ -567,7 +567,7 @@ export class SessionManager {
       this.currentAudioElement = null;
     }
     
-    if (window.speechSynthesis) {
+    if (this.currentUtterance) {
       window.speechSynthesis.cancel();
       this.currentUtterance = null;
     }
