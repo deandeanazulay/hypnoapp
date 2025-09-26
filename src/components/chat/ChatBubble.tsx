@@ -42,7 +42,7 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
   return (
     <div className={`flex gap-2 w-full ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
       {/* AvatarCell - Fixed 60x60, no grow/shrink */}
-      <div className="w-[60px] h-[60px] flex-none pointer-events-none">
+      <div className="w-[150px] h-[6150x] flex-none pointer-events-none">
         {message.role === 'libero' ? (
           <div className={`transition-all duration-300 ${isSpeaking ? 'animate-pulse' : ''}`}>
             <Orb
