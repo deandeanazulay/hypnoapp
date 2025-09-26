@@ -447,38 +447,50 @@ export class SessionManager {
     });
     this._emit('play');
     
-    // Set TTS lock and try ElevenLabs first
-    this.ttsLock = true;
+    // Clear any previous TTS before starting new segment
+    this._cancelCurrentTTS();
+    
+    // Start with ElevenLabs attempt
     this._speakSegmentWithFallback(segment.text);
   }
 
   private async _speakSegmentWithFallback(text: string) {
+    console.log(`TTS: Starting segment ${this.currentSegmentIndex + 1} - attempting ElevenLabs first`);
+    
+    // Set TTS lock here to prevent multiple simultaneous attempts
+    this.ttsLock = true;
+    
     try {
-      console.log('TTS: Attempting ElevenLabs synthesis...');
       
       // Try ElevenLabs first
       const result = await synthesizeSegment(text, {
-        voiceId: 'EXAVITQu4vr4xnSDxMaL',
+        voiceId: AI.voice.defaultVoiceId, // Use Adam voice from config
         cacheKey: `segment-${this.currentSegmentIndex}`,
         mode: 'live'
       });
 
       if (result.provider === 'elevenlabs' && result.audioUrl) {
-        console.log('TTS: Using ElevenLabs audio');
+        console.log(`TTS: ✅ Using ElevenLabs audio for segment ${this.currentSegmentIndex + 1}`);
         this._playAudioUrl(result.audioUrl);
         return;
       }
 
-      console.log('TTS: ElevenLabs not available, using browser TTS');
+      console.log(`TTS: ⚠️ ElevenLabs not available for segment ${this.currentSegmentIndex + 1}, using browser TTS`);
+      if (result.error) {
+        console.log(`TTS: ElevenLabs error: ${result.error}`);
+      }
       await this._speakSegmentNow(text);
     } catch (error) {
-      console.error('TTS: Error with ElevenLabs, falling back to browser:', error);
+      console.error(`TTS: ❌ Error with ElevenLabs for segment ${this.currentSegmentIndex + 1}, falling back to browser:`, error);
       await this._speakSegmentNow(text);
     }
   }
 
   private _playAudioUrl(audioUrl: string) {
     console.log(`TTS: Creating audio element for ElevenLabs segment ${this.currentSegmentIndex + 1}`);
+    
+    // TTS lock should remain true during ElevenLabs playback
+    // this.ttsLock = true; // Already set in _speakSegmentWithFallback
     
     // Create audio element for ElevenLabs
     this.currentAudioElement = new Audio(audioUrl);
@@ -504,7 +516,10 @@ export class SessionManager {
       this.currentAudioElement = null;
       
       // Fall back to browser TTS on audio error  
-      this._speakSegmentNow(text.substring(0, 50) + '...');
+      const segment = this.segments[this.currentSegmentIndex];
+      if (segment) {
+        this._speakSegmentNow(segment.text);
+      }
     };
     
     // Start playback with error handling
@@ -514,7 +529,10 @@ export class SessionManager {
       console.error(`TTS: ❌ Failed to play ElevenLabs audio for segment ${this.currentSegmentIndex + 1}:`, error);
       this.ttsLock = false;
       this.currentAudioElement = null;
-      this._speakSegmentNow(text);
+      const segment = this.segments[this.currentSegmentIndex];
+      if (segment) {
+        this._speakSegmentNow(segment.text);
+      }
     });
   }
 
@@ -530,6 +548,9 @@ export class SessionManager {
       return;
     }
 
+    // Stop any existing speech before starting new utterance
+    window.speechSynthesis.cancel();
+    
     // Wait for voices to load
     await this.voicesLoadedPromise;
     
@@ -575,12 +596,18 @@ export class SessionManager {
     };
     
     utterance.onerror = (event) => {
-      console.error(`TTS: ❌ Browser TTS error for segment ${this.currentSegmentIndex + 1}:`, event.error);
+      // Only log non-interruption errors
+      if (event.error !== 'interrupted' && event.error !== 'canceled') {
+        console.error(`TTS: ❌ Browser TTS error for segment ${this.currentSegmentIndex + 1}:`, event.error);
+      } else {
+        console.log(`TTS: Browser TTS ${event.error} for segment ${this.currentSegmentIndex + 1} (expected)`);
+      }
+      
       this.ttsLock = false;
       
       if (event.error === 'interrupted' || event.error === 'canceled') {
         // Expected - don't advance
-        console.log('TTS: Interrupted/canceled');
+        console.log(`TTS: Interrupted/canceled segment ${this.currentSegmentIndex + 1}`);
       } else {
         console.warn('TTS: Error -', event.error);
         // Fallback advance to prevent stalling
@@ -590,9 +617,12 @@ export class SessionManager {
       }
     };
     
-    // SPEAK IMMEDIATELY - must be in same user gesture task
-    window.speechSynthesis.speak(utterance);
-    console.log(`TTS: Browser TTS queued segment ${this.currentSegmentIndex + 1} for playback`);
+    // Small delay to ensure clean state before speaking
+    setTimeout(() => {
+      if (this.currentUtteranceId === utteranceId && !this.wasCanceledByUs) {
+        console.log(`TTS: Speaking segment ${this.currentSegmentIndex + 1} with browser TTS`);
+        window.speechSynthesis.speak(utterance);
+      }
   }
 
   private async _selectBestVoice(utterance: SpeechSynthesisUtterance) {
@@ -607,12 +637,15 @@ export class SessionManager {
     const preferredVoices = [
       'Microsoft David',
       'Microsoft Mark', 
-      'Google US English Male',
+      'Daniel (Enhanced)',
       'Daniel',
+      'Google US English Male',
       'Alex',
       'Tom',
+      'Microsoft Zira', // Male-sounding female voice
       'Google US English',
-      'Microsoft Aria' // Female fallback
+      'Microsoft Aria', // Female fallback
+      'Samantha'
     ];
     
     for (const voiceName of preferredVoices) {
@@ -709,7 +742,6 @@ export class SessionManager {
     console.log('TTS: Canceling current speech');
     this.wasCanceledByUs = true;
     this.currentUtteranceId = null;
-    this.ttsLock = false;
     
     if (this.currentAudioElement) {
       this.currentAudioElement.pause();
@@ -722,6 +754,11 @@ export class SessionManager {
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
+    
+    // Reset TTS lock after a brief delay to allow cleanup
+    setTimeout(() => {
+      this.ttsLock = false;
+    }, 50);
   }
   
   dispose() {
