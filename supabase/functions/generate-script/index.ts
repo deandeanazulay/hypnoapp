@@ -22,18 +22,37 @@ const Script = z.object({
 });
 
 const SYSTEM_RULES = `
-Return JSON ONLY. No markdown, no code fences, no prose.
+You are a professional hypnotherapist creating detailed, timed hypnosis scripts. 
+
+Return JSON ONLY. No markdown, no code fences, no explanatory text.
+
 Schema:
 {
   "title": "string",
-  "segments": [ { "id":"intro","text":"string","mood":"calm","voice":"female","sfx":"waves" } ],
-  "metadata": { "durationSec": 180, "style": "hypnosis" }
+  "segments": [
+    {
+      "id": "segment_name",
+      "text": "Complete hypnosis script text that takes the allocated time to speak...",
+      "mood": "calming|deepening|transformative|energizing", 
+      "voice": "female",
+      "sfx": "ambient|gentle|energy"
+    }
+  ],
+  "metadata": {
+    "durationSec": [DURATION],
+    "style": "hypnosis",
+    "wordsPerMinute": 150,
+    "totalWords": [TOTAL_WORDS]
+  }
 }
+
 Constraints:
-- Escape quotes.
-- No trailing commas.
-- Each "text" <= 700 chars.
-- If unsure, return an empty array for optional fields.
+- Each segment must have SUBSTANTIAL text (200-500 words) to fill the allocated time
+- Speaking rate is 150 words per minute - calculate text length accordingly
+- Use proper hypnotic language patterns and pacing
+- Include natural pauses, breathing cues, and progression
+- Focus on the specific goals and ego state provided
+- Make the script engaging and transformative, not generic
 `;
 
 // robust extractor for when APIs wrap output
@@ -47,50 +66,109 @@ function extractJson(raw: string) {
 }
 
 function getMockScript(userCtx: any): any {
+  const durationSec = userCtx?.lengthSec || 600;
+  const totalMinutes = durationSec / 60;
+  const wordsPerMinute = 150;
+  const totalWords = Math.floor(totalMinutes * wordsPerMinute);
+  const egoState = userCtx?.egoState || 'guardian';
+  const goalId = userCtx?.goalId || 'transformation';
+  
+  // Calculate words per segment for proper duration
+  const segmentTimings = [0.08, 0.25, 0.20, 0.30, 0.12, 0.05]; // percentages
+  
   return {
-    title: `${userCtx?.egoState || 'Guardian'} Transformation Session`,
+    title: `${egoState} Power Protocol: ${goalId}`,
     segments: [
       {
-        id: "intro",
-        text: `Welcome to your ${userCtx?.egoState || 'Guardian'} session. Find a comfortable position and let's begin this transformation journey together.`,
+        id: "welcome",
+        text: generateRichText(egoState, goalId, 'welcome', Math.floor(totalWords * segmentTimings[0])),
         mood: "welcoming",
         voice: "female",
         sfx: "ambient"
-      },
-      {
-        id: "induction", 
-        text: "Close your eyes gently and take a deep breath in... hold it for a moment... and slowly let it out. With each breath, feel your body becoming more and more relaxed.",
+        voice: "female",
+        sfx: "ambient"
+        id: "induction",
+        text: generateRichText(egoState, goalId, 'induction', Math.floor(totalWords * segmentTimings[1])),
         mood: "calming",
         voice: "female",
-        sfx: "breath"
-      },
+        sfx: "deep_tone"
+        text: "Close your eyes gently and take a deep breath in... hold it for a moment... and slowly let it out. With each breath, feel your body becoming more and more relaxed.",
+        mood: "calming",
+        id: "deepening",
+        text: generateRichText(egoState, goalId, 'deepening', Math.floor(totalWords * segmentTimings[2])),
+        mood: "hypnotic",
+        voice: "female",
+        sfx: "resonance"
       {
         id: "deepening",
-        text: "Now imagine yourself going deeper into this wonderful state of relaxation. Count slowly backwards from 5 to 1, and with each number, feel yourself sinking twice as deep.",
-        mood: "deepening",
+        id: "core_work",
+        text: generateRichText(egoState, goalId, 'transformation', Math.floor(totalWords * segmentTimings[3])),
+        mood: "transformative",
         voice: "female", 
+        sfx: "energy"
         sfx: "gentle"
       },
-      {
-        id: "transformation",
-        text: `Feel your ${userCtx?.egoState || 'Guardian'} energy awakening within you. You are releasing what no longer serves you and embracing your true potential.`,
+        id: "integration",
+        text: generateRichText(egoState, goalId, 'integration', Math.floor(totalWords * segmentTimings[4])),
+        mood: "anchoring",
+        voice: "female",
+        sfx: "crystallize"
         mood: "empowering",
         voice: "female",
-        sfx: "energy"
-      },
-      {
         id: "emergence",
-        text: "Now it's time to return. Count from 1 to 5, and with each number, feel yourself becoming more alert. 5... eyes open, fully awake and transformed.",
+        text: generateRichText(egoState, goalId, 'emergence', Math.floor(totalWords * segmentTimings[5])),
         mood: "energizing",
         voice: "female",
-        sfx: "uplifting"
+        sfx: "awakening"
       }
     ],
     metadata: {
       durationSec: userCtx?.lengthSec || 300,
       style: "hypnosis"
+    ],
+    metadata: {
+      durationSec: durationSec,
+      style: "advanced_hypnosis",
+      wordsPerMinute: wordsPerMinute,
+      totalWords: totalWords
     }
   };
+}
+
+function generateRichText(egoState: string, goalId: string, phase: string, targetWords: number): string {
+  // Generate substantial text content for each phase
+  const templates = {
+    welcome: `Welcome to your ${egoState} transformation session. Today we're focusing specifically on ${goalId}, and I want you to know that you're in exactly the right place at exactly the right time for this powerful work. Your ${egoState} energy is already beginning to awaken, preparing to guide you through this profound journey of change. Find your most comfortable position now, whether that's sitting or lying down, and begin to let your body settle into this space. Feel the support beneath you, notice the temperature of the air on your skin, and allow your breathing to find its own natural rhythm. This is your time, your space, your transformation.`,
+    induction: `Close your eyes gently now and take your first conscious breath of this session. Breathe in slowly and deeply, filling your lungs completely... and as you exhale, feel the first wave of relaxation beginning to flow through your body. With each breath you take, you're moving deeper into a state of profound relaxation and receptivity. Your ${egoState} energy is guiding this process, ensuring that you feel completely safe and supported as you let go. Notice how with each exhale, tension leaves your body... with each inhale, calm and peace flow in. Your muscles are beginning to soften and relax, starting with your face and jaw, flowing down through your neck and shoulders. This relaxation is deepening with every moment, preparing your mind for the powerful transformation work we'll do around ${goalId}.`,
+    deepening: `You're going deeper now, much deeper into this peaceful, receptive state. Your ${egoState} energy is creating the perfect inner environment for change. I want you to imagine yourself slowly descending a beautiful staircase, each step taking you deeper into your inner wisdom. With each step down, you feel twice as relaxed, twice as open to positive change. Step by step, deeper and deeper, your ${egoState} consciousness is expanding, opening to new possibilities around ${goalId}. Feel yourself sinking into this profound state where transformation happens easily and naturally. Your conscious mind can rest now, allowing your ${egoState} wisdom to guide the process of change.`,
+    transformation: `Your ${egoState} energy is now fully activated and focused on your ${goalId}. Feel this powerful archetypal force working at the deepest levels of your being, creating the exact changes you desire. These transformations are happening now, in this moment, at the cellular level, at the neurological level, at the quantum level of your existence. Your ${egoState} wisdom knows exactly what needs to change and how to change it. Feel these positive shifts occurring throughout your entire system - in your thoughts, your feelings, your beliefs, your behaviors. Everything related to ${goalId} is being transformed now, upgraded, optimized for your highest good. This change is permanent, powerful, and perfect for you.`,
+    integration: `These profound changes are now integrating into every aspect of who you are. Your ${egoState} energy is ensuring that these transformations become a permanent part of your identity, your daily experience, your automatic responses. Feel these changes locking in at the deepest levels, becoming as natural as breathing, as automatic as your heartbeat. When you encounter situations related to ${goalId} in your daily life, these new patterns will activate automatically, guided by your ${egoState} wisdom. You carry this transformation with you always, and it grows stronger with each passing day.`,
+    emergence: `It's time now to return to full awareness, bringing all these powerful changes with you. Your ${egoState} energy will continue working on your ${goalId} long after this session ends. I'll count from 1 to 5, and on the count of 5, you'll open your eyes feeling completely refreshed, energized, and transformed. 1... feeling energy beginning to return to your body... 2... becoming more aware of your surroundings... 3... feeling wonderful, feeling powerful, feeling transformed... 4... almost ready to open your eyes... and 5... eyes open! Fully alert, completely refreshed, and permanently changed for the better.`
+  };
+  
+  let baseText = templates[phase as keyof typeof templates] || templates.welcome;
+  
+  // Expand text to reach target word count
+  const currentWords = baseText.split(' ').length;
+  if (currentWords < targetWords) {
+    const expansionNeeded = targetWords - currentWords;
+    // Add breathing cues and pauses to extend duration naturally
+    const extensions = [
+      " Take another deep breath now, feeling this energy strengthening...",
+      " Allow yourself a moment to feel these changes deepening...", 
+      " Notice how each breath supports this transformation...",
+      " Feel this ${egoState} energy expanding throughout your being...",
+      " Let these positive changes continue to unfold naturally..."
+    ];
+    
+    let expandedText = baseText;
+    while (expandedText.split(' ').length < targetWords && extensions.length > 0) {
+      expandedText += extensions.shift()?.replace('${egoState}', egoState) || '';
+    }
+    baseText = expandedText;
+  }
+  
+  return baseText;
 }
 
 Deno.serve(async (req) => {
