@@ -63,9 +63,7 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
       </div>
       
       {/* Message Bubble */}
-      <div className={`max-w-[70%] flex flex-col ${message.role === 'user' ? 'order-1 items-end' : 'order-2 items-start'}`}>
-        message.role === 'user' ? 'items-end' : 'items-start'
-      } flex flex-col`}>
+      <div className={`max-w-[70%] flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
         <div className={`rounded-2xl p-4 border group relative ${
           message.role === 'user'
             ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-500/30 text-white rounded-tr-md'
@@ -119,11 +117,7 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
         </div>
         
         {/* Timestamp */}
-        <div className={`text-xs text-white/50 mt-1 px-2 ${
-          message.role === 'user' ? 'text-right' : 'text-left'
-        }`}>
-          message.role === 'user' ? 'text-right' : 'text-left'
-        }`}>
+        <div className={`text-xs text-white/50 mt-1 px-2 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
           <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       </div>
