@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Copy, Clock } from 'lucide-react';
+import { User, Copy } from 'lucide-react';
 import Orb from '../Orb';
 
 interface ChatMessage {
@@ -40,11 +40,9 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
   };
 
   return (
-    <div className={`flex w-full mb-4 animate-slide-up px-4 ${
-      message.role === 'user' ? 'justify-end' : 'justify-start'
-    }`}>
-      {/* Avatar */}
-      <div className={`flex-shrink-0 ${message.role === 'user' ? 'order-2 ml-3' : 'order-1 mr-3'}`}>
+    <div className={`flex gap-2 w-full ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+      {/* AvatarCell - Fixed 60x60, no grow/shrink */}
+      <div className="w-[60px] h-[60px] flex-none pointer-events-none">
         {message.role === 'libero' ? (
           <div className={`transition-all duration-300 ${isSpeaking ? 'animate-pulse' : ''}`}>
             <Orb
@@ -52,23 +50,24 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
               egoState={activeEgoState}
               size={60}
               variant="webgl"
-              className="orb-avatar"
             />
           </div>
         ) : (
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500/30 to-cyan-500/30 border-2 border-teal-400/50 flex items-center justify-center self-end">
+          <div className="w-[60px] h-[60px] rounded-full bg-gradient-to-br from-teal-500/30 to-cyan-500/30 border-2 border-teal-400/50 flex items-center justify-center">
             <User size={18} className="text-teal-400" />
           </div>
         )}
       </div>
       
-      {/* Message Bubble */}
-      <div className={`max-w-[70%] flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
+      {/* BubbleCell - Flexible width, max 78% */}
+      <div className={`flex-1 max-w-[78%] flex flex-col ${message.role === 'user' ? 'self-end items-end' : 'self-start items-start'}`}>
         <div className={`rounded-2xl p-4 border group relative ${
           message.role === 'user'
             ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-500/30 text-white rounded-tr-md'
             : message.isLoading
             ? 'bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border-purple-500/20 text-white rounded-tl-md'
+            : message.error
+            ? 'bg-gradient-to-br from-red-500/15 to-orange-500/15 border-red-500/30 text-white rounded-tl-md'
             : 'bg-gradient-to-br from-purple-500/15 to-indigo-500/15 border-purple-500/30 text-white rounded-tl-md'
         }`}>
           {/* Loading State */}
@@ -116,7 +115,7 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
           )}
         </div>
         
-        {/* Timestamp */}
+        {/* Timestamp - Below bubble, aligned with bubble */}
         <div className={`text-xs text-white/50 mt-1 px-2 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
           <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>

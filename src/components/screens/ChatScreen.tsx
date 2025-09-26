@@ -491,7 +491,7 @@ export default function ChatScreen() {
 
         {/* Chat Messages */}
         {hasRealMessages && (
-          <div className="flex-1 flex flex-col min-h-0" style={{ paddingTop: '60px', paddingBottom: '200px' }}>
+          <div className="flex-1 flex flex-col min-h-0" style={{ paddingTop: '60px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 140px + 1rem)' }}>
             <ChatMessages
               messages={messages}
               onCopyMessage={copyMessage}

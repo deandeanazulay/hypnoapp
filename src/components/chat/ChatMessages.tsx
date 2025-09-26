@@ -36,7 +36,7 @@ export default function ChatMessages({
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
-      <div className="max-w-3xl mx-auto space-y-2">
+      <div className="flex flex-col space-y-2">
         {messages.map((message, index) => (
           <div key={message.id} style={{ animationDelay: `${index * 50}ms` }}>
             <ChatBubble 
