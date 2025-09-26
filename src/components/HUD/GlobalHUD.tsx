@@ -51,13 +51,16 @@ export default function GlobalHUD() {
               <Settings size={16} className="text-white/80" />
             </button>
           </div>
+    );
+  }
+
   // Calculate XP progress
   const xpProgress = (user.experience % 100) / 100;
   const sessionsLeft = user.plan === 'free' ? Math.max(0, 1 - user.daily_sessions_used) : '∞';
+  const egoState = getEgoState(activeEgoState);
+  const egoColor = getEgoColor(activeEgoState);
 
   const handleEgoStateClick = () => {
-            }
-    )
     openEgoModal();
   };
 
