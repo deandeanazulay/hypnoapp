@@ -20,6 +20,36 @@ interface ChatMessage {
   error?: boolean;
 }
 
+// Local storage key for chat persistence
+const CHAT_STORAGE_KEY = 'libero-chat-messages';
+
+// Save messages to local storage
+const saveMessagesToStorage = (messages: ChatMessage[]) => {
+  try {
+    const messagesToSave = messages.filter(msg => !msg.isLoading); // Don't save loading states
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messagesToSave));
+  } catch (error) {
+    console.error('Failed to save chat messages to local storage:', error);
+  }
+};
+
+// Load messages from local storage
+const loadMessagesFromStorage = (): ChatMessage[] => {
+  try {
+    const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return parsed.map((msg: any) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      }));
+    }
+  } catch (error) {
+    console.error('Failed to load chat messages from local storage:', error);
+  }
+  return [];
+};
+
 export default function ChatScreen() {
   const { isAuthenticated } = useAuth();
   const { activeEgoState, showToast, openModal } = useAppStore();
@@ -27,11 +57,29 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+
+  // Load messages from local storage on mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      const savedMessages = loadMessagesFromStorage();
+      if (savedMessages.length > 0) {
+        setMessages(savedMessages);
+      }
+    }
+  }, [isAuthenticated]);
+
+  // Save messages to local storage whenever messages change
+  useEffect(() => {
+    if (isAuthenticated && messages.length > 0) {
+      saveMessagesToStorage(messages);
+    }
+  }, [messages, isAuthenticated]);
 
   // Send welcome message when screen loads and user is authenticated
   useEffect(() => {
-    if (isAuthenticated && messages.length === 0) {
+    if (isAuthenticated && messages.length === 0 && loadMessagesFromStorage().length === 0) {
       const welcomeMessage: ChatMessage = {
         id: 'welcome-' + Date.now(),
         role: 'libero',
@@ -215,7 +263,10 @@ export default function ChatScreen() {
   };
 
   const clearChat = () => {
+    // Clear from both state and local storage
     setMessages([]);
+    localStorage.removeItem(CHAT_STORAGE_KEY);
+    
     // Re-add welcome message
     setTimeout(() => {
       const welcomeMessage: ChatMessage = {
@@ -226,6 +277,18 @@ export default function ChatScreen() {
       };
       setMessages([welcomeMessage]);
     }, 100);
+  };
+
+  const toggleMicrophone = () => {
+    if (isListening) {
+      // Stop listening
+      setIsListening(false);
+      // TODO: Implement speech recognition stop
+    } else {
+      // Start listening
+      setIsListening(true);
+      // TODO: Implement speech recognition start
+    }
   };
 
   const suggestions = [
@@ -273,9 +336,9 @@ export default function ChatScreen() {
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 h-full overflow-hidden">
+      <div className="relative z-10 h-full flex flex-col">
         {/* Center Orb - Show at top when no real conversation yet */}
-        <div className="flex-1 flex items-center justify-center relative">
+        <div className={`${!hasRealMessages ? 'flex-1 flex items-center justify-center' : 'flex-shrink-0 py-8 flex justify-center'} relative`}>
           {!hasRealMessages && (
             <div className="text-center">
               <Orb
@@ -293,11 +356,20 @@ export default function ChatScreen() {
           )}
         </div>
 
-        {/* Messages Area */}
+        {/* Messages Area - Only show when we have real messages */}
+        {hasRealMessages && (
+          <div className="flex-1 min-h-0 overflow-y-auto pb-4">
+            <ChatMessages
+              messages={messages}
+              onCopyMessage={copyMessage}
+              activeEgoState={activeEgoState}
+            />
+          </div>
+        )}
       </div>
 
       {/* Suggestions - Above Input Area */}
-      <div className="fixed left-0 right-0 z-40" style={{ bottom: 'calc(var(--total-nav-height, 128px) + 120px)' }}>
+      <div className="fixed left-0 right-0 z-40" style={{ bottom: 'calc(var(--total-nav-height, 128px) + 140px)' }}>
         <ChatSuggestions
           suggestions={suggestions}
           onSuggestionClick={setInputText}
@@ -312,9 +384,11 @@ export default function ChatScreen() {
         onInputChange={setInputText}
         onSubmit={handleSubmit}
         onClearChat={clearChat}
-        onToggleMute={() => setIsMuted(!isMuted)}
+        onToggleMic={() => setIsMuted(!isMuted)}
         isLoading={isLoading}
-        isMuted={isMuted}
+        isMicEnabled={!isMuted}
+        isListening={false}
+        isListening={isListening}
         hasMessages={messages.length > 1}
       />
     </div>

@@ -27,8 +27,14 @@ export default function ChatInput({
   placeholder = "Ask Libero about protocols, ego states, or transformation techniques..."
 }: ChatInputProps) {
   return (
-    <div className="fixed left-0 right-0 bg-black/98 backdrop-blur-xl border-t border-white/20 px-4 py-4 z-50" 
-         style={{ bottom: 'var(--total-nav-height, 128px)', paddingBottom: '1rem' }}>
+    <div className="fixed left-0 right-0 bg-black/98 backdrop-blur-xl border-t border-white/20 z-50" 
+         style={{ 
+           bottom: 'var(--total-nav-height, 128px)', 
+           paddingTop: '1rem',
+           paddingBottom: '1rem',
+           paddingLeft: '1rem',
+           paddingRight: '1rem'
+         }}>
       <div className="px-4">
         <div className="max-w-3xl mx-auto">
           <div className="bg-gradient-to-br from-white/10 to-white/15 backdrop-blur-xl rounded-2xl border border-white/25 p-3 shadow-2xl">
