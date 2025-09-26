@@ -52,15 +52,9 @@ export class SessionManager {
   private currentUtteranceId: string | null = null;
   private voicesLoaded = false;
   private voicesLoadedPromise: Promise<void>;
-  private voicesLoadedPromise: Promise<void>;
-  private voicesLoadedPromise: Promise<void>;
 
   async initialize(userContext: any) {
     try {
-      // Initialize voices loading promise
-      this.voicesLoadedPromise = this._ensureVoicesLoaded();
-      // Initialize voices loading promise
-      this.voicesLoadedPromise = this._ensureVoicesLoaded();
       // Initialize voices loading promise
       this.voicesLoadedPromise = this._ensureVoicesLoaded();
       await this._initializeSession(userContext);
@@ -416,76 +410,6 @@ export class SessionManager {
     });
   }
 
-  private _ensureVoicesLoaded(): Promise<void> {
-    return new Promise((resolve) => {
-      if (typeof window === 'undefined' || !window.speechSynthesis) {
-        resolve();
-        return;
-      }
-
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        this.voicesLoaded = true;
-        resolve();
-        return;
-      }
-
-      const handleVoicesChanged = () => {
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          this.voicesLoaded = true;
-          console.log(`TTS: Loaded ${voices.length} browser voices`);
-          window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-          resolve();
-        }
-      };
-
-      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-      
-      // Fallback timeout in case voiceschanged never fires
-      setTimeout(() => {
-        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-        this.voicesLoaded = true;
-        resolve();
-      }, 3000);
-    });
-  }
-
-  private _ensureVoicesLoaded(): Promise<void> {
-    return new Promise((resolve) => {
-      if (typeof window === 'undefined' || !window.speechSynthesis) {
-        resolve();
-        return;
-      }
-
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        this.voicesLoaded = true;
-        resolve();
-        return;
-      }
-
-      const handleVoicesChanged = () => {
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          this.voicesLoaded = true;
-          console.log(`TTS: Loaded ${voices.length} browser voices`);
-          window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-          resolve();
-        }
-      };
-
-      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-      
-      // Fallback timeout in case voiceschanged never fires
-      setTimeout(() => {
-        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-        this.voicesLoaded = true;
-        resolve();
-      }, 3000);
-    });
-  }
-
   private _emit(event: string, data?: any) {
     if (this.eventListeners[event]) {
       this.eventListeners[event].forEach(listener => listener(data));
@@ -796,18 +720,10 @@ export class SessionManager {
   }
 
   private async _selectBestVoice(utterance: SpeechSynthesisUtterance) {
-    // Ensure voices are loaded
     await this.voicesLoadedPromise;
-    
-    // Ensure voices are loaded
-    await this.voicesLoadedPromise;
-    
-    // Ensure voices are loaded
-    await this.voicesLoadedPromise;
-    
     const voices = window.speechSynthesis.getVoices();
     
-    ];
+    let selectedVoice = null;
     const preferredVoices = [
       'Google US English', 
       'Microsoft Aria', 
@@ -819,6 +735,7 @@ export class SessionManager {
       'Karen',
       'Daniel'
     ];
+    
     for (const voiceName of preferredVoices) {
       selectedVoice = voices.find(voice => voice.name.includes(voiceName));
       if (selectedVoice) break;
@@ -831,10 +748,6 @@ export class SessionManager {
     if (selectedVoice) {
       utterance.voice = selectedVoice;
       console.log(`TTS: Selected voice: ${selectedVoice.name} (${selectedVoice.lang})`);
-    } else {
-      console.log(`TTS: Using default voice from ${voices.length} available voices`);
-    } else {
-      console.log(`TTS: Using default voice from ${voices.length} available voices`);
     } else {
       console.log(`TTS: Using default voice from ${voices.length} available voices`);
     }
