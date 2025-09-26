@@ -34,14 +34,32 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn('ChatGPT: Supabase not configured, using fallback');
-      throw new Error('Supabase configuration missing');
+    // Robust validation for environment variables
+    if (!supabaseUrl || !supabaseAnonKey || 
+        supabaseUrl === 'null' || supabaseUrl === 'undefined' || 
+        supabaseAnonKey === 'null' || supabaseAnonKey === 'undefined' ||
+        supabaseUrl === 'YOUR_SUPABASE_URL' || 
+        supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY' ||
+        supabaseUrl.trim() === '' || supabaseAnonKey.trim() === '') {
+      console.warn('ChatGPT: Invalid Supabase configuration detected');
+      console.warn('VITE_SUPABASE_URL:', supabaseUrl);
+      console.warn('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '[PRESENT]' : '[MISSING]');
+      throw new Error('Invalid or missing Supabase configuration. Please check your environment variables.');
     }
     
     const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
     
-    const response = await fetch(`${baseUrl}/functions/v1/generate-script`, {
+    // Validate the final URL before making the request
+    let validatedUrl: URL;
+    try {
+      validatedUrl = new URL(`${baseUrl}/functions/v1/generate-script`);
+    } catch (urlError) {
+      console.error('ChatGPT: Invalid Supabase URL construction');
+      console.error('Base URL:', baseUrl);
+      throw new Error(`Invalid Supabase URL: ${baseUrl}. Please verify VITE_SUPABASE_URL is correct.`);
+    }
+    
+    const response = await fetch(validatedUrl.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
