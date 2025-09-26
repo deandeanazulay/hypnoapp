@@ -209,15 +209,14 @@ Return ONLY the JSON object above - no markdown, no explanations.` }]
       }
       
       // Fallback to mock script
-      const mockScript = getMockScript(scriptParams)
       return new Response(
         JSON.stringify({
-          response: JSON.stringify(mockScript),
-          sessionUpdates: {},
-          source: 'mock_fallback',
-          timestamp: Date.now()
+          error: 'Script generation failed completely',
+          reason: 'AI_GENERATION_FAILED',
+          suggestion: 'Check GEMINI_API_KEY and try again'
         }),
         {
+          status: 500,
           headers: {
             'Content-Type': 'application/json',
             ...corsHeaders,

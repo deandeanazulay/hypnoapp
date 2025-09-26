@@ -250,8 +250,12 @@ Deno.serve(async (req) => {
 
     if (!res.ok) {
       console.warn(`Gemini API error ${res.status}, using mock script`);
-      const mockScript = getMockScript(userCtx);
-      return new Response(JSON.stringify(mockScript), {
+      return new Response(JSON.stringify({ 
+        error: `Gemini API error: ${res.status}`,
+        reason: 'API_ERROR',
+        suggestion: 'Check GEMINI_API_KEY configuration'
+      }), {
+        status: 500,
         headers: { "content-type": "application/json", ...corsHeaders },
       });
     }
@@ -266,8 +270,12 @@ Deno.serve(async (req) => {
       payload = typeof text === "string" ? extractJson(text) : extractJson(JSON.stringify(text));
     } catch {
       console.warn("Failed to extract JSON from Gemini response, using mock script");
-      const mockScript = getMockScript(userCtx);
-      return new Response(JSON.stringify(mockScript), {
+      return new Response(JSON.stringify({ 
+        error: 'Failed to parse AI response',
+        reason: 'PARSE_ERROR',
+        suggestion: 'AI returned invalid JSON format'
+      }), {
+        status: 500,
         headers: { "content-type": "application/json", ...corsHeaders },
       });
     }
@@ -279,8 +287,13 @@ Deno.serve(async (req) => {
       });
     } catch (validationError) {
       console.warn("Script validation failed, using mock script:", validationError);
-      const mockScript = getMockScript(userCtx);
-      return new Response(JSON.stringify(mockScript), {
+      return new Response(JSON.stringify({ 
+        error: 'Script validation failed',
+        reason: 'VALIDATION_ERROR',
+        details: validationError.message,
+        suggestion: 'AI response did not match expected script format'
+      }), {
+        status: 500,
         headers: { "content-type": "application/json", ...corsHeaders },
       });
     }
