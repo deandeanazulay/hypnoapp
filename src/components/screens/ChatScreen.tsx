@@ -476,8 +476,11 @@ export default function ChatScreen() {
         </div>
 
         {/* Messages Area - Only show when we have real messages */}
-              onStartRecording={startRecording}
-              activeEgoState={activeEgoState}
+        {hasRealMessages && (
+          <div className="flex-1 flex flex-col min-h-0">
+            <ChatMessages
+              messages={messages}
+              onCopyMessage={copyMessage}
             />
           </div>
         )}
