@@ -301,9 +301,9 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error("Generate script error:", error);
     
-    // Emergency fallback to prevent session from completely breaking
-    console.warn("Using emergency fallback script due to error:", error.message);
-    const emergencyScript = getEmergencyScript(userCtx);
+    // Always return a valid script structure even on error
+    console.warn("Generate script failed, returning emergency script:", error.message);
+    const emergencyScript = getEmergencyScript(userCtx || {});
     return new Response(JSON.stringify(emergencyScript), {
       headers: { "content-type": "application/json", ...corsHeaders },
     });
@@ -311,47 +311,53 @@ Deno.serve(async (req) => {
 });
 
 function getEmergencyScript(userCtx: any): any {
+  // Safe parameter extraction with robust defaults
   const egoState = String(userCtx?.egoState || 'guardian');
-  const goalName = String(userCtx?.goalName || 'transformation');
-  const actionName = String(userCtx?.actionName || 'change');
-  const duration = userCtx?.lengthSec || 600;
+  const goalName = String(userCtx?.goalName || userCtx?.goalId || 'personal transformation');
+  const actionName = String(userCtx?.actionName || 'transformation work');
+  const duration = Number(userCtx?.lengthSec) || 600;
+  const sessionId = userCtx?.sessionUniqueId || Date.now();
+  
+  console.log('Emergency script params:', { egoState, goalName, actionName, duration });
   
   return {
-    title: `${egoState} Emergency Session: ${goalName}`,
+    title: `Emergency Session: ${goalName}`,
     segments: [
       {
-        id: "emergency_intro",
-        text: `EMERGENCY MODE: API not configured. Close your eyes and breathe deeply. We're working on ${goalName} today.`,
+        id: "emergency_start",
+        text: `EMERGENCY MODE: API connection issue. Close your eyes and breathe deeply. We're working on ${goalName} with ${egoState} energy today.`,
         mood: "calming",
         voice: "female",
         sfx: "ambient"
       },
       {
-        id: "emergency_relax", 
-        text: "Take three deep breaths. In... and out. Feel your body relaxing. This is just a basic session while AI setup is completed.",
+        id: "emergency_relax",
+        text: "Take three slow, deep breaths. Inhale for 4 counts, hold for 4, exhale for 6. Feel your body beginning to relax with each breath.",
         mood: "calming",
         voice: "female",
         sfx: "ambient"
       },
       {
         id: "emergency_work",
-        text: `Focus on your goal of ${goalName}. Imagine yourself already having achieved this. See it, feel it, believe it.`,
+        text: `Now focus on your goal of ${goalName}. Imagine yourself already achieving this goal. See it clearly, feel it deeply, believe it completely.`,
         mood: "transformative",
-        voice: "female", 
+        voice: "female",
         sfx: "energy"
       },
       {
         id: "emergency_end",
-        text: "Time to return. Count 1, 2, 3 and open your eyes feeling refreshed. Configure your GEMINI_API_KEY for full AI sessions.",
+        text: "Time to return to full awareness. Count with me: 1... feeling energy returning... 2... becoming more alert... 3... eyes open, feeling refreshed.",
         mood: "energizing",
-        voice: "female",
+        voice: "female", 
         sfx: "awakening"
       }
     ],
     metadata: {
       durationSec: duration,
-      style: "emergency_fallback",
-      isEmergency: true
+      style: "emergency_mode",
+      isEmergency: true,
+      sessionId: sessionId,
+      error: "GEMINI_API_KEY not configured or API call failed"
     }
   };
 }

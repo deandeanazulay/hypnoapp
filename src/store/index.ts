@@ -58,7 +58,8 @@ export const useAppStore = create<AppState>()(
         settings: false,
         auth: false,
         plan: false,
-        tokens: false
+        tokens: false,
+        geminiChat: false
       },
       toasts: [],
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target } from 'lucide-react';
+import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, MessageCircle } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
@@ -24,6 +24,13 @@ export default function GlobalHUD() {
             >
               Sign In
             </button>
+            <button 
+              onClick={() => openModal('geminiChat')}
+              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110"
+              title="Test Gemini API"
+            >
+              <MessageCircle size={16} className="text-purple-400" />
+            </button>
           </div>
           
           <h1 className="text-white text-lg font-light">Libero</h1>
@@ -33,6 +40,14 @@ export default function GlobalHUD() {
             className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
           >
             <Settings size={16} className="text-white/80" />
+          </button>
+          
+          <button 
+            onClick={() => openModal('geminiChat')}
+            className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110"
+            title="Test Gemini API"
+          >
+            <MessageCircle size={16} className="text-purple-400" />
           </button>
         </div>
       </div>

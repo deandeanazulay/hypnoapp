@@ -23,6 +23,7 @@ import EgoStatesModal from './components/modals/EgoStatesModal';
 import SettingsModal from './components/modals/SettingsModal';
 import PlanModal from './components/modals/PlanModal';
 import TokensModal from './components/modals/TokensModal';
+import GeminiChatWidget from './components/GeminiChatWidget';
 
 // Session Components
 import UnifiedSessionWorld from './components/UnifiedSessionWorld';
@@ -368,6 +369,11 @@ export default function App() {
           
           <PlanModal />
           <TokensModal />
+          
+          <GeminiChatWidget 
+            isOpen={modals.geminiChat}
+            onClose={() => closeModal('geminiChat')}
+          />
 
           {/* Toast Manager */}
           <ToastManager />

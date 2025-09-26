@@ -107,3 +107,96 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
     };
   }
 }
+
+async function generateScriptDirectly(userContext: any): Promise<SessionScript> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY not configured');
+  }
+
+  const prompt = `Create a ${Math.floor(userContext.lengthSec / 60)}-minute hypnosis script for:
+- Goal: ${userContext.goalName}
+- Ego State: ${userContext.egoState}
+- Action: ${userContext.actionName}
+
+Return ONLY valid JSON with this structure:
+{
+  "title": "Session Title",
+  "segments": [
+    {"id": "intro", "text": "Complete script text...", "mood": "calming"},
+    {"id": "main", "text": "Main transformation text...", "mood": "transformative"},
+    {"id": "end", "text": "Awakening text...", "mood": "energizing"}
+  ]
+}`;
+
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+        responseMimeType: 'application/json'
+      }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Direct API call failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  if (!aiResponse) {
+    throw new Error('No response from Gemini API');
+  }
+
+  const script = JSON.parse(aiResponse);
+  if (!script.segments || script.segments.length === 0) {
+    throw new Error('Invalid script structure from API');
+  }
+
+  return script;
+}
+
+function createEmergencyScript(userContext: any): SessionScript {
+  const egoState = String(userContext?.egoState || 'guardian');
+  const goalName = String(userContext?.goalName || 'personal transformation');
+  const actionName = String(userContext?.actionName || 'transformation work');
+  
+  return {
+    title: `Emergency Mode: ${goalName}`,
+    segments: [
+      {
+        id: "emergency_1",
+        text: `Emergency session activated. Close your eyes and breathe deeply. Today we're working on ${goalName} using ${egoState} energy.`,
+        approxSec: 30,
+        mood: "calming"
+      },
+      {
+        id: "emergency_2", 
+        text: "Take slow, deep breaths. Count backwards from 10 to 1, feeling more relaxed with each number.",
+        approxSec: 45,
+        mood: "deepening"
+      },
+      {
+        id: "emergency_3",
+        text: `Focus on your intention for ${goalName}. Visualize yourself succeeding. Feel the confidence and power within you.`,
+        approxSec: 120,
+        mood: "transformative"
+      },
+      {
+        id: "emergency_4",
+        text: "Count from 1 to 5. On 5, open your eyes feeling refreshed and empowered. 1... 2... 3... 4... 5, eyes open!",
+        approxSec: 25,
+        mood: "energizing"
+      }
+    ],
+    metadata: {
+      isEmergency: true,
+      durationSec: userContext?.lengthSec || 600
+    }
+  };
+}
