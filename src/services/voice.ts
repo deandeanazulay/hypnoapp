@@ -127,47 +127,47 @@ export function synthesizeWithBrowserTTS(
       return;
     }
 
-    console.log(`Voice: Using browser TTS for: ${text.substring(0, 50)}...`);
+    console.log(`🗣️ Voice: Using browser TTS for: ${text.substring(0, 50)}...`);
 
     // Cancel any existing speech
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = voiceConfig.rate ?? 0.6; // Slower for hypnotherapy
-    utterance.pitch = voiceConfig.pitch ?? 0.7; // Lower, more soothing
+    utterance.rate = voiceConfig.rate ?? 0.7; // Slower for hypnotherapy
+    utterance.pitch = voiceConfig.pitch ?? 0.8; // Lower, more soothing
     utterance.volume = voiceConfig.volume ?? 0.9;
 
     // Wait for voices to load if needed
     const setVoiceAndSpeak = () => {
       const voices = speechSynthesis.getVoices();
-      console.log(`Voice: Found ${voices.length} browser voices`);
+      console.log(`🗣️ Voice: Found ${voices.length} browser voices`);
       
       // Find the most suitable voice for hypnotherapy
       const preferredVoice = voices.find(voice => 
-        voice.name.includes('Female') || 
-        voice.name.includes('Karen') ||
-        voice.name.includes('Samantha') ||
-        voice.name.includes('Victoria') ||
-        voice.name.includes('Moira') ||
+        voice.name.includes('David') ||
+        voice.name.includes('Daniel') ||
+        voice.name.includes('Mark') ||
+        voice.name.includes('Alex') ||
+        voice.name.includes('Tom') ||
         (voice.lang.includes('en') && voice.name.includes('Google'))
       ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
       
       if (preferredVoice) {
         utterance.voice = preferredVoice;
-        console.log(`Voice: Using browser voice: ${preferredVoice.name}`);
+        console.log(`🗣️ Voice: Using browser voice: ${preferredVoice.name}`);
       }
 
       utterance.onstart = () => {
-        console.log('Voice: Browser TTS started');
+        console.log('🗣️ Voice: Browser TTS started');
       };
 
       utterance.onend = () => {
-        console.log('Voice: Browser TTS finished');
+        console.log('🗣️ Voice: Browser TTS finished');
         resolve();
       };
 
       utterance.onerror = (event) => {
-        console.error('Voice: Browser TTS error:', event.error);
+        console.error('🗣️ Voice: Browser TTS error:', event.error);
         reject(new Error(`Browser TTS failed: ${event.error}`));
       };
 

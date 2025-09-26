@@ -115,8 +115,12 @@ export class SessionManager {
   }
 
   private async _initializeSession(userContext: any) {
+    console.log('📝 Session: _initializeSession called with context:', userContext);
+    
     try {
+      console.log('📝 Session: Calling getSessionScript...');
       this.scriptPlan = await getSessionScript(userContext);
+      console.log('📝 Session: getSessionScript returned:', this.scriptPlan ? 'success' : 'null');
       
       // Only use fallback if Gemini completely failed
       if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
@@ -136,14 +140,20 @@ export class SessionManager {
       this.scriptPlan = this._createEmergencyFallback(userContext);
     }
 
+    console.log(`📝 Session: Final script has ${this.scriptPlan.segments.length} segments`);
+    
     // Initialize segments array
     this.segments = this.scriptPlan.segments.map((segment: any) => ({
+      ...segment,
       id: segment.id,
       text: segment.text,
       approxSec: segment.approxSec || 30,
       audio: null,
-      ttsProvider: 'browser-tts' as const
+      ttsProvider: 'none' as const,
+      isBuffered: false
     }));
+    
+    console.log(`📝 Session: Segments array created with ${this.segments.length} items`);
     
     // Update state with total segments
     this._updateState({
@@ -457,7 +467,88 @@ export class SessionManager {
   }
 
   private async _prebufferInitialSegments() {
-    // Placeholder for prebuffering logic
+    console.log('🚀 Session: Pre-buffering initial segments for faster playback...');
+    
+    if (!this.segments || this.segments.length === 0) {
+      console.log('🚀 Session: No segments to pre-buffer');
+      return;
+    }
+    
+    // Pre-buffer first segment for immediate playback
+    const firstSegment = this.segments[0];
+    if (firstSegment) {
+      console.log('🚀 Session: Pre-buffering first segment...');
+      try {
+        await this._bufferSegmentAudio(0);
+        console.log('🚀 Session: First segment ready!');
+      } catch (error) {
+        console.warn('🚀 Session: First segment pre-buffer failed:', error);
+      }
+    }
+    
+    // Start background buffering for next segments
+    this._prebufferNextSegments();
+  }
+  
+  private async _prebufferNextSegments() {
+    console.log('🔄 Session: Background pre-buffering next segments...');
+    
+    const maxBuffer = AI.voice.preBufferSegments || 2;
+    const bufferPromises = [];
+    
+    for (let i = this.currentSegmentIndex + 1; i < Math.min(this.segments.length, this.currentSegmentIndex + maxBuffer + 1); i++) {
+      const segment = this.segments[i];
+      if (segment && !segment.isBuffered && !segment.bufferPromise) {
+        console.log(`🔄 Session: Queuing buffer for segment ${i + 1}`);
+        const promise = this._bufferSegmentAudio(i);
+        segment.bufferPromise = promise;
+        bufferPromises.push(promise);
+      }
+    }
+    
+    if (bufferPromises.length > 0) {
+      try {
+        await Promise.all(bufferPromises);
+        console.log(`🔄 Session: Pre-buffered ${bufferPromises.length} segments`);
+      } catch (error) {
+        console.warn('🔄 Session: Some segments failed to pre-buffer:', error);
+      }
+    }
+  }
+  
+  private async _bufferSegmentAudio(segmentIndex: number): Promise<void> {
+    const segment = this.segments[segmentIndex];
+    if (!segment || segment.isBuffered) {
+      return;
+    }
+    
+    console.log(`🔄 Buffer: Starting buffer for segment ${segmentIndex + 1}`);
+    
+    try {
+      const result = await synthesizeSegment(segment.text, {
+        voiceId: AI.voice.defaultVoiceId,
+        cacheKey: `buffer-segment-${segmentIndex}`,
+        mode: 'pre-gen'
+      });
+      
+      if (result.provider === 'elevenlabs' && result.audioUrl) {
+        // Create audio element for pre-buffered content
+        segment.audio = new Audio(result.audioUrl);
+        segment.audio.preload = 'auto';
+        segment.ttsProvider = 'elevenlabs';
+        segment.isBuffered = true;
+        console.log(`🔄 Buffer: ✅ ElevenLabs segment ${segmentIndex + 1} buffered`);
+      } else {
+        // For browser TTS, we can't pre-buffer, so mark as ready
+        segment.ttsProvider = 'browser-tts';
+        segment.isBuffered = true;
+        console.log(`🔄 Buffer: ⚠️ Browser TTS will be used for segment ${segmentIndex + 1}`);
+      }
+    } catch (error) {
+      console.warn(`🔄 Buffer: Failed to buffer segment ${segmentIndex + 1}:`, error);
+      segment.ttsProvider = 'browser-tts';
+      segment.isBuffered = true;
+    }
   }
 
   private _updateState(updates: Partial<SessionState>) {
@@ -508,6 +599,8 @@ export class SessionManager {
 
 
   play() {
+    console.log('🎮 Session: play() called');
+    
     // Check if we have segments
     if (!this.segments || this.segments.length === 0) {
       console.error('Session: No segments to play');
@@ -540,18 +633,25 @@ export class SessionManager {
     // Clear any previous TTS before starting new segment
     this._cancelCurrentTTS();
     
-    // Start with ElevenLabs attempt
+    console.log('🎵 Session: About to call _speakSegmentWithFallback');
     this._speakSegmentWithFallback(segment.text);
   }
 
   private async _speakSegmentWithFallback(text: string) {
-    console.log(`TTS: Starting segment ${this.currentSegmentIndex + 1} - attempting ElevenLabs first`);
+    console.log(`🎵 TTS: _speakSegmentWithFallback called for segment ${this.currentSegmentIndex + 1}`);
+    console.log(`🎵 TTS: Text length: ${text.length}, text: "${text.substring(0, 100)}..."`);
     
-    // Set TTS lock here to prevent multiple simultaneous attempts
+    // Check if TTS is already locked
+    if (this.ttsLock) {
+      console.log('⚠️ TTS: Already locked, skipping this attempt');
+      return;
+    }
+    
     this.ttsLock = true;
+    console.log('🔒 TTS: Lock acquired for segment', this.currentSegmentIndex + 1);
     
     try {
-      
+      console.log('🌐 TTS: Attempting ElevenLabs synthesis...');
       // Try ElevenLabs first
       const result = await synthesizeSegment(text, {
         voiceId: AI.voice.defaultVoiceId, // Use Adam voice from config
@@ -559,6 +659,8 @@ export class SessionManager {
         mode: 'live'
       });
 
+      console.log(`🌐 TTS: ElevenLabs result:`, result);
+      
       if (result.provider === 'elevenlabs' && result.audioUrl) {
         console.log(`TTS: ✅ Using ElevenLabs audio for segment ${this.currentSegmentIndex + 1}`);
         this._playAudioUrl(result.audioUrl);
@@ -569,9 +671,11 @@ export class SessionManager {
       if (result.error) {
         console.log(`TTS: ElevenLabs error: ${result.error}`);
       }
+      console.log('🗣️ TTS: Falling back to browser TTS...');
       await this._speakSegmentNow(text);
     } catch (error) {
       console.error(`TTS: ❌ Error with ElevenLabs for segment ${this.currentSegmentIndex + 1}, falling back to browser:`, error);
+      console.log('🗣️ TTS: Exception caught, using browser TTS...');
       await this._speakSegmentNow(text);
     }
   }
@@ -625,9 +729,55 @@ export class SessionManager {
       }
     });
   }
+  
+  private _playAudioElement(audioElement: HTMLAudioElement) {
+    console.log(`🎵 TTS: Playing pre-buffered audio element for segment ${this.currentSegmentIndex + 1}`);
+    
+    this.currentAudioElement = audioElement;
+    
+    // Clone the audio element to avoid conflicts
+    const clonedAudio = audioElement.cloneNode() as HTMLAudioElement;
+    this.currentAudioElement = clonedAudio;
+    
+    clonedAudio.onended = () => {
+      console.log(`TTS: ✅ Pre-buffered ElevenLabs segment ${this.currentSegmentIndex + 1} completed`);
+      this.ttsLock = false;
+      this.currentAudioElement = null;
+      
+      if (!this.wasCanceledByUs) {
+        this._handleSegmentEnd();
+      }
+    };
+    
+    clonedAudio.onerror = (event) => {
+      console.error(`TTS: ❌ Pre-buffered audio error for segment ${this.currentSegmentIndex + 1}:`, event);
+      this.ttsLock = false;
+      this.currentAudioElement = null;
+      
+      // Fall back to browser TTS
+      const segment = this.segments[this.currentSegmentIndex];
+      if (segment) {
+        this._speakSegmentNow(segment.text);
+      }
+    };
+    
+    clonedAudio.play().then(() => {
+      console.log(`TTS: ✅ Pre-buffered audio playing for segment ${this.currentSegmentIndex + 1}`);
+    }).catch(error => {
+      console.error(`TTS: ❌ Failed to play pre-buffered audio for segment ${this.currentSegmentIndex + 1}:`, error);
+      this.ttsLock = false;
+      this.currentAudioElement = null;
+      
+      const segment = this.segments[this.currentSegmentIndex];
+      if (segment) {
+        this._speakSegmentNow(segment.text);
+      }
+    });
+  }
 
   private async _speakSegmentNow(text: string) {
-    console.log(`TTS: Using browser TTS for segment ${this.currentSegmentIndex + 1}`);
+    console.log(`🗣️ TTS: _speakSegmentNow called for segment ${this.currentSegmentIndex + 1}`);
+    console.log(`🗣️ TTS: speechSynthesis available:`, !!window.speechSynthesis);
     
     if (!window.speechSynthesis) {
       console.error('Session: speechSynthesis not available');
@@ -639,12 +789,13 @@ export class SessionManager {
     }
 
     // Stop any existing speech before starting new utterance
+    console.log('🗣️ TTS: Canceling any existing speech');
     window.speechSynthesis.cancel();
     
     // Wait for voices to load
+    console.log('🗣️ TTS: Waiting for voices to load...');
     await this.voicesLoadedPromise;
-    
-    console.log(`TTS: Browser voices loaded, creating utterance for segment ${this.currentSegmentIndex + 1}`);
+    console.log('🗣️ TTS: Voices loaded, creating utterance');
     
     // Double-check if we were cancelled while waiting
     if (this.wasCanceledByUs) {
@@ -657,14 +808,17 @@ export class SessionManager {
     const utteranceId = `utterance-${Date.now()}-${Math.random()}`;
     this.currentUtteranceId = utteranceId;
     this.wasCanceledByUs = false;
+    console.log(`🗣️ TTS: Created utterance ID: ${utteranceId}`);
     
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.7;  // Slower for hypnotic effect
     utterance.pitch = 0.8; // Lower pitch for male-like calming effect
     utterance.volume = 1.0;
+    console.log('🗣️ TTS: Utterance configured');
     
     // Voice selection (handle async loading properly)
     await this._selectBestVoice(utterance);
+    console.log('🗣️ TTS: Voice selected');
     
     // Event handlers
     utterance.onstart = () => {
@@ -677,7 +831,10 @@ export class SessionManager {
       
       // Only advance if we didn't cancel this utterance
       if (this.currentUtteranceId === utteranceId && !this.wasCanceledByUs) {
+        console.log(`🗣️ TTS: Segment ${this.currentSegmentIndex + 1} completed, advancing...`);
         this._handleSegmentEnd();
+      } else {
+        console.log(`🗣️ TTS: Segment ${this.currentSegmentIndex + 1} ended but was cancelled or mismatched ID`);
       }
       
       if (this.wasCanceledByUs) {
@@ -702,16 +859,21 @@ export class SessionManager {
         console.warn('TTS: Error -', event.error);
         // Fallback advance to prevent stalling
         if (this.currentUtteranceId === utteranceId && !this.wasCanceledByUs) {
+          console.log(`🗣️ TTS: Error fallback - advancing from segment ${this.currentSegmentIndex + 1}`);
           this._handleSegmentEnd();
         }
       }
     };
     
     // Small delay to ensure clean state before speaking
+    console.log(`🗣️ TTS: Queuing speech for segment ${this.currentSegmentIndex + 1} with 100ms delay`);
     setTimeout(() => {
       if (this.currentUtteranceId === utteranceId && !this.wasCanceledByUs) {
         console.log(`TTS: Speaking segment ${this.currentSegmentIndex + 1} with browser TTS`);
+        console.log(`🗣️ TTS: Actually calling speechSynthesis.speak() now`);
         window.speechSynthesis.speak(utterance);
+      } else {
+        console.log(`🗣️ TTS: Cancelled before speaking - ID mismatch or cancelled`);
       }
     }, 100);
   }
@@ -757,7 +919,10 @@ export class SessionManager {
   }
 
   private _handleSegmentEnd() {
+    console.log(`🎵 _handleSegmentEnd called. Current segment: ${this.currentSegmentIndex + 1}/${this.segments.length}`);
+    
     if (this.currentSegmentIndex < this.segments.length - 1) {
+      console.log(`🎵 Advancing to segment ${this.currentSegmentIndex + 2}`);
       this.currentSegmentIndex++;
       
       this._updateState({ 
@@ -768,12 +933,16 @@ export class SessionManager {
       // Continue to next segment immediately if still playing
       if (this._state.playState === 'playing') {
         // Small pause for natural flow
+        console.log(`🎵 Session still playing, starting segment ${this.currentSegmentIndex + 1} in 500ms`);
         setTimeout(() => {
+          console.log(`🎵 Timeout completed, calling play() for segment ${this.currentSegmentIndex + 1}`);
           this.play();
-        }, 800);
+        }, 500);
+      } else {
+        console.log('🎵 Session not playing, segment advancement paused');
       }
     } else {
-      console.log('TTS: Session complete');
+      console.log('🎵 Session complete - all segments finished');
       this._updateState({ playState: 'stopped' });
       this._emit('end');
     }
@@ -830,11 +999,12 @@ export class SessionManager {
   }
 
   private _cancelCurrentTTS() {
-    console.log('TTS: Canceling current speech');
+    console.log('🛑 TTS: Canceling current speech');
     this.wasCanceledByUs = true;
     this.currentUtteranceId = null;
     
     if (this.currentAudioElement) {
+      console.log('🛑 TTS: Stopping ElevenLabs audio element');
       this.currentAudioElement.pause();
       this.currentAudioElement.onended = null;
       this.currentAudioElement.onerror = null;
@@ -843,11 +1013,13 @@ export class SessionManager {
     }
     
     if (window.speechSynthesis) {
+      console.log('🛑 TTS: Canceling browser speechSynthesis');
       window.speechSynthesis.cancel();
     }
     
     // Reset TTS lock after a brief delay to allow cleanup
     setTimeout(() => {
+      console.log('🔓 TTS: Lock released after cleanup delay');
       this.ttsLock = false;
     }, 50);
   }
