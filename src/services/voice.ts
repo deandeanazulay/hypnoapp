@@ -8,7 +8,7 @@ export interface VoiceResult {
 
 export interface SynthesizeSegmentOptions {
   voiceId?: string;
-  model?: 'tts-1' | 'tts-1-hd';
+  model?: 'gpt-4o-mini-tts' | 'tts-1' | 'tts-1-hd';
   cacheKey?: string;
   mode?: 'live' | 'pre-gen';
 }
@@ -49,8 +49,8 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       },
       body: JSON.stringify({ 
         text: text.trim(), 
-        voice: opts.voiceId || "alloy",
-        model: opts.model || "tts-1",
+        voice: opts.voiceId || "ash",
+        model: opts.model || "gpt-4o-mini-tts",
         speed: 1.0,
         response_format: "wav"
       }),

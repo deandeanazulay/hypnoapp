@@ -180,7 +180,8 @@ export class SessionManager {
       const result = await synthesizeSegment(segment.text, {
         voiceId: AI.voice.defaultVoiceId,
         cacheKey: `buffer-segment-${segmentIndex}`,
-        mode: 'pre-gen'
+        mode: 'pre-gen',
+        model: AI.voice.model
       });
       
       if (result.provider === 'openai-tts' && result.audioUrl) {
@@ -316,7 +317,8 @@ export class SessionManager {
       const result = await synthesizeSegment(text, {
         voiceId: AI.voice.defaultVoiceId,
         cacheKey: `live-segment-${this.currentSegmentIndex}`,
-        mode: 'live'
+        mode: 'live',
+        model: AI.voice.model
       });
 
       if (result.provider === 'openai-tts' && result.audioUrl) {

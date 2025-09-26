@@ -9,8 +9,10 @@ export const AI = {
   chatgptMaxRetries: 2,           // Max retries for transient ChatGPT errors
   openaiTtsBaseUrl: 'https://api.openai.com/v1/audio/speech', // OpenAI TTS API base URL
   voice: {
-    defaultVoiceId: 'alloy', // Alloy - calm, deep male voice perfect for hypnosis
-    model: 'tts-1', // 'tts-1' for standard quality, 'tts-1-hd' for higher quality
+    defaultVoiceId: 'ash', // Ash - hypnotic voice as requested
+    model: 'gpt-4o-mini-tts', // OpenAI's gpt-4o-mini-tts model as specified
+    instructions: 'speak in a hypnotic voice', // Hypnotic voice instruction
+    speed: 1.0, // Normal speed as specified
     preBufferSegments: 2,          // Number of audio segments to pre-buffer ahead of current playback
     maxCacheMB: 120,               // Maximum size for audio cache in MB
     maxCharactersPerRequest: 4096  // Character limit for OpenAI TTS
