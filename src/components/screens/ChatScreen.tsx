@@ -276,12 +276,13 @@ export default function ChatScreen() {
         body={
           <div className="relative z-10 h-full flex flex-col">
             {/* Orb Header */}
-            <div className="flex-shrink-0 flex justify-center py-6">
+            <div className="flex-shrink-0 flex justify-center pt-8 pb-4">
               <Orb
                 onTap={() => {}}
                 egoState={activeEgoState}
-                size={350}
+                size={window.innerWidth < 768 ? 200 : 350}
                 variant="webgl"
+                className="mx-auto"
               />
             </div>
 
@@ -290,19 +291,19 @@ export default function ChatScreen() {
               messages={messages}
               onCopyMessage={copyMessage}
             />
-
-            {/* Suggestions - Above Input Area */}
-            <div className="absolute bottom-32 left-0 right-0 z-30">
-              <ChatSuggestions
-                suggestions={suggestions}
-                onSuggestionClick={setInputText}
-                isLoading={isLoading}
-                show={messages.length <= 1}
-              />
-            </div>
           </div>
         }
       />
+
+      {/* Suggestions - Above Input Area */}
+      <div className="fixed bottom-40 left-0 right-0 z-30">
+        <ChatSuggestions
+          suggestions={suggestions}
+          onSuggestionClick={setInputText}
+          isLoading={isLoading}
+          show={messages.length <= 1}
+        />
+      </div>
 
       {/* Chat Input - Fixed at Bottom */}
       <ChatInput
