@@ -42,19 +42,15 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
   return (
     <div className={`flex gap-2 w-full ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
       {/* AvatarCell - Fixed 60x60, no grow/shrink */}
-      <div className="w-[60px] h-[60px] flex-none pointer-events-none overflow-visible">
-        {message.role === 'libero' ? (
-               style={{ transform: 'translateX(-70px) translateY(-30px)' }}>
-            <Orb
-              onTap={() => {}}
-              egoState={activeEgoState}
-              size={180}
-              variant="webgl"
-            />
-          </div>
-        ) : (
-          <div className="w-[60px] h-[60px] rounded-full bg-gradient-to-br from-teal-500/30 to-cyan-500/30 border-2 border-teal-400/50 flex items-center justify-center">
-            <User size={18} className="text-teal-400" />
+            <div className="transition-all duration-300" 
+                 style={{ transform: 'translateX(-70px) translateY(-30px)' }}>
+              <Orb
+                onTap={() => {}}
+                egoState={activeEgoState}
+                size={200}
+                variant="webgl"
+              />
+            </div>
           </div>
         )}
       </div>
