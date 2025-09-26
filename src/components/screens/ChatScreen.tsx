@@ -276,7 +276,7 @@ export default function ChatScreen() {
         body={
           <div className="relative z-10 h-full flex flex-col">
             {/* Orb Header */}
-            <div className="flex-shrink-0 flex justify-center pt-8 pb-4">
+            <div className="flex-shrink-0 flex justify-center pt-16 pb-8 relative z-20">
               <Orb
                 onTap={() => {}}
                 egoState={activeEgoState}
@@ -286,11 +286,13 @@ export default function ChatScreen() {
               />
             </div>
 
-            {/* Messages Area */}
-            <ChatMessages 
-              messages={messages}
-              onCopyMessage={copyMessage}
-            />
+            {/* Messages Area - Positioned below orb with proper spacing */}
+            <div className="flex-1 relative z-30" style={{ marginTop: '20px' }}>
+              <ChatMessages 
+                messages={messages}
+                onCopyMessage={copyMessage}
+              />
+            </div>
           </div>
         }
       />

@@ -27,7 +27,7 @@ export default function ChatMessages({ messages, onCopyMessage }: ChatMessagesPr
   }, [messages]);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-32" style={{ paddingBottom: '200px' }}>
+    <div className="h-full overflow-y-auto px-4" style={{ paddingBottom: '200px', paddingTop: '20px' }}>
       <div className="max-w-3xl mx-auto py-4">
         {messages.map((message, index) => (
           <div key={message.id} style={{ animationDelay: `${index * 100}ms` }}>

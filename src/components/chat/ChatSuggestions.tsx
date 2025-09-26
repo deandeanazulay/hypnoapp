@@ -60,10 +60,10 @@ export default function ChatSuggestions({
   if (!show) return null;
 
   return (
-    <div className="px-4">
+    <div className="px-4 relative z-40">
       <div 
         ref={scrollContainerRef}
-        className={`flex gap-3 overflow-x-auto scrollbar-hide pb-2 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`flex gap-3 overflow-x-auto scrollbar-hide pb-2 px-2 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         style={{ 
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
