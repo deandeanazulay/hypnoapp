@@ -61,6 +61,8 @@ export default function GlobalHUD() {
   const egoColor = getEgoColor(activeEgoState);
 
   const handleEgoStateClick = () => {
+            }
+    )
     openEgoModal();
   };
 
@@ -232,5 +234,6 @@ export default function GlobalHUD() {
       </div>
     </div>
   );
+}
 }
 }
