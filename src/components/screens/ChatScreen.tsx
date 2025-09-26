@@ -415,12 +415,13 @@ export default function ChatScreen() {
                         className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-white/70 text-xs transition-all hover:scale-105 disabled:opacity-50"
                       >
                         {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <Orb
+              onTap={() => {}}
+              egoState={activeEgoState}
+              afterglow={false}
+              size={200}
+              variant="webgl"
+            />
           </div>
         }
       />
