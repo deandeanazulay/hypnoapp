@@ -29,7 +29,13 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
       goalName: String(userContext.goalName || 'personal transformation'),
       actionName: String(userContext.actionName || 'transformation work'),
       methodName: String(userContext.methodName || 'guided relaxation'),
-      protocolName: String(userContext.protocolName || 'custom session')
+      protocolName: String(userContext.protocolName || 'custom session'),
+      // Add custom protocol specific fields for better Edge Function integration
+      customProtocolName: userContext.customProtocol?.name || userContext.protocolName || null,
+      customProtocolGoals: userContext.customProtocol?.goals?.join(', ') || '',
+      customProtocolInduction: userContext.customProtocol?.induction || '',
+      customProtocolDuration: userContext.customProtocol?.duration || userContext.lengthSec || 600,
+      customProtocolNotes: userContext.customProtocol?.deepener || ''
     };
     
     
