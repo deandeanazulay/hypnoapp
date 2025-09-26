@@ -80,14 +80,14 @@ Deno.serve(async (req) => {
     // ElevenLabs API request body
     const elevenLabsBody = { 
       text: processedText,
-      model_id: "eleven_flash_v2_5",
+      model_id: "eleven_v3", // Latest ElevenLabs v3 model for quality
       voice_settings: {
-        stability: 0.7,
-        similarity_boost: 0.8,
-        style: 0.3,
+        stability: 0.75,     // Optimized for v3
+        similarity_boost: 0.85, // Higher quality for v3  
+        style: 0.4,          // Enhanced expressiveness in v3
         use_speaker_boost: true
       },
-      output_format: "mp3_44100_128"
+      output_format: "mp3_44100_128" // High quality output
     };
 
     console.log('TTS: Calling ElevenLabs API with body:', JSON.stringify(elevenLabsBody, null, 2));
@@ -153,8 +153,8 @@ Deno.serve(async (req) => {
       
       return new Response(JSON.stringify({ 
         fallback: "browser-tts",
-        reason: `ElevenLabs validation error: ${validationError}`,
-        details: { status: 422, voiceId, textLength: processedText.length, model: "eleven_flash_v2_5" }
+        reason: `ElevenLabs validation error with eleven_v3: ${validationError}`,
+        details: { status: 422, voiceId, textLength: processedText.length, model: "eleven_v3" }
       }), {
         headers: { "content-type": "application/json", ...corsHeaders },
       });
@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
           status: elevenLabsResponse.status,
           textLength: processedText.length,
           voiceId: voiceId,
-          model: "eleven_flash_v2_5",
+          model: "eleven_v3",
           errorData: errorData
         }
       }), {
