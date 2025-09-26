@@ -73,9 +73,6 @@ class AnalyticsQueue {
 
     try {
       if (synchronous) {
-            if (import.meta.env.DEV) {
-              console.log('Cache: Evicted ' + entry.key + ', freed ' + (entry.size / (1024 * 1024)).toFixed(2) + 'MB');
-            }
         if (navigator.sendBeacon) {
           const data = JSON.stringify({ events: eventsToSend });
           navigator.sendBeacon('/api/analytics', data);
@@ -84,9 +81,6 @@ class AnalyticsQueue {
         // Regular fetch for asynchronous sending
         await this.sendEvents(eventsToSend);
       }
-        if (import.meta.env.DEV) {
-          console.log('Cache: Eviction complete. Freed ' + removedSize.toFixed(2) + 'MB');
-        }
       if (import.meta.env.DEV) {
         console.log('Analytics: Flushed ' + eventsToSend.length + ' events');
       }
