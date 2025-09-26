@@ -274,20 +274,19 @@ export default function ChatScreen() {
 
       <PageShell
         body={
-          <div className="relative z-10 h-full flex flex-col">
-            {/* Orb Header */}
-            <div className="flex-shrink-0 flex justify-center pt-16 pb-8 relative z-20">
+          <div className="relative z-10 h-full">
+            {/* Orb - Fixed positioning for visibility */}
+            <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20">
               <Orb
                 onTap={() => {}}
                 egoState={activeEgoState}
                 size={window.innerWidth < 768 ? 200 : 350}
                 variant="webgl"
-                className="mx-auto"
               />
             </div>
 
-            {/* Messages Area - Positioned below orb with proper spacing */}
-            <div className="flex-1 relative z-30" style={{ marginTop: '20px' }}>
+            {/* Messages Area - With top padding to avoid orb */}
+            <div className="h-full relative z-30" style={{ paddingTop: window.innerWidth < 768 ? '220px' : '370px' }}>
               <ChatMessages 
                 messages={messages}
                 onCopyMessage={copyMessage}
