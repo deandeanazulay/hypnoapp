@@ -58,10 +58,10 @@ Deno.serve(async (req: Request) => {
 
     console.log('Full session context received:', JSON.stringify(sessionContext, null, 2))
 
-    // Get Gemini API key from environment
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
-    if (!geminiApiKey) {
-      console.error('GEMINI_API_KEY environment variable not set')
+    // Get OpenAI API key from environment
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!openaiApiKey) {
+      console.error('OPENAI_API_KEY environment variable not set')
       
       // For script generation, return proper JSON structure
       if (requestType === 'script_generation') {
@@ -111,46 +111,56 @@ Deno.serve(async (req: Request) => {
       try {
         const prompt = [
           {
-            role: 'user',
-            parts: [{ text: JSON_ONLY_RULES + `
+            role: 'system',
+            content: `You are a professional hypnotherapist creating detailed scripts. Return ONLY a valid JSON object with this structure:
 
+{
+  "segments": [
+    {
+      "id": "segment_name", 
+      "text": "Complete hypnosis script text for this segment...",
+      "approxSec": 30,
+      "mood": "calming|deepening|transformative|energizing"
+    }
+  ],
+  "outline": "Brief description",
+  "safetyNotes": "Safety information",
+  "version": "1.0.0",
+  "hash": "unique_hash"
+}
 Generate a ${scriptParams.lengthSec / 60}-minute hypnotherapy script:
 - Goal: ${scriptParams.goalId}
 - Ego State: ${scriptParams.egoState}
 - User Level: ${scriptParams.level}
 - Locale: ${scriptParams.locale}
 
-Return ONLY the JSON object - no other text.` }]
+Return ONLY the JSON object - no other text.`
+          },
+          {
+            role: 'user',
+            content: `Generate script for: ${scriptParams.goalId} using ${scriptParams.egoState} energy`
           }
         ];
 
-        console.log('Calling Gemini for script generation with JSON-only rules...')
-        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+        console.log('Calling ChatGPT for script generation with JSON-only rules...')
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openaiApiKey}`,
           },
           body: JSON.stringify({
-            contents: prompt,
-            generationConfig: {
-              temperature: 0.3, // Lower temperature for more predictable JSON
-              topK: 20,
-              topP: 0.8,
-              maxOutputTokens: 2048,
-              responseMimeType: 'application/json' // Request JSON format
-            },
-            safetySettings: [
-              { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-              { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-              { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-              { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
-            ]
+            model: 'gpt-4o',
+            messages: prompt,
+            temperature: 0.3,
+            max_tokens: 2048,
+            response_format: { type: 'json_object' }
           })
         });
 
-        if (geminiResponse.ok) {
-          const geminiData = await geminiResponse.json();
-          const aiResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (openaiResponse.ok) {
+          const openaiData = await openaiResponse.json();
+          const aiResponse = openaiData.choices?.[0]?.message?.content;
           
           if (aiResponse) {
             // Try to parse as JSON - use defensive extraction
@@ -169,7 +179,7 @@ Return ONLY the JSON object - no other text.` }]
             
             // Validate basic structure
             if (scriptResponse.segments && Array.isArray(scriptResponse.segments)) {
-              console.log('Script generation successful via Gemini API');
+              console.log('Script generation successful via ChatGPT API');
               return new Response(
                 JSON.stringify({
                   response: JSON.stringify(scriptResponse),
@@ -213,60 +223,37 @@ Return ONLY the JSON object - no other text.` }]
       // Prepare conversation for Gemini
       conversation = [
         {
-          role: 'user',
-          parts: [{ text: systemPrompt }]
+          role: 'system',
+          content: systemPrompt
         },
-        ...sessionContext.conversationHistory.map(msg => ({
-          role: msg.role === 'user' ? 'user' : 'model',
-          parts: [{ text: msg.content }]
-        })),
+        ...sessionContext.conversationHistory,
         {
           role: 'user',
-          parts: [{ text: message }]
+          content: message
         }
       ]
     }
 
-    console.log('Calling Gemini API...')
+    console.log('Calling ChatGPT API...')
 
-    // Call Gemini API
+    // Call ChatGPT API
     let response: Response
     try {
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiApiKey}`,
         },
         body: JSON.stringify({
-          contents: conversation,
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: requestType === 'script_generation' ? 2048 : 1024,
-          },
-          safetySettings: [
-            {
-              category: 'HARM_CATEGORY_HARASSMENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_HATE_SPEECH',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            }
-          ]
+          model: 'gpt-4o',
+          messages: conversation,
+          temperature: 0.7,
+          max_tokens: requestType === 'script_generation' ? 2048 : 1024
         })
       })
     } catch (fetchError) {
-      console.error('Network error calling Gemini API:', fetchError)
+      console.error('Network error calling ChatGPT API:', fetchError)
       
       // For script generation, return proper JSON structure
       if (requestType === 'script_generation') {
@@ -309,7 +296,7 @@ Return ONLY the JSON object - no other text.` }]
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error('Gemini API error:', errorData)
+      console.error('ChatGPT API error:', errorData)
       
       // For script generation, return proper JSON structure
       if (requestType === 'script_generation') {
@@ -350,10 +337,10 @@ Return ONLY the JSON object - no other text.` }]
     }
 
     const data = await response.json()
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text
+    const aiResponse = data.choices?.[0]?.message?.content
 
     if (!aiResponse) {
-      console.error('No response content from Gemini AI')
+      console.error('No response content from ChatGPT')
       
       // For script generation, return proper JSON structure
       if (requestType === 'script_generation') {
