@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 
 // Types
 export type EgoStateId = 'guardian' | 'rebel' | 'healer' | 'explorer' | 'mystic' | 'sage' | 'child' | 'performer' | 'shadow' | 'builder' | 'seeker' | 'lover' | 'trickster' | 'warrior' | 'visionary';
-export type TabId = 'home' | 'explore' | 'create' | 'favorites' | 'profile';
+export type TabId = 'home' | 'explore' | 'create' | 'chat' | 'profile';
 
 interface Toast {
   id: string;
@@ -29,6 +29,7 @@ interface AppState {
     plan: boolean;
     tokens: boolean;
     chatgptChat: boolean;
+    favorites: boolean;
   };
   
   // Toasts
@@ -60,7 +61,8 @@ export const useAppStore = create<AppState>()(
         auth: false,
         plan: false,
         tokens: false,
-        chatgptChat: false
+        chatgptChat: false,
+        favorites: false
       },
       toasts: [],
 

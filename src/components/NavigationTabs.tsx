@@ -12,7 +12,7 @@ const iconMap = {
   home: Home,
   explore: Search,
   create: Plus,
-  favorites: Heart,
+  chat: MessageCircle,
   profile: User
 };
 

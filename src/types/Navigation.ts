@@ -1,4 +1,4 @@
-export type TabId = 'home' | 'explore' | 'create' | 'favorites' | 'profile';
+export type TabId = 'home' | 'explore' | 'create' | 'chat' | 'profile';
 
 export interface Tab {
   id: TabId;
@@ -27,10 +27,10 @@ export const TABS: Tab[] = [
     description: 'Custom Journey Builder'
   },
   {
-    id: 'favorites',
-    name: 'Favorites',
-    icon: '❤️',
-    description: 'Quick Access'
+    id: 'chat',
+    name: 'Chat',
+    icon: '💬',
+    description: 'Talk with Libero'
   },
   {
     id: 'profile',

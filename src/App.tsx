@@ -10,7 +10,7 @@ import { useViewportLayout } from './hooks/useViewportLayout';
 const HomeScreen = React.lazy(() => import('./components/screens/HomeScreen'));
 const ExploreScreen = React.lazy(() => import('./components/screens/ExploreScreen'));
 const CreateScreen = React.lazy(() => import('./components/screens/CreateScreen'));
-const FavoritesScreen = React.lazy(() => import('./components/screens/FavoritesScreen'));
+const ChatScreen = React.lazy(() => import('./components/screens/ChatScreen'));
 const ProfileScreen = React.lazy(() => import('./components/screens/ProfileScreen'));
 
 // Layout Components
@@ -24,6 +24,7 @@ import EgoStatesModal from './components/modals/EgoStatesModal';
 import SettingsModal from './components/modals/SettingsModal';
 import PlanModal from './components/modals/PlanModal';
 import TokensModal from './components/modals/TokensModal';
+import FavoritesModal from './components/modals/FavoritesModal';
 import ChatGPTChatWidget from './components/ChatGPTChatWidget';
 
 // Session Components
@@ -147,8 +148,8 @@ export default function App() {
               return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
             case 'create':
               return <CreateScreen onProtocolCreate={handleProtocolCreate} onShowAuth={handleShowAuth} />;
-            case 'favorites':
-              return <FavoritesScreen onSessionSelect={handleFavoriteSelect} />;
+            case 'chat':
+              return <ChatScreen />;
             case 'profile':
               return (
                 <ProfileScreen
@@ -409,6 +410,10 @@ export default function App() {
             <ChatGPTChatWidget 
               isOpen={modals.chatgptChat}
               onClose={() => closeModal('chatgptChat')}
+            />
+
+            <FavoritesModal 
+              onSessionSelect={handleFavoriteSelect}
             />
 
             {/* Toast Manager */}

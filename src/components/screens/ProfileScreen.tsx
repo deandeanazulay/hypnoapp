@@ -246,6 +246,17 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                 </button>
 
                 <button
+                  onClick={() => openModal('favorites')}
+                  className="bg-gradient-to-br from-rose-500/10 to-pink-500/10 backdrop-blur-xl rounded-xl p-4 border border-rose-500/20 hover:border-rose-500/30 hover:scale-105 transition-all text-left"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <Heart size={20} className="text-rose-400" />
+                    <ChevronRight size={16} className="text-white/40" />
+                  </div>
+                  <h4 className="text-white font-semibold mb-1">Favorites</h4>
+                  <p className="text-white/70 text-sm">Mind vault</p>
+                </button>
+                <button
                   onClick={handleOpenSettings}
                   className="bg-gradient-to-br from-gray-500/10 to-slate-500/10 backdrop-blur-xl rounded-xl p-4 border border-gray-500/20 hover:border-gray-500/30 hover:scale-105 transition-all text-left"
                 >
