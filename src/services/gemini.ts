@@ -15,36 +15,56 @@ export interface SessionScript {
 
 export async function getSessionScript(userContext: any): Promise<SessionScript> {
   try {
+    console.log('Gemini: Generating dynamic script with context:', userContext);
+    
+    // Add timestamp and randomness for unique scripts
+    const enhancedContext = {
+      ...userContext,
+      currentTime: new Date().toISOString(),
+      sessionUniqueId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      promptVariation: Math.floor(Math.random() * 5) + 1
+    };
+    
     console.log('Gemini: Generating script with context:', userContext);
     
-    const { data, error } = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-script`, {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.warn('Gemini: Supabase not configured, using fallback');
+      throw new Error('Supabase configuration missing');
+    }
+    
+    const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
+    
+    const response = await fetch(`${baseUrl}/functions/v1/generate-script`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
       },
       body: JSON.stringify({
-        egoState: userContext.egoState || 'guardian',
-        goalId: userContext.goalId || 'transformation',
-        lengthSec: userContext.lengthSec || 600,
-        customProtocol: userContext.customProtocol,
-        protocol: userContext.protocol,
-        userPrefs: userContext.userPrefs || {}
+        userCtx: enhancedContext,
+        templates: {
+          systemPrompt: 'Create a unique, dynamic hypnosis script',
+          requireUnique: true
+        }
       })
     });
 
-    if (error) {
-      console.warn('Gemini: API error, using fallback');
-      throw new Error(`API Error: ${error}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn('Gemini: API error, using fallback:', errorText);
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
     }
 
-    const result = await data.json();
+    const result = await response.json();
     
     if (!result.segments || result.segments.length === 0) {
       throw new Error('No segments returned from API');
     }
 
-    console.log(`Gemini: Generated ${result.segments.length} segments`);
+    console.log(`Gemini: ✅ Generated ${result.segments.length} unique segments`);
     return result;
     
   } catch (error) {

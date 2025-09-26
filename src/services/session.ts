@@ -831,13 +831,11 @@ export class SessionManager {
     
     // Clean up audio URLs to prevent memory leaks
     this.segments.forEach(segment => {
-      if (segment?.audio?.src.startsWith('blob:')) {
+      if (segment?.audio?.src) {
         URL.revokeObjectURL(segment.audio.src);
       }
     });
     
-    this._isInitialized = false;
-    this._initializationPromise = null;
     this.ttsLock = false;
     this.wasCanceledByUs = false;
     this.currentUtteranceId = null;
@@ -856,4 +854,37 @@ export class SessionManager {
   getCurrentState(): SessionState {
     return { ...this._state };
   }
+}
+
+// Factory function to create and start a session
+export function startSession(options: StartSessionOptions): SessionHandle {
+  const manager = new SessionManager();
+  
+  // Convert options to userContext format
+  const userContext = {
+    egoState: options.egoState,
+    goalId: options.goalId || options.goal?.name || 'transformation',
+    lengthSec: (options.lengthSec || 15 * 60), // Default 15 minutes
+    customProtocol: options.customProtocol,
+    protocol: options.protocol,
+    userPrefs: options.userPrefs,
+    action: options.action,
+    goal: options.goal,
+    method: options.method
+  };
+  
+  // Start initialization immediately
+  manager.initialize(userContext).catch(error => {
+    console.error('Session: Failed to initialize session:', error);
+  });
+  
+  return {
+    play: () => manager.play(),
+    pause: () => manager.pause(),
+    next: () => manager.next(),
+    prev: () => manager.prev(),
+    dispose: () => manager.dispose(),
+    on: (event: string, listener: Function) => manager.on(event, listener),
+    getCurrentState: () => manager.getCurrentState()
+  };
 }
