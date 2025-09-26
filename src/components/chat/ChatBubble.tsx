@@ -44,7 +44,7 @@ export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking
       {/* AvatarCell - Fixed 60x60, no grow/shrink */}
       <div className="w-[60px] h-[60px] flex-none pointer-events-none overflow-visible">
         {message.role === 'libero' ? (
-          <div className={`transition-all duration-300 ${isSpeaking ? 'animate-pulse' : ''}`}>
+          <div className={`transition-all duration-300 ${isSpeaking ? 'animate-pulse' : ''}`} style={{ transform: 'translateX(-70px)' }}>
             <Orb
               onTap={() => {}}
               egoState={activeEgoState}
