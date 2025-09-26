@@ -15,11 +15,9 @@ export interface SynthesizeSegmentOptions {
 
 export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOptions = {}): Promise<VoiceResult> {
   const startTime = Date.now();
-  console.log(`Voice: Synthesizing ${text.length} chars with voice ${opts.voiceId || 'default'} for ${opts.cacheKey || 'unknown segment'}`);
   
   // Check character limit for ElevenLabs Flash v2.5 (3000 chars)
   if (text.length > 3000) {
-    console.warn(`Voice: Text too long (${text.length} chars) for ElevenLabs Flash v2.5 (max 3000), truncating for ${opts.cacheKey || 'segment'}`);
     text = text.substring(0, 2900) + '...'; // Leave some buffer
   }
   
@@ -34,7 +32,6 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn(`Voice: Supabase configuration missing for ${opts.cacheKey || 'segment'}, falling back to browser TTS`);
     track('tts_synthesis_success', {
       textLength: text.length,
       provider: 'browser-tts',
@@ -46,7 +43,6 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
 
   try {
     const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
-    console.log(`Voice: Calling TTS function at ${baseUrl}/functions/v1/tts for ${opts.cacheKey || 'segment'}`);
     
     const response = await fetch(`${baseUrl}/functions/v1/tts`, {
       method: "POST",
@@ -62,7 +58,6 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Voice: TTS function error ${response.status} for ${opts.cacheKey || 'segment'}:`, errorText);
       throw new Error(`TTS function returned ${response.status}: ${errorText}`);
     }
 
@@ -71,8 +66,6 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     // Check if response is JSON (fallback signal)
     if (contentType.includes("application/json")) {
       const fallbackData = await response.json();
-      console.log(`Voice: ElevenLabs fallback triggered for ${opts.cacheKey || 'segment'}:`, fallbackData.reason || 'API returned JSON instead of audio');
-      console.log(`Voice: Fallback details:`, fallbackData);
       
       track('tts_synthesis_success', {
         textLength: text.length,
@@ -89,12 +82,10 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       const audioBlob = await response.blob();
       
       if (audioBlob.size === 0) {
-        console.warn(`Voice: Received empty audio response for ${opts.cacheKey || 'segment'}, falling back to browser TTS`);
         return { provider: 'browser-tts' };
       }
       
       const audioUrl = URL.createObjectURL(audioBlob);
-      console.log(`Voice: Successfully generated ${audioBlob.size} bytes of audio for ${opts.cacheKey || 'segment'}`);
       
       track('tts_synthesis_success', {
         textLength: text.length,
@@ -110,7 +101,6 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     throw new Error(`Unexpected content type: ${contentType}`);
 
   } catch (error: any) {
-    console.error(`Voice: Synthesis failed for ${opts.cacheKey || 'segment'}:`, error.message);
     
     track('tts_synthesis_error', {
       error: error.message,

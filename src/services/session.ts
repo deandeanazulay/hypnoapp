@@ -378,24 +378,17 @@ export class SessionManager {
   }
 
   private _playPreBufferedAudio(audioElement: HTMLAudioElement) {
-    console.log(`🎵 TTS: Playing pre-buffered ElevenLabs for segment ${this.currentSegmentIndex + 1}`);
     
     // Clone to avoid conflicts
     const clonedAudio = audioElement.cloneNode() as HTMLAudioElement;
     this.currentAudioElement = clonedAudio;
     
-    clonedAudio.onloadeddata = () => {
-      console.log(`🎵 TTS: ElevenLabs audio loaded for segment ${this.currentSegmentIndex + 1}`);
-    };
-    
     clonedAudio.onended = () => {
-      console.log(`🎵 TTS: ✅ Pre-buffered ElevenLabs segment ${this.currentSegmentIndex + 1} completed`);
       this.currentAudioElement = null;
       this._handleSegmentEnd();
     };
     
     clonedAudio.onerror = (event) => {
-      console.error(`🎵 TTS: ❌ Pre-buffered audio error for segment ${this.currentSegmentIndex + 1}:`, event);
       this.currentAudioElement = null;
       
       // Fall back to browser TTS on audio error  
@@ -406,7 +399,6 @@ export class SessionManager {
     };
     
     clonedAudio.play().catch(error => {
-      console.error(`🎵 TTS: ❌ Failed to play pre-buffered audio for segment ${this.currentSegmentIndex + 1}:`, error);
       this.currentAudioElement = null;
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
@@ -416,24 +408,17 @@ export class SessionManager {
   }
 
   private _playElevenLabsAudio(audioUrl: string) {
-    console.log(`🎵 TTS: Playing live ElevenLabs for segment ${this.currentSegmentIndex + 1}`);
     
     // Create audio element for ElevenLabs
     this.currentAudioElement = new Audio(audioUrl);
     this.currentAudioElement.volume = 1.0;
     
-    this.currentAudioElement.onloadeddata = () => {
-      console.log(`🎵 TTS: ElevenLabs audio loaded for segment ${this.currentSegmentIndex + 1}, starting playback`);
-    };
-    
     this.currentAudioElement.onended = () => {
-      console.log(`🎵 TTS: ✅ Live ElevenLabs segment ${this.currentSegmentIndex + 1} completed`);
       this.currentAudioElement = null;
       this._handleSegmentEnd();
     };
     
     this.currentAudioElement.onerror = (event) => {
-      console.error(`🎵 TTS: ❌ Live ElevenLabs audio error for segment ${this.currentSegmentIndex + 1}:`, event);
       this.currentAudioElement = null;
       
       // Fall back to browser TTS on audio error  
@@ -444,10 +429,7 @@ export class SessionManager {
     };
     
     // Start playback with error handling
-    this.currentAudioElement.play().then(() => {
-      console.log(`🎵 TTS: ElevenLabs playback started successfully for segment ${this.currentSegmentIndex + 1}`);
-    }).catch(error => {
-      console.error(`🎵 TTS: ❌ Failed to play live ElevenLabs audio for segment ${this.currentSegmentIndex + 1}:`, error);
+    this.currentAudioElement.play().catch(error => {
       this.currentAudioElement = null;
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
@@ -457,7 +439,6 @@ export class SessionManager {
   }
 
   private async _playWithBrowserTTS(text: string) {
-    console.log(`🗣️ TTS: Using browser TTS for segment ${this.currentSegmentIndex + 1}`);
     
     if (!window.speechSynthesis) {
       console.error('Session: speechSynthesis not available');
@@ -473,7 +454,6 @@ export class SessionManager {
     // Wait for voices to load
     await this.voicesLoadedPromise;
     
-    console.log(`🗣️ TTS: Browser voices loaded, creating utterance for segment ${this.currentSegmentIndex + 1}`);
     
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.7;  // Slower for hypnotic effect
@@ -484,12 +464,9 @@ export class SessionManager {
     await this._selectBestVoice(utterance);
     
     // Event handlers
-    utterance.onstart = () => {
-      console.log(`🗣️ TTS: ✅ Browser TTS segment ${this.currentSegmentIndex + 1} started`);
-    };
+    utterance.onstart = () => {};
     
     utterance.onend = () => {
-      console.log(`🗣️ TTS: ✅ Browser TTS segment ${this.currentSegmentIndex + 1} completed`);
       this.currentUtterance = null;
       this._handleSegmentEnd();
     };
@@ -497,18 +474,15 @@ export class SessionManager {
     utterance.onerror = (event) => {
       // Only log non-interruption errors
       if (event.error !== 'interrupted' && event.error !== 'canceled') {
-        console.error(`🗣️ TTS: ❌ Browser TTS error for segment ${this.currentSegmentIndex + 1}:`, event.error);
+        console.error('Browser TTS error:', event.error);
       } else {
-        console.log(`🗣️ TTS: Browser TTS ${event.error} for segment ${this.currentSegmentIndex + 1} (expected)`);
       }
       
       this.currentUtterance = null;
       
       if (event.error === 'interrupted' || event.error === 'canceled') {
         // Expected - don't advance
-        console.log(`🗣️ TTS: Interrupted/canceled segment ${this.currentSegmentIndex + 1}`);
       } else {
-        console.warn('🗣️ TTS: Unexpected error -', event.error);
         // Fallback advance to prevent stalling
         this._handleSegmentEnd();
       }
@@ -520,7 +494,6 @@ export class SessionManager {
     // Small delay to ensure clean state before speaking
     setTimeout(() => {
       if (this.currentUtterance === utterance && !this._isDisposed) {
-        console.log(`🗣️ TTS: Speaking segment ${this.currentSegmentIndex + 1} with browser TTS`);
         window.speechSynthesis.speak(utterance);
       }
     }, 100);
@@ -560,22 +533,16 @@ export class SessionManager {
     
     if (selectedVoice) {
       utterance.voice = selectedVoice;
-      console.log(`🗣️ TTS: Selected browser voice: ${selectedVoice.name} (${selectedVoice.lang}) for segment ${this.currentSegmentIndex + 1}`);
-    } else {
-      console.log(`🗣️ TTS: Using default browser voice from ${voices.length} available voices for segment ${this.currentSegmentIndex + 1}`);
     }
   }
 
   private _handleSegmentEnd() {
-    console.log(`🎵 Segment ${this.currentSegmentIndex + 1} completed`);
     
     if (this._isDisposed) {
-      console.log('Session disposed during segment end');
       return;
     }
     
     if (this.currentSegmentIndex < this.segments.length - 1) {
-      console.log(`🎵 Advancing to segment ${this.currentSegmentIndex + 2}`);
       this.currentSegmentIndex++;
       
       this._updateState({ 
@@ -585,7 +552,6 @@ export class SessionManager {
       
       // Continue to next segment if still playing
       if (this._state.playState === 'playing') {
-        console.log(`🎵 Auto-continuing to segment ${this.currentSegmentIndex + 1} in 500ms`);
         setTimeout(() => {
           if (this._state.playState === 'playing' && !this._isDisposed) {
             this._playCurrentSegment();
@@ -593,7 +559,6 @@ export class SessionManager {
         }, 500);
       }
     } else {
-      console.log('🎵 Session complete - all segments finished');
       this._updateState({ playState: 'stopped' });
       this._emit('end');
     }
@@ -602,14 +567,12 @@ export class SessionManager {
   pause() {
     if (this._state.playState === 'paused') return;
     
-    console.log('⏸️ Session: Pausing');
     this._cancelCurrentTTS();
     this._updateState({ playState: 'paused' });
     this._emit('pause');
   }
 
   next() {
-    console.log('⏭️ Session: Next segment');
     this._cancelCurrentTTS();
     
     if (this.currentSegmentIndex < this.segments.length - 1) {
@@ -632,7 +595,6 @@ export class SessionManager {
   }
 
   prev() {
-    console.log('⏮️ Session: Previous segment');
     this._cancelCurrentTTS();
     
     if (this.currentSegmentIndex > 0) {
@@ -652,7 +614,6 @@ export class SessionManager {
   }
 
   private _cancelCurrentTTS() {
-    console.log('🛑 TTS: Canceling current speech');
     
     if (this.currentAudioElement) {
       this.currentAudioElement.pause();
@@ -663,14 +624,12 @@ export class SessionManager {
     }
     
     if (this.currentUtterance) {
-      console.log('🛑 TTS: Canceling browser speechSynthesis');
       window.speechSynthesis.cancel();
       this.currentUtterance = null;
     }
   }
   
   dispose() {
-    console.log('Session: Disposing session manager');
     this._isDisposed = true;
     this._cancelCurrentTTS();
     
