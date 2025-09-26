@@ -30,15 +30,13 @@ export default function ChatBubble({ message, onCopy, activeEgoState, showOrbAsL
             <User size={16} className="text-teal-400" />
           </div>
         ) : (
-          <div className="w-16 h-16 flex items-center justify-center">
-            <Orb
-              onTap={() => {}}
-              egoState={activeEgoState}
-              size={60}
-              variant="webgl"
-              className="orb-avatar"
-            />
-          </div>
+          <Orb
+            onTap={() => {}}
+            egoState={activeEgoState}
+            size={80}
+            variant="webgl"
+            className="orb-avatar flex-shrink-0"
+          />
         )}
       </div>
       
