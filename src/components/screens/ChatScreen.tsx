@@ -477,15 +477,6 @@ export default function ChatScreen() {
 
         {/* Messages Area - Only show when we have real messages */}
               onStartRecording={startRecording}
-              onStopRecording={stopRecording}
-              onPlayRecording={playRecording}
-              onDeleteRecording={deleteRecording}
-              onSendRecording={sendRecording}
-          <div className="flex-1 min-h-0 overflow-y-auto pb-4">
-              isRecording={isRecording}
-              hasRecording={hasRecording}
-              isPlayingRecording={isPlayingRecording}
-              recordingDuration={recordingDuration}
               activeEgoState={activeEgoState}
             />
           </div>
@@ -508,11 +499,16 @@ export default function ChatScreen() {
         onInputChange={setInputText}
         onSubmit={handleSubmit}
         onClearChat={clearChat}
-        onToggleMic={() => setIsMicEnabled(!isMicEnabled)}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
+        onPlayRecording={playRecording}
+        onDeleteRecording={deleteRecording}
+        onSendRecording={sendRecording}
         isLoading={isLoading}
-        isMicEnabled={isMicEnabled}
-        isListening={false}
-        isListening={isListening}
+        isRecording={isRecording}
+        hasRecording={hasRecording}
+        isPlayingRecording={isPlayingRecording}
+        recordingDuration={recordingDuration}
         hasMessages={messages.length > 1}
       />
     </div>
