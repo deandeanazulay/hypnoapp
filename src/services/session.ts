@@ -418,12 +418,6 @@ export class SessionManager {
 
 
   play() {
-    // Single-flight guard
-    if (this.ttsLock) {
-      console.log('Session: TTS already active, ignoring duplicate play');
-      return;
-    }
-    
     // Check if we have segments
     if (!this.segments || this.segments.length === 0) {
       console.error('Session: No segments to play');
@@ -443,7 +437,7 @@ export class SessionManager {
       return;
     }
     
-    console.log(`TTS: Starting segment ${this.currentSegmentIndex + 1}/${this.segments.length}`);
+    console.log(`Session: Starting segment ${this.currentSegmentIndex + 1}/${this.segments.length} with text: "${segment.text.substring(0, 50)}..."`);
     
     // Update state to show current segment
     this._updateState({ 
@@ -453,7 +447,8 @@ export class SessionManager {
     });
     this._emit('play');
     
-    // CRITICAL: Try ElevenLabs first, fallback to browser TTS
+    // Set TTS lock and try ElevenLabs first
+    this.ttsLock = true;
     this._speakSegmentWithFallback(segment.text);
   }
 
@@ -483,16 +478,18 @@ export class SessionManager {
   }
 
   private _playAudioUrl(audioUrl: string) {
+    console.log(`TTS: Creating audio element for ElevenLabs segment ${this.currentSegmentIndex + 1}`);
+    
     // Create audio element for ElevenLabs
     this.currentAudioElement = new Audio(audioUrl);
     this.currentAudioElement.volume = 1.0;
     
     this.currentAudioElement.onloadeddata = () => {
-      console.log('TTS: ElevenLabs audio loaded, starting playback');
+      console.log(`TTS: ElevenLabs audio loaded for segment ${this.currentSegmentIndex + 1}, starting playback`);
     };
     
     this.currentAudioElement.onended = () => {
-      console.log(`TTS: ElevenLabs segment ${this.currentSegmentIndex + 1} completed`);
+      console.log(`TTS: ✅ ElevenLabs segment ${this.currentSegmentIndex + 1} completed successfully`);
       this.ttsLock = false;
       this.currentAudioElement = null;
       
@@ -502,24 +499,31 @@ export class SessionManager {
     };
     
     this.currentAudioElement.onerror = (event) => {
-      console.error('TTS: ElevenLabs audio error:', event);
+      console.error(`TTS: ❌ ElevenLabs audio error for segment ${this.currentSegmentIndex + 1}:`, event);
       this.ttsLock = false;
       this.currentAudioElement = null;
       
-      // Fall back to browser TTS on audio error
-      this._speakSegmentNow(text);
+      // Fall back to browser TTS on audio error  
+      this._speakSegmentNow(text.substring(0, 50) + '...');
     };
     
-    // Start playback
-    this.currentAudioElement.play().catch(error => {
-      console.error('TTS: Failed to play ElevenLabs audio:', error);
+    // Start playback with error handling
+    this.currentAudioElement.play().then(() => {
+      console.log(`TTS: ElevenLabs playback started successfully for segment ${this.currentSegmentIndex + 1}`);
+    }).catch(error => {
+      console.error(`TTS: ❌ Failed to play ElevenLabs audio for segment ${this.currentSegmentIndex + 1}:`, error);
+      this.ttsLock = false;
+      this.currentAudioElement = null;
       this._speakSegmentNow(text);
     });
   }
 
   private async _speakSegmentNow(text: string) {
+    console.log(`TTS: Using browser TTS for segment ${this.currentSegmentIndex + 1}`);
+    
     if (!window.speechSynthesis) {
       console.error('Session: speechSynthesis not available');
+      this.ttsLock = false;
       setTimeout(() => {
         this._handleSegmentEnd();
       }, 3000);
@@ -529,9 +533,12 @@ export class SessionManager {
     // Wait for voices to load
     await this.voicesLoadedPromise;
     
+    console.log(`TTS: Browser voices loaded, creating utterance for segment ${this.currentSegmentIndex + 1}`);
+    
     // Double-check if we were cancelled while waiting
     if (this.wasCanceledByUs) {
       console.log('TTS: Cancelled while waiting for voices');
+      this.ttsLock = false;
       return;
     }
     
@@ -541,8 +548,8 @@ export class SessionManager {
     this.wasCanceledByUs = false;
     
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9;
-    utterance.pitch = 1.0;
+    utterance.rate = 0.7;  // Slower for hypnotic effect
+    utterance.pitch = 0.8; // Lower pitch for male-like calming effect
     utterance.volume = 1.0;
     
     // Voice selection (handle async loading properly)
@@ -550,11 +557,11 @@ export class SessionManager {
     
     // Event handlers
     utterance.onstart = () => {
-      console.log(`TTS: Segment ${this.currentSegmentIndex + 1} started`);
+      console.log(`TTS: ✅ Browser TTS segment ${this.currentSegmentIndex + 1} started`);
     };
     
     utterance.onend = () => {
-      console.log(`TTS: Segment ${this.currentSegmentIndex + 1} ended`);
+      console.log(`TTS: ✅ Browser TTS segment ${this.currentSegmentIndex + 1} ended`);
       this.ttsLock = false;
       
       // Only advance if we didn't cancel this utterance
@@ -568,6 +575,7 @@ export class SessionManager {
     };
     
     utterance.onerror = (event) => {
+      console.error(`TTS: ❌ Browser TTS error for segment ${this.currentSegmentIndex + 1}:`, event.error);
       this.ttsLock = false;
       
       if (event.error === 'interrupted' || event.error === 'canceled') {
@@ -584,7 +592,7 @@ export class SessionManager {
     
     // SPEAK IMMEDIATELY - must be in same user gesture task
     window.speechSynthesis.speak(utterance);
-    console.log(`TTS: Queued segment ${this.currentSegmentIndex + 1} for playback`);
+    console.log(`TTS: Browser TTS queued segment ${this.currentSegmentIndex + 1} for playback`);
   }
 
   private async _selectBestVoice(utterance: SpeechSynthesisUtterance) {
@@ -594,17 +602,19 @@ export class SessionManager {
     const voices = window.speechSynthesis.getVoices();
     
     let selectedVoice = null;
+    
+    // Prefer male voices for hypnotic effect
     const preferredVoices = [
-      'Google US English', 
-      'Microsoft Aria', 
+      'Microsoft David',
       'Microsoft Mark', 
-      'Microsoft David', 
-      'Samantha', 
-      'Victoria', 
-      'Moira',
-      'Karen',
-      'Daniel'
+      'Google US English Male',
+      'Daniel',
+      'Alex',
+      'Tom',
+      'Google US English',
+      'Microsoft Aria' // Female fallback
     ];
+    
     for (const voiceName of preferredVoices) {
       selectedVoice = voices.find(voice => voice.name.includes(voiceName));
       if (selectedVoice) break;
@@ -616,9 +626,9 @@ export class SessionManager {
     
     if (selectedVoice) {
       utterance.voice = selectedVoice;
-      console.log(`TTS: Selected voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+      console.log(`TTS: Selected browser voice: ${selectedVoice.name} (${selectedVoice.lang}) for segment ${this.currentSegmentIndex + 1}`);
     } else {
-      console.log(`TTS: Using default voice from ${voices.length} available voices`);
+      console.log(`TTS: Using default browser voice from ${voices.length} available voices for segment ${this.currentSegmentIndex + 1}`);
     }
   }
 
