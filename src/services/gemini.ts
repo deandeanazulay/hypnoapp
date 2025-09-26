@@ -72,8 +72,38 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
     return result;
     
   } catch (error) {
-    // NO FALLBACK - Let caller handle the error
-    console.error('Script generation failed completely:', error);
-    throw new Error(`AI script generation failed: ${error.message}. Check GEMINI_API_KEY configuration.`);
+    console.error('Script generation failed:', error);
+    
+    // Return emergency fallback to prevent session from breaking
+    console.warn('Using emergency fallback script');
+    return {
+      title: `Emergency Session: ${enhancedContext.goalName}`,
+      segments: [
+        {
+          id: "emergency_intro",
+          text: `API ERROR: Close your eyes and breathe. Working on ${enhancedContext.goalName} in emergency mode.`,
+          approxSec: 30
+        },
+        {
+          id: "emergency_relax",
+          text: "Take deep breaths. Relax your body. This is a basic session while AI is being configured.",
+          approxSec: 60
+        },
+        {
+          id: "emergency_work", 
+          text: `Focus on ${enhancedContext.goalName}. Imagine achieving this goal successfully.`,
+          approxSec: 180
+        },
+        {
+          id: "emergency_end",
+          text: "Count 1, 2, 3 and open your eyes. Configure GEMINI_API_KEY for full AI sessions.",
+          approxSec: 30
+        }
+      ],
+      metadata: {
+        isEmergency: true,
+        error: error.message
+      }
+    };
   }
 }

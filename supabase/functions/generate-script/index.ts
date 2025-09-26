@@ -300,13 +300,58 @@ Deno.serve(async (req) => {
 
   } catch (error: any) {
     console.error("Generate script error:", error);
-    return new Response(JSON.stringify({ 
-      error: "Script generation failed completely",
-      reason: error.message || 'Unknown error',
-      suggestion: "Check all API configurations and network connectivity"
-    }), {
-      status: 500,
+    
+    // Emergency fallback to prevent session from completely breaking
+    console.warn("Using emergency fallback script due to error:", error.message);
+    const emergencyScript = getEmergencyScript(userCtx);
+    return new Response(JSON.stringify(emergencyScript), {
       headers: { "content-type": "application/json", ...corsHeaders },
     });
+  }
+});
+
+function getEmergencyScript(userCtx: any): any {
+  const egoState = String(userCtx?.egoState || 'guardian');
+  const goalName = String(userCtx?.goalName || 'transformation');
+  const actionName = String(userCtx?.actionName || 'change');
+  const duration = userCtx?.lengthSec || 600;
+  
+  return {
+    title: `${egoState} Emergency Session: ${goalName}`,
+    segments: [
+      {
+        id: "emergency_intro",
+        text: `EMERGENCY MODE: API not configured. Close your eyes and breathe deeply. We're working on ${goalName} today.`,
+        mood: "calming",
+        voice: "female",
+        sfx: "ambient"
+      },
+      {
+        id: "emergency_relax", 
+        text: "Take three deep breaths. In... and out. Feel your body relaxing. This is just a basic session while AI setup is completed.",
+        mood: "calming",
+        voice: "female",
+        sfx: "ambient"
+      },
+      {
+        id: "emergency_work",
+        text: `Focus on your goal of ${goalName}. Imagine yourself already having achieved this. See it, feel it, believe it.`,
+        mood: "transformative",
+        voice: "female", 
+        sfx: "energy"
+      },
+      {
+        id: "emergency_end",
+        text: "Time to return. Count 1, 2, 3 and open your eyes feeling refreshed. Configure your GEMINI_API_KEY for full AI sessions.",
+        mood: "energizing",
+        voice: "female",
+        sfx: "awakening"
+      }
+    ],
+    metadata: {
+      durationSec: duration,
+      style: "emergency_fallback",
+      isEmergency: true
+    }
   }
 });
