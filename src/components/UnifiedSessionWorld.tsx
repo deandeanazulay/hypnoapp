@@ -369,7 +369,11 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
       );
       
       if (currentSegment?.text) {
-        const aiMessage = { role: 'ai' as const, content: currentSegment.text, timestamp: Date.now() };
+        const aiMessage = { 
+          role: 'ai' as const, 
+          content: currentSegment.text, 
+          timestamp: Date.now() 
+        };
         
         setConversation(prev => {
           // Only add if it's not already the last message
@@ -590,7 +594,6 @@ export default function UnifiedSessionWorld({ sessionConfig, onComplete, onCance
     
     return egoResponses[egoState] || "I'm here with you. Continue breathing naturally and trust the process. You're doing perfectly.";
   };
-  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (textInput.trim() && !isThinking) {
