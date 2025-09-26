@@ -3,9 +3,6 @@ import { SessionScript, getSessionScript } from './gemini';
 import { synthesizeSegment } from './voice';
 import { AI } from '../config/ai';
 
-// Debug flag for TTS logging - OFF by default
-const DEBUG_TTS = false;
-
 export interface ScriptSegment { 
   id: string;
   text: string;
@@ -79,10 +76,11 @@ export class SessionManager {
   // Simplified TTS management
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private voicesLoaded = false;
+  private voicesLoadedPromise: Promise<void>;
 
   constructor() {
     console.log('Session: Initializing session manager...');
-    this._ensureVoicesLoaded();
+    this.voicesLoadedPromise = this._ensureVoicesLoaded();
   }
 
   async initialize(userContext: any) {
@@ -105,7 +103,7 @@ export class SessionManager {
     try {
       console.log('Session: Starting initialization with dynamic script generation...');
       
-      // Generate dynamic script
+      // Generate script through API only - NO HARDCODED FALLBACKS
       await this._initializeSession(userContext);
       
       if (this._isDisposed) return;
@@ -130,26 +128,18 @@ export class SessionManager {
     console.log('📝 Session: _initializeSession called with context:', userContext);
     
     try {
-      console.log('📝 Session: Calling getSessionScript...');
+      console.log('📝 Session: Calling getSessionScript (API ONLY)...');
       this.scriptPlan = await getSessionScript(userContext);
       console.log('📝 Session: getSessionScript returned:', this.scriptPlan ? 'success' : 'null');
       
-      // Only use fallback if Gemini completely failed
       if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
-        console.log('Session: Gemini failed, using local fallback script');
-        this.scriptPlan = this._createProtocolBasedScript(userContext);
-      } else {
-        console.log(`Session: Using Gemini-generated script with ${this.scriptPlan.segments.length} segments`);
+        throw new Error('Script generation failed - no segments returned from API');
       }
-    } catch (error: any) {
-      console.log('Session: Script generation error, using fallback:', error.message);
-      this.scriptPlan = this._createProtocolBasedScript(userContext);
-    }
 
-    // Final validation - ensure segments exist
-    if (!this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
-      console.warn('Session: No segments after all attempts, creating emergency fallback');
-      this.scriptPlan = this._createEmergencyFallback(userContext);
+      console.log(`Session: Using AI-generated script with ${this.scriptPlan.segments.length} segments`);
+    } catch (error: any) {
+      console.error('Session: Script generation FAILED - NO FALLBACK:', error.message);
+      throw new Error(`Script generation failed: ${error.message}. Please check API configuration.`);
     }
 
     console.log(`📝 Session: Final script has ${this.scriptPlan.segments.length} segments`);
@@ -174,7 +164,7 @@ export class SessionManager {
       currentSegmentId: this.segments[0]?.id || null
     });
 
-    console.log(`Session: Ready with ${this.segments.length} segments`);
+    console.log(`Session: Ready with ${this.segments.length} segments (NO HARDCODED CONTENT)`);
   }
 
   private async _prebufferFirstSegment() {
@@ -226,7 +216,7 @@ export class SessionManager {
         // For browser TTS, we can't pre-buffer, so mark as ready
         segment.ttsProvider = 'browser-tts';
         segment.isBuffered = true;
-        console.log(`🔄 Buffer: ⚠️ Browser TTS will be used for segment ${segmentIndex + 1}`);
+        console.log(`🔄 Buffer: ⚠️ Browser TTS will be used for segment ${segmentIndex + 1} - Reason: ${result.error || 'API not available'}`);
       }
     } catch (error) {
       console.warn(`🔄 Buffer: Failed to buffer segment ${segmentIndex + 1}:`, error);
@@ -240,36 +230,41 @@ export class SessionManager {
     this._emit('state-change', this._state);
   }
 
-  private _ensureVoicesLoaded(): void {
+  private async _ensureVoicesLoaded(): Promise<void> {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       this.voicesLoaded = true;
       return;
     }
 
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      this.voicesLoaded = true;
-      console.log(`TTS: Already loaded ${voices.length} browser voices`);
-      return;
-    }
-
-    const handleVoicesChanged = () => {
+    return new Promise((resolve) => {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
         this.voicesLoaded = true;
-        console.log(`TTS: Loaded ${voices.length} browser voices`);
-        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+        console.log(`TTS: Already loaded ${voices.length} browser voices`);
+        resolve();
+        return;
       }
-    };
 
-    window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-    
-    // Fallback timeout
-    setTimeout(() => {
-      window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-      this.voicesLoaded = true;
-      console.log('TTS: Voice loading timeout, proceeding anyway');
-    }, 2000);
+      const handleVoicesChanged = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          this.voicesLoaded = true;
+          console.log(`TTS: Loaded ${voices.length} browser voices`);
+          window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+          resolve();
+        }
+      };
+
+      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+      
+      // Fallback timeout
+      setTimeout(() => {
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+        this.voicesLoaded = true;
+        console.log('TTS: Voice loading timeout, proceeding anyway');
+        resolve();
+      }, 2000);
+    });
   }
 
   private _emit(event: string, data?: any) {
@@ -278,12 +273,24 @@ export class SessionManager {
     }
   }
 
-  play() {
+  async play() {
     console.log('🎮 Session: play() called');
     
     if (this._isDisposed) {
       console.log('Session: Cannot play - session disposed');
       return;
+    }
+
+    // Wait for initialization if needed
+    if (!this._isInitialized && this._initializationPromise) {
+      console.log('Session: Waiting for initialization to complete...');
+      try {
+        await this._initializationPromise;
+      } catch (error) {
+        console.error('Session: Initialization failed during play:', error);
+        this._updateState({ error: 'Failed to initialize session' });
+        return;
+      }
     }
     
     // Check if we have segments
@@ -306,7 +313,7 @@ export class SessionManager {
     }
     
     console.log(`Session: Starting segment ${this.currentSegmentIndex + 1}/${this.segments.length}`);
-    console.log(`Session: Segment text: "${segment.text.substring(0, 100)}..."`);
+    console.log(`Session: Segment text preview: "${segment.text.substring(0, 100)}..."`);
     
     // Update state to show current segment
     this._updateState({ 
@@ -316,7 +323,10 @@ export class SessionManager {
     });
     this._emit('play');
     
-    // Start playing audio
+    // Clear any previous TTS before starting new segment
+    this._cancelCurrentTTS();
+    
+    // Start playing audio immediately
     this._playCurrentSegment();
   }
 
@@ -327,10 +337,8 @@ export class SessionManager {
       return;
     }
     
-    // Stop any current audio first
-    this._stopCurrentAudio();
-    
-    console.log(`🎵 TTS: Playing segment ${this.currentSegmentIndex + 1}`);
+    console.log(`🎵 Session: About to play segment ${this.currentSegmentIndex + 1}`);
+    console.log(`🎵 TTS: Segment text: "${segment.text.substring(0, 100)}..."`);
     
     // Try pre-buffered ElevenLabs first
     if (segment.ttsProvider === 'elevenlabs' && segment.audio) {
@@ -358,109 +366,173 @@ export class SessionManager {
         return;
       }
 
-      console.log(`🎵 TTS: ElevenLabs not available, using browser TTS for segment ${this.currentSegmentIndex + 1}`);
+      console.log(`🎵 TTS: ⚠️ ElevenLabs not available for segment ${this.currentSegmentIndex + 1}, using browser TTS`);
+      if (result.error) {
+        console.log(`🎵 TTS: ElevenLabs error reason: ${result.error}`);
+      }
       this._playWithBrowserTTS(text);
     } catch (error) {
-      console.error(`🎵 TTS: ElevenLabs error for segment ${this.currentSegmentIndex + 1}:`, error);
+      console.error(`🎵 TTS: ❌ Error with ElevenLabs for segment ${this.currentSegmentIndex + 1}, falling back to browser:`, error);
       this._playWithBrowserTTS(text);
     }
   }
 
   private _playPreBufferedAudio(audioElement: HTMLAudioElement) {
+    console.log(`🎵 TTS: Playing pre-buffered ElevenLabs for segment ${this.currentSegmentIndex + 1}`);
+    
     // Clone to avoid conflicts
     const clonedAudio = audioElement.cloneNode() as HTMLAudioElement;
     this.currentAudioElement = clonedAudio;
     
+    clonedAudio.onloadeddata = () => {
+      console.log(`🎵 TTS: ElevenLabs audio loaded for segment ${this.currentSegmentIndex + 1}`);
+    };
+    
     clonedAudio.onended = () => {
-      console.log(`🎵 TTS: ✅ Pre-buffered segment ${this.currentSegmentIndex + 1} completed`);
+      console.log(`🎵 TTS: ✅ Pre-buffered ElevenLabs segment ${this.currentSegmentIndex + 1} completed`);
+      this.currentAudioElement = null;
       this._handleSegmentEnd();
     };
     
     clonedAudio.onerror = (event) => {
-      console.error(`🎵 TTS: Pre-buffered audio error for segment ${this.currentSegmentIndex + 1}:`, event);
-      this._playWithBrowserTTS(this.segments[this.currentSegmentIndex]?.text || '');
+      console.error(`🎵 TTS: ❌ Pre-buffered audio error for segment ${this.currentSegmentIndex + 1}:`, event);
+      this.currentAudioElement = null;
+      
+      // Fall back to browser TTS on audio error  
+      const segment = this.segments[this.currentSegmentIndex];
+      if (segment) {
+        this._playWithBrowserTTS(segment.text);
+      }
     };
     
     clonedAudio.play().catch(error => {
-      console.error(`🎵 TTS: Failed to play pre-buffered audio for segment ${this.currentSegmentIndex + 1}:`, error);
-      this._playWithBrowserTTS(this.segments[this.currentSegmentIndex]?.text || '');
+      console.error(`🎵 TTS: ❌ Failed to play pre-buffered audio for segment ${this.currentSegmentIndex + 1}:`, error);
+      this.currentAudioElement = null;
+      const segment = this.segments[this.currentSegmentIndex];
+      if (segment) {
+        this._playWithBrowserTTS(segment.text);
+      }
     });
   }
 
   private _playElevenLabsAudio(audioUrl: string) {
+    console.log(`🎵 TTS: Playing live ElevenLabs for segment ${this.currentSegmentIndex + 1}`);
+    
+    // Create audio element for ElevenLabs
     this.currentAudioElement = new Audio(audioUrl);
     this.currentAudioElement.volume = 1.0;
     
+    this.currentAudioElement.onloadeddata = () => {
+      console.log(`🎵 TTS: ElevenLabs audio loaded for segment ${this.currentSegmentIndex + 1}, starting playback`);
+    };
+    
     this.currentAudioElement.onended = () => {
       console.log(`🎵 TTS: ✅ Live ElevenLabs segment ${this.currentSegmentIndex + 1} completed`);
+      this.currentAudioElement = null;
       this._handleSegmentEnd();
     };
     
     this.currentAudioElement.onerror = (event) => {
-      console.error(`🎵 TTS: Live ElevenLabs audio error for segment ${this.currentSegmentIndex + 1}:`, event);
-      this._playWithBrowserTTS(this.segments[this.currentSegmentIndex]?.text || '');
+      console.error(`🎵 TTS: ❌ Live ElevenLabs audio error for segment ${this.currentSegmentIndex + 1}:`, event);
+      this.currentAudioElement = null;
+      
+      // Fall back to browser TTS on audio error  
+      const segment = this.segments[this.currentSegmentIndex];
+      if (segment) {
+        this._playWithBrowserTTS(segment.text);
+      }
     };
     
-    this.currentAudioElement.play().catch(error => {
-      console.error(`🎵 TTS: Failed to play live ElevenLabs audio for segment ${this.currentSegmentIndex + 1}:`, error);
-      this._playWithBrowserTTS(this.segments[this.currentSegmentIndex]?.text || '');
+    // Start playback with error handling
+    this.currentAudioElement.play().then(() => {
+      console.log(`🎵 TTS: ElevenLabs playback started successfully for segment ${this.currentSegmentIndex + 1}`);
+    }).catch(error => {
+      console.error(`🎵 TTS: ❌ Failed to play live ElevenLabs audio for segment ${this.currentSegmentIndex + 1}:`, error);
+      this.currentAudioElement = null;
+      const segment = this.segments[this.currentSegmentIndex];
+      if (segment) {
+        this._playWithBrowserTTS(segment.text);
+      }
     });
   }
 
-  private _playWithBrowserTTS(text: string) {
+  private async _playWithBrowserTTS(text: string) {
     console.log(`🗣️ TTS: Using browser TTS for segment ${this.currentSegmentIndex + 1}`);
     
     if (!window.speechSynthesis) {
-      console.error('Browser TTS not available');
-      this._handleSegmentEnd();
+      console.error('Session: speechSynthesis not available');
+      setTimeout(() => {
+        this._handleSegmentEnd();
+      }, 3000);
       return;
     }
 
-    // Stop any existing speech
+    // Stop any existing speech before starting new utterance
     window.speechSynthesis.cancel();
     
-    // Wait a moment for clean state
-    setTimeout(() => {
-      if (this._isDisposed) return;
+    // Wait for voices to load
+    await this.voicesLoadedPromise;
+    
+    console.log(`🗣️ TTS: Browser voices loaded, creating utterance for segment ${this.currentSegmentIndex + 1}`);
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.7;  // Slower for hypnotic effect
+    utterance.pitch = 0.8; // Lower pitch for male-like calming effect
+    utterance.volume = 1.0;
+    
+    // Voice selection (handle async loading properly)
+    await this._selectBestVoice(utterance);
+    
+    // Event handlers
+    utterance.onstart = () => {
+      console.log(`🗣️ TTS: ✅ Browser TTS segment ${this.currentSegmentIndex + 1} started`);
+    };
+    
+    utterance.onend = () => {
+      console.log(`🗣️ TTS: ✅ Browser TTS segment ${this.currentSegmentIndex + 1} completed`);
+      this.currentUtterance = null;
+      this._handleSegmentEnd();
+    };
+    
+    utterance.onerror = (event) => {
+      // Only log non-interruption errors
+      if (event.error !== 'interrupted' && event.error !== 'canceled') {
+        console.error(`🗣️ TTS: ❌ Browser TTS error for segment ${this.currentSegmentIndex + 1}:`, event.error);
+      } else {
+        console.log(`🗣️ TTS: Browser TTS ${event.error} for segment ${this.currentSegmentIndex + 1} (expected)`);
+      }
       
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.7;  // Slower for hypnotic effect
-      utterance.pitch = 0.8; // Lower pitch for calming effect
-      utterance.volume = 1.0;
+      this.currentUtterance = null;
       
-      // Select best male voice
-      this._selectBestVoice(utterance);
-      
-      utterance.onstart = () => {
-        console.log(`🗣️ TTS: ✅ Browser TTS segment ${this.currentSegmentIndex + 1} started`);
-      };
-      
-      utterance.onend = () => {
-        console.log(`🗣️ TTS: ✅ Browser TTS segment ${this.currentSegmentIndex + 1} completed`);
-        this.currentUtterance = null;
+      if (event.error === 'interrupted' || event.error === 'canceled') {
+        // Expected - don't advance
+        console.log(`🗣️ TTS: Interrupted/canceled segment ${this.currentSegmentIndex + 1}`);
+      } else {
+        console.warn('🗣️ TTS: Unexpected error -', event.error);
+        // Fallback advance to prevent stalling
         this._handleSegmentEnd();
-      };
-      
-      utterance.onerror = (event) => {
-        if (event.error !== 'interrupted' && event.error !== 'canceled') {
-          console.error(`🗣️ TTS: Browser TTS error for segment ${this.currentSegmentIndex + 1}:`, event.error);
-        }
-        this.currentUtterance = null;
-        
-        // Advance anyway to prevent hanging
-        if (event.error !== 'interrupted' && event.error !== 'canceled') {
-          this._handleSegmentEnd();
-        }
-      };
-      
-      this.currentUtterance = utterance;
-      window.speechSynthesis.speak(utterance);
-      console.log(`🗣️ TTS: Browser TTS started for segment ${this.currentSegmentIndex + 1}`);
-    }, 200);
+      }
+    };
+    
+    // Store current utterance
+    this.currentUtterance = utterance;
+    
+    // Small delay to ensure clean state before speaking
+    setTimeout(() => {
+      if (this.currentUtterance === utterance && !this._isDisposed) {
+        console.log(`🗣️ TTS: Speaking segment ${this.currentSegmentIndex + 1} with browser TTS`);
+        window.speechSynthesis.speak(utterance);
+      }
+    }, 100);
   }
 
-  private _selectBestVoice(utterance: SpeechSynthesisUtterance) {
+  private async _selectBestVoice(utterance: SpeechSynthesisUtterance) {
+    // Ensure voices are loaded
+    await this.voicesLoadedPromise;
+    
     const voices = window.speechSynthesis.getVoices();
+    
+    let selectedVoice = null;
     
     // Prefer male voices for hypnotic effect
     const preferredVoices = [
@@ -471,13 +543,12 @@ export class SessionManager {
       'Google US English Male',
       'Alex',
       'Tom',
-      'Microsoft Zira',
+      'Microsoft Zira', // Male-sounding female voice
       'Google US English',
-      'Microsoft Aria',
+      'Microsoft Aria', // Female fallback
       'Samantha'
     ];
     
-    let selectedVoice = null;
     for (const voiceName of preferredVoices) {
       selectedVoice = voices.find(voice => voice.name.includes(voiceName));
       if (selectedVoice) break;
@@ -489,9 +560,9 @@ export class SessionManager {
     
     if (selectedVoice) {
       utterance.voice = selectedVoice;
-      console.log(`🗣️ TTS: Selected voice: ${selectedVoice.name} for segment ${this.currentSegmentIndex + 1}`);
+      console.log(`🗣️ TTS: Selected browser voice: ${selectedVoice.name} (${selectedVoice.lang}) for segment ${this.currentSegmentIndex + 1}`);
     } else {
-      console.log(`🗣️ TTS: Using default voice for segment ${this.currentSegmentIndex + 1}`);
+      console.log(`🗣️ TTS: Using default browser voice from ${voices.length} available voices for segment ${this.currentSegmentIndex + 1}`);
     }
   }
 
@@ -514,12 +585,12 @@ export class SessionManager {
       
       // Continue to next segment if still playing
       if (this._state.playState === 'playing') {
-        console.log(`🎵 Auto-continuing to segment ${this.currentSegmentIndex + 1} in 800ms`);
+        console.log(`🎵 Auto-continuing to segment ${this.currentSegmentIndex + 1} in 500ms`);
         setTimeout(() => {
           if (this._state.playState === 'playing' && !this._isDisposed) {
             this._playCurrentSegment();
           }
-        }, 800);
+        }, 500);
       }
     } else {
       console.log('🎵 Session complete - all segments finished');
@@ -532,14 +603,14 @@ export class SessionManager {
     if (this._state.playState === 'paused') return;
     
     console.log('⏸️ Session: Pausing');
-    this._stopCurrentAudio();
+    this._cancelCurrentTTS();
     this._updateState({ playState: 'paused' });
     this._emit('pause');
   }
 
   next() {
     console.log('⏭️ Session: Next segment');
-    this._stopCurrentAudio();
+    this._cancelCurrentTTS();
     
     if (this.currentSegmentIndex < this.segments.length - 1) {
       this.currentSegmentIndex++;
@@ -562,7 +633,7 @@ export class SessionManager {
 
   prev() {
     console.log('⏮️ Session: Previous segment');
-    this._stopCurrentAudio();
+    this._cancelCurrentTTS();
     
     if (this.currentSegmentIndex > 0) {
       this.currentSegmentIndex--;
@@ -580,10 +651,9 @@ export class SessionManager {
     }
   }
 
-  private _stopCurrentAudio() {
-    console.log('🛑 TTS: Stopping current audio');
+  private _cancelCurrentTTS() {
+    console.log('🛑 TTS: Canceling current speech');
     
-    // Stop ElevenLabs audio
     if (this.currentAudioElement) {
       this.currentAudioElement.pause();
       this.currentAudioElement.onended = null;
@@ -592,8 +662,8 @@ export class SessionManager {
       this.currentAudioElement = null;
     }
     
-    // Stop browser TTS
     if (this.currentUtterance) {
+      console.log('🛑 TTS: Canceling browser speechSynthesis');
       window.speechSynthesis.cancel();
       this.currentUtterance = null;
     }
@@ -602,7 +672,7 @@ export class SessionManager {
   dispose() {
     console.log('Session: Disposing session manager');
     this._isDisposed = true;
-    this._stopCurrentAudio();
+    this._cancelCurrentTTS();
     
     // Clean up audio URLs to prevent memory leaks
     this.segments.forEach(segment => {
@@ -624,191 +694,6 @@ export class SessionManager {
 
   getCurrentState(): SessionState {
     return { ...this._state };
-  }
-
-  // Script generation methods remain the same...
-  private _createProtocolBasedScript(userContext: any): any {
-    const { egoState = 'guardian', goalId = 'transformation', lengthSec = 900 } = userContext;
-    const { customProtocol, protocol } = userContext;
-    
-    let scriptContent;
-    if (customProtocol && customProtocol.name) {
-      scriptContent = this._generateCustomProtocolScript(customProtocol, egoState, lengthSec);
-    } else if (protocol && protocol.script) {
-      scriptContent = this._generateFromProtocol(protocol, egoState, lengthSec);
-    } else {
-      scriptContent = this._generateGenericScript(egoState, goalId, lengthSec);
-    }
-    
-    return {
-      title: customProtocol?.name || protocol?.name || `${egoState} Transformation Protocol: ${goalId}`,
-      segments: scriptContent,
-      metadata: {
-        egoStateActivation: egoState,
-        transformationGoal: goalId,
-        durationSec: lengthSec
-      }
-    };
-  }
-
-  private _generateCustomProtocolScript(customProtocol: any, egoState: string, lengthSec: number) {
-    const segments = [
-      {
-        id: "welcome",
-        text: `Welcome to your ${customProtocol.name}. Today we're focusing on ${customProtocol.goals?.join(' and ') || 'transformation'}. Find a comfortable position and let's begin this journey together.`,
-        approxSec: Math.floor(lengthSec * 0.08)
-      },
-      {
-        id: "induction", 
-        text: this._adaptInductionMethod(customProtocol.induction || 'progressive', customProtocol.goals?.[0] || 'transformation'),
-        approxSec: Math.floor(lengthSec * 0.25)
-      },
-      {
-        id: "deepening",
-        text: customProtocol.deepener || this._generateDeepening(egoState, customProtocol.goals?.[0] || 'transformation'),
-        approxSec: Math.floor(lengthSec * 0.20)
-      },
-      {
-        id: "goal_work",
-        text: this._generateGoalSpecificWork(customProtocol.goals || ['transformation'], egoState),
-        approxSec: Math.floor(lengthSec * 0.30)
-      },
-      {
-        id: "integration", 
-        text: this._generateIntegration(egoState, customProtocol.goals?.join(' and ') || 'transformation'),
-        approxSec: Math.floor(lengthSec * 0.12)
-      },
-      {
-        id: "emergence",
-        text: this._generateEmergence(egoState, customProtocol.goals?.join(' and ') || 'transformation'),
-        approxSec: Math.floor(lengthSec * 0.05)
-      }
-    ];
-    return segments;
-  }
-
-  private _generateFromProtocol(protocol: any, egoState: string, lengthSec: number) {
-    const segments = [
-      {
-        id: "welcome",
-        text: `Welcome to ${protocol.name}. ${protocol.description} Let's begin this ${lengthSec / 60}-minute journey together.`,
-        approxSec: Math.floor(lengthSec * 0.08)
-      },
-      {
-        id: "induction",
-        text: this._adaptScriptToEgoState(protocol.script.induction, egoState),
-        approxSec: Math.floor(lengthSec * 0.25)
-      },
-      {
-        id: "deepening",
-        text: this._adaptScriptToEgoState(protocol.script.deepening, egoState),
-        approxSec: Math.floor(lengthSec * 0.20)
-      },
-      {
-        id: "suggestions",
-        text: this._adaptScriptToEgoState(protocol.script.suggestions, egoState),
-        approxSec: Math.floor(lengthSec * 0.30)
-      },
-      {
-        id: "integration",
-        text: this._generateIntegration(egoState, protocol.category || 'transformation'),
-        approxSec: Math.floor(lengthSec * 0.12)
-      },
-      {
-        id: "emergence",
-        text: protocol.script.emergence || this._generateEmergence(egoState, protocol.category || 'transformation'),
-        approxSec: Math.floor(lengthSec * 0.05)
-      }
-    ];
-    return segments;
-  }
-
-  private _generateGenericScript(egoState: string, goalId: string, lengthSec: number) {
-    const segments = [
-      {
-        id: "intro",
-        text: `Welcome to your ${egoState} transformation session. We're focusing on ${goalId} today. Find a comfortable position and close your eyes when you're ready.`,
-        approxSec: Math.floor(lengthSec * 0.08)
-      },
-      {
-        id: "induction", 
-        text: `Take a deep breath in through your nose... hold it for a moment... and slowly exhale through your mouth. Feel your body beginning to relax as your ${egoState} energy awakens to guide this transformation.`,
-        approxSec: Math.floor(lengthSec * 0.20)
-      },
-      {
-        id: "deepening",
-        text: `Going deeper now into this peaceful state. Your ${egoState} wisdom is creating the perfect inner environment for change. Count backwards from 10 to 1, feeling twice as relaxed with each number.`,
-        approxSec: Math.floor(lengthSec * 0.25)
-      },
-      {
-        id: "work",
-        text: `Feel your ${egoState} energy working on ${goalId} now. These positive changes are happening at the deepest levels of your being, creating lasting transformation that serves your highest good.`,
-        approxSec: Math.floor(lengthSec * 0.30)
-      },
-      {
-        id: "integration", 
-        text: `These changes are integrating into every cell of your being. Your ${egoState} energy ensures these transformations become a permanent part of who you are.`,
-        approxSec: Math.floor(lengthSec * 0.12)
-      },
-      {
-        id: "emergence",
-        text: `Time to return now. Count from 1 to 5, and on 5, open your eyes feeling refreshed and transformed. 1... 2... 3... 4... 5... Eyes open, fully alert and renewed.`,
-        approxSec: Math.floor(lengthSec * 0.05)
-      }
-    ];
-    return segments;
-  }
-
-  private _createEmergencyFallback(userContext: any) {
-    return {
-      title: `${userContext.egoState || 'Guardian'} Emergency Session`,
-      segments: [
-        { id: "start", text: `Welcome to your ${userContext.egoState || 'Guardian'} session. Take a deep breath and close your eyes.`, approxSec: 15 },
-        { id: "relax", text: "Feel your body relaxing completely from your toes to the top of your head.", approxSec: 25 },
-        { id: "transform", text: `Your ${userContext.egoState || 'Guardian'} energy is creating positive change throughout your being.`, approxSec: 30 },
-        { id: "return", text: "Count from 1 to 5 and open your eyes feeling refreshed. 1... 2... 3... 4... 5... Eyes open!", approxSec: 20 }
-      ]
-    };
-  }
-
-  // Helper methods for script generation
-  private _adaptInductionMethod(method: string, goal: string): string {
-    const methods = {
-      progressive: `Let's begin with progressive relaxation. Starting with your toes, feel them relaxing completely. Now your feet, your ankles, your calves... Let this wave of relaxation flow up through your entire body as we work on ${goal}.`,
-      rapid: `Close your eyes now and take a deep breath. Hold it... and as you exhale, let your body drop into complete relaxation. With each word I speak, you go deeper, preparing your mind for transformation around ${goal}.`,
-      breath: `Focus on your breathing now. Breathe in slowly for 4 counts... hold for 4... exhale for 6... Feel your breath naturally guiding you into a receptive state for working on ${goal}.`,
-      visualization: `Imagine yourself in a place of perfect peace and safety. See it clearly in your mind... feel yourself there completely... This is your sanctuary for transformation around ${goal}.`
-    };
-    return methods[method as keyof typeof methods] || methods.progressive;
-  }
-
-  private _generateGoalSpecificWork(goals: string[], egoState: string): string {
-    const goalText = goals.join(' and ');
-    return `Your ${egoState} energy is now fully focused on ${goalText}. Feel these positive changes beginning at the deepest levels of your being. With each breath, your transformation around ${goalText} becomes stronger and more permanent.`;
-  }
-
-  private _adaptScriptToEgoState(originalText: string, egoState: string): string {
-    const egoAdaptations = {
-      guardian: 'Feel completely safe and protected as ',
-      rebel: 'Feel your power to break free as ',
-      healer: 'Feel healing energy flowing as ',
-      explorer: 'Feel excitement for discovery as ',
-      mystic: 'Connect with infinite wisdom as '
-    };
-    const prefix = egoAdaptations[egoState as keyof typeof egoAdaptations] || '';
-    return prefix + originalText.toLowerCase();
-  }
-
-  private _generateDeepening(egoState: string, goalId: string): string {
-    return `Going even deeper now into this peaceful state. Your ${egoState} energy is guiding you safely into the perfect depth for transformation work on ${goalId}. Feel yourself sinking deeper with each breath.`;
-  }
-
-  private _generateIntegration(egoState: string, goalId: string): string {
-    return `These powerful changes are now integrating into every aspect of your being. Your ${egoState} energy ensures that these transformations around ${goalId} become a permanent part of who you are.`;
-  }
-
-  private _generateEmergence(egoState: string, goalId: string): string {
-    return `Time to return now, bringing all these positive changes with you. Your ${egoState} energy will continue working on your ${goalId}. Count from 1 to 5, and on 5, open your eyes feeling completely refreshed and transformed.`;
   }
 }
 

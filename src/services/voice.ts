@@ -65,7 +65,8 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     // Check if response is JSON (fallback signal)
     if (contentType.includes("application/json")) {
       const fallbackData = await response.json();
-      console.log(`Voice: ElevenLabs fallback triggered for ${opts.cacheKey || 'segment'}:`, fallbackData.reason || 'unknown reason');
+      console.log(`Voice: ElevenLabs fallback triggered for ${opts.cacheKey || 'segment'}:`, fallbackData.reason || 'API returned JSON instead of audio');
+      console.log(`Voice: Fallback details:`, fallbackData);
       
       track('tts_synthesis_success', {
         textLength: text.length,
@@ -74,7 +75,7 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
         reason: fallbackData.reason || 'api-fallback'
       });
       
-      return { provider: "browser-tts" };
+      return { provider: "browser-tts", error: fallbackData.reason };
     }
 
     // Check if response is audio

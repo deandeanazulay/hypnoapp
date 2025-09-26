@@ -19,12 +19,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { text, voiceId = "21m00Tcm4TlvDq8ikWAM" } = await req.json();
+    const { text, voiceId = "pNInz6obpgDQGcFmaJgB" } = await req.json();
 
     // Validate input
     if (!text || text.length > 5000) {
       return new Response(JSON.stringify({ 
-        error: "Invalid text input - must be 1-5000 characters" 
+        fallback: "browser-tts",
+        reason: "Invalid text input - must be 1-5000 characters"
       }), { 
         status: 400, 
         headers: { "content-type": "application/json", ...corsHeaders }
@@ -37,7 +38,7 @@ Deno.serve(async (req) => {
       console.warn("ELEVENLABS_API_KEY not configured, returning browser-tts fallback");
       return new Response(JSON.stringify({ 
         fallback: "browser-tts",
-        reason: "API key not configured"
+        reason: "ElevenLabs API key not configured"
       }), {
         headers: { "content-type": "application/json", ...corsHeaders },
       });
@@ -66,12 +67,12 @@ Deno.serve(async (req) => {
       }),
     });
 
-    // Handle specific error codes that should trigger fallback
+    // Handle specific error codes with detailed reasons
     if (elevenLabsResponse.status === 401) {
       console.warn("ElevenLabs: Authentication failed - invalid API key");
       return new Response(JSON.stringify({ 
         fallback: "browser-tts",
-        reason: "Authentication failed"
+        reason: "ElevenLabs authentication failed - check API key"
       }), {
         headers: { "content-type": "application/json", ...corsHeaders },
       });
@@ -81,7 +82,7 @@ Deno.serve(async (req) => {
       console.warn("ElevenLabs: Payment required - quota exceeded");
       return new Response(JSON.stringify({ 
         fallback: "browser-tts",
-        reason: "Quota exceeded"
+        reason: "ElevenLabs quota exceeded - upgrade plan needed"
       }), {
         headers: { "content-type": "application/json", ...corsHeaders },
       });
@@ -91,7 +92,18 @@ Deno.serve(async (req) => {
       console.warn("ElevenLabs: Rate limited");
       return new Response(JSON.stringify({ 
         fallback: "browser-tts",
-        reason: "Rate limited"
+        reason: "ElevenLabs rate limited - try again later"
+      }), {
+        headers: { "content-type": "application/json", ...corsHeaders },
+      });
+    }
+
+    if (elevenLabsResponse.status === 422) {
+      const errorData = await elevenLabsResponse.text();
+      console.warn("ElevenLabs: Invalid request:", errorData);
+      return new Response(JSON.stringify({ 
+        fallback: "browser-tts",
+        reason: `ElevenLabs validation error: ${errorData}`
       }), {
         headers: { "content-type": "application/json", ...corsHeaders },
       });
@@ -102,7 +114,7 @@ Deno.serve(async (req) => {
       console.error(`ElevenLabs API error ${elevenLabsResponse.status}:`, errorText);
       return new Response(JSON.stringify({ 
         fallback: "browser-tts",
-        reason: `API error ${elevenLabsResponse.status}`
+        reason: `ElevenLabs API error ${elevenLabsResponse.status}: ${errorText}`
       }), {
         headers: { "content-type": "application/json", ...corsHeaders },
       });
@@ -115,7 +127,7 @@ Deno.serve(async (req) => {
       console.error("ElevenLabs returned empty audio response");
       return new Response(JSON.stringify({ 
         fallback: "browser-tts",
-        reason: "Empty audio response"
+        reason: "ElevenLabs returned empty audio"
       }), {
         headers: { "content-type": "application/json", ...corsHeaders },
       });
@@ -136,7 +148,7 @@ Deno.serve(async (req) => {
     console.error("TTS function error:", error);
     return new Response(JSON.stringify({ 
       fallback: "browser-tts",
-      reason: "Internal error",
+      reason: `TTS function error: ${error.message}`,
       error: error.message
     }), {
       status: 500,
