@@ -415,8 +415,8 @@ export class SessionManager {
     });
     this._emit('play');
     
-    // CRITICAL: Call TTS in same user gesture (no async/await before this)
-    this._speakSegmentNow(segment.text);
+    // CRITICAL: Try ElevenLabs first, fallback to browser TTS
+    this._speakSegmentWithFallback(segment.text);
   }
 
   private _speakSegmentNow(text: string) {
