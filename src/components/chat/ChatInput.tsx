@@ -1,14 +1,15 @@
 import React from 'react';
-import { Send, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { Send, RotateCcw, Mic, MicOff } from 'lucide-react';
 
 interface ChatInputProps {
   inputText: string;
   onInputChange: (text: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onClearChat: () => void;
-  onToggleMute: () => void;
+  onToggleMic: () => void;
   isLoading: boolean;
-  isMuted: boolean;
+  isMicEnabled: boolean;
+  isListening: boolean;
   hasMessages: boolean;
   placeholder?: string;
 }
@@ -18,9 +19,10 @@ export default function ChatInput({
   onInputChange,
   onSubmit,
   onClearChat,
-  onToggleMute,
+  onToggleMic,
   isLoading,
-  isMuted,
+  isMicEnabled,
+  isListening,
   hasMessages,
   placeholder = "Ask Libero about protocols, ego states, or transformation techniques..."
 }: ChatInputProps) {
@@ -48,17 +50,19 @@ export default function ChatInput({
               
               {/* Control Buttons */}
               <div className="flex items-center space-x-2">
-                {/* Audio Control */}
+                {/* Microphone Control */}
                 <button
                   type="button"
-                  onClick={onToggleMute}
+                  onClick={onToggleMic}
                   className={`p-2.5 rounded-xl transition-all hover:scale-110 border ${
-                    isMuted 
-                      ? 'bg-red-500/20 border-red-500/40 text-red-400 hover:bg-red-500/30' 
-                      : 'bg-green-500/20 border-green-500/40 text-green-400 hover:bg-green-500/30'
+                    isListening
+                      ? 'bg-red-500/20 border-red-500/40 text-red-400 hover:bg-red-500/30 animate-pulse' 
+                      : isMicEnabled
+                      ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30'
+                      : 'bg-white/10 border-white/20 text-white/60'
                   }`}
                 >
-                  {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                  {isMicEnabled ? <Mic size={16} /> : <MicOff size={16} />}
                 </button>
                 
                 {/* Clear Chat Button */}
