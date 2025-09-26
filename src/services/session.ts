@@ -599,6 +599,7 @@ export class SessionManager {
       this.currentAudioElement.pause();
       this.currentAudioElement.onended = null;
       this.currentAudioElement.onerror = null;
+      this.currentAudioElement.src = '';
       this.currentAudioElement = null;
     }
     
