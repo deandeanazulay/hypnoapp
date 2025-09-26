@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bot, User, Copy } from 'lucide-react';
+import Orb from '../Orb';
 
 interface ChatMessage {
   id: string;
@@ -13,25 +14,32 @@ interface ChatMessage {
 interface ChatBubbleProps {
   message: ChatMessage;
   onCopy: (content: string) => void;
+  activeEgoState: string;
 }
 
-export default function ChatBubble({ message, onCopy }: ChatBubbleProps) {
+export default function ChatBubble({ message, onCopy, activeEgoState }: ChatBubbleProps) {
   return (
     <div className={`flex items-start gap-4 mb-4 animate-slide-up ${
       message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
     }`}>
       {/* Avatar */}
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border-2 shadow-lg ${
-        message.role === 'user'
-          ? 'bg-gradient-to-br from-teal-400 to-cyan-400 border-teal-300'
-          : message.error
-          ? 'bg-gradient-to-br from-red-400 to-orange-400 border-red-300'
-          : 'bg-gradient-to-br from-purple-400 to-indigo-400 border-purple-300'
-      }`}>
+      <div className="flex-shrink-0">
         {message.role === 'user' ? (
-          <User size={16} className="text-black" />
+          <Orb
+            onTap={() => {}}
+            egoState={activeEgoState}
+            size={40}
+            variant="css"
+            className="border-2 border-white/20"
+          />
         ) : (
-          <Bot size={16} className="text-black" />
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-lg ${
+            message.error
+              ? 'bg-gradient-to-br from-red-400 to-orange-400 border-red-300'
+              : 'bg-gradient-to-br from-purple-400 to-indigo-400 border-purple-300'
+          }`}>
+            <Bot size={16} className="text-black" />
+          </div>
         )}
       </div>
       

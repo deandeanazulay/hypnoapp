@@ -281,21 +281,12 @@ export default function ChatScreen() {
                 onTap={() => {}}
                 egoState={activeEgoState}
                 size={window.innerWidth < 768 ? 200 : 350}
-                variant="webgl"
-              />
-            </div>
-
-            {/* Messages Area - Properly spaced below orb */}
-            <div 
-              className="h-full relative z-30 flex flex-col"
-              style={{ 
-                paddingTop: window.innerWidth < 768 ? '220px' : '370px',
-                paddingBottom: '200px' // Space for suggestions + input
               }}
             >
               <ChatMessages 
                 messages={messages}
                 onCopyMessage={copyMessage}
+                activeEgoState={activeEgoState}
               />
             </div>
           </div>
