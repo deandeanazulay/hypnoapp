@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Home, Search, Plus, Heart, User } from 'lucide-react';
+import { Home, Search, Plus, Heart, User, MessageCircle } from 'lucide-react';
 import { TABS, TabId } from '../types/Navigation';
 
 interface NavigationTabsProps {
