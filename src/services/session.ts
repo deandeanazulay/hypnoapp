@@ -317,6 +317,7 @@ export class SessionManager {
       });
 
       if (result.provider === 'elevenlabs' && result.audioUrl) {
+        this._playElevenLabsAudio(result.audioUrl);
         return;
       }
 
@@ -566,7 +567,7 @@ export class SessionManager {
       this.currentAudioElement = null;
     }
     
-    if (this.currentUtterance) {
+    if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
       this.currentUtterance = null;
     }
