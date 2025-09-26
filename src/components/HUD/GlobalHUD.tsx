@@ -56,6 +56,8 @@ export default function GlobalHUD() {
   const sessionsLeft = user.plan === 'free' ? Math.max(0, 1 - user.daily_sessions_used) : '∞';
 
   const handleEgoStateClick = () => {
+            }
+    )
     openEgoModal();
   };
 
@@ -227,4 +229,5 @@ export default function GlobalHUD() {
       </div>
     </div>
   );
+}
 }
