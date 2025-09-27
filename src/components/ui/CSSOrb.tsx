@@ -102,8 +102,7 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
           style={{
             width: outerRingSize,
             height: outerRingSize,
-            borderColor: 'rgba(255,255,255,0.15)',
-            animation: `breathe ${evolutionLevel === 'master' ? 4 : 6}s ease-in-out infinite`
+            borderColor: 'rgba(255,255,255,0.15)'
           }}
         />
 

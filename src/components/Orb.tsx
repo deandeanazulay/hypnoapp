@@ -105,6 +105,3 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
     <WebGLOrb {...props} onTap={debugOnTap} size={size} evolutionLevel={evolutionLevel} /> : 
     <CSSOrb {...props} onTap={debugOnTap} size={size} evolutionLevel={evolutionLevel} />;
 }
-
-// Re-export the ref type for convenience
-export type { WebGLOrbRef };

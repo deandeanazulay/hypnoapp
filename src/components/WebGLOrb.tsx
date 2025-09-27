@@ -409,8 +409,8 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     if (orbMeshRef.current) {
       // Apply geometric transformation to vertices
       applyGeometricShape(orbMeshRef.current, alienState.currentShape, smoothTransition, sphereRadiusRef.current);
-      
-      orbMeshRef.current.scale.setScalar(breathingScale);
+      // Orb no longer scales in size, only changes shape
+      orbMeshRef.current.scale.setScalar(1); 
       
       // Minimal rotation for visual interest, not spinning
       orbMeshRef.current.rotation.x = Math.sin(time * 0.1) * 0.05;
@@ -552,11 +552,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       // Smooth transition between shapes
       const currentRadius = radius + (newRadius - radius) * transition;
       
-      // Apply new position
+      // Apply new position based on shape transformation
       const scale = currentRadius / radius;
       positions[i * 3] = x * scale;
       positions[i * 3 + 1] = y * scale;
-      positions[i * 3 + 2] = z * scale;
+++ b/src/components/WebGLOrb.tsx
     }
     
     positionAttribute.needsUpdate = true;
