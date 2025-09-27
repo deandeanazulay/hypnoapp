@@ -270,7 +270,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       active: (user?.session_streak || 0) === 0,
       xpReward: 25,
       tokenReward: 5,
-      difficulty: 'easy'
+      difficulty: 'easy',
       protocol: {
         id: 'progressive-relaxation-basic',
         name: 'Progressive Relaxation',
@@ -288,7 +288,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
       xpReward: 50,
       tokenReward: 10,
-      difficulty: 'easy'
+      difficulty: 'easy',
       protocol: {
         id: 'rapid-stress-release',
         name: 'Rapid Stress Release',
@@ -306,7 +306,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
       xpReward: 75,
       tokenReward: 15,
-      difficulty: 'medium'
+      difficulty: 'medium',
       protocol: {
         id: 'ego-exploration',
         name: 'Ego State Exploration',
@@ -324,7 +324,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
       xpReward: 100,
       tokenReward: 25,
-      difficulty: 'hard'
+      difficulty: 'hard',
       protocol: {
         id: 'confidence-builder',
         name: 'Confidence Building',
@@ -342,7 +342,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       active: user?.level >= 3 && user?.level < 5,
       xpReward: 200,
       tokenReward: 50,
-      difficulty: 'hard'
+      difficulty: 'hard',
       protocol: {
         id: 'advanced-transformation',
         name: 'Advanced Transformation',
