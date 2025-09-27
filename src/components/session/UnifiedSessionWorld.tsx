@@ -266,67 +266,71 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
         </div>
 
         {/* Premium Breathing Dock - Bottom */}
+        {/* Premium Breathing Dock - Bottom */}
         <div className="absolute bottom-0 left-0 right-0 z-30">
-          <div className="w-full bg-gradient-to-r from-black/95 via-purple-950/95 to-black/95 backdrop-blur-xl border-t border-white/10 px-6 py-4">
-            <div className="flex items-center justify-between max-w-6xl mx-auto">
-              {/* Breathing State */}
-              <div className="flex items-center space-x-4">
-                <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Breathing</div>
-                <div className={`inline-flex items-center justify-center w-20 h-8 rounded-xl border-2 transition-all duration-1000 ${getBreathingColor()}`}>
-                  <span className="text-sm font-bold capitalize">
-                    {breathing === 'hold-inhale' ? 'Hold' : 
-                     breathing === 'hold-exhale' ? 'Hold' :
-                     breathing}
-                  </span>
-                </div>
-              </div>
-
-              {/* Breathing Timer */}
-              <div className="flex items-center space-x-3">
-                <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Cycle</div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-400/20 border border-teal-400/40 flex items-center justify-center">
-                    <span className="text-teal-400 text-sm font-bold">
-                      {Math.floor((Date.now() / 2000) % 8) + 1}s
+          <div className="w-full bg-gradient-to-r from-black/95 via-purple-950/95 to-black/95 backdrop-blur-xl border-t border-white/10 px-6 py-6">
+            <div className="max-w-6xl mx-auto">
+              {/* Breathing Focus Row */}
+              <div className="flex items-center justify-center space-x-8 mb-4">
+                {/* Current Breathing State */}
+                <div className="flex items-center space-x-4">
+                  <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Breathing</div>
+                  <div className={`inline-flex items-center justify-center w-24 h-10 rounded-xl border-2 transition-all duration-1000 ${getBreathingColor()}`}>
+                    <span className="text-base font-bold capitalize">
+                      {breathing === 'hold-inhale' ? 'Hold' : 
+                       breathing === 'hold-exhale' ? 'Hold' :
+                       breathing}
                     </span>
                   </div>
-                  <div className="text-white/40 text-sm">/ 8s</div>
                 </div>
-              </div>
 
-              {/* Breathing Pattern Visualization */}
-              <div className="flex items-center space-x-3">
-                <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Pattern</div>
-                <div className="flex items-center space-x-1">
-                  {['Inhale', 'Hold', 'Exhale', 'Hold'].map((breathPhase, index) => (
-                    <div key={breathPhase} className="flex items-center">
-                      <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                        (breathing === 'inhale' && index === 0) ||
-                        (breathing === 'hold-inhale' && index === 1) ||
-                        (breathing === 'exhale' && index === 2) ||
-                        (breathing === 'hold-exhale' && index === 3)
-                          ? 'bg-teal-400 scale-125 animate-pulse'
-                          : 'bg-white/20'
-                      }`} />
-                      {index < 3 && <div className="w-3 h-0.5 bg-white/20 mx-1" />}
+                {/* Live Cycle Timer */}
+                <div className="flex items-center space-x-3">
+                  <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Cycle</div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-400/20 border border-teal-400/40 flex items-center justify-center">
+                      <span className="text-teal-400 text-base font-bold">
+                        {Math.floor((Date.now() / 2000) % 8) + 1}s
+                      </span>
                     </div>
-                  ))}
+                    <div className="text-white/40 text-sm">/ 8s</div>
+                  </div>
+                </div>
+
+                {/* Breathing Pattern Visualization */}
+                <div className="flex items-center space-x-4">
+                  <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Pattern</div>
+                  <div className="flex items-center space-x-2">
+                    {['Inhale', 'Hold', 'Exhale', 'Hold'].map((breathPhase, index) => (
+                      <div key={breathPhase} className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                          (breathing === 'inhale' && index === 0) ||
+                          (breathing === 'hold-inhale' && index === 1) ||
+                          (breathing === 'exhale' && index === 2) ||
+                          (breathing === 'hold-exhale' && index === 3)
+                            ? 'bg-teal-400 scale-125 animate-pulse shadow-lg shadow-teal-400/50'
+                            : 'bg-white/20'
+                        }`} />
+                        {index < 3 && <div className="w-4 h-0.5 bg-white/20 mx-2" />}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Session Stats */}
-              <div className="flex items-center space-x-4">
+              {/* Session Stats Row */}
+              <div className="flex items-center justify-center space-x-8">
                 <div className="text-center">
-                  <div className="text-white text-sm font-bold">{sessionState.currentSegmentIndex + 1}</div>
-                  <div className="text-white/60 text-xs">Segment</div>
+                  <div className="text-white text-lg font-bold">{sessionState.currentSegmentIndex + 1}</div>
+                  <div className="text-white/60 text-xs tracking-wider uppercase">Segment</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-purple-400 text-sm font-bold">{depth}</div>
-                  <div className="text-white/60 text-xs">Depth</div>
+                  <div className="text-purple-400 text-lg font-bold">{depth}</div>
+                  <div className="text-white/60 text-xs tracking-wider uppercase">Depth</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-orange-400 text-sm font-bold">{sessionState.totalSegments}</div>
-                  <div className="text-white/60 text-xs">Total</div>
+                  <div className="text-orange-400 text-lg font-bold">{sessionState.totalSegments}</div>
+                  <div className="text-white/60 text-xs tracking-wider uppercase">Total</div>
                 </div>
               </div>
             </div>
