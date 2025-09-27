@@ -115,11 +115,13 @@ export default function App() {
                 />
               } />
             </Routes>
-            
-            {/* Auth Modal */}
-            <AuthModal isOpen={modals.auth} onClose={() => closeModal('auth')} />
-            <ToastManager />
-          </div>
+              {/* Bottom Navigation - Hidden during session */}
+              {!sessionHandle && (
+                <NavigationTabs
+                  activeTab={activeTab}
+                  onTabChange={handleTabChange}
+                />
+              )}
         </ErrorBoundary>
       </Router>
     );

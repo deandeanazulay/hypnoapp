@@ -150,7 +150,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black h-screen w-screen overflow-hidden">
+    <div className="fixed inset-0 z-[100] bg-black h-screen w-screen overflow-hidden">
       {/* Session Header */}
       <div className="absolute top-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-xl border-b border-white/10 p-4">
         <div className="flex items-center justify-between">
