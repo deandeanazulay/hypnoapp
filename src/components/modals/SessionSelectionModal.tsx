@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Play, Clock, Star, Trophy, Zap, Target, Crown, Flame, CheckCircle, Lock, ArrowRight } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
 import { getEgoColor } from '../../config/theme';
+import { getEgoState } from '../../store';
 
 interface SessionSelectionModalProps {
   isOpen: boolean;
@@ -120,6 +121,7 @@ export default function SessionSelectionModal({
 
   const availableSessions = getAvailableSessions();
   const egoColor = getEgoColor(activeEgoState);
+  const currentState = getEgoState(activeEgoState);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
