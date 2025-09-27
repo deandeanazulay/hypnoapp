@@ -55,27 +55,25 @@ export default function HomeScreen({
       </div>
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 py-2">
-        {/* Center Orb */}
-        <div className="mb-3">
-          <Orb 
-            onTap={handleOrbTap}
-            egoState={currentState.id}
-            size={window.innerWidth < 768 ? 180 : 240}
-            variant="webgl"
-            afterglow={false}
-          />
-        </div>
-
-        {/* Tagline */}
-        <div className="text-center mb-6">
+        {/* Tagline - Above Orb */}
+        <div className="text-center mb-4">
           <h2 className="text-white text-lg font-light mb-1">
             Enter with Libero in {currentState.name}
           </h2>
           <p className="text-white/70 text-xs">Tap to begin with Libero</p>
         </div>
 
-        {/* Tagline - Closer to orb */}
-        <div className="text-center mb-3">
+        {/* Center Orb */}
+        <div className="mb-3">
+          <Orb 
+            onTap={handleOrbTap}
+            egoState={currentState.id}
+            size={window.innerWidth < 768 ? 320 : 400}
+            variant="webgl"
+            afterglow={false}
+          />
+        </div>
+
         <div className="grid grid-cols-2 gap-2 max-w-xs w-full mb-3">
           <button
             onClick={() => {
