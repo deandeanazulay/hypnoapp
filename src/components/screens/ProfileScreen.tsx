@@ -16,6 +16,8 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   const { activeEgoState, openModal, openEgoModal, showToast } = useAppStore();
   const { isAuthenticated, signOut, user: authUser } = useAuth();
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [recentSessions, setRecentSessions] = useState<any[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
 
   const currentEgoState = getEgoState(activeEgoState);
   const egoColor = getEgoColor(activeEgoState);
@@ -27,9 +29,59 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
 
   // Get achievements info
   const achievements = user?.achievements || [];
-  const totalAchievements = 25; // Example total available
+  const totalAchievements = 9; // Actual available achievements
 
-  const [recentSessions, setRecentSessions] = useState<any[]>([]);
+  // Fetch recent sessions
+  useEffect(() => {
+    const fetchRecentSessions = async () => {
+      if (!isAuthenticated || !user?.id) return;
+      
+      setSessionsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('sessions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('completed_at', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          console.error('Error fetching recent sessions:', error);
+        } else {
+          const formattedSessions = (data || []).map(session => ({
+            id: session.id,
+            name: session.action,
+            ago: formatTimeAgo(session.completed_at),
+            xp: session.experience_gained,
+            egoState: session.ego_state,
+            duration: session.duration
+          }));
+          setRecentSessions(formattedSessions);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setSessionsLoading(false);
+      }
+    };
+
+    fetchRecentSessions();
+  }, [isAuthenticated, user?.id]);
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    
+    return date.toLocaleDateString();
+  };
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -40,6 +92,35 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
     }
   };
 
+  const getEgoStateIcon = (egoState: string) => {
+    const iconMap: { [key: string]: string } = {
+      guardian: '🛡️',
+      rebel: '⚡',
+      mystic: '🔮',
+      lover: '💖',
+      builder: '🔨',
+      seeker: '🧭',
+      trickster: '🎭',
+      warrior: '⚔️',
+      visionary: '👁️'
+    };
+    return iconMap[egoState] || '⭐';
+  };
+
+  const getAchievementName = (achievementId: string): string => {
+    const achievementNames: { [key: string]: string } = {
+      'first_session': 'First Steps',
+      'three_day_streak': 'Building Momentum',
+      'week_warrior': 'Week Warrior',
+      'month_master': 'Month Master',
+      'level_5_master': 'Level 5 Master',
+      'level_10_sage': 'Level 10 Sage',
+      'ego_explorer': 'Ego Explorer',
+      'archetypal_master': 'Archetypal Master',
+      'token_collector': 'Token Collector'
+    };
+    return achievementNames[achievementId] || achievementId.replace('_', ' ');
+  };
   const handleOpenSettings = () => {
     openModal('settings');
   };
@@ -287,13 +368,25 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                   <Brain size={20} className="text-teal-400" />
                   <span>Recent Sessions</span>
                 </h3>
-                {recentSessions.length > 0 ? (
+                {sessionsLoading ? (
+                  <div className="text-center py-4">
+                    <div className="w-8 h-8 border-2 border-teal-400/30 border-t-teal-400 rounded-full animate-spin mx-auto mb-2"></div>
+                    <p className="text-white/60 text-sm">Loading sessions...</p>
+                  </div>
+                ) : recentSessions.length > 0 ? (
                   <div className="space-y-3">
                     {recentSessions.map((session) => (
-                      <div key={session.id} className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10">
+                      <div key={session.id} className="flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/10 hover:bg-black/30 transition-all">
                         <div>
-                          <div className="text-white font-medium text-sm">{session.name}</div>
-                          <div className="text-white/60 text-xs">{session.ago}</div>
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="text-sm">{getEgoStateIcon(session.egoState)}</span>
+                            <div className="text-white font-medium text-sm">{session.name}</div>
+                          </div>
+                          <div className="text-white/60 text-xs flex items-center space-x-2">
+                            <span>{session.ago}</span>
+                            <span>•</span>
+                            <span>{session.duration}m</span>
+                          </div>
                         </div>
                         <div className="flex items-center space-x-1">
                           <Star size={14} className="text-orange-400" />
@@ -323,26 +416,48 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                   <span className="text-white/60 text-sm">{achievements.length}/{totalAchievements}</span>
                 </div>
                 
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="flex -space-x-2">
-                    {achievements.slice(0, 3).map((achievement, i) => (
-                      <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-amber-400 border-2 border-black flex items-center justify-center">
-                        <Award size={14} className="text-black" />
+                {achievements.length > 0 ? (
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex -space-x-2">
+                        {achievements.slice(0, 3).map((achievement, i) => (
+                          <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-amber-400 border-2 border-black flex items-center justify-center">
+                            <Award size={14} className="text-black" />
+                          </div>
+                        ))}
+                        {achievements.length > 3 && (
+                          <div className="w-8 h-8 rounded-full bg-black/40 border-2 border-white/20 flex items-center justify-center">
+                            <span className="text-white/70 text-xs">+{achievements.length - 3}</span>
+                          </div>
+                        )}
                       </div>
-                    ))}
-                    {achievements.length > 3 && (
-                      <div className="w-8 h-8 rounded-full bg-black/40 border-2 border-white/20 flex items-center justify-center">
-                        <span className="text-white/70 text-xs">+{achievements.length - 3}</span>
+                      <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-yellow-400 to-amber-400 rounded-full transition-all duration-700"
+                          style={{ width: `${(achievements.length / totalAchievements) * 100}%` }}
+                        />
                       </div>
-                    )}
+                    </div>
+                    
+                    {/* Recent achievements */}
+                    <div className="space-y-2">
+                      {achievements.slice(-3).map((achievement, i) => (
+                        <div key={i} className="flex items-center space-x-2 bg-black/20 rounded-lg p-2 border border-white/10">
+                          <Award size={12} className="text-yellow-400" />
+                          <span className="text-white/80 text-sm">{getAchievementName(achievement)}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-yellow-400 to-amber-400 rounded-full transition-all duration-700"
-                      style={{ width: `${(achievements.length / totalAchievements) * 100}%` }}
-                    />
+                ) : (
+                  <div className="text-center py-6 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-500/20 to-slate-500/20 flex items-center justify-center mx-auto mb-3 border border-gray-500/30">
+                      <Award size={20} className="text-gray-400" />
+                    </div>
+                    <h4 className="text-white font-medium mb-1">No Achievements Yet</h4>
+                    <p className="text-white/60 text-sm">Complete sessions to unlock badges</p>
                   </div>
-                </div>
+                )}
                 
                 <p className="text-white/70 text-sm">Complete more sessions to unlock rare badges and titles</p>
               </div>

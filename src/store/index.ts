@@ -164,6 +164,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       egoStates: false,
       favorites: false,
       documentationHub: false,
+      personalLibrary: false,
     }
   })),
   
@@ -193,6 +194,76 @@ export const useAppStore = create<AppState>((set, get) => ({
   setActiveEgoState: (state) => set({ activeEgoState: state }),
 }));
 
+// Achievement definitions
+export const ACHIEVEMENTS = [
+  {
+    id: 'first_session',
+    name: 'First Steps',
+    description: 'Complete your first transformation session',
+    icon: '🌟',
+    rarity: 'common'
+  },
+  {
+    id: 'three_day_streak',
+    name: 'Building Momentum',
+    description: 'Maintain a 3-day practice streak',
+    icon: '⚡',
+    rarity: 'common'
+  },
+  {
+    id: 'week_warrior',
+    name: 'Week Warrior',
+    description: 'Complete 7 consecutive days of practice',
+    icon: '🏆',
+    rarity: 'rare'
+  },
+  {
+    id: 'month_master',
+    name: 'Month Master',
+    description: 'Maintain a 30-day streak',
+    icon: '👑',
+    rarity: 'epic'
+  },
+  {
+    id: 'level_5_master',
+    name: 'Level 5 Master',
+    description: 'Reach Level 5',
+    icon: '🎯',
+    rarity: 'rare'
+  },
+  {
+    id: 'level_10_sage',
+    name: 'Level 10 Sage',
+    description: 'Reach Level 10',
+    icon: '🧙',
+    rarity: 'epic'
+  },
+  {
+    id: 'ego_explorer',
+    name: 'Ego Explorer',
+    description: 'Try 3 different ego state guides',
+    icon: '🗺️',
+    rarity: 'uncommon'
+  },
+  {
+    id: 'archetypal_master',
+    name: 'Archetypal Master',
+    description: 'Use 6 different ego states',
+    icon: '🎭',
+    rarity: 'epic'
+  },
+  {
+    id: 'token_collector',
+    name: 'Token Collector',
+    description: 'Accumulate 100 tokens',
+    icon: '💰',
+    rarity: 'rare'
+  }
+];
+
+export const getAchievement = (id: string) => {
+  return ACHIEVEMENTS.find(achievement => achievement.id === id);
+};
 // Convenience function to open ego modal
 export const openEgoModal = () => {
   useAppStore.getState().openModal('egoStates');

@@ -88,23 +88,29 @@ export default function GlobalHUD() {
   };
 
   const handleLevelClick = () => {
-    const nextLevelXp = (user.level * 100) - user.experience;
+    const currentLevelXP = user.experience % 100;
+    const nextLevelXp = 100 - currentLevelXP;
     showToast({
       type: 'info',
-      message: `Level ${user.level}! ${nextLevelXp} XP needed for next level.`
+      message: `Level ${user.level}! ${nextLevelXp} XP needed for Level ${user.level + 1}.`,
+      duration: 4000
     });
   };
 
   const handleStreakClick = () => {
     if (user.session_streak > 0) {
+      const nextMilestone = user.session_streak < 7 ? 7 : user.session_streak < 30 ? 30 : null;
+      const bonusInfo = nextMilestone ? ` Next bonus at ${nextMilestone} days!` : '';
       showToast({
         type: 'success',
-        message: `Amazing! ${user.session_streak} day streak. Keep the momentum going!`
+        message: `Amazing! ${user.session_streak} day streak.${bonusInfo}`,
+        duration: 5000
       });
     } else {
       showToast({
         type: 'info',
-        message: 'Start a session today to begin your transformation streak!'
+        message: 'Start a session today to begin your transformation streak!',
+        duration: 4000
       });
     }
   };

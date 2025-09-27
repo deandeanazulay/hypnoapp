@@ -28,6 +28,15 @@ export default function SessionSelectionModal({
   const { updateUser } = useGameState();
   const { startNewSession } = useSessionStore();
 
+  // Calculate dynamic milestone status
+  const getTotalSessions = () => {
+    return Object.values(user?.ego_state_usage || {}).reduce((sum, count) => sum + count, 0);
+  };
+
+  const getUniqueEgoStatesUsed = () => {
+    return Object.keys(user?.ego_state_usage || {}).length;
+  };
+
   // Generate available sessions from milestones
   const getAvailableSessions = () => {
     const milestones = [
@@ -36,8 +45,8 @@ export default function SessionSelectionModal({
         name: 'First Steps',
         icon: Play,
         unlocked: true,
-        completed: false,
-        active: true,
+        completed: getTotalSessions() > 0,
+        active: getTotalSessions() === 0,
         xpReward: 25,
         tokenReward: 5,
         difficulty: 'easy',
@@ -53,9 +62,9 @@ export default function SessionSelectionModal({
         id: 'three-day-streak',
         name: 'Building Momentum',
         icon: Zap,
-        unlocked: false,
-        completed: false,
-        active: false,
+        unlocked: getTotalSessions() > 0,
+        completed: (user?.session_streak || 0) >= 3,
+        active: getTotalSessions() > 0 && (user?.session_streak || 0) < 3,
         xpReward: 50,
         tokenReward: 10,
         difficulty: 'easy',
@@ -71,9 +80,9 @@ export default function SessionSelectionModal({
         id: 'ego-explorer',
         name: 'Guide Discovery',
         icon: Star,
-        unlocked: false,
-        completed: false,
-        active: false,
+        unlocked: (user?.session_streak || 0) >= 3,
+        completed: getUniqueEgoStatesUsed() >= 3,
+        active: (user?.session_streak || 0) >= 3 && getUniqueEgoStatesUsed() < 3,
         xpReward: 75,
         tokenReward: 15,
         difficulty: 'medium',
@@ -89,9 +98,9 @@ export default function SessionSelectionModal({
         id: 'week-warrior',
         name: 'Week Warrior',
         icon: Trophy,
-        unlocked: false,
-        completed: false,
-        active: false,
+        unlocked: getUniqueEgoStatesUsed() >= 2,
+        completed: (user?.session_streak || 0) >= 7,
+        active: getUniqueEgoStatesUsed() >= 2 && (user?.session_streak || 0) < 7,
         xpReward: 100,
         tokenReward: 25,
         difficulty: 'hard',
@@ -107,9 +116,9 @@ export default function SessionSelectionModal({
         id: 'level-master',
         name: 'Level 5 Master',
         icon: Crown,
-        unlocked: false,
-        completed: false,
-        active: false,
+        unlocked: (user?.session_streak || 0) >= 7,
+        completed: (user?.level || 1) >= 5,
+        active: (user?.session_streak || 0) >= 7 && (user?.level || 1) < 5,
         xpReward: 200,
         tokenReward: 50,
         difficulty: 'hard',
@@ -194,6 +203,15 @@ export default function SessionSelectionModal({
     }
   };
 
+  const getMilestoneRequirements = (milestoneId: string): string => {
+    switch (milestoneId) {
+      case 'three-day-streak': return 'Complete your first session';
+      case 'ego-explorer': return 'Maintain a 3-day streak';
+      case 'week-warrior': return 'Try 2 different ego states';
+      case 'level-master': return 'Achieve a 7-day streak';
+      default: return 'Complete previous milestones';
+    }
+  };
   return (
     <ModalShell
       isOpen={isOpen}

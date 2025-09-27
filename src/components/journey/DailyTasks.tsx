@@ -26,6 +26,7 @@ export default function DailyTasks({ onTaskComplete, userLevel, userGoals }: Dai
   const today = new Date().toDateString();
   const lastSessionDate = user?.last_session_date;
   const hasCompletedToday = lastSessionDate === today;
+  const dailySessionsUsed = user?.daily_sessions_used || 0;
 
   // Generate daily tasks based on user level and goals
   const generateDailyTasks = (): DailyTask[] => {
@@ -39,7 +40,7 @@ export default function DailyTasks({ onTaskComplete, userLevel, userGoals }: Dai
       description: 'Your main transformation session for today',
       duration: 15,
       xpReward: 25,
-      completed: hasCompletedToday,
+      completed: dailySessionsUsed > 0,
       type: 'primary',
       protocol: {
         id: 'daily-primary',
@@ -57,7 +58,7 @@ export default function DailyTasks({ onTaskComplete, userLevel, userGoals }: Dai
         description: 'Quick 5-minute breathing session',
         duration: 5,
         xpReward: 10,
-        completed: false,
+        completed: dailySessionsUsed >= 2,
         type: 'bonus',
         protocol: {
           id: 'breathing-mastery',
@@ -75,7 +76,7 @@ export default function DailyTasks({ onTaskComplete, userLevel, userGoals }: Dai
         description: 'Explore a different archetypal energy',
         duration: 10,
         xpReward: 15,
-        completed: false,
+        completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
         type: 'bonus',
         protocol: {
           id: 'ego-exploration',
@@ -92,6 +93,7 @@ export default function DailyTasks({ onTaskComplete, userLevel, userGoals }: Dai
   const dailyTasks = generateDailyTasks();
   const completedTasks = dailyTasks.filter(task => task.completed).length;
   const totalXP = dailyTasks.reduce((sum, task) => sum + (task.completed ? task.xpReward : 0), 0);
+  const allTasksCompleted = completedTasks === dailyTasks.length && dailyTasks.length > 1;
 
   return (
     <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
@@ -181,7 +183,7 @@ export default function DailyTasks({ onTaskComplete, userLevel, userGoals }: Dai
       </div>
 
       {/* Completion Bonus */}
-      {completedTasks === dailyTasks.length && dailyTasks.length > 1 && (
+      {allTasksCompleted && (
         <div className="mt-4 bg-gradient-to-br from-yellow-500/10 to-amber-500/10 rounded-xl p-4 border border-yellow-500/20 animate-bounce-in">
           <div className="text-center">
             <div className="w-12 h-12 rounded-full bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center mx-auto mb-2 animate-level-up">
@@ -199,7 +201,9 @@ export default function DailyTasks({ onTaskComplete, userLevel, userGoals }: Dai
         <div className="bg-black/20 rounded-lg p-3 border border-white/10">
           <div className="flex items-center space-x-2">
             <Target size={14} className="text-teal-400" />
-            <span className="text-white/70 text-sm">Advanced {userGoals?.mainGoal || 'Transformation'} Session</span>
+            <span className="text-white/70 text-sm">
+              {userLevel >= 5 ? 'Advanced' : 'Progressive'} {userGoals?.mainGoal || 'Transformation'} Session
+            </span>
           </div>
         </div>
       </div>

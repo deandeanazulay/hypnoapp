@@ -260,14 +260,23 @@ interface HorizontalMilestoneRoadmapProps {
 }
 
 function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: HorizontalMilestoneRoadmapProps) {
+  // Calculate dynamic milestone status based on real user data
+  const getTotalSessions = () => {
+    return Object.values(user?.ego_state_usage || {}).reduce((sum, count) => sum + count, 0);
+  };
+
+  const getUniqueEgoStatesUsed = () => {
+    return Object.keys(user?.ego_state_usage || {}).length;
+  };
+
   const milestones = [
     {
       id: 'first-session',
       name: 'First Steps',
       icon: Play,
       unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
+      completed: getTotalSessions() > 0,
+      active: getTotalSessions() === 0,
       xpReward: 25,
       tokenReward: 5,
       difficulty: 'easy',
@@ -283,9 +292,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       id: 'three-day-streak',
       name: 'Momentum',
       icon: Zap,
-      unlocked: (user?.session_streak || 0) > 0,
+      unlocked: getTotalSessions() > 0,
       completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) > 0 && (user?.session_streak || 0) < 3,
+      active: getTotalSessions() > 0 && (user?.session_streak || 0) < 3,
       xpReward: 50,
       tokenReward: 10,
       difficulty: 'easy',
@@ -302,8 +311,8 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       name: 'Guide Discovery',
       icon: Star,
       unlocked: (user?.session_streak || 0) >= 3,
-      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
-      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
+      completed: getUniqueEgoStatesUsed() >= 3,
+      active: (user?.session_streak || 0) >= 3 && getUniqueEgoStatesUsed() < 3,
       xpReward: 75,
       tokenReward: 15,
       difficulty: 'medium',
@@ -319,9 +328,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       id: 'week-warrior',
       name: 'Week Warrior',
       icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
+      unlocked: getUniqueEgoStatesUsed() >= 2,
       completed: (user?.session_streak || 0) >= 7,
-      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
+      active: getUniqueEgoStatesUsed() >= 2 && (user?.session_streak || 0) < 7,
       xpReward: 100,
       tokenReward: 25,
       difficulty: 'hard',
@@ -337,9 +346,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       id: 'level-master',
       name: 'Level 5',
       icon: Crown,
-      unlocked: (user?.level || 1) >= 5,
-      completed: (user?.level || 1) >= 10,
-      active: (user?.level || 1) >= 5 && (user?.level || 1) < 10,
+      unlocked: (user?.session_streak || 0) >= 7,
+      completed: (user?.level || 1) >= 5,
+      active: (user?.session_streak || 0) >= 7 && (user?.level || 1) < 5,
       xpReward: 200,
       tokenReward: 50,
       difficulty: 'hard',
@@ -358,9 +367,24 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
 
   const handleMilestoneClick = (milestone: any) => {
     if (!milestone.unlocked) return;
+      const requirements = getMilestoneRequirements(milestone.id);
+      showToast({
+        type: 'info',
+        message: `Unlock requirement: ${requirements}`,
+        duration: 4000
+      });
     onMilestoneSelect(milestone);
   };
 
+  const getMilestoneRequirements = (milestoneId: string): string => {
+    switch (milestoneId) {
+      case 'three-day-streak': return 'Complete your first session';
+      case 'ego-explorer': return 'Maintain a 3-day streak';
+      case 'week-warrior': return 'Try 2 different ego states';
+      case 'level-master': return 'Achieve a 7-day streak';
+      default: return 'Complete previous milestones';
+    }
+  };
   return (
     <div className="w-full max-w-[720px] mx-auto mb-2">
       {/* Header */}

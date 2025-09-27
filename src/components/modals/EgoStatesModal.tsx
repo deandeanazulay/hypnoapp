@@ -24,6 +24,9 @@ export default function EgoStatesModal() {
     return Math.round(((user.ego_state_usage[stateId] || 0) / totalUsage) * 100);
   };
 
+  const getUsageCount = (stateId: string) => {
+    return user?.ego_state_usage?.[stateId] || 0;
+  };
   const getMostUsedState = () => {
     if (!user?.ego_state_usage) return null;
     const entries = Object.entries(user.ego_state_usage);
@@ -33,6 +36,7 @@ export default function EgoStatesModal() {
   };
 
   const mostUsedState = getMostUsedState();
+  const totalSessions = Object.values(user?.ego_state_usage || {}).reduce((sum, count) => sum + count, 0);
 
   return (
     <ModalShell
@@ -43,15 +47,18 @@ export default function EgoStatesModal() {
     >
       <div className="space-y-6 overflow-y-auto">
         {/* Usage Insights */}
-        {user && mostUsedState && (
+        {user && mostUsedState && totalSessions > 0 && (
           <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-4 border border-teal-500/20">
             <div className="flex items-center space-x-2 mb-2">
               <TrendingUp size={16} className="text-teal-400" />
               <h3 className="text-white font-medium">Your Journey Patterns</h3>
             </div>
             <p className="text-white/80 text-sm">
-              You've used <strong>{mostUsedState.name}</strong> most often ({getUsagePercentage(mostUsedState.id)}% of sessions).
-              Try different states to unlock new transformation pathways.
+              You've used <strong>{mostUsedState.name}</strong> most often ({getUsagePercentage(mostUsedState.id)}% of {totalSessions} sessions).
+              {Object.keys(user.ego_state_usage).length < 3 ? 
+                ' Try different states to unlock the Ego Explorer achievement!' :
+                ' You\'re exploring multiple archetypal energies - excellent progress!'
+              }
             </p>
           </div>
         )}
@@ -98,10 +105,10 @@ export default function EgoStatesModal() {
                 </p>
                 
                 {/* Usage Stats */}
-                {user && usagePercent > 0 && (
+                {user && getUsageCount(state.id) > 0 && (
                   <div className="bg-black/20 rounded-lg p-2 border border-white/10">
                     <div className="text-white/80 text-xs font-medium mb-1">
-                      {usagePercent}% of your sessions
+                      {getUsageCount(state.id)} sessions ({usagePercent}%)
                     </div>
                     <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
                       <div 
@@ -128,6 +135,7 @@ export default function EgoStatesModal() {
           <p className="text-white/80 text-sm leading-relaxed">
             Each ego state channels different energies and approaches. Guardian offers protection and grounding, 
             Rebel brings liberation, Healer provides restoration. Choose the guide that resonates with your current intention.
+            {totalSessions === 0 && ' Start your first session to begin tracking your archetypal journey!'}
           </p>
         </div>
       </div>

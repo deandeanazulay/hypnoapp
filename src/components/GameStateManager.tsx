@@ -170,11 +170,29 @@ export function GameStateProvider({ children }: GameStateProviderProps) {
 
     const newExperience = user.experience + amount;
     const newLevel = Math.floor(newExperience / 100) + 1;
+    const oldLevel = user.level;
+    
+    // Check for level up
+    const leveledUp = newLevel > oldLevel;
+    let levelUpTokens = 0;
+    
+    if (leveledUp) {
+      levelUpTokens = 5 * (newLevel - oldLevel); // 5 tokens per level
+    }
 
     await updateUser({
       experience: newExperience,
-      level: newLevel
+      level: newLevel,
+      tokens: (user.tokens || 0) + levelUpTokens
     });
+
+    if (leveledUp) {
+      showToast({
+        type: 'success',
+        message: `🎉 Level Up! You're now Level ${newLevel}! +${levelUpTokens} tokens`,
+        duration: 6000
+      });
+    }
   };
 
   const incrementStreak = async () => {
@@ -191,11 +209,30 @@ export function GameStateProvider({ children }: GameStateProviderProps) {
       return;
     }
 
+    const newStreak = user.session_streak + 1;
+    let bonusTokens = 0;
+    
+    // Award bonus tokens for streak milestones
+    if (newStreak % 7 === 0) {
+      bonusTokens = 10; // Weekly streak bonus
+    } else if (newStreak % 30 === 0) {
+      bonusTokens = 50; // Monthly streak bonus
+    }
+
     await updateUser({
-      session_streak: user.session_streak + 1,
+      session_streak: newStreak,
       last_session_time: new Date().toISOString(),
-      last_session_date: today
+      last_session_date: today,
+      tokens: (user.tokens || 0) + bonusTokens
     });
+
+    if (bonusTokens > 0) {
+      showToast({
+        type: 'success',
+        message: `🔥 ${newStreak}-day streak! Bonus: +${bonusTokens} tokens`,
+        duration: 5000
+      });
+    }
   };
 
   const updateEgoStateUsage = async (state: string) => {
@@ -234,6 +271,8 @@ export function GameStateProvider({ children }: GameStateProviderProps) {
     refetchUser
   };
 
+  // Import showToast from useAppStore for achievement notifications
+  const { showToast } = useAppStore();
   return (
     <GameStateContext.Provider value={value}>
       {children}

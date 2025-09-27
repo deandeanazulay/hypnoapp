@@ -19,14 +19,23 @@ interface HorizontalMilestoneRoadmapProps {
 }
 
 function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMilestoneRoadmapProps) {
+  // Calculate dynamic milestone status based on real user data
+  const getTotalSessions = () => {
+    return Object.values(user?.ego_state_usage || {}).reduce((sum, count) => sum + count, 0);
+  };
+
+  const getUniqueEgoStatesUsed = () => {
+    return Object.keys(user?.ego_state_usage || {}).length;
+  };
+
   const milestones = [
     {
       id: 'first-session',
       name: 'First Steps',
       icon: Play,
       unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
+      completed: getTotalSessions() > 0,
+      active: getTotalSessions() === 0,
       xpReward: 25,
       tokenReward: 5,
       difficulty: 'easy',
@@ -42,9 +51,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMiles
       id: 'three-day-streak',
       name: 'Building Momentum',
       icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
-      completed: false,
-      active: false,
+      unlocked: getTotalSessions() > 0,
+      completed: (user?.session_streak || 0) >= 3,
+      active: getTotalSessions() > 0 && (user?.session_streak || 0) < 3,
       xpReward: 50,
       tokenReward: 10,
       difficulty: 'easy',
@@ -60,9 +69,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMiles
       id: 'ego-explorer',
       name: 'Guide Discovery',
       icon: Star,
-      unlocked: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length >= 1,
-      completed: false,
-      active: false,
+      unlocked: (user?.session_streak || 0) >= 3,
+      completed: getUniqueEgoStatesUsed() >= 3,
+      active: (user?.session_streak || 0) >= 3 && getUniqueEgoStatesUsed() < 3,
       xpReward: 75,
       tokenReward: 15,
       difficulty: 'medium',
@@ -78,9 +87,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMiles
       id: 'week-warrior',
       name: 'Week Warrior',
       icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: false,
-      active: false,
+      unlocked: getUniqueEgoStatesUsed() >= 2,
+      completed: (user?.session_streak || 0) >= 7,
+      active: getUniqueEgoStatesUsed() >= 2 && (user?.session_streak || 0) < 7,
       xpReward: 100,
       tokenReward: 25,
       difficulty: 'hard',
@@ -96,9 +105,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMiles
       id: 'level-master',
       name: 'Level 5',
       icon: Crown,
-      unlocked: (user?.level || 1) >= 5,
-      completed: false,
-      active: false,
+      unlocked: (user?.session_streak || 0) >= 7,
+      completed: (user?.level || 1) >= 5,
+      active: (user?.session_streak || 0) >= 7 && (user?.level || 1) < 5,
       xpReward: 200,
       tokenReward: 50,
       difficulty: 'hard',
@@ -113,10 +122,27 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMiles
   ];
 
   const handleMilestoneClick = (milestone: any) => {
-    if (!milestone.unlocked) return;
+    if (!milestone.unlocked) {
+      const requirements = getMilestoneRequirements(milestone.id);
+      showToast({
+        type: 'info',
+        message: `Unlock requirement: ${requirements}`,
+        duration: 4000
+      });
+      return;
+    }
     onMilestoneSelect(milestone);
   };
 
+  const getMilestoneRequirements = (milestoneId: string): string => {
+    switch (milestoneId) {
+      case 'three-day-streak': return 'Complete your first session';
+      case 'ego-explorer': return 'Maintain a 3-day streak';
+      case 'week-warrior': return 'Try 2 different ego states';
+      case 'level-master': return 'Achieve a 7-day streak';
+      default: return 'Complete previous milestones';
+    }
+  };
   return (
     <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
       {/* Header */}

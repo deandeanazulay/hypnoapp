@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react';
 import { useSessionStore } from '../../store/sessionStore';
 import { useAppStore } from '../../store';
+import { useGameState } from '../GameStateManager';
+import { supabase } from '../../lib/supabase';
 import Orb from '../Orb';
 
 interface UnifiedSessionWorldProps {
@@ -18,8 +20,11 @@ interface BreathingState {
 export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionWorldProps) {
   const { sessionHandle, sessionState, play, pause, nextSegment, prevSegment, disposeSession } = useSessionStore();
   const { activeEgoState, showToast } = useAppStore();
+  const { user, updateUser, addExperience, incrementStreak, updateEgoStateUsage } = useGameState();
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [audioLevel, setAudioLevel] = useState(80);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [sessionData, setSessionData] = useState<any>(null);
 
   // Session state
   const [depth, setDepth] = useState(1);
@@ -39,6 +44,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   useEffect(() => {
     if (isOpen && sessionHandle && sessionState.isInitialized && sessionState.playState === 'stopped') {
       console.log('[SESSION-WORLD] Auto-starting session');
+      setSessionStartTime(Date.now());
       setTimeout(() => {
         play();
       }, 1000);
@@ -103,15 +109,183 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
 
       sessionHandle.on('end', () => {
         console.log('[SESSION-WORLD] Session completed');
-        showToast({
-          type: 'success',
-          message: 'Session completed! Well done.'
-        });
-        onClose();
+        handleSessionComplete();
       });
     }
   }, [sessionHandle, showToast, onClose]);
 
+  // Calculate session rewards
+  const calculateSessionRewards = (durationMinutes: number, completionRate: number = 1.0) => {
+    const baseXP = Math.floor(durationMinutes * 2); // 2 XP per minute
+    const completionBonus = Math.floor(baseXP * (completionRate - 1)); // Bonus for full completion
+    const totalXP = baseXP + completionBonus;
+    
+    const baseTokens = Math.floor(durationMinutes / 5); // 1 token per 5 minutes
+    const minTokens = 2; // Minimum 2 tokens per session
+    const totalTokens = Math.max(baseTokens, minTokens);
+    
+    return { xp: totalXP, tokens: totalTokens };
+  };
+
+  // Handle session completion with full gamification
+  const handleSessionComplete = async () => {
+    if (!user || !sessionStartTime) {
+      console.error('[SESSION-WORLD] Cannot complete session - missing user or start time');
+      return;
+    }
+
+    try {
+      const sessionEndTime = Date.now();
+      const sessionDurationMs = sessionEndTime - sessionStartTime;
+      const sessionDurationMinutes = Math.floor(sessionDurationMs / (1000 * 60));
+      
+      // Calculate rewards
+      const rewards = calculateSessionRewards(sessionDurationMinutes);
+      
+      // Prepare session data
+      const sessionRecord = {
+        user_id: user.id,
+        ego_state: activeEgoState,
+        action: sessionData?.action || 'transformation session',
+        duration: sessionDurationMinutes,
+        experience_gained: rewards.xp,
+        completed_at: new Date().toISOString()
+      };
+
+      // Save session to database
+      const { error: sessionError } = await supabase
+        .from('sessions')
+        .insert(sessionRecord);
+
+      if (sessionError) {
+        console.error('[SESSION-WORLD] Error saving session:', sessionError);
+        showToast({
+          type: 'error',
+          message: 'Session completed but failed to save progress'
+        });
+      } else {
+        console.log('[SESSION-WORLD] Session saved successfully');
+      }
+
+      // Award experience points
+      await addExperience(rewards.xp);
+      
+      // Update ego state usage
+      await updateEgoStateUsage(activeEgoState);
+      
+      // Increment streak and award tokens
+      await incrementStreak();
+      
+      // Award session tokens
+      await updateUser({ 
+        tokens: (user.tokens || 0) + rewards.tokens,
+        daily_sessions_used: (user.daily_sessions_used || 0) + 1
+      });
+
+      // Check for achievements
+      await checkAndUnlockAchievements(user, rewards);
+
+      // Show completion message
+      showToast({
+        type: 'success',
+        message: `Session completed! +${rewards.xp} XP, +${rewards.tokens} tokens`,
+        duration: 5000
+      });
+
+      // Close session after brief delay
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+
+    } catch (error) {
+      console.error('[SESSION-WORLD] Error completing session:', error);
+      showToast({
+        type: 'error',
+        message: 'Session completed but failed to save progress'
+      });
+      onClose();
+    }
+  };
+
+  // Check and unlock achievements
+  const checkAndUnlockAchievements = async (currentUser: any, sessionRewards: any) => {
+    const newAchievements: string[] = [];
+    const currentAchievements = currentUser.achievements || [];
+
+    // First session achievement
+    if (!currentAchievements.includes('first_session')) {
+      newAchievements.push('first_session');
+    }
+
+    // Streak achievements
+    const newStreak = (currentUser.session_streak || 0) + 1;
+    if (newStreak >= 3 && !currentAchievements.includes('three_day_streak')) {
+      newAchievements.push('three_day_streak');
+    }
+    if (newStreak >= 7 && !currentAchievements.includes('week_warrior')) {
+      newAchievements.push('week_warrior');
+    }
+    if (newStreak >= 30 && !currentAchievements.includes('month_master')) {
+      newAchievements.push('month_master');
+    }
+
+    // Level achievements
+    const newLevel = Math.floor((currentUser.experience + sessionRewards.xp) / 100) + 1;
+    if (newLevel >= 5 && !currentAchievements.includes('level_5_master')) {
+      newAchievements.push('level_5_master');
+    }
+    if (newLevel >= 10 && !currentAchievements.includes('level_10_sage')) {
+      newAchievements.push('level_10_sage');
+    }
+
+    // Ego state achievements
+    const egoStateUsage = currentUser.ego_state_usage || {};
+    const uniqueStatesUsed = Object.keys(egoStateUsage).length + (egoStateUsage[activeEgoState] ? 0 : 1);
+    if (uniqueStatesUsed >= 3 && !currentAchievements.includes('ego_explorer')) {
+      newAchievements.push('ego_explorer');
+    }
+    if (uniqueStatesUsed >= 6 && !currentAchievements.includes('archetypal_master')) {
+      newAchievements.push('archetypal_master');
+    }
+
+    // Token achievements
+    const newTokens = (currentUser.tokens || 0) + sessionRewards.tokens;
+    if (newTokens >= 100 && !currentAchievements.includes('token_collector')) {
+      newAchievements.push('token_collector');
+    }
+
+    // Update achievements if any new ones unlocked
+    if (newAchievements.length > 0) {
+      const updatedAchievements = [...currentAchievements, ...newAchievements];
+      await updateUser({ achievements: updatedAchievements });
+      
+      // Show achievement notifications
+      newAchievements.forEach(achievement => {
+        const achievementName = getAchievementName(achievement);
+        showToast({
+          type: 'success',
+          message: `🏆 Achievement Unlocked: ${achievementName}!`,
+          duration: 6000
+        });
+      });
+    }
+  };
+
+  // Get human-readable achievement names
+  const getAchievementName = (achievementId: string): string => {
+    const achievementNames: { [key: string]: string } = {
+      'first_session': 'First Steps',
+      'three_day_streak': 'Building Momentum',
+      'week_warrior': 'Week Warrior',
+      'month_master': 'Month Master',
+      'level_5_master': 'Level 5 Master',
+      'level_10_sage': 'Level 10 Sage',
+      'ego_explorer': 'Ego Explorer',
+      'archetypal_master': 'Archetypal Master',
+      'token_collector': 'Token Collector'
+    };
+    return achievementNames[achievementId] || achievementId;
+  };
 
   // Breathing pattern functions
   const startBreathingPattern = () => {
@@ -260,6 +434,8 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
       sessionHandle.pause();
       disposeSession();
     }
+    setSessionStartTime(null);
+    setSessionData(null);
     onClose();
   };
 
@@ -276,6 +452,16 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
     // TODO: Apply volume to audio elements
   };
 
+  // Store session configuration when session starts
+  useEffect(() => {
+    if (sessionHandle && sessionState.scriptPlan) {
+      setSessionData({
+        action: sessionState.scriptPlan.title || 'Transformation Session',
+        egoState: activeEgoState,
+        protocol: sessionState.scriptPlan.metadata || {}
+      });
+    }
+  }, [sessionHandle, sessionState.scriptPlan, activeEgoState]);
   if (!isOpen || !sessionHandle) {
     return null;
   }

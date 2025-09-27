@@ -5,6 +5,7 @@ import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { supabase } from '../../lib/supabase';
+import { useSessionStore } from '../../store/sessionStore';
 
 interface Session {
   id: string;
@@ -36,6 +37,7 @@ export default function FavoritesModal({ onSessionSelect }: FavoritesModalProps)
   const { modals, closeModal, showToast } = useAppStore();
   const { user } = useGameState();
   const { isAuthenticated } = useAuth();
+  const { startNewSession } = useSessionStore();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'recent' | 'best'>('all');
@@ -99,20 +101,58 @@ export default function FavoritesModal({ onSessionSelect }: FavoritesModalProps)
   };
 
   const handleSessionStart = (session: Session) => {
-    const favoriteSession: FavoriteSession = {
-      id: session.id,
-      name: session.action,
-      egoState: session.ego_state,
-      action: session.action,
-      duration: session.duration,
-      rating: session.experience_gained / 10,
-      completedCount: 1,
-      lastCompleted: new Date(session.completed_at),
-      badges: []
-    };
-    
-    onSessionSelect(favoriteSession);
-    closeModal('favorites');
+    try {
+      showToast({
+        type: 'info',
+        message: `Replaying ${session.action}...`
+      });
+
+      // Close the modal first
+      closeModal('favorites');
+
+      // Start the session using the session store
+      startNewSession({
+        egoState: session.ego_state,
+        goal: {
+          id: 'replay-' + session.id,
+          name: session.action
+        },
+        action: {
+          name: session.action,
+          id: 'replay'
+        },
+        method: {
+          name: 'guided relaxation',
+          id: 'guided'
+        },
+        lengthSec: session.duration * 60,
+        userPrefs: {
+          level: user?.level || 1,
+          experience: user?.experience || 0
+        }
+      });
+
+      const favoriteSession: FavoriteSession = {
+        id: session.id,
+        name: session.action,
+        egoState: session.ego_state,
+        action: session.action,
+        duration: session.duration,
+        rating: session.experience_gained / 10,
+        completedCount: 1,
+        lastCompleted: new Date(session.completed_at),
+        badges: []
+      };
+      
+      onSessionSelect(favoriteSession);
+
+    } catch (error) {
+      console.error('Error starting favorite session:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to start session. Please try again.'
+      });
+    }
   };
 
   const getEgoStateIcon = (egoState: string) => {
@@ -335,6 +375,27 @@ export default function FavoritesModal({ onSessionSelect }: FavoritesModalProps)
                 <div className="text-white/60 text-xs">Total XP Earned</div>
               </div>
             </div>
+            
+            {/* Best session highlight */}
+            {sessions.length > 0 && (
+              <div className="mt-4 bg-gradient-to-br from-yellow-500/10 to-amber-500/10 rounded-lg p-3 border border-yellow-500/20">
+                <h5 className="text-white font-medium mb-2 flex items-center space-x-1">
+                  <Star size={14} className="text-yellow-400" />
+                  <span>Best Session</span>
+                </h5>
+                {(() => {
+                  const bestSession = sessions.reduce((best, current) => 
+                    current.experience_gained > best.experience_gained ? current : best
+                  );
+                  return (
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/80 text-sm">{bestSession.action}</span>
+                      <span className="text-yellow-400 font-bold text-sm">+{bestSession.experience_gained} XP</span>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
         )}
       </div>
