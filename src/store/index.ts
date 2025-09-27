@@ -30,6 +30,7 @@ interface AppState {
     tokens: boolean;
     chatgptChat: boolean;
     documentationHub: boolean;
+    documentationHub: boolean;
     favorites: boolean;
   };
   
@@ -64,6 +65,7 @@ export const useAppStore = create<AppState>()(
         tokens: false,
         chatgptChat: false,
         documentationHub: false
+        documentationHub: false,
         favorites: false
       },
       toasts: [],
