@@ -503,7 +503,7 @@ export default function HomeScreen({
     console.log('Starting session:', session);
   };
   // Safe size calc (prevents layout jumps & dead space)
-  const orbSize = Math.round(Math.min(typeof window !== 'undefined' ? window.innerWidth : 360, 480) * 0.55);
+  const orbSize = Math.round(Math.min(typeof window !== 'undefined' ? window.innerWidth : 360, 480) * 1);
 
   return (
     <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
