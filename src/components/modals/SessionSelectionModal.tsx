@@ -24,7 +24,8 @@ export default function SessionSelectionModal({
 }: SessionSelectionModalProps) {
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const { showToast } = useAppStore();
-  const { updateUser, addExperience, incrementStreak, updateEgoStateUsage } = useGameState();
+  const { updateUser } = useGameState();
+  const { startNewSession } = useSessionStore();
 
   // Generate available sessions from milestones
   const getAvailableSessions = () => {
@@ -149,8 +150,8 @@ export default function SessionSelectionModal({
       // Close the modal first
       onClose();
 
-      // Start the actual session using the session service
-      const sessionHandle = startSession({
+      // Start the actual session using the session store
+      await startNewSession({
         egoState: activeEgoState,
         protocol: session.protocol,
         goal: {
@@ -172,37 +173,12 @@ export default function SessionSelectionModal({
         }
       });
 
-      console.log('[SESSION-MODAL] Session handle created, starting play...');
-      
-      // Start playing the session
-      sessionHandle.play();
+      console.log('[SESSION-MODAL] Session started via store');
 
       // Track session start
       showToast({
         type: 'success',
         message: `${session.protocol.name} session started!`
-      });
-
-      // Update user stats when session completes
-      sessionHandle.on('end', async () => {
-        console.log('[SESSION-MODAL] Session completed, updating stats...');
-        try {
-          // Add experience points
-          await addExperience(session.xpReward || 25);
-          
-          // Update streak
-          await incrementStreak();
-          
-          // Update ego state usage
-          await updateEgoStateUsage(activeEgoState);
-          
-          showToast({
-            type: 'success',
-            message: `Session completed! +${session.xpReward || 25} XP earned`
-          });
-        } catch (error) {
-          console.error('Error updating user stats after session:', error);
-        }
       });
 
       // Call the original callback for any additional handling

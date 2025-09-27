@@ -192,6 +192,15 @@ export default function App() {
           
           {/* Toast System */}
           <ToastManager />
+          
+          {/* Session World */}
+          <UnifiedSessionWorld 
+            isOpen={!!sessionHandle}
+            onClose={() => {
+              // Handle session close
+              console.log('[APP] Closing session world');
+            }}
+          />
         </div>
       </ErrorBoundary>
     </Router>
