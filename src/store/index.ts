@@ -1,181 +1,244 @@
-import { create } from 'zustand';
+import React from 'react';
+import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, MessageCircle, HelpCircle } from 'lucide-react';
+import { useGameState } from '../GameStateManager';
+import { useAppStore, getEgoState } from '../../store';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
+import { getEgoColor } from '../../config/theme';
 
-// Types
-export interface ToastMessage {
-  id: string;
-  type: 'success' | 'error' | 'info' | 'warning';
-  message: string;
-  duration?: number;
-}
-
-export interface EgoState {
-  id: string;
-  name: string;
-  role: string;
-  icon: string;
-  description: string;
-  color: string;
-  accent: string;
-}
-
-interface AppState {
-  // Modal states
-  modals: {
-    auth: boolean;
-    settings: boolean;
-    egoStates: boolean;
-    favorites: boolean;
-    plan: boolean;
-    tokens: boolean;
-    documentationHub: boolean;
-  };
+export default function GlobalHUD() {
+  const { user } = useGameState();
+  const { activeEgoState, openModal, openEgoModal, showToast } = useAppStore();
+  const { isAuthenticated } = useAuth();
   
-  // Toast system
-  toasts: ToastMessage[];
-  
-  // Ego state
-  activeEgoState: string;
-  
-  // Actions
-  openModal: (modal: keyof AppState['modals']) => void;
-  closeModal: (modal: keyof AppState['modals']) => void;
-  openEgoModal: () => void;
-  showToast: (toast: Omit<ToastMessage, 'id'>) => void;
-  removeToast: (id: string) => void;
-  setActiveEgoState: (stateId: string) => void;
-}
-
-// Ego States Data
-export const EGO_STATES: EgoState[] = [
-  {
-    id: 'guardian',
-    name: 'Guardian',
-    role: 'Protector & Stabilizer',
-    icon: '🛡️',
-    description: 'Shields you from stress and creates safe mental spaces',
-    color: '#0891b2',
-    accent: '#06b6d4'
-  },
-  {
-    id: 'rebel',
-    name: 'Rebel',
-    role: 'Breaker of Patterns',
-    icon: '⚡',
-    description: 'Breaks through mental barriers and limiting beliefs',
-    color: '#dc2626',
-    accent: '#ef4444'
-  },
-  {
-    id: 'mystic',
-    name: 'Mystic',
-    role: 'Wisdom Seeker',
-    icon: '🔮',
-    description: 'Connects you to deeper insight and intuitive knowing',
-    color: '#7c3aed',
-    accent: '#8b5cf6'
-  },
-  {
-    id: 'lover',
-    name: 'Lover',
-    role: 'Heart Healer',
-    icon: '💖',
-    description: 'Cultivates self-compassion and emotional healing',
-    color: '#ec4899',
-    accent: '#f472b6'
-  },
-  {
-    id: 'builder',
-    name: 'Builder',
-    role: 'Achievement Catalyst',
-    icon: '🏗️',
-    description: 'Structures your mind for success and manifestation',
-    color: '#ea580c',
-    accent: '#f97316'
-  },
-  {
-    id: 'seeker',
-    name: 'Seeker',
-    role: 'Explorer of Possibilities',
-    icon: '🧭',
-    description: 'Opens new pathways and expands your perspective',
-    color: '#059669',
-    accent: '#10b981'
-  },
-  {
-    id: 'trickster',
-    name: 'Trickster',
-    role: 'Joyful Transformer',
-    icon: '🎭',
-    description: 'Uses play and humor to shift your mental state',
-    color: '#d946ef',
-    accent: '#e879f9'
-  },
-  {
-    id: 'warrior',
-    name: 'Warrior',
-    role: 'Courage Activator',
-    icon: '⚔️',
-    description: 'Builds inner strength and conquers fears',
-    color: '#b91c1c',
-    accent: '#dc2626'
-  },
-  {
-    id: 'visionary',
-    name: 'Visionary',
-    role: 'Future Architect',
-    icon: '🌟',
-    description: 'Connects you to your highest potential and dreams',
-    color: '#7c2d12',
-    accent: '#ea580c'
+  if (!isAuthenticated || !user) {
+    return (
+      <div 
+        data-hud
+        className="global-hud fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 px-4 py-2"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => openModal('auth')}
+              className="px-3 py-1 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all text-xs font-medium"
+            >
+              Sign In
+            </button>
+            {/* <button 
+              onClick={() => openModal('chatgptChat')} // Removed as per prompt
+              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110" // Removed as per prompt
+              title="Test ChatGPT API & Get Help"
+            >
+              <MessageCircle size={16} className="text-purple-400" />
+            </button>
+          </div>
+          
+          <h1 className="text-white text-lg font-light">Libero</h1>
+          
+          <div className="flex items-center space-x-2">
+            {/* Helper Button */}
+            <button
+              onClick={() => openModal('documentationHub')}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+              title="Help & Documentation"
+            >
+              <HelpCircle size={16} className="text-white/80" />
+            </button>
+            {/* <button 
+              onClick={() => openModal('chatgptChat')} // Removed as per prompt
+              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110" // Removed as per prompt
+              title="Test ChatGPT API" // Removed as per prompt
+            > */}
+            
+            <button 
+              onClick={() => openModal('settings')}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+            >
+              <Settings size={16} className="text-white/80" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
-];
 
-// Helper function
-export const getEgoState = (id: string): EgoState => {
-  return EGO_STATES.find(state => state.id === id) || EGO_STATES[0];
-};
+  // Calculate XP progress
+  const xpProgress = (user.experience % 100) / 100;
+  const sessionsLeft = user.plan === 'free' ? Math.max(0, 1 - user.daily_sessions_used) : '∞';
+  const egoState = getEgoState(activeEgoState);
+  const egoColor = getEgoColor(activeEgoState);
 
-// Store
-export const useAppStore = create<AppState>((set) => ({
-  modals: {
-    auth: false,
-    settings: false,
-    egoStates: false,
-    favorites: false,
-    plan: false,
-    tokens: false,
-    documentationHub: false,
-  },
-  
-  toasts: [],
-  
-  activeEgoState: 'guardian',
-  
-  openModal: (modal) => 
-    set((state) => ({ 
-      modals: { ...state.modals, [modal]: true } 
-    })),
-    
-  closeModal: (modal) => 
-    set((state) => ({ 
-      modals: { ...state.modals, [modal]: false } 
-    })),
-    
-  openEgoModal: () => 
-    set((state) => ({ 
-      modals: { ...state.modals, egoStates: true } 
-    })),
-    
-  showToast: (toast) =>
-    set((state) => ({
-      toasts: [...state.toasts, { ...toast, id: Date.now().toString() }]
-    })),
-    
-  removeToast: (id) =>
-    set((state) => ({
-      toasts: state.toasts.filter(toast => toast.id !== id)
-    })),
-    
-  setActiveEgoState: (stateId) =>
-    set({ activeEgoState: stateId }),
-}));
+  const handleEgoStateClick = () => {
+    openEgoModal();
+  };
+
+  const handlePlanClick = () => {
+    openModal('plan');
+  };
+
+  const handleTokensClick = () => {
+    openModal('tokens');
+  };
+
+  const handleLevelClick = () => {
+    const nextLevelXp = (user.level * 100) - user.experience;
+    showToast({
+      type: 'info',
+      message: `Level ${user.level}! ${nextLevelXp} XP needed for next level.`
+    });
+  };
+
+  const handleStreakClick = () => {
+    if (user.session_streak > 0) {
+      showToast({
+        type: 'success',
+        message: `Amazing! ${user.session_streak} day streak. Keep the momentum going!`
+      });
+    } else {
+      showToast({
+        type: 'info',
+        message: 'Start a session today to begin your transformation streak!'
+      });
+    }
+  };
+
+  const handleAwardsClick = () => {
+    if (user.achievements.length > 0) {
+      showToast({
+        type: 'success',
+        message: `You've earned ${user.achievements.length} achievements! View them in your profile.`
+      });
+    } else {
+      showToast({
+        type: 'info',
+        message: 'Complete sessions to unlock achievements and badges!'
+      });
+    }
+  };
+  return (
+    <div 
+      data-hud
+      className="global-hud fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 px-2 py-2"
+    >
+      <div className="flex items-center justify-between text-xs sm:text-sm">
+        {/* Left: Ego State */}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleEgoStateClick}
+            className="w-8 h-8 rounded-full bg-gradient-to-br border-2 flex items-center justify-center"
+            style={{ 
+              background: `linear-gradient(135deg, ${egoColor.accent}60, ${egoColor.accent}40)`,
+              borderColor: egoColor.accent + '80'
+            }}
+          >
+            <span className="text-sm">{egoState.icon}</span>
+          </button>
+          <div className="hidden sm:block">
+            <button 
+              onClick={handleEgoStateClick}
+              className="text-white font-medium hover:text-white/80 transition-colors text-left"
+            >
+              {egoState.name}
+            </button>
+            <div className="text-white/60 text-xs">{egoState.role}</div>
+          </div>
+        </div>
+
+        {/* Center: Stats */}
+        <div className="flex items-center space-x-3 sm:space-x-6">
+          {/* Level */}
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={handleLevelClick}
+              className="w-5 h-5 rounded bg-teal-500/20 border border-teal-500/40 flex items-center justify-center hover:bg-teal-500/30 hover:scale-110 transition-all text-xxs"
+            >
+              <span className="text-teal-400 font-bold text-xs">L{user.level}</span>
+            </button>
+            <span className="text-white/60 hidden sm:inline">Level</span>
+          </div>
+
+          {/* XP Progress */}
+          <button 
+            onClick={handleLevelClick}
+            className="flex items-center space-x-2 hover:scale-105 transition-all"
+          > 
+            <span className="text-orange-400 font-medium">{user.experience % 100} XP</span>
+            <div className="w-16 h-2 bg-white/20 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-orange-400 to-amber-400 transition-all duration-300"
+                style={{ width: `${xpProgress * 100}%` }}
+              />
+            </div>
+          </button>
+
+          {/* Streak */}
+          <button 
+            onClick={handleStreakClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
+            <span className="text-yellow-400 font-medium">{user.session_streak}d</span>
+            <span className="text-white/60 hidden sm:inline">streak</span>
+          </button>
+
+          {/* Sessions */}
+          <div className="flex items-center space-x-1">
+            <span className="text-purple-400 font-medium">{user.daily_sessions_used}</span>
+            <span className="text-white/60 hidden sm:inline">Sessions</span>
+          </div>
+
+          {/* Awards */}
+          <button 
+            onClick={handleAwardsClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
+            <span className="text-blue-400 font-medium">{user.achievements.length}</span>
+            <span className="text-white/60 hidden sm:inline">Awards</span>
+          </button>
+        </div>
+
+        {/* Right: Tokens & Plan */}
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={handleTokensClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
+            <span className="text-yellow-400 font-medium">{user.tokens}</span>
+            <span className="text-white/60 hidden sm:inline">tokens</span>
+          </button>
+          
+          <button 
+            onClick={handlePlanClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
+            <span className="text-green-400 font-medium uppercase">{user.plan}</span>
+            <span className="text-white/60 hidden sm:inline">Plan</span>
+          </button>
+          
+          <div className="flex items-center space-x-1">
+            <span className="text-teal-400 font-medium">{sessionsLeft}</span>
+            <span className="text-white/60 hidden sm:inline">Left</span>
+          </div>
+        </div>
+        
+        {/* Right Controls */}
+        <div className="flex items-center space-x-2"> 
+          {/* Helper Button */}
+          <button
+            onClick={() => openModal('documentationHub')}
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+            title="Help & Documentation"
+          >
+            <HelpCircle size={16} className="text-white/80" />
+          </button>
+          
+          <button 
+            onClick={() => openModal('settings')}
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+          >
+            <Settings size={16} className="text-white/80" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
