@@ -10,6 +10,7 @@ import { useProtocolStore } from '../../state/protocolStore';
 import { useGameState } from '../GameStateManager';
 import { TabId } from '../../types/Navigation';
 import { getEgoColor } from '../../config/theme';
+import SessionSelectionModal from '../modals/SessionSelectionModal';
 
 interface HomeScreenProps {
   onOrbTap: () => void;
@@ -270,6 +271,13 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       xpReward: 25,
       tokenReward: 5,
       difficulty: 'easy'
+      protocol: {
+        id: 'progressive-relaxation-basic',
+        name: 'Progressive Relaxation',
+        category: 'stress-relief',
+        duration: 10,
+        description: 'Gentle introduction to hypnotherapy'
+      }
     },
     {
       id: 'three-day-streak',
@@ -281,6 +289,13 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       xpReward: 50,
       tokenReward: 10,
       difficulty: 'easy'
+      protocol: {
+        id: 'rapid-stress-release',
+        name: 'Rapid Stress Release',
+        category: 'stress-relief',
+        duration: 10,
+        description: 'Quick stress relief technique'
+      }
     },
     {
       id: 'ego-explorer',
@@ -292,6 +307,13 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       xpReward: 75,
       tokenReward: 15,
       difficulty: 'medium'
+      protocol: {
+        id: 'ego-exploration',
+        name: 'Ego State Exploration',
+        category: 'consciousness',
+        duration: 15,
+        description: 'Explore different archetypal energies'
+      }
     },
     {
       id: 'week-warrior',
@@ -303,6 +325,13 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       xpReward: 100,
       tokenReward: 25,
       difficulty: 'hard'
+      protocol: {
+        id: 'confidence-builder',
+        name: 'Confidence Building',
+        category: 'confidence',
+        duration: 20,
+        description: 'Build unshakeable confidence'
+      }
     },
     {
       id: 'level-master',
@@ -314,12 +343,19 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       xpReward: 200,
       tokenReward: 50,
       difficulty: 'hard'
+      protocol: {
+        id: 'advanced-transformation',
+        name: 'Advanced Transformation',
+        category: 'advanced',
+        duration: 30,
+        description: 'Deep consciousness work'
+      }
     }
   ];
 
   const handleMilestoneClick = (milestone: any) => {
     if (!milestone.unlocked) return;
-    onTabChange('explore');
+    onMilestoneSelect(milestone);
   };
 
   return (
@@ -437,6 +473,7 @@ export default function HomeScreen({
   const { isAuthenticated } = useAuth();
   const { user } = useGameState();
   const { customActions } = useProtocolStore();
+  const [showSessionMenu, setShowSessionMenu] = useState(false);
 
   const currentState = EGO_STATES.find(s => s.id === activeEgoState) || EGO_STATES[0];
 
@@ -445,9 +482,26 @@ export default function HomeScreen({
       onShowAuth();
       return;
     }
-    onOrbTap();
+    setShowSessionMenu(true);
   };
 
+  const handleQuickSessionTap = () => {
+    if (!isAuthenticated) {
+      onShowAuth();
+      return;
+    }
+    setShowSessionMenu(true);
+  };
+
+  const handleMilestoneSelect = (milestone: any) => {
+    setShowSessionMenu(true);
+  };
+
+  const handleSessionSelect = (session: any) => {
+    setShowSessionMenu(false);
+    // TODO: Start the actual session
+    console.log('Starting session:', session);
+  };
   // Safe size calc (prevents layout jumps & dead space)
   const orbSize = Math.round(Math.min(typeof window !== 'undefined' ? window.innerWidth : 360, 480) * 0.55);
 
@@ -483,7 +537,7 @@ export default function HomeScreen({
         {isAuthenticated && user && (
           <HorizontalMilestoneRoadmap
             user={user}
-            onMilestoneSelect={() => onTabChange('explore')}
+            onMilestoneSelect={handleMilestoneSelect}
             onTabChange={onTabChange}
           />
         )}
@@ -491,7 +545,7 @@ export default function HomeScreen({
         {/* Actions — single row of 4, compact */}
         <div className="grid grid-cols-4 gap-2 w-full max-w-[680px] mb-2 px-2">
           <button
-            onClick={() => (isAuthenticated ? null : onShowAuth())}
+            onClick={handleQuickSessionTap}
             className="bg-gradient-to-br from-teal-500/20 to-cyan-500/20 backdrop-blur-xl rounded-lg p-2 border border-teal-500/30 hover:border-teal-500/40 hover:scale-105 transition-all text-center"
           >
             <div className="w-6 h-6 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center mx-auto mb-1">
@@ -550,6 +604,15 @@ export default function HomeScreen({
           </button>
         </div>
       </div>
+
+      {/* Session Selection Modal */}
+      <SessionSelectionModal
+        isOpen={showSessionMenu}
+        onClose={() => setShowSessionMenu(false)}
+        onSessionSelect={handleSessionSelect}
+        user={user}
+        activeEgoState={activeEgoState}
+      />
     </div>
   );
 }
