@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Star, CheckCircle, Play, Gift, Trophy, Zap, Target, Crown, ArrowDown } from 'lucide-react';
+import { Lock, Star, CheckCircle, Play, Gift, Trophy, Zap, Target, Crown, ArrowDown, ArrowRight } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore } from '../../store';
 
