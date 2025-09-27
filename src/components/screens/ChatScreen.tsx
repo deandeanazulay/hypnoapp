@@ -1,316 +1,454 @@
 import React, { useState, useEffect } from 'react';
+import { MessageCircle } from 'lucide-react';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
-import { useAppStore, getEgoState } from '../../store';
+import { useAppStore, EGO_STATES } from '../../store';
 import { useGameState } from '../GameStateManager';
-import { useProtocolStore } from '../../state/protocolStore';
-import { track } from '../../services/analytics';
-import { CheckCircle, Lock, Play, Star, Gift, Trophy, Zap, Target, Shield, Flame, Crown, ArrowRight, Heart, Sparkles, ChevronRight, Clock } from 'lucide-react';
-import Orb from '../Orb';
-import ActionsBar from '../ActionsBar';
-import SessionInitiationFlow from '../session/SessionInitiationFlow';
-import HorizontalMilestoneRoadmap from '../shared/HorizontalMilestoneRoadmap';
 import PageShell from '../layout/PageShell';
-import { TabId } from '../../types/Navigation';
+import Orb from '../Orb';
+import ChatMessages from '../chat/ChatMessages';
+import ChatSuggestions from '../chat/ChatSuggestions';
+import ChatInput from '../chat/ChatInput';
+import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../../utils/apiErrorHandler';
+import { HYPNOSIS_PROTOCOLS, PROTOCOL_CATEGORIES } from '../../data/protocols';
 
-interface HomeScreenProps {
-  onOrbTap: () => void;
-  onTabChange: (tabId: TabId) => void;
-  onShowAuth: () => void;
-  activeTab: string;
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'libero';
+  content: string;
+  timestamp: Date;
+  isLoading?: boolean;
+  error?: boolean;
+  audioUrl?: string;
 }
 
-// Horizontal Milestone Roadmap Component
-interface HorizontalMilestoneRoadmapProps {
-  user: any;
-  onMilestoneSelect: (milestone: any) => void;
-  onTabChange: (tabId: TabId) => void;
-}
+// Local storage for chat persistence
+const CHAT_STORAGE_KEY = 'libero-chat-messages';
 
-function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: HorizontalMilestoneRoadmapProps) {
-  const milestones = [
-    {
-      id: 'first-session',
-      name: 'First Steps',
-      icon: Play,
-      unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
-      xpReward: 25,
-      tokenReward: 5,
-      difficulty: 'easy'
-    },
-    {
-      id: 'three-day-streak',
-      name: 'Momentum',
-      icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
-      completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
-      xpReward: 50,
-      tokenReward: 10,
-      difficulty: 'easy'
-    },
-    {
-      id: 'ego-explorer',
-      name: 'Guide Discovery',
-      icon: Star,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
-      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
-      xpReward: 75,
-      tokenReward: 15,
-      difficulty: 'medium'
-    },
-    {
-      id: 'week-warrior',
-      name: 'Week Warrior',
-      icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: (user?.session_streak || 0) >= 7,
-      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
-      xpReward: 100,
-      tokenReward: 25,
-      difficulty: 'hard'
-    },
-    {
-      id: 'level-master',
-      name: 'Level 5',
-      icon: Crown,
-      unlocked: user?.level >= 3,
-      completed: user?.level >= 5,
-      active: user?.level >= 3 && user?.level < 5,
-      xpReward: 200,
-      tokenReward: 50,
-      difficulty: 'hard'
+const saveMessagesToStorage = (messages: ChatMessage[]) => {
+  try {
+    const messagesToSave = messages.filter(msg => !msg.isLoading);
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messagesToSave));
+  } catch (error) {
+    console.error('Failed to save chat messages:', error);
+  }
+};
+
+const loadMessagesFromStorage = (): ChatMessage[] => {
+  try {
+    const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return parsed.map((msg: any) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      }));
     }
-  ];
+  } catch (error) {
+    console.error('Failed to load chat messages:', error);
+  }
+  return [];
+};
 
-  const handleMilestoneClick = (milestone: any) => {
-    if (!milestone.unlocked) return;
-    onTabChange('explore');
-    // Future: could pass milestone ID to focus on specific milestone
-  };
-
-  return (
-    <div className="w-full max-w-md mx-auto mb-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white/80 text-sm font-medium">Your Next Milestones</h3>
-        <button
-          onClick={() => onTabChange('explore')}
-          className="text-teal-400 hover:text-teal-300 text-xs font-medium transition-colors flex items-center space-x-1"
-        >
-          <span>View All</span>
-          <ArrowRight size={12} />
-        </button>
-      </div>
-
-      {/* Horizontal Roadmap */}
-      <div className="relative overflow-hidden">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
-        
-        {/* Scrollable container */}
-        <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 py-2">
-          {milestones.map((milestone, index) => {
-            const IconComponent = milestone.icon;
-            const isCompleted = milestone.completed;
-            const isActive = milestone.active;
-            const isUnlocked = milestone.unlocked;
-            
-            return (
-              <div key={milestone.id} className="flex items-center space-x-6 flex-shrink-0">
-                {/* Milestone Node */}
-                <button
-                  onClick={() => handleMilestoneClick(milestone)}
-                  disabled={!isUnlocked}
-                  className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 group ${
-                    isCompleted
-                      ? 'bg-green-500/30 border-green-400 shadow-lg shadow-green-400/50'
-                      : isActive  
-                      ? 'bg-orange-500/30 border-orange-400 animate-pulse shadow-lg shadow-orange-400/50'
-                      : isUnlocked
-                      ? 'bg-teal-500/20 border-teal-400 shadow-lg shadow-teal-400/40 hover:bg-teal-500/30'
-                      : 'bg-white/10 border-white/20 cursor-not-allowed opacity-60'
-                  }`}
-                >
-                  {/* Completion badge */}
-                  {isCompleted && (
-                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center animate-bounce-in border border-black">
-                      <CheckCircle size={12} className="text-black" />
-                    </div>
-                  )}
-                  
-                  {/* Active pulse ring */}
-                  {isActive && (
-                    <div className="absolute -inset-1 rounded-full border border-orange-400 animate-ping" />
-                  )}
-                  
-                  {/* Icon */}
-                  {isCompleted ? (
-                    <CheckCircle size={16} className="text-green-400" />
-                  ) : !isUnlocked ? (
-                    <Lock size={16} className="text-white/40" />
-                  ) : (
-                    <IconComponent size={16} className={`${
-                      isActive ? 'text-orange-400' : 'text-teal-400'
-                    }`} />
-                  )}
-                </button>
-
-                {/* Connection Line */}
-                {index < milestones.length - 1 && (
-                  <div className={`w-8 h-0.5 ${
-                    isCompleted && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-green-400 to-teal-400'
-                      : isCompleted
-                      ? 'bg-gradient-to-r from-green-400 to-white/20'
-                      : isUnlocked && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-teal-400 to-orange-400 animate-pulse'
-                      : 'bg-white/20'
-                  } rounded-full`} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Milestone Labels - Below the roadmap */}
-      <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 mt-2">
-        {milestones.map((milestone, index) => (
-          <div key={milestone.id} className="flex-shrink-0 text-center" style={{ width: '72px' }}>
-            <div className={`text-xs font-medium ${
-              milestone.completed
-                ? 'text-green-400'
-                : milestone.active
-                ? 'text-orange-400'
-                : milestone.unlocked
-                ? 'text-teal-400'
-                : 'text-white/40'
-            }`}>
-              {milestone.name}
-            </div>
-            {milestone.unlocked && (
-              <div className="flex items-center justify-center space-x-1 text-xs mt-1">
-                {milestone.xpReward && (
-                  <span className="text-orange-400/80">+{milestone.xpReward}</span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export default function HomeScreen({ onOrbTap, onTabChange, onShowAuth, activeTab }: HomeScreenProps) {
+export default function ChatScreen() {
   const { isAuthenticated } = useAuth();
+  const { activeEgoState, showToast, openModal } = useAppStore();
   const { user } = useGameState();
-  const { activeEgoState, showToast } = useAppStore();
-  const { customActions } = useProtocolStore();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [hasRecording, setHasRecording] = useState(false);
+  const [isPlayingRecording, setIsPlayingRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
 
-  const [selectedAction, setSelectedAction] = useState<any>(null);
-  const [showSessionFlow, setShowSessionFlow] = useState(false);
-  const [sessionCount, setSessionCount] = useState(0);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-
-  const currentEgoState = getEgoState(activeEgoState);
-
-  // Fetch real session data for accurate milestone tracking
+  // Load messages from storage
   useEffect(() => {
-    const fetchSessionData = async () => {
-      if (!isAuthenticated || !user?.id) {
-        setIsLoadingData(false);
-        return;
+    if (isAuthenticated) {
+      const savedMessages = loadMessagesFromStorage();
+      if (savedMessages.length > 0) {
+        setMessages(savedMessages);
       }
+    }
+  }, [isAuthenticated]);
 
+  // Save messages to storage
+  useEffect(() => {
+    if (isAuthenticated && messages.length > 0) {
+      saveMessagesToStorage(messages);
+    }
+  }, [messages, isAuthenticated]);
+
+  // Initialize media recorder
+  useEffect(() => {
+    const initializeRecorder = async () => {
       try {
-        const { data, error } = await supabase
-          .from('sessions')
-          .select('id, ego_state, completed_at')
-          .eq('user_id', user.id);
-
-        if (error) {
-          console.error('Error fetching session data:', error);
-          setSessionCount(0);
-        } else {
-          setSessionCount(data?.length || 0);
-          if (import.meta.env.DEV) {
-            console.log('Session data loaded:', { 
-              totalSessions: data?.length || 0,
-              userStreak: user?.session_streak || 0,
-              userLevel: user?.level || 1,
-              egoStateUsage: Object.keys(user?.ego_state_usage || {}).length
-            });
-          }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          console.warn('Media recording not supported');
+          return;
         }
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            setRecordedBlob(event.data);
+            setHasRecording(true);
+          }
+        };
+        
+        recorder.onstop = () => {
+          stream.getTracks().forEach(track => track.stop());
+          setIsRecording(false);
+          if (recordingTimer) {
+            clearInterval(recordingTimer);
+            setRecordingTimer(null);
+          }
+        };
+        
+        setMediaRecorder(recorder);
       } catch (error) {
-        console.error('Error fetching sessions:', error);
-        setSessionCount(0);
-      } finally {
-        setIsLoadingData(false);
+        console.warn('Media recorder initialization failed:', error);
+        setMediaRecorder(null);
       }
     };
 
-    fetchSessionData();
-  }, [isAuthenticated, user?.id, user?.session_streak]);
-
-  const handleOrbTap = () => {
-    if (!isAuthenticated) {
-      onShowAuth();
-      return;
+    if (isAuthenticated) {
+      initializeRecorder();
     }
 
-    setShowSessionFlow(true);
-    track('orb_interaction', { 
-      state: 'tapped', 
-      authenticated: isAuthenticated,
-      egoState: activeEgoState 
-    });
+    return () => {
+      if (recordingTimer) {
+        clearInterval(recordingTimer);
+      }
+    };
+  }, [isAuthenticated]);
+
+  // Send welcome message
+  useEffect(() => {
+    if (isAuthenticated && messages.length === 0 && loadMessagesFromStorage().length === 0) {
+      setTimeout(() => {
+        const welcomeMessage: ChatMessage = {
+          id: 'welcome-' + Date.now(),
+          role: 'libero',
+          content: `Hello! I'm Libero, your consciousness guide. I can help you with hypnotherapy sessions, ego state exploration, and transformation techniques.\n\nWhat would you like to explore today?`,
+          timestamp: new Date()
+        };
+        setMessages([welcomeMessage]);
+      }, 1000);
+    }
+  }, [isAuthenticated, messages.length]);
+
+  const buildKnowledgeBase = () => {
+    return {
+      appName: 'Libero - The Hypnotist That Frees Minds',
+      currentUser: {
+        level: user?.level || 1,
+        experience: user?.experience || 0,
+        activeEgoState: activeEgoState,
+        plan: user?.plan || 'free',
+        tokens: user?.tokens || 0,
+        streak: user?.session_streak || 0,
+        dailySessionsUsed: user?.daily_sessions_used || 0
+      },
+      egoStates: EGO_STATES.map(state => ({
+        id: state.id,
+        name: state.name,
+        role: state.role,
+        description: state.description
+      })),
+      protocolCategories: PROTOCOL_CATEGORIES.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon
+      })),
+      availableProtocols: HYPNOSIS_PROTOCOLS.slice(0, 8).map(protocol => ({
+        name: protocol.name,
+        category: protocol.category,
+        difficulty: protocol.difficulty,
+        duration: protocol.duration,
+        description: protocol.description,
+        benefits: protocol.benefits.slice(0, 3)
+      })),
+      sessionContext: {
+        currentTime: new Date().toISOString(),
+        timeOfDay: new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'
+      }
+    };
   };
 
-  const handleMilestoneSelect = (milestone: any) => {
-    onTabChange('explore');
-    track('milestone_selected', { 
-      milestoneId: milestone.id, 
-      source: 'home_roadmap' 
-    });
+  // Voice recording functions
+  const startRecording = () => {
+    if (!mediaRecorder || isRecording) return;
+    
+    setIsRecording(true);
+    setRecordingDuration(0);
+    setHasRecording(false);
+    setRecordedBlob(null);
+    
+    const timer = setInterval(() => {
+      setRecordingDuration(prev => prev + 1);
+    }, 1000);
+    setRecordingTimer(timer);
+    
+    mediaRecorder.start();
   };
+
+  const stopRecording = () => {
+    if (!mediaRecorder || !isRecording) return;
+    
+    mediaRecorder.stop();
+    setIsRecording(false);
+    
+    if (recordingTimer) {
+      clearInterval(recordingTimer);
+      setRecordingTimer(null);
+    }
+  };
+
+  const playRecording = () => {
+    if (!recordedBlob) return;
+    
+    const audio = new Audio(URL.createObjectURL(recordedBlob));
+    setIsPlayingRecording(true);
+    
+    audio.onended = () => {
+      setIsPlayingRecording(false);
+      URL.revokeObjectURL(audio.src);
+    };
+    
+    audio.onerror = () => {
+      setIsPlayingRecording(false);
+    };
+    
+    audio.play();
+  };
+
+  const deleteRecording = () => {
+    setHasRecording(false);
+    setRecordedBlob(null);
+    setRecordingDuration(0);
+    
+    if (isRecording && mediaRecorder) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      if (recordingTimer) {
+        clearInterval(recordingTimer);
+        setRecordingTimer(null);
+      }
+    }
+  };
+
+  const sendRecording = async () => {
+    if (!recordedBlob) return;
+    
+    try {
+      // TODO: Implement OpenAI Whisper transcription
+      const transcribedText = `[Voice Message - ${formatTime(recordingDuration)}]`;
+      const audioUrl = URL.createObjectURL(recordedBlob);
+      
+      deleteRecording();
+      await sendMessage(transcribedText, audioUrl);
+      
+      showToast({
+        type: 'info',
+        message: 'Voice transcription coming soon - audio saved'
+      });
+    } catch (error) {
+      console.error('Failed to send voice message:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to send voice message'
+      });
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const sendMessage = async (message: string, audioUrl?: string) => {
+    if (!message.trim()) return;
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: message,
+      timestamp: new Date(),
+      audioUrl
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputText('');
+    setIsLoading(true);
+
+    // Show typing indicator
+    const typingMessage: ChatMessage = {
+      id: 'typing-' + Date.now(),
+      role: 'libero',
+      content: '...',
+      timestamp: new Date(),
+      isLoading: true
+    };
+    setMessages(prev => [...prev, typingMessage]);
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new ApiError(
+          'Chat service not configured',
+          500,
+          'MISSING_CONFIG',
+          'Supabase configuration missing',
+          'Check environment variables'
+        );
+      }
+
+      const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
+      
+      // Set speaking state for orb animation
+      setIsSpeaking(true);
+      
+      const response = await safeFetch(
+        `${baseUrl}/functions/v1/chatgpt-chat`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`
+          },
+          body: JSON.stringify({
+            message: message,
+            knowledgeBase: buildKnowledgeBase(),
+            conversationHistory: messages
+              .filter(msg => !msg.isLoading && !msg.error)
+              .map(msg => ({
+                role: msg.role === 'libero' ? 'assistant' : 'user',
+                content: msg.content
+              }))
+          })
+        },
+        {
+          operation: 'Chat with Libero',
+          additionalContext: {
+            messageLength: message.length,
+            conversationLength: messages.length,
+            activeEgoState: activeEgoState
+          }
+        }
+      );
+
+      const data = await response.json();
+      
+      // Remove typing indicator
+      setMessages(prev => prev.filter(msg => !msg.isLoading));
+      
+      if (!data.response) {
+        throw new ApiError(
+          'No response from chat service',
+          500,
+          'NO_RESPONSE',
+          'Chat API returned empty response',
+          'Try again or rephrase your message'
+        );
+      }
+
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'libero',
+        content: data.response,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+
+    } catch (error: any) {
+      setMessages(prev => prev.filter(msg => !msg.isLoading));
+      
+      let userFriendlyMessage = 'Connection temporarily unavailable';
+      if (error instanceof ApiError) {
+        userFriendlyMessage = getUserFriendlyErrorMessage(error);
+      }
+      
+      const errorResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'libero',
+        content: `I'm having trouble connecting right now. ${userFriendlyMessage}\n\nPlease try again in a moment.`,
+        timestamp: new Date(),
+        error: true
+      };
+
+      setMessages(prev => [...prev, errorResponse]);
+      showToast({ type: 'error', message: userFriendlyMessage });
+    } finally {
+      setIsLoading(false);
+      setIsSpeaking(false);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputText.trim() && !isLoading) {
+      sendMessage(inputText.trim());
+    }
+  };
+
+  const copyMessage = (content: string) => {
+    navigator.clipboard.writeText(content);
+    showToast({ type: 'success', message: 'Copied to clipboard' });
+  };
+
+  const clearChat = () => {
+    setMessages([]);
+    localStorage.removeItem(CHAT_STORAGE_KEY);
+    
+    setTimeout(() => {
+      const welcomeMessage: ChatMessage = {
+        id: 'welcome-' + Date.now(),
+        role: 'libero',
+        content: `Hello! I'm Libero, your consciousness guide. I can help you with hypnotherapy sessions, ego state exploration, and transformation techniques.\n\nWhat would you like to explore today?`,
+        timestamp: new Date()
+      };
+      setMessages([welcomeMessage]);
+    }, 500);
+  };
+
+  const suggestions = [
+    'What ego state should I use today?',
+    'Recommend a stress relief protocol',
+    'How do I create a custom protocol?',
+    'Explain hypnotherapy basics',
+    'Help me with confidence building',
+    'Show me sleep improvement techniques'
+  ];
 
   if (!isAuthenticated) {
     return (
       <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
-        {/* Background Effects */}
         <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
+          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
         </div>
-
-        {/* Horizontal Milestone Roadmap */}
-        {isAuthenticated && user && (
-          <HorizontalMilestoneRoadmap 
-            user={user}
-            onMilestoneSelect={(milestone) => {
-              // Navigate to journey tab and focus on milestone
-              onTabChange('explore');
-            }}
-            onTabChange={onTabChange}
-          />
-        )}
 
         <PageShell
           body={
             <div className="h-full flex items-center justify-center p-4">
               <div className="text-center max-w-sm">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6 border border-teal-500/30">
-                  <Heart size={32} className="text-teal-400" />
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
+                  <MessageCircle size={32} className="text-purple-400" />
                 </div>
-                <h3 className="text-white text-xl font-light mb-4">Sign in to begin your transformation</h3>
+                <h3 className="text-white text-xl font-light mb-4">Sign in to chat with Libero</h3>
                 <button
-                  onClick={onShowAuth}
+                  onClick={() => openModal('auth')}
                   className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
                 >
                   Sign In
@@ -323,72 +461,74 @@ export default function HomeScreen({ onOrbTap, onTabChange, onShowAuth, activeTa
     );
   }
 
+  const hasRealMessages = messages.some(msg => !msg.isLoading);
+
   return (
     <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
-      {/* Background Effects */}
       <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
       </div>
 
-      <PageShell
-        body={
-          <div className="relative z-10 h-full overflow-hidden">
-            {/* Main Content */}
-            <div 
-              id="scene" 
-              className="relative h-full flex flex-col items-center justify-center px-4"
-              style={{ 
-                paddingTop: '60px',
-                paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)'
-              }}
-            >
-              {/* Orb Section */}
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="mb-6">
-                    <Orb
-                      onTap={handleOrbTap}
-                      size={Math.min(window.innerWidth * 0.8, 400)}
-                      egoState={activeEgoState}
-                      variant="auto"
-                      className="mx-auto"
-                    />
-                  </div>
-                  
-                  {/* Orb Tagline */}
-                  <div className="max-w-xs mx-auto">
-                    <p className="text-white/90 text-lg font-light mb-2">
-                      Enter with Libero in <span className="text-teal-400 font-medium">{currentEgoState.name}</span>
-                    </p>
-                    <p className="text-white/60 text-sm">
-                      Tap to begin your transformation
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Section - Milestone Roadmap */}
-              <div className="flex-shrink-0 w-full max-w-lg mx-auto mb-4">
-                <HorizontalMilestoneRoadmap 
-                  user={user}
-                  onMilestoneSelect={handleMilestoneSelect}
-                  onTabChange={onTabChange}
-                />
+      <div className="relative z-10 h-full flex flex-col">
+        {/* Welcome Orb - Show when no conversation */}
+        {!hasRealMessages && (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <Orb
+                onTap={() => {}}
+                egoState={activeEgoState}
+                size={window.innerWidth < 768 ? 280 : 420}
+                variant="webgl"
+                afterglow={false}
+              />
+              <div className="mt-6">
+                <h2 className="text-white text-xl font-light mb-2">Chat with Libero</h2>
+                <p className="text-white/70 text-sm">Your consciousness guide is ready to help</p>
               </div>
             </div>
+          </div>
+        )}
 
-            {/* Session Initiation Flow */}
-            <SessionInitiationFlow
-              isOpen={showSessionFlow}
-              onClose={() => setShowSessionFlow(false)}
-              onSessionStart={() => {
-                track('session_started_from_home', { egoState: activeEgoState });
-              }}
-              egoState={activeEgoState}
+        {/* Chat Messages */}
+        {hasRealMessages && (
+          <div className="flex-1 flex flex-col min-h-0" style={{ paddingTop: '60px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 140px + 1rem)' }}>
+            <ChatMessages
+              messages={messages}
+              onCopyMessage={copyMessage}
+              activeEgoState={activeEgoState}
+              isSpeaking={isSpeaking}
             />
           </div>
-        }
+        )}
+      </div>
+
+      {/* Quick Reply Suggestions */}
+      <div className="fixed left-0 right-0 bottom-0 z-40" style={{ bottom: 'calc(var(--total-nav-height, 128px) + 140px)' }}>
+        <ChatSuggestions
+          suggestions={suggestions}
+          onSuggestionClick={setInputText}
+          isLoading={isLoading}
+          show={messages.length <= 1}
+        />
+      </div>
+
+      {/* Chat Input */}
+      <ChatInput
+        inputText={inputText}
+        onInputChange={setInputText}
+        onSubmit={handleSubmit}
+        onClearChat={clearChat}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
+        onPlayRecording={playRecording}
+        onDeleteRecording={deleteRecording}
+        onSendRecording={sendRecording}
+        isLoading={isLoading}
+        isRecording={isRecording}
+        hasRecording={hasRecording}
+        isPlayingRecording={isPlayingRecording}
+        recordingDuration={recordingDuration}
+        hasMessages={messages.length > 1}
       />
     </div>
   );

@@ -1,52 +1,60 @@
 import React from 'react';
 
 interface ChatSuggestionsProps {
-  onSuggestionSelect: (suggestion: string) => void;
-  egoState: string;
+  suggestions: string[];
+  onSuggestionClick: (suggestion: string) => void;
+  isLoading: boolean;
+  show: boolean;
 }
 
-export default function ChatSuggestions({ onSuggestionSelect, egoState }: ChatSuggestionsProps) {
-  const getSuggestions = () => {
-    const baseSuggestions = [
-      'I feel stressed',
-      'Help me focus',
-      'I want to relax',
-      'I need confidence'
-    ];
+export default function ChatSuggestions({ 
+  suggestions, 
+  onSuggestionClick, 
+  isLoading, 
+  show 
+}: ChatSuggestionsProps) {
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-    const egoSpecificSuggestions: { [key: string]: string[] } = {
-      guardian: ['I need protection', 'Help me feel safe', 'I want stability'],
-      rebel: ['I want to break free', 'Help me overcome limits', 'I need courage'],
-      healer: ['I need healing', 'Help me restore myself', 'I want peace'],
-      explorer: ['I want to discover', 'Help me find direction', 'I need adventure'],
-      mystic: ['I seek wisdom', 'Help me connect', 'I want understanding'],
-      sage: ['I need guidance', 'Help me learn', 'I want clarity'],
-      child: ['I want to play', 'Help me find joy', 'I need wonder'],
-      performer: ['I want to express', 'Help me shine', 'I need creativity'],
-      shadow: ['I want integration', 'Help me accept myself', 'I need wholeness']
-    };
-
-    const specific = egoSpecificSuggestions[egoState] || [];
-    return [...baseSuggestions, ...specific.slice(0, 2)];
-  };
-
-  const suggestions = getSuggestions();
+  if (!show) return null;
 
   return (
-    <div 
-      className="fixed left-0 right-0 z-40 px-4"
-      style={{ bottom: 'calc(var(--total-nav-height, 64px) + 6px)' }}
-    >
-      <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide max-w-md mx-auto">
-        {suggestions.map((suggestion) => (
-          <button
-            key={suggestion}
-            onClick={() => onSuggestionSelect(suggestion)}
-            className="flex-shrink-0 px-3 py-2 border border-white/20 rounded-lg text-white/70 text-xs transition-all hover:scale-105 hover:bg-white/10 hover:text-white"
+    <div className="px-4 mb-4">
+      <div className="max-w-3xl mx-auto">
+        {/* Horizontal Scrolling Container with Fade */}
+        <div className="relative">
+          {/* Fade Gradients */}
+          <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-black via-black/80 to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-black via-black/80 to-transparent z-10 pointer-events-none" />
+          
+          {/* Scrollable Suggestions */}
+          <div 
+            ref={scrollContainerRef}
+            className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 px-6"
+            style={{ 
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch'
+            }}
           >
-            {suggestion}
-          </button>
-        ))}
+            {suggestions.map((suggestion, index) => (
+              <button
+                key={suggestion}
+                onClick={() => onSuggestionClick(suggestion)}
+                disabled={isLoading}
+                className={`flex-shrink-0 px-4 py-2.5 bg-gradient-to-br from-white/10 to-white/15 hover:from-white/15 hover:to-white/20 border border-white/25 hover:border-white/40 rounded-full text-white/80 hover:text-white text-sm font-medium transition-all hover:scale-105 disabled:opacity-50 select-none shadow-lg backdrop-blur-sm animate-slide-up`}
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                  minWidth: 'max-content'
+                }}
+              >
+                {suggestion}
+              </button>
+            ))}
+            
+            {/* Spacer for smooth edge scrolling */}
+            <div className="flex-shrink-0 w-4" />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,218 +1,554 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
-interface RequestBody {
-  message: string
+interface SessionContext {
   egoState: string
-  sessionContext?: any
-  userId?: string
+  phase: string
+  depth: number
+  breathing: string
+  userProfile: any
+  conversationHistory: Array<{role: 'user' | 'assistant', content: string}>
 }
 
-interface EgoState {
-  name: string
-  description: string
-  voice: string
-}
-
-const egoStates: Record<string, EgoState> = {
-  guardian: {
-    name: 'Guardian',
-    description: 'Protective, nurturing, creates safe spaces',
-    voice: 'calm, protective, reassuring'
-  },
-  rebel: {
-    name: 'Rebel',
-    description: 'Challenges limitations, breaks through barriers',
-    voice: 'bold, challenging, empowering'
-  },
-  mystic: {
-    name: 'Mystic', 
-    description: 'Spiritual, intuitive, connects to deeper wisdom',
-    voice: 'mystical, flowing, transcendent'
-  },
-  lover: {
-    name: 'Lover',
-    description: 'Compassionate, heart-centered, builds connection',
-    voice: 'warm, loving, heart-centered'
-  },
-  builder: {
-    name: 'Builder',
-    description: 'Creative, constructive, manifests reality',
-    voice: 'practical, encouraging, action-oriented'
+interface HypnosisRequest {
+  message: string
+  sessionContext: SessionContext
+  requestType: 'guidance' | 'response' | 'induction' | 'deepening' | 'script_generation'
+  scriptParams?: {
+    goalId: string
+    egoState: string
+    lengthSec: number
+    level: number
+    streak: number
+    locale: string
+    userPrefs: any
   }
 }
 
-function buildHypnosisPrompt(message: string, egoState: string, sessionContext: any): string {
-  const state = egoStates[egoState] || egoStates.guardian
-  
-  return `You are Libero, an AI hypnotist guide manifesting as the ${state.name} archetype.
-
-${state.name} Voice: ${state.voice}
-Description: ${state.description}
-
-User's message: "${message}"
-
-Respond as Libero in the ${state.name} state. Your response should:
-- Be 2-3 sentences maximum
-- Use hypnotic language patterns (embedded commands, presuppositions)
-- Match the ${state.name}'s energy and approach
-- Guide toward relaxation and positive transformation
-- End with a gentle suggestion or invitation
-
-Current session context: ${JSON.stringify(sessionContext || {})}
-
-Respond only as Libero, staying in character.`
-}
-
-function getFallbackResponse(egoState: string, message: string): string {
-  const state = egoStates[egoState] || egoStates.guardian
-  
-  const fallbacks: Record<string, string[]> = {
-    guardian: [
-      "Feel yourself settling into this safe space... as you breathe deeply, allow your mind to find its natural rhythm of peace.",
-      "Let this moment become a sanctuary where you can release what no longer serves you... and embrace what nurtures your soul.",
-      "Notice how easily you can let go now... trusting in your own inner wisdom to guide you toward healing."
-    ],
-    rebel: [
-      "Break free from those limiting thoughts... and step boldly into the power that's always been yours.",
-      "Challenge the old patterns that held you back... as you discover the fierce strength within.",
-      "Shatter those barriers... and emerge transformed, knowing you can conquer anything you choose."
-    ],
-    mystic: [
-      "Connect with the infinite wisdom flowing through you... as ancient knowledge awakens in your consciousness.",
-      "Feel the mystical currents of transformation... weaving through every cell of your being with divine purpose.",
-      "Open to the sacred mysteries within... where your deepest truths reveal themselves in perfect timing."
-    ],
-    lover: [
-      "Feel love's gentle embrace surrounding you... as your heart opens to receive all the healing you deserve.",
-      "Let compassion flow through every breath... connecting you to the beautiful soul you truly are.",
-      "Embrace yourself with tender acceptance... as love transforms every part of your being."
-    ],
-    builder: [
-      "Construct new pathways of possibility... as your mind architects the reality you truly desire.",
-      "Build momentum with each conscious breath... creating the foundation for lasting transformation.",
-      "Manifest your highest vision... as each moment becomes a stepping stone toward your dreams."
-    ]
-  }
-  
-  const responses = fallbacks[egoState] || fallbacks.guardian
-  return responses[Math.floor(Math.random() * responses.length)]
-}
-
-async function callOpenAI(prompt: string): Promise<string> {
-  const openaiKey = Deno.env.get('OPENAI_API_KEY')
-  
-  if (!openaiKey) {
-    throw new Error('OpenAI API key not configured')
-  }
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are Libero, a hypnotic AI guide. Respond with brief, hypnotic language that helps users relax and transform.'
-        },
-        {
-          role: 'user', 
-          content: prompt
-        }
-      ],
-      max_tokens: 150,
-      temperature: 0.8,
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`)
-  }
-
-  const data = await response.json()
-  return data.choices[0]?.message?.content || 'Let yourself relax into this moment of peace...'
-}
-
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 200, 
-      headers: corsHeaders 
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders,
     })
   }
 
   if (req.method !== 'POST') {
     return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { 
-        status: 405, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      JSON.stringify({
+        error: 'Method not allowed',
+        code: 'METHOD_NOT_ALLOWED',
+        details: 'Only POST requests are supported'
+      }),
+      {
+        status: 405,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
       }
-    )
+    );
   }
 
   try {
-    const body: RequestBody = await req.json()
-    const { message, egoState = 'guardian', sessionContext, userId } = body
-
-    if (!message || typeof message !== 'string') {
+    let requestData: HypnosisRequest;
+    try {
+      requestData = await req.json();
+    } catch (parseError) {
       return new Response(
-        JSON.stringify({ error: 'Message is required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        JSON.stringify({
+          error: 'Invalid JSON in request body',
+          code: 'INVALID_JSON',
+          details: parseError.message
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
+    const { message, sessionContext, requestType, scriptParams } = requestData;
+
+    // Validate required fields
+    if (!message || !sessionContext || !requestType) {
+      return new Response(
+        JSON.stringify({
+          error: 'Missing required fields',
+          code: 'MISSING_FIELDS',
+          details: 'message, sessionContext, and requestType are required'
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
+
+    // Get OpenAI API key from environment
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!openaiApiKey) {
+      console.error('OPENAI_API_KEY environment variable not set')
+      
+      // For script generation, return proper JSON structure
+      if (requestType === 'script_generation') {
+        const mockScript = getMockScript(scriptParams)
+        return new Response(
+          JSON.stringify({
+            response: JSON.stringify(mockScript),
+            sessionUpdates: {},
+            error: 'API key not configured',
+            code: 'MISSING_API_KEY',
+            details: 'OPENAI_API_KEY environment variable not set',
+            suggestion: 'Configure OPENAI_API_KEY in Supabase Edge Functions settings',
+            timestamp: Date.now()
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
+          }
+        )
+      }
+      
+      const fallbackResponse = getFallbackResponse(requestType)
+      return new Response(
+        JSON.stringify({
+          response: fallbackResponse,
+          sessionUpdates: {},
+          error: 'API key not configured',
+          code: 'MISSING_API_KEY',
+          details: 'OPENAI_API_KEY environment variable not set',
+          suggestion: 'Configure OPENAI_API_KEY in Supabase Edge Functions settings',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
         }
       )
     }
 
-    // Build the prompt for the AI
-    const prompt = buildHypnosisPrompt(message, egoState, sessionContext)
-    
-    let aiResponse: string
 
-    try {
-      // Try to call OpenAI
-      aiResponse = await callOpenAI(prompt)
-    } catch (error) {
-      console.warn('OpenAI unavailable, using fallback:', error.message)
-      // Use fallback response if OpenAI fails
-      aiResponse = getFallbackResponse(egoState, message)
+    let messages: any[]
+    
+    // Handle script generation differently
+    if (requestType === 'script_generation' && scriptParams) {
+      // For script generation, try ChatGPT with hardened JSON rules, fallback to mock
+      try {
+        messages = [
+          {
+            role: 'system',
+            content: `You are a professional hypnotherapist creating a detailed script. Return ONLY a valid JSON object with this structure:
+
+{
+  "title": "Session Title",
+  "segments": [
+    {
+      "id": "segment_name", 
+      "text": "Complete hypnosis script text for this segment...",
+      "mood": "calming|deepening|transformative|energizing",
+      "voice": "female",
+      "sfx": "ambient|gentle|energy"
+    }
+  ],
+  "metadata": {
+    "durationSec": ${scriptParams.lengthSec},
+    "style": "hypnosis"
+  }
+}
+
+CRITICAL REQUIREMENTS:
+- Total script must be exactly ${scriptParams.lengthSec / 60} minutes (${scriptParams.targetWords || Math.floor(scriptParams.lengthSec * 2.5)} words total)
+- Create 6-8 segments with realistic timing
+- Each segment should be ${Math.floor((scriptParams.targetWords || Math.floor(scriptParams.lengthSec * 2.5)) / 7)} words on average
+- Use ${scriptParams.egoState} archetypal energy throughout
+- Focus on goal: ${scriptParams.goalName || scriptParams.goalId}
+${scriptParams.userPrefs?.customProtocol ? `
+- This is a CUSTOM PROTOCOL: "${scriptParams.userPrefs.customProtocol.name}"
+- Specific goals: ${scriptParams.userPrefs.customProtocol.goals?.join(', ') || 'transformation'}
+- Use ${scriptParams.userPrefs.customProtocol.induction || 'progressive'} induction method
+- Custom notes: ${scriptParams.userPrefs.customProtocol.deepener || 'standard approach'}` : ''}
+
+SEGMENT STRUCTURE:
+1. Welcome (8% of time) - Introduce the session and goal
+2. Induction (25% of time) - Guide into hypnotic state
+3. Deepening (20% of time) - Deepen the trance
+4. Core Work (30% of time) - Main transformation work on the goal
+5. Integration (12% of time) - Lock in the changes
+6. Emergence (5% of time) - Return to full awareness
+
+Make each segment substantial and detailed. No short sentences - create full, rich hypnotic language that fills the time allocation.
+
+Return ONLY the JSON object above - no markdown, no explanations.`
+          },
+          {
+            role: 'user',
+            content: `Generate script for: ${scriptParams.goalId || scriptParams.goalName} using ${scriptParams.egoState} energy`
+          }
+        ];
+
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openaiApiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: messages,
+            temperature: 0.3,
+            max_tokens: 2048,
+            response_format: { type: 'json_object' }
+          })
+        });
+
+        if (openaiResponse.ok) {
+          const openaiData = await openaiResponse.json();
+          const aiResponse = openaiData.choices?.[0]?.message?.content;
+          
+          if (aiResponse) {
+            // Try to parse as JSON - use defensive extraction
+            let scriptResponse: any;
+            try {
+              scriptResponse = JSON.parse(aiResponse);
+            } catch {
+              // Try extracting JSON from mixed content
+              const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                scriptResponse = JSON.parse(jsonMatch[0]);
+              } else {
+                throw new Error('No JSON found in response');
+              }
+            }
+            
+            // Validate basic structure
+            if (scriptResponse.segments && Array.isArray(scriptResponse.segments)) {
+              return new Response(
+                JSON.stringify({
+                  response: JSON.stringify(scriptResponse),
+                  sessionUpdates: {},
+                  timestamp: Date.now()
+                }),
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...corsHeaders,
+                  },
+                }
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Script generation failed, using mock:', error);
+      }
+      
+      // Fallback to mock script
+      const mockScript = getMockScript(scriptParams)
+      return new Response(
+        JSON.stringify({
+          response: JSON.stringify(mockScript),
+          sessionUpdates: {},
+          error: 'Script generation failed',
+          code: 'SCRIPT_GENERATION_FAILED',
+          details: 'Using mock script as fallback',
+          timestamp: Date.now()
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    } else {
+      // Build system prompt based on ego state and session context for regular conversations
+      const systemPrompt = buildHypnosisPrompt(sessionContext, requestType, message)
+      
+      // Prepare messages for OpenAI
+      messages = [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        ...sessionContext.conversationHistory,
+        {
+          role: 'user',
+          content: message
+        }
+      ];
     }
 
-    // Return the response
+
+    // Call OpenAI API
+    let response: Response
+    try {
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiApiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: messages,
+          temperature: 0.7,
+          max_tokens: requestType === 'script_generation' ? 2048 : 1024
+        })
+      })
+    } catch (fetchError) {
+      console.error('Network error calling OpenAI API:', fetchError)
+      console.error('This likely means the Edge Function needs network permissions to access generativelanguage.googleapis.com')
+      
+      // For script generation, return proper JSON structure
+      if (requestType === 'script_generation') {
+        const mockScript = getMockScript(scriptParams)
+        return new Response(
+          JSON.stringify({
+            response: JSON.stringify(mockScript),
+            sessionUpdates: {},
+            error: 'Network error occurred',
+            code: 'NETWORK_ERROR',
+            details: fetchError.message,
+            suggestion: 'Check network connectivity and try again',
+            timestamp: Date.now()
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
+          }
+        )
+      }
+      
+      // Return a contextual fallback based on the session state
+      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
+      return new Response(
+        JSON.stringify({
+          response: contextualResponse,
+          sessionUpdates: {},
+          error: 'Network error occurred',
+          code: 'NETWORK_ERROR',
+          details: fetchError.message,
+          suggestion: 'Check network connectivity and try again',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
+
+    if (!response.ok) {
+      const errorData = await response.text()
+      console.error('OpenAI API error:', errorData)
+      
+      // For script generation, return proper JSON structure
+      if (requestType === 'script_generation') {
+        const mockScript = getMockScript(scriptParams)
+        return new Response(
+          JSON.stringify({
+            response: JSON.stringify(mockScript),
+            sessionUpdates: {},
+            error: 'OpenAI API error',
+            code: 'OPENAI_API_ERROR',
+            details: errorData,
+            suggestion: 'Check API key and quota limits',
+            timestamp: Date.now()
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
+          }
+        )
+      }
+      
+      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
+      return new Response(
+        JSON.stringify({
+          response: contextualResponse,
+          sessionUpdates: {},
+          error: 'OpenAI API error',
+          code: 'OPENAI_API_ERROR',
+          details: errorData,
+          suggestion: 'Check API key and quota limits',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
+
+    const data = await response.json()
+    const aiResponse = data.choices?.[0]?.message?.content
+
+    if (!aiResponse) {
+      console.error('No response content from ChatGPT')
+      
+      // For script generation, return proper JSON structure
+      if (requestType === 'script_generation') {
+        const mockScript = getMockScript(scriptParams)
+        return new Response(
+          JSON.stringify({
+            response: JSON.stringify(mockScript),
+            sessionUpdates: {},
+            error: 'No response from OpenAI',
+            code: 'NO_AI_RESPONSE',
+            details: 'OpenAI returned empty response',
+            suggestion: 'Try again or check API service status',
+            timestamp: Date.now()
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
+          }
+        )
+      }
+      
+      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
+      return new Response(
+        JSON.stringify({
+          response: contextualResponse,
+          sessionUpdates: {},
+          error: 'No response from OpenAI',
+          code: 'NO_AI_RESPONSE',
+          details: 'OpenAI returned empty response',
+          suggestion: 'Try again or check API service status',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
+
+
+    // For script generation, ensure response is valid JSON
+    if (requestType === 'script_generation') {
+      let scriptResponse: any
+      try {
+        scriptResponse = JSON.parse(aiResponse)
+      } catch {
+        console.warn('AI returned non-JSON script, using mock')
+        scriptResponse = getMockScript(scriptParams)
+      }
+      
+      return new Response(
+        JSON.stringify({
+          response: JSON.stringify(scriptResponse),
+          sessionUpdates: {},
+          timestamp: Date.now()
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
+
+    // Parse any session updates from the AI response for regular conversations
+    const sessionUpdates = parseSessionUpdates(aiResponse, sessionContext)
+
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         response: aiResponse,
-        egoState: egoState,
-        timestamp: new Date().toISOString()
+        sessionUpdates,
+        timestamp: Date.now()
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
       }
     )
 
-  } catch (error) {
-    console.error('AI Hypnosis function error:', error)
+  } catch (error: any) {
+    console.error('AI Hypnosis error:', error)
+    
+    // For script generation, return proper JSON structure
+    if (requestType === 'script_generation') {
+      const mockScript = getMockScript(scriptParams)
+      return new Response(
+        JSON.stringify({
+          response: JSON.stringify(mockScript),
+          sessionUpdates: {},
+          error: 'Unexpected error occurred',
+          code: 'UNEXPECTED_ERROR',
+          details: error.message,
+          suggestion: 'Try again or contact support if issue persists',
+          timestamp: Date.now()
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      )
+    }
+    
+    // Fallback response for errors
+    const fallbackResponse = getFallbackResponse(requestType || 'guidance')
     
     return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
-        fallback: getFallbackResponse('guardian', 'help')
+      JSON.stringify({
+        response: fallbackResponse,
+        sessionUpdates: {},
+        error: 'Unexpected error occurred',
+        code: 'UNEXPECTED_ERROR',
+        details: error.message,
+        suggestion: 'Try again or contact support if issue persists',
+        timestamp: Date.now()
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 200, // Don't fail the session, provide fallback
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
       }
     )
   }
