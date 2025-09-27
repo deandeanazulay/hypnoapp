@@ -61,7 +61,7 @@ export default function HomeScreen({
           <p className="text-white/70 text-xs">Tap to begin with Libero</p>
         </div>
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center " style={{ paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)' }}>
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4" >
         {/* Center Orb */}
         <div className="">
           <Orb 
