@@ -4,6 +4,7 @@ import ModalShell from '../layout/ModalShell';
 import { getEgoColor } from '../../config/theme';
 import { getEgoState } from '../../store';
 import { useAppStore } from '../../store';
+import { useSessionStore } from '../../store/sessionStore';
 import { startSession } from '../../services/session';
 import { useGameState } from '../GameStateManager';
 
