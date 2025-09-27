@@ -176,15 +176,7 @@ function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPrevie
                       ? 'bg-teal-500/20 border-teal-400 shadow-xl shadow-teal-400/40 hover:bg-teal-500/30'
                       : 'bg-white/10 border-white/20 cursor-not-allowed'
                   }`}
-                  style={{
-                    boxShadow: isCompleted 
-                      ? '0 0 32px rgba(34, 197, 94, 0.6), inset 0 0 16px rgba(255,255,255,0.1)'
-                      : isActive 
-                      ? '0 0 32px rgba(251, 146, 60, 0.6), inset 0 0 16px rgba(255,255,255,0.1)'
-                      : isUnlocked
-                      ? '0 0 24px rgba(20, 184, 166, 0.4), inset 0 0 12px rgba(255,255,255,0.1)'
-                      : '0 0 8px rgba(255,255,255,0.1)'
-                  }}
+                  
                 >
                   {/* Completion badge */}
                   {isCompleted && (
