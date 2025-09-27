@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useSimpleAuth as useAuth } from './hooks/useSimpleAuth';
 import { useAppStore } from './store';
+import { useSessionStore } from './store/sessionStore';
 import { useViewportLayout } from './hooks/useViewportLayout';
 
 // Components
@@ -35,6 +36,7 @@ import { track } from './services/analytics';
 export default function App() {
   const { isAuthenticated, loading } = useAuth();
   const { activeTab, setActiveTab, modals, closeModal, openModal } = useAppStore();
+  const { sessionHandle } = useSessionStore();
   const [showLanding, setShowLanding] = useState(!isAuthenticated);
 
   // Set up viewport layout
