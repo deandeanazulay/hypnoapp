@@ -6,8 +6,8 @@ import { useProtocolStore } from '../../state/protocolStore';
 import { track } from '../../services/analytics';
 import { CheckCircle, Lock, Play, Star, Gift, Trophy, Zap, Target, Shield, Flame, Crown, ArrowRight, Heart, Sparkles, ChevronRight, Clock } from 'lucide-react';
 import Orb from '../Orb';
-import ActionsBar from '../ActionsBar';
 import SessionInitiationFlow from '../session/SessionInitiationFlow';
+import HorizontalMilestoneRoadmap from '../shared/HorizontalMilestoneRoadmap';
 import PageShell from '../layout/PageShell';
 import { TabId } from '../../types/Navigation';
 
@@ -278,6 +278,30 @@ export default function HomeScreen({ onOrbTap, onTabChange, onShowAuth, activeTa
           />
         )}
 
+        {/* Horizontal Milestone Roadmap */}
+        {isAuthenticated && user && (
+          <HorizontalMilestoneRoadmap 
+            user={user}
+            onMilestoneSelect={(milestone) => {
+              // Navigate to journey tab and focus on milestone
+              onTabChange('explore');
+            }}
+            onTabChange={onTabChange}
+          />
+        )}
+
+        {/* Horizontal Milestone Roadmap */}
+        {isAuthenticated && user && (
+          <HorizontalMilestoneRoadmap 
+            user={user}
+            onMilestoneSelect={(milestone) => {
+              // Navigate to journey tab and focus on milestone
+              onTabChange('explore');
+            }}
+            onTabChange={onTabChange}
+          />
+        )}
+
         <PageShell
           body={
             <div className="h-full flex items-center justify-center p-4">
@@ -354,14 +378,6 @@ export default function HomeScreen({ onOrbTap, onTabChange, onShowAuth, activeTa
                 />
               </div>
             </div>
-
-            {/* Actions Bar */}
-            <ActionsBar
-              selectedAction={selectedAction}
-              onActionSelect={handleActionSelect}
-              onNavigateToCreate={handleNavigateToCreate}
-              customActions={customActions}
-            />
 
             {/* Session Initiation Flow */}
             <SessionInitiationFlow
