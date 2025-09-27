@@ -167,6 +167,9 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
             egoState={activeEgoState}
             size={window.innerWidth < 768 ? 320 : 480}
             variant="webgl"
+          />
+        </div>
+
         {/* Premium Breathing Indicator */}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30">
           <div className="bg-black/95 backdrop-blur-xl rounded-2xl px-8 py-6 border border-white/10 shadow-2xl shadow-purple-500/20">
