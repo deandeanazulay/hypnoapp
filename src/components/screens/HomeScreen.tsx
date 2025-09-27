@@ -133,7 +133,7 @@ function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPrevie
   return (
     <div className="bg-black/90 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl shadow-purple-500/10">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between">
         <h3 className="text-white font-semibold text-lg flex items-center space-x-2">
           <Target size={20} className="text-teal-400" />
           <span>Your Path</span>
