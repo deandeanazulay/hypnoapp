@@ -329,7 +329,7 @@ export default function HomeScreen({
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 py-2">
         {/* Tagline - Above orb */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-2">
           <h2 className="text-white text-lg font-light mb-1">
             Enter with Libero in {currentState.name}
           </h2>
@@ -337,7 +337,7 @@ export default function HomeScreen({
         </div>
 
         {/* Center Orb */}
-        <div className="mb-3">
+        <div>
           <Orb 
             onTap={handleOrbTap}
             egoState={currentState.id}
