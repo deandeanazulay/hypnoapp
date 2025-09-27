@@ -53,13 +53,6 @@ export default function HomeScreen({
       <div className="absolute inset-0">
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
       </div>
-        {/* Tagline */}
-        <div className="text-center mb-6">
-          <h2 className="text-white text-lg font-light mb-1">
-            Enter with Libero in {currentState.name}
-          </h2>
-          <p className="text-white/70 text-xs">Tap to begin with Libero</p>
-        </div>
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 py-2">
         {/* Center Orb */}
@@ -71,6 +64,14 @@ export default function HomeScreen({
             variant="webgl"
             afterglow={false}
           />
+        </div>
+
+        {/* Tagline */}
+        <div className="text-center mb-6">
+          <h2 className="text-white text-lg font-light mb-1">
+            Enter with Libero in {currentState.name}
+          </h2>
+          <p className="text-white/70 text-xs">Tap to begin with Libero</p>
         </div>
 
         {/* Tagline - Closer to orb */}
@@ -165,6 +166,7 @@ export default function HomeScreen({
             </div>
             <ChevronRight size={12} className="text-white/40" />
           </button>
+        </div>
         </div>
       </div>
     </div>
