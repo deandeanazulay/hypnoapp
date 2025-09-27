@@ -102,6 +102,10 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
 
   // Render the appropriate orb type - NEVER switch after initial render
   return useWebGL ? 
-    <WebGLOrb {...props} onTap={debugOnTap} size={size} evolutionLevel={evolutionLevel} /> : 
-    <CSSOrb {...props} onTap={debugOnTap} size={size} evolutionLevel={evolutionLevel} />;
+    <div style={{ overflow: 'visible', position: 'relative', zIndex: 10 }}>
+      <WebGLOrb {...props} onTap={debugOnTap} size={size} evolutionLevel={evolutionLevel} />
+    </div> : 
+    <div style={{ overflow: 'visible', position: 'relative', zIndex: 10 }}>
+      <CSSOrb {...props} onTap={debugOnTap} size={size} evolutionLevel={evolutionLevel} />
+    </div>;
 }

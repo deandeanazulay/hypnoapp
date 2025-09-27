@@ -559,7 +559,7 @@ html, body, #root {
   transform: none !important; 
   filter: none !important;
   perspective: none !important;
-  overflow-x: hidden;
+  overflow: visible !important;
 }
 
 /* WebGL Orb Specific Styles */

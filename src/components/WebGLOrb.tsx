@@ -683,7 +683,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   return (
     <div 
       ref={containerRef}
-      className={`orb-container relative overflow-visible ${className}`}
+      className={`orb-container relative ${className}`}
       style={{ 
         width: size, 
         height: size, 
