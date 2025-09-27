@@ -493,9 +493,9 @@ export class SessionManager {
     }
     
     // Move to next segment
-    if (this.currentSegmentIndex < this.segments.length - 1) {
-      this.currentSegmentIndex++;
-      
+    this.currentSegmentIndex++;
+    
+    if (this.currentSegmentIndex < this.segments.length) {
       this._updateState({ 
         currentSegmentIndex: this.currentSegmentIndex,
         currentSegmentId: this.segments[this.currentSegmentIndex]?.id || null
@@ -648,4 +648,25 @@ export function startSession(options: StartSessionOptions): SessionHandle {
     on: (event: string, listener: Function) => manager.on(event, listener),
     getCurrentState: () => manager.getCurrentState()
   };
+}
+
+// Debug function to test session creation
+export function debugSession(options: StartSessionOptions) {
+  console.log('[SESSION-DEBUG] Creating session with options:', options);
+  const handle = startSession(options);
+  console.log('[SESSION-DEBUG] Session handle created:', handle);
+  
+  handle.on('state-change', (state) => {
+    console.log('[SESSION-DEBUG] State change:', state);
+  });
+  
+  handle.on('play', () => {
+    console.log('[SESSION-DEBUG] Session started playing');
+  });
+  
+  handle.on('end', () => {
+    console.log('[SESSION-DEBUG] Session ended');
+  });
+  
+  return handle;
 }
