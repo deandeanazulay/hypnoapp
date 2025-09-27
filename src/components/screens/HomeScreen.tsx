@@ -63,7 +63,7 @@ export default function HomeScreen({
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4" style={{ paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)' }}>
         {/* Center Orb */}
-        <div className="mb-4">
+        <div className="">
           <Orb 
             onTap={handleOrbTap}
             egoState={currentState.id}
