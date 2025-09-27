@@ -1,261 +1,200 @@
 import React from 'react';
-import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, HelpCircle, BookOpen } from 'lucide-react';
-import { useGameState } from '../GameStateManager';
-import { useAppStore, getEgoState } from '../../store';
-import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
-import { getEgoColor } from '../../config/theme';
+import { Send, Mic, RotateCcw, Trash2, Play, Pause } from 'lucide-react';
 
-export default function GlobalHUD() {
-  const { user } = useGameState();
-  const { activeEgoState, openModal, openEgoModal, showToast } = useAppStore();
-  const { isAuthenticated } = useAuth();
-  
-  if (!isAuthenticated || !user) {
+interface ChatInputProps {
+  inputText: string;
+  onInputChange: (text: string) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  onClearChat: () => void;
+  onStartRecording: () => void;
+  onStopRecording: () => void;
+  onPlayRecording: () => void;
+  onDeleteRecording: () => void;
+  onSendRecording: () => void;
+  isLoading: boolean;
+  isRecording: boolean;
+  hasRecording: boolean;
+  isPlayingRecording: boolean;
+  recordingDuration: number;
+  hasMessages: boolean;
+}
+
+export default function ChatInput({
+  inputText,
+  onInputChange,
+  onSubmit,
+  onClearChat,
+  onStartRecording,
+  onStopRecording,
+  onPlayRecording,
+  onDeleteRecording,
+  onSendRecording,
+  isLoading,
+  isRecording,
+  hasRecording,
+  isPlayingRecording,
+  recordingDuration,
+  hasMessages
+}: ChatInputProps) {
+  const [isPointerDown, setIsPointerDown] = React.useState(false);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setIsPointerDown(true);
+    onStartRecording();
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setIsPointerDown(false);
+    onStopRecording();
+  };
+
+  const handlePointerLeave = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setIsPointerDown(false);
+    onStopRecording();
+  };
+
+  // Show recording interface if currently recording or has recording
+  if (isRecording || hasRecording) {
     return (
-      <div 
-        data-hud
-        className="global-hud fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 px-4 py-2"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <button 
-              onClick={() => openModal('auth')}
-              className="px-3 py-1 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all text-xs font-medium"
-            >
-              Sign In
-            </button>
-                onClick={() => {
-                  // Retry last message - resend the last user message
-                  if (hasMessages) {
-                    const lastUserMessage = [...Array.from(document.querySelectorAll('.chat-message'))].reverse().find(msg => msg.classList.contains('user-message'));
-                    if (lastUserMessage) {
-                      const lastMessage = lastUserMessage.textContent || '';
-                      if (lastMessage && onInputChange) {
-                        onInputChange(lastMessage);
-                      }
-                    }
-                  }
-                }}
-                className="p-3 bg-gray-500/20 hover:bg-gray-500/30 border border-gray-500/40 rounded-full text-gray-400 hover:text-gray-300 transition-all hover:scale-110"
-                title="Retry last message"
-              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110" // Removed as per prompt
-              title="Test ChatGPT API & Get Help"
-            >
-              <MessageCircle size={16} className="text-purple-400" />
-            </button>
-          </div>
-          
-          <h1 className="text-white text-lg font-light">Libero</h1>
-          
-          <div className="flex items-center space-x-2">
-            {/* Helper Button */}
-            <button
-              onClick={() => openModal('documentationHub')}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
-              title="Help & Documentation"
-            >
-              <HelpCircle size={16} className="text-white/80" />
-            </button>
-            {/* <button 
-              onClick={() => openModal('chatgptChat')} // Removed as per prompt
-                <RotateCcw size={18} />
-              title="Test ChatGPT API" // Removed as per prompt
-            > */}
-            
-            <button 
-              onClick={() => openModal('settings')}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
-            >
-              <Settings size={16} className="text-white/80" />
-            </button>
-          </div>
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/20 p-4"
+           style={{ paddingBottom: 'calc(1rem + var(--safe-bottom, 0px))' }}>
+        <div className="max-w-3xl mx-auto">
+          {isRecording ? (
+            /* Recording Active State */
+            <div className="flex items-center justify-center space-x-4">
+              <div className="flex items-center space-x-3 bg-red-500/20 border border-red-500/40 rounded-full px-6 py-3">
+                <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
+                <span className="text-red-400 font-medium">{formatTime(recordingDuration)}</span>
+                <span className="text-white/80 text-sm">Recording...</span>
+              </div>
+              
+              <button
+                onClick={onStopRecording}
+                className="w-12 h-12 rounded-full bg-red-500/30 border-2 border-red-500/60 text-red-400 flex items-center justify-center hover:bg-red-500/40 transition-all"
+              >
+                <div className="w-4 h-4 bg-red-400 rounded"></div>
+              </button>
+            </div>
+          ) : (
+            /* Has Recording State */
+            <div className="flex items-center justify-between">
+              <button
+                onClick={onDeleteRecording}
+                className="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 flex items-center justify-center hover:bg-red-500/30 hover:scale-110 transition-all"
+              >
+                <Trash2 size={20} />
+              </button>
+              
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={isPlayingRecording ? () => {} : onPlayRecording}
+                  className="w-12 h-12 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 flex items-center justify-center hover:bg-blue-500/30 hover:scale-110 transition-all"
+                >
+                  {isPlayingRecording ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
+                </button>
+                
+                <div className="text-center">
+                  <div className="text-white font-medium">{formatTime(recordingDuration)}</div>
+                  <div className="text-white/60 text-xs">Voice message</div>
+                </div>
+              </div>
+              
+              <button
+                onClick={onSendRecording}
+                className="w-12 h-12 rounded-full bg-gradient-to-r from-teal-400 to-cyan-400 text-black flex items-center justify-center hover:scale-110 transition-all shadow-lg shadow-teal-400/30"
+              >
+                <Send size={20} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  // Calculate XP progress
-  const xpProgress = (user.experience % 100) / 100;
-  const sessionsLeft = user.plan === 'free' ? Math.max(0, 1 - user.daily_sessions_used) : '∞';
-  const egoState = getEgoState(activeEgoState);
-  const egoColor = getEgoColor(activeEgoState);
-
-  const handleEgoStateClick = () => {
-    openEgoModal();
-  };
-
-  const handlePlanClick = () => {
-    openModal('plan');
-  };
-
-  const handleTokensClick = () => {
-    openModal('tokens');
-  };
-
-  const handleLevelClick = () => {
-    const nextLevelXp = (user.level * 100) - user.experience;
-    showToast({
-      type: 'info',
-      message: `Level ${user.level}! ${nextLevelXp} XP needed for next level.`
-    });
-  };
-
-  const handleStreakClick = () => {
-    if (user.session_streak > 0) {
-      showToast({
-        type: 'success',
-        message: `Amazing! ${user.session_streak} day streak. Keep the momentum going!`
-      });
-    } else {
-      showToast({
-        type: 'info',
-        message: 'Start a session today to begin your transformation streak!'
-      });
-    }
-  };
-
-  const handleAwardsClick = () => {
-    if (user.achievements.length > 0) {
-      showToast({
-        type: 'success',
-        message: `You've earned ${user.achievements.length} achievements! View them in your profile.`
-      });
-    } else {
-      showToast({
-        type: 'info',
-        message: 'Complete sessions to unlock achievements and badges!'
-      });
-    }
-  };
+  // Normal chat input state
   return (
-            {/* Voice Recording Button - Telegram Style (always visible when no text) */}
-            {!inputText.trim() && (
-      className="global-hud fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 px-2 py-2"
-    >
-      <div className="flex items-center justify-between text-xs sm:text-sm">
-        {/* Left: Ego State */}
-        <div className="flex items-center space-x-2">
-                onTouchStart={handlePointerDown}
-                onTouchEnd={handlePointerUp}
-          <button
-                className={`relative p-3 rounded-full transition-all border-2 select-none touch-none ${
-            className="w-8 h-8 rounded-full bg-gradient-to-br border-2 flex items-center justify-center"
-                    ? 'bg-red-500/30 border-red-500/60 text-red-400 scale-110 shadow-lg shadow-red-500/50' 
-                    : 'bg-blue-500/30 border-blue-500/60 text-blue-400 hover:bg-blue-500/40 hover:scale-110 shadow-lg shadow-blue-500/30'
-              borderColor: egoColor.accent + '80'
-            }}
-          >
-            <span className="text-sm">{egoState.icon}</span>
-          </button>
-                title={isRecording ? "Recording... slide left to cancel" : "Hold to record voice message"}
-          <div className="hidden sm:block">
-            <button 
-                  <div className="w-5 h-5 bg-red-400 rounded-full animate-pulse" />
-              className="text-white font-medium hover:text-white/80 transition-colors text-left"
-            >
-              {egoState.name}
-            </button>
-                {/* Recording pulse effect - more prominent */}
-          </div>
-                  <>
-                    <div className="absolute inset-0 rounded-full border-2 border-red-400 animate-ping" />
-                    <div className="absolute inset-0 rounded-full border border-red-300 animate-pulse" />
-                  </>
-
-        {/* Center: Stats */}
-        <div className="flex items-center space-x-3 sm:space-x-6">
-          {/* Level */}
-          <div className="flex items-center space-x-1">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/20 p-4"
+         style={{ paddingBottom: 'calc(1rem + var(--safe-bottom, 0px))' }}>
+      <div className="max-w-3xl mx-auto">
+        <form onSubmit={onSubmit} className="flex items-center space-x-3">
+          {/* Retry Button (Left) - Telegram Style */}
+          {hasMessages && (
             <button
-              onClick={handleLevelClick}
-              className="p-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full text-black font-semibold hover:scale-110 transition-all disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-teal-400/30 flex-shrink-0 border-2 border-teal-500/40"
+              type="button"
+              onClick={() => {
+                // Retry last message - resend the last user message
+                if (hasMessages) {
+                  onClearChat();
+                }
+              }}
+              className="w-12 h-12 rounded-full bg-gray-500/20 hover:bg-gray-500/30 border border-gray-500/40 text-gray-400 hover:text-gray-300 transition-all hover:scale-110 shadow-lg flex items-center justify-center"
+              title="Clear chat"
             >
-              <span className="text-teal-400 font-bold text-xs">L{user.level}</span>
+              <RotateCcw size={20} />
             </button>
-            <span className="text-white/60 hidden sm:inline">Level</span>
+          )}
+
+          {/* Text Input - Flexible */}
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => onInputChange(e.target.value)}
+              placeholder="Message Libero..."
+              disabled={isLoading}
+              className="w-full bg-white/10 border border-white/20 rounded-full px-6 py-4 text-white placeholder-white/50 focus:outline-none focus:border-teal-500/50 focus:bg-white/15 transition-all disabled:opacity-50"
+            />
           </div>
 
-          {/* XP Progress */}
-          <button 
-            onClick={handleLevelClick}
-            className="flex items-center space-x-2 hover:scale-105 transition-all"
-          > 
-            <span className="text-orange-400 font-medium">{user.experience % 100} XP</span>
-            <div className="w-16 h-2 bg-white/20 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-orange-400 to-amber-400 transition-all duration-300"
-                style={{ width: `${xpProgress * 100}%` }}
-              />
-            </div>
-          </button>
-
-          {/* Streak */}
-          <button 
-            onClick={handleStreakClick}
-            className="flex items-center space-x-1 hover:scale-105 transition-all"
-          >
-            <span className="text-yellow-400 font-medium">{user.session_streak}d</span>
-            <span className="text-white/60 hidden sm:inline">streak</span>
-          </button>
-
-          {/* Sessions */}
-          <div className="flex items-center space-x-1">
-            <span className="text-purple-400 font-medium">{user.daily_sessions_used}</span>
-            <span className="text-white/60 hidden sm:inline">Sessions</span>
-          </div>
-
-          {/* Awards */}
-          <button 
-            onClick={handleAwardsClick}
-            className="flex items-center space-x-1 hover:scale-105 transition-all"
-          >
-            <span className="text-blue-400 font-medium">{user.achievements.length}</span>
-            <span className="text-white/60 hidden sm:inline">Awards</span>
-          </button>
-        </div>
-
-        {/* Right: Tokens & Plan */}
-        <div className="flex items-center space-x-3">
-          <button 
-            onClick={handleTokensClick}
-            className="flex items-center space-x-1 hover:scale-105 transition-all"
-          >
-            <span className="text-yellow-400 font-medium">{user.tokens}</span>
-            <span className="text-white/60 hidden sm:inline">tokens</span>
-          </button>
-          
-          <button 
-            onClick={handlePlanClick}
-            className="flex items-center space-x-1 hover:scale-105 transition-all"
-          >
-            <span className="text-green-400 font-medium uppercase">{user.plan}</span>
-            <span className="text-white/60 hidden sm:inline">Plan</span>
-          </button>
-          
-          <div className="flex items-center space-x-1">
-            <span className="text-teal-400 font-medium">{sessionsLeft}</span>
-            <span className="text-white/60 hidden sm:inline">Left</span>
-          </div>
-        </div>
-        
-        {/* Right Controls */}
-        <div className="flex items-center space-x-2"> 
-          {/* Helper Button */}
-          <button
-            onClick={() => openModal('documentationHub')}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
-            title="Help & Documentation"
-          >
-            <HelpCircle size={16} className="text-white/80" />
-          </button>
-          
-          <button 
-            onClick={() => openModal('settings')}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
-          >
-            <Settings size={16} className="text-white/80" />
-          </button>
-        </div>
+          {/* Right Button - Changes based on input */}
+          {inputText.trim() ? (
+            /* Send Button */
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-12 h-12 rounded-full bg-gradient-to-r from-teal-400 to-cyan-400 text-black flex items-center justify-center hover:scale-110 transition-all disabled:opacity-50 shadow-lg shadow-teal-400/30"
+            >
+              <Send size={20} />
+            </button>
+          ) : (
+            /* Microphone Button */
+            <button
+              type="button"
+              onPointerDown={handlePointerDown}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerLeave}
+              onTouchStart={(e) => { e.preventDefault(); handlePointerDown(e as any); }}
+              onTouchEnd={(e) => { e.preventDefault(); handlePointerUp(e as any); }}
+              disabled={isLoading}
+              className={`w-12 h-12 rounded-full border-2 transition-all select-none touch-none shadow-lg disabled:opacity-50 flex items-center justify-center ${
+                isPointerDown || isRecording
+                  ? 'bg-red-500/30 border-red-500/60 text-red-400 scale-110 shadow-red-500/50' 
+                  : 'bg-blue-500/30 border-blue-500/60 text-blue-400 hover:bg-blue-500/40 hover:scale-110 shadow-blue-500/30'
+              }`}
+              title={isPointerDown ? "Recording... release to stop" : "Hold to record voice message"}
+            >
+              <Mic size={20} />
+              
+              {/* Recording pulse effect */}
+              {(isPointerDown || isRecording) && (
+                <>
+                  <div className="absolute inset-0 rounded-full border-2 border-red-400 animate-ping" />
+                  <div className="absolute inset-0 rounded-full border border-red-300 animate-pulse" />
+                </>
+              )}
+            </button>
+          )}
+        </form>
       </div>
     </div>
   );
