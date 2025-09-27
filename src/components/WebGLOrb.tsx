@@ -65,6 +65,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     currentShape: 0
   });
 
+  // Store sphere radius for animation access
+  const sphereRadiusRef = useRef<number>(10);
+
   // State for animations
   const [isSpeaking, setIsSpeaking] = React.useState(false);
   const [isListening, setIsListening] = React.useState(false);
@@ -300,6 +303,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const scaleMultiplier = validSize / baseSize;
     const sphereRadius = 10 * scaleMultiplier;
     
+    // Store radius for animation access
+    sphereRadiusRef.current = sphereRadius;
+    
     // Create clean sphere geometry - NO DEFORMATION
     const baseDetail = evolutionLevel === 'basic' ? 32 : evolutionLevel === 'enhanced' ? 48 : evolutionLevel === 'advanced' ? 64 : 96;
     const sphereGeometry = new THREE.SphereGeometry(sphereRadius, baseDetail, baseDetail);
@@ -403,7 +409,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     
     if (orbMeshRef.current) {
       // Apply geometric transformation to vertices
-      applyGeometricShape(orbMeshRef.current, alienState.currentShape, smoothTransition, sphereRadius);
+      applyGeometricShape(orbMeshRef.current, alienState.currentShape, smoothTransition, sphereRadiusRef.current);
       
       orbMeshRef.current.scale.setScalar(breathingScale);
       
