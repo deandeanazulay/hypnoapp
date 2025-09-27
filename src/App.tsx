@@ -27,6 +27,7 @@ import PlanModal from './components/modals/PlanModal';
 import TokensModal from './components/modals/TokensModal';
 import FavoritesModal from './components/modals/FavoritesModal';
 import DocumentationHubModal from './components/modals/DocumentationHubModal';
+import PersonalLibraryModal from './components/modals/PersonalLibraryModal';
 import UnifiedSessionWorld from './components/session/UnifiedSessionWorld';
 
 // Session Components
