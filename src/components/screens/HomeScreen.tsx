@@ -90,8 +90,8 @@ export default function HomeScreen({
           <Orb
             onTap={handleOrbTap}
             egoState={activeEgoState}
-            afterglow={false}
-            size={350}
+            afterglow={true}
+            size={420}
             variant="webgl"
           />
           
