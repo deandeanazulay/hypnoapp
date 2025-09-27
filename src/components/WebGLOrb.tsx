@@ -342,6 +342,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     }
     
     // Legacy single glow layer for backward compatibility
+    const glowGeometry = new THREE.SphereGeometry(sphereRadius * 0.95, 32, 32);
     const glowMaterial1 = new THREE.MeshBasicMaterial({
       color: color,
       transparent: true,
