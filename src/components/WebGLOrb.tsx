@@ -365,6 +365,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
     if (import.meta.env.DEV) {
       console.log('[ORB] Geometry initialized successfully');
+    }
 
     // Alien breathing - more dramatic and irregular
     const evolutionComplexity = evolutionLevel === 'basic' ? 1 : evolutionLevel === 'enhanced' ? 1.5 : evolutionLevel === 'advanced' ? 2 : 3;
