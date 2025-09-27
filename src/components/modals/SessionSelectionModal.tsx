@@ -3,6 +3,9 @@ import { Play, Clock, Star, Trophy, Zap, Target, Crown, Flame, CheckCircle, Lock
 import ModalShell from '../layout/ModalShell';
 import { getEgoColor } from '../../config/theme';
 import { getEgoState } from '../../store';
+import { useAppStore } from '../../store';
+import { startSession } from '../../services/session';
+import { useGameState } from '../GameStateManager';
 
 interface SessionSelectionModalProps {
   isOpen: boolean;
@@ -20,6 +23,8 @@ export default function SessionSelectionModal({
   activeEgoState 
 }: SessionSelectionModalProps) {
   const [selectedSession, setSelectedSession] = useState<any>(null);
+  const { showToast } = useAppStore();
+  const { updateUser, addExperience, incrementStreak, updateEgoStateUsage } = useGameState();
 
   // Generate available sessions from milestones
   const getAvailableSessions = () => {
@@ -132,8 +137,79 @@ export default function SessionSelectionModal({
     }
   };
 
-  const handleSessionStart = (session: any) => {
-    onSessionSelect(session);
+  const handleSessionStart = async (session: any) => {
+    try {
+      showToast({
+        type: 'info',
+        message: `Starting ${session.protocol.name}...`
+      });
+
+      // Close the modal first
+      onClose();
+
+      // Start the actual session using the session service
+      const sessionHandle = startSession({
+        egoState: activeEgoState,
+        protocol: session.protocol,
+        goal: {
+          id: session.id,
+          name: session.protocol.name
+        },
+        action: {
+          name: session.protocol.name,
+          id: session.protocol.id
+        },
+        method: {
+          name: 'guided relaxation',
+          id: 'guided'
+        },
+        lengthSec: session.protocol.duration * 60,
+        userPrefs: {
+          level: user?.level || 1,
+          experience: user?.experience || 0
+        }
+      });
+
+      // Start playing the session
+      sessionHandle.play();
+
+      // Track session start
+      showToast({
+        type: 'success',
+        message: `${session.protocol.name} session started!`
+      });
+
+      // Update user stats when session completes
+      sessionHandle.on('end', async () => {
+        try {
+          // Add experience points
+          await addExperience(session.xpReward || 25);
+          
+          // Update streak
+          await incrementStreak();
+          
+          // Update ego state usage
+          await updateEgoStateUsage(activeEgoState);
+          
+          showToast({
+            type: 'success',
+            message: `Session completed! +${session.xpReward || 25} XP earned`
+          });
+        } catch (error) {
+          console.error('Error updating user stats after session:', error);
+        }
+      });
+
+      // Call the original callback for any additional handling
+      onSessionSelect(session);
+
+    } catch (error) {
+      console.error('Error starting session:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to start session. Please try again.'
+      });
+    }
   };
 
   return (
