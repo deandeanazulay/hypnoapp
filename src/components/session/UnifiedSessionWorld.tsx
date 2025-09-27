@@ -9,6 +9,12 @@ interface UnifiedSessionWorldProps {
   onClose: () => void;
 }
 
+interface BreathingState {
+  phase: 'rest' | 'exhale' | 'hold-exhale' | 'inhale' | 'hold-inhale';
+  timeRemaining: number;
+  cycleCount: number;
+  isActive: boolean;
+}
 export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionWorldProps) {
   const { sessionHandle, sessionState, play, pause, nextSegment, prevSegment, disposeSession } = useSessionStore();
   const { activeEgoState, showToast } = useAppStore();
@@ -17,9 +23,18 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
 
   // Session state
   const [depth, setDepth] = useState(1);
-  const [breathing, setBreathing] = useState<'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale' | 'rest'>('rest');
   const [phase, setPhase] = useState('preparation');
 
+  // Breathing pattern state (4-4-6-4 pattern)
+  const [breathingState, setBreathingState] = useState<BreathingState>({
+    phase: 'rest',
+    timeRemaining: 5, // 5 second initial rest
+    cycleCount: 0,
+    isActive: false
+  });
+  
+  const breathingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const breathingAudioRef = useRef<HTMLAudioElement | null>(null);
   // Auto-start session when opened
   useEffect(() => {
     if (isOpen && sessionHandle && sessionState.isInitialized && sessionState.playState === 'stopped') {
@@ -30,6 +45,23 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
     }
   }, [isOpen, sessionHandle, sessionState.isInitialized, sessionState.playState, play]);
 
+  // Start breathing pattern when session starts
+  useEffect(() => {
+    if (sessionState.playState === 'playing' && !breathingState.isActive) {
+      startBreathingPattern();
+    } else if (sessionState.playState !== 'playing' && breathingState.isActive) {
+      pauseBreathingPattern();
+    }
+  }, [sessionState.playState]);
+
+  // Cleanup breathing timer on unmount
+  useEffect(() => {
+    return () => {
+      if (breathingTimerRef.current) {
+        clearInterval(breathingTimerRef.current);
+      }
+    };
+  }, []);
   // Handle session state changes
   useEffect(() => {
     if (sessionHandle) {
@@ -80,27 +112,136 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
     }
   }, [sessionHandle, showToast, onClose]);
 
-  // Breathing animation effect
-  useEffect(() => {
-    if (sessionState.playState === 'playing') {
-      const breathingCycle = setInterval(() => {
-        setBreathing(prev => {
-          switch (prev) {
-            case 'rest': return 'inhale';
-            case 'inhale': return 'hold-inhale';
-            case 'hold-inhale': return 'exhale';
-            case 'exhale': return 'hold-exhale';
-            case 'hold-exhale': return 'rest';
-            default: return 'rest';
-          }
-        });
-      }, 2000); // 2 second breathing cycle
 
-      return () => clearInterval(breathingCycle);
+  // Breathing pattern functions
+  const startBreathingPattern = () => {
+    console.log('[BREATHING] Starting 4-4-6-4 breathing pattern');
+    
+    setBreathingState({
+      phase: 'rest',
+      timeRemaining: 5,
+      cycleCount: 0,
+      isActive: true
+    });
+    
+    // Start with 5-second rest period
+    breathingTimerRef.current = setInterval(() => {
+      setBreathingState(prev => {
+        if (prev.timeRemaining <= 1) {
+          // Move to next phase
+          const nextPhase = getNextBreathingPhase(prev.phase);
+          const nextDuration = getBreathingPhaseDuration(nextPhase);
+          
+          // Play audio cue for phase transition
+          playBreathingCue(nextPhase);
+          
+          return {
+            ...prev,
+            phase: nextPhase,
+            timeRemaining: nextDuration,
+            cycleCount: nextPhase === 'exhale' ? prev.cycleCount + 1 : prev.cycleCount
+          };
+        } else {
+          return {
+            ...prev,
+            timeRemaining: prev.timeRemaining - 1
+          };
+        }
+      });
+    }, 1000); // Update every second
+  };
+  
+  const pauseBreathingPattern = () => {
+    console.log('[BREATHING] Pausing breathing pattern');
+    if (breathingTimerRef.current) {
+      clearInterval(breathingTimerRef.current);
+      breathingTimerRef.current = null;
     }
-  }, [sessionState.playState]);
-
+    setBreathingState(prev => ({ ...prev, isActive: false }));
+  };
+  
+  const getNextBreathingPhase = (currentPhase: BreathingState['phase']): BreathingState['phase'] => {
+    switch (currentPhase) {
+      case 'rest': return 'exhale';
+      case 'exhale': return 'hold-exhale';
+      case 'hold-exhale': return 'inhale';
+      case 'inhale': return 'hold-inhale';
+      case 'hold-inhale': return 'exhale';
+      default: return 'exhale';
+    }
+  };
+  
+  const getBreathingPhaseDuration = (phase: BreathingState['phase']): number => {
+    switch (phase) {
+      case 'rest': return 5;
+      case 'exhale': return 4;
+      case 'hold-exhale': return 4;
+      case 'inhale': return 6;
+      case 'hold-inhale': return 4;
+      default: return 4;
+    }
+  };
+  
+  const playBreathingCue = (phase: BreathingState['phase']) => {
+    if (!isVoiceEnabled) return;
+    
+    // Create subtle audio cues for breathing transitions
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Different tones for different phases
+      const frequencies = {
+        'exhale': 220,    // Lower tone for exhale
+        'hold-exhale': 180,
+        'inhale': 330,    // Higher tone for inhale
+        'hold-inhale': 280,
+        'rest': 200
+      };
+      
+      oscillator.frequency.setValueAtTime(frequencies[phase] || 220, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+      console.log('[BREATHING] Audio cue failed:', error);
+    }
+  };
+  
+  const getBreathingPhaseColor = () => {
+    switch (breathingState.phase) {
+      case 'exhale': return 'text-blue-400 bg-blue-500/20 border-blue-400';
+      case 'hold-exhale': return 'text-cyan-400 bg-cyan-500/20 border-cyan-400';
+      case 'inhale': return 'text-green-400 bg-green-500/20 border-green-400';
+      case 'hold-inhale': return 'text-teal-400 bg-teal-500/20 border-teal-400';
+      case 'rest': return 'text-purple-400 bg-purple-500/20 border-purple-400';
+      default: return 'text-white/60 bg-white/10 border-white/20';
+    }
+  };
+  
+  const getBreathingInstruction = () => {
+    switch (breathingState.phase) {
+      case 'exhale': return 'Breathe out slowly and completely';
+      case 'hold-exhale': return 'Hold your breath gently';
+      case 'inhale': return 'Breathe in deeply and slowly';
+      case 'hold-inhale': return 'Hold your breath comfortably';
+      case 'rest': return 'Prepare to begin breathing';
+      default: return 'Follow your natural breath';
+    }
+  };
   const handleClose = () => {
+    // Stop breathing pattern
+    pauseBreathingPattern();
+    
     if (sessionHandle) {
       sessionHandle.pause();
       disposeSession();
@@ -125,29 +266,6 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
     return null;
   }
 
-  const getPhaseColor = () => {
-    switch (phase.toLowerCase()) {
-      case 'preparation': return 'text-blue-400 bg-blue-500/20 border-blue-500/40';
-      case 'induction': return 'text-teal-400 bg-teal-500/20 border-teal-500/40';
-      case 'deepening': return 'text-purple-400 bg-purple-500/20 border-purple-500/40';
-      case 'exploration': return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/40';
-      case 'transformation': return 'text-orange-400 bg-orange-500/20 border-orange-500/40';
-      case 'integration': return 'text-green-400 bg-green-500/20 border-green-500/40';
-      case 'completion': return 'text-white bg-white/20 border-white/40';
-      case 'paused': return 'text-gray-400 bg-gray-500/20 border-gray-500/40';
-      default: return 'text-white/60 bg-white/10 border-white/20';
-    }
-  };
-
-  const getBreathingColor = () => {
-    switch (breathing) {
-      case 'inhale': return 'text-blue-400 bg-blue-500/20 border-blue-400';
-      case 'hold-inhale': return 'text-teal-400 bg-teal-500/20 border-teal-400';
-      case 'exhale': return 'text-green-400 bg-green-500/20 border-green-400';
-      case 'hold-exhale': return 'text-purple-400 bg-purple-500/20 border-purple-400';
-      default: return 'text-white/60 bg-white/10 border-white/20';
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-[100] bg-black h-screen w-screen overflow-hidden">
@@ -205,7 +323,15 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
             {/* Phase Indicator */}
             <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20">
               <div className="text-white/80 text-xs font-medium mb-2 text-center">PHASE</div>
-              <div className={`px-3 py-1 rounded-full border transition-all ${getPhaseColor()}`}>
+              <div className={`px-3 py-1 rounded-full border transition-all ${
+                phase === 'preparation' ? 'text-blue-400 bg-blue-500/20 border-blue-500/40' :
+                phase === 'induction' ? 'text-teal-400 bg-teal-500/20 border-teal-500/40' :
+                phase === 'deepening' ? 'text-purple-400 bg-purple-500/20 border-purple-500/40' :
+                phase === 'transformation' ? 'text-orange-400 bg-orange-500/20 border-orange-500/40' :
+                phase === 'integration' ? 'text-green-400 bg-green-500/20 border-green-500/40' :
+                phase === 'completion' ? 'text-white bg-white/20 border-white/40' :
+                'text-white/60 bg-white/10 border-white/20'
+              }`}>
                 <span className="text-sm font-medium capitalize">{phase}</span>
               </div>
             </div>
@@ -266,59 +392,110 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
           />
         </div>
 
-        {/* Premium Breathing Dock - Bottom */}
+
+        {/* Enhanced Breathing Guide - Bottom */}
         <div className="absolute bottom-0 left-0 right-0 z-30 p-4">
-          <div className="w-full max-w-5xl mx-auto bg-gradient-to-r from-black/95 via-purple-950/95 to-black/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-purple-500/20 overflow-hidden">
-            <div className="px-4 py-3">
-              <div className="flex items-center justify-between max-w-4xl mx-auto">
-                {/* Breathing State - Centered */}
-                <div className="flex items-center space-x-4">
-                  <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Breathing</div>
-                  <div className={`flex items-center justify-center w-20 h-8 rounded-xl border-2 transition-all duration-1000 shadow-lg ${getBreathingColor()}`}>
-                    <span className="text-xs font-bold capitalize">
-                      {breathing === 'hold-inhale' ? 'Hold' : 
-                       breathing === 'hold-exhale' ? 'Hold' :
-                       breathing}
-                    </span>
+          <div className="w-full max-w-6xl mx-auto bg-gradient-to-r from-black/95 via-purple-950/95 to-black/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-purple-500/20 overflow-hidden">
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between max-w-5xl mx-auto">
+                {/* Breathing Phase Display */}
+                <div className="flex items-center space-x-6">
+                  <div className="text-center">
+                    <div className="text-white/60 text-xs font-medium tracking-wider uppercase mb-2">Breathing</div>
+                    <div className={`flex items-center justify-center w-24 h-10 rounded-xl border-2 transition-all duration-500 shadow-lg ${getBreathingPhaseColor()}`}>
+                      <span className="text-sm font-bold capitalize">
+                        {breathingState.phase === 'hold-inhale' ? 'Hold' : 
+                         breathingState.phase === 'hold-exhale' ? 'Hold' :
+                         breathingState.phase}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Countdown Timer */}
+                  <div className="text-center">
+                    <div className="text-white/60 text-xs font-medium tracking-wider uppercase mb-2">Timer</div>
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-400/40 to-cyan-400/40 border-2 border-teal-400/60 flex items-center justify-center shadow-xl shadow-teal-400/30 relative">
+                      <span className="text-teal-400 text-lg font-bold">
+                        {breathingState.timeRemaining}
+                      </span>
+                      {/* Progress ring */}
+                      <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          fill="none"
+                          stroke="rgba(255,255,255,0.1)"
+                          strokeWidth="2"
+                        />
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeDasharray={`${2 * Math.PI * 28}`}
+                          strokeDashoffset={`${2 * Math.PI * 28 * (1 - (breathingState.timeRemaining / getBreathingPhaseDuration(breathingState.phase)))}`}
+                          className="text-teal-400 transition-all duration-1000"
+                        />
+                      </svg>
+                    </div>
                   </div>
                 </div>
 
-                {/* Live Cycle Timer */}
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400/40 to-cyan-400/40 border-2 border-teal-400/60 flex items-center justify-center shadow-xl shadow-teal-400/30">
-                    <span className="text-teal-400 text-xs font-bold">
-                      {Math.floor((Date.now() / 2000) % 8) + 1}s
-                    </span>
+                {/* Breathing Instruction */}
+                <div className="flex-1 text-center mx-8">
+                  <div className="text-white/60 text-xs font-medium tracking-wider uppercase mb-2">Instruction</div>
+                  <div className="text-white text-lg font-light leading-relaxed">
+                    {getBreathingInstruction()}
                   </div>
-                  <div className="text-white/50 text-sm font-medium">/ 8s</div>
+                  <div className="text-white/50 text-sm mt-1">
+                    Cycle {breathingState.cycleCount} • 4-4-6-4 Pattern
+                  </div>
                 </div>
 
                 {/* Pattern Visualization */}
-                <div className="flex items-center space-x-3">
-                  {['Inhale', 'Hold', 'Exhale', 'Hold'].map((breathPhase, index) => (
-                    <div key={breathPhase} className="flex items-center">
-                      <div className={`w-3 h-3 rounded-full transition-all duration-500 shadow-lg ${
-                        (breathing === 'inhale' && index === 0) ||
-                        (breathing === 'hold-inhale' && index === 1) ||
-                        (breathing === 'exhale' && index === 2) ||
-                        (breathing === 'hold-exhale' && index === 3)
-                          ? 'bg-teal-400 scale-150 animate-pulse shadow-teal-400/60'
-                          : 'bg-white/20'
-                      }`} />
-                      {index < 3 && <div className="w-3 h-0.5 bg-white/30 mx-2 rounded-full" />}
+                <div className="flex items-center space-x-4">
+                  <div className="text-center">
+                    <div className="text-white/60 text-xs font-medium tracking-wider uppercase mb-2">Pattern</div>
+                    <div className="flex items-center space-x-2">
+                      {[
+                        { phase: 'exhale', duration: 4, label: 'Out' },
+                        { phase: 'hold-exhale', duration: 4, label: 'Hold' },
+                        { phase: 'inhale', duration: 6, label: 'In' },
+                        { phase: 'hold-inhale', duration: 4, label: 'Hold' }
+                      ].map((step, index) => (
+                        <div key={step.phase} className="flex items-center">
+                          <div className={`w-4 h-4 rounded-full transition-all duration-500 shadow-lg border-2 ${
+                            breathingState.phase === step.phase
+                              ? 'bg-teal-400 scale-150 animate-pulse shadow-teal-400/60 border-teal-400'
+                              : 'bg-white/20 border-white/30'
+                          }`} />
+                          <div className="text-center mx-1">
+                            <div className={`text-xs font-bold ${
+                              breathingState.phase === step.phase ? 'text-teal-400' : 'text-white/60'
+                            }`}>
+                              {step.duration}s
+                            </div>
+                            <div className={`text-xs ${
+                              breathingState.phase === step.phase ? 'text-teal-400' : 'text-white/40'
+                            }`}>
+                              {step.label}
+                            </div>
+                          </div>
+                          {index < 3 && <div className="w-2 h-0.5 bg-white/30 rounded-full" />}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
 
                 {/* Session Stats */}
-                <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-4">
                   <div className="text-center bg-black/30 rounded-lg px-3 py-2 border border-white/10">
                     <div className="text-white text-sm font-bold">{sessionState.currentSegmentIndex + 1}</div>
                     <div className="text-white/50 text-xs">Segment</div>
-                  </div>
-                  <div className="text-center bg-black/30 rounded-lg px-3 py-2 border border-white/10">
-                    <div className="text-purple-400 text-sm font-bold">{depth}</div>
-                    <div className="text-white/50 text-xs">Depth</div>
                   </div>
                   <div className="text-center bg-black/30 rounded-lg px-3 py-2 border border-white/10">
                     <div className="text-orange-400 text-sm font-bold">{sessionState.totalSegments}</div>
@@ -329,7 +506,6 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
             </div>
           </div>
         </div>
-
         {/* Loading State */}
         {!sessionState.isInitialized && (
           <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
