@@ -1,13 +1,13 @@
 import React from 'react';
 import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, MessageCircle, HelpCircle } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
-import { useAppStore, getEgoState } from '../../store';
+import { useAppStore, getEgoState, openEgoModal } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { getEgoColor } from '../../config/theme';
 
 export default function GlobalHUD() {
   const { user } = useGameState();
-  const { activeEgoState, openModal, openEgoModal, showToast } = useAppStore();
+  const { activeEgoState, openModal, showToast } = useAppStore();
   const { isAuthenticated } = useAuth();
   
   if (!isAuthenticated || !user) {
