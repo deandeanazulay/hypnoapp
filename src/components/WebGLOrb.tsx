@@ -409,14 +409,26 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       const originalPositions = geometry.userData.originalPositions;
       const positions = geometry.attributes.position.array;
       
+      // Safety check for positions array
+      if (!originalPositions || !positions || originalPositions.length !== positions.length) {
+        return;
+      }
       for (let i = 0; i < positions.length; i += 3) {
         const origX = originalPositions[i];
         const origY = originalPositions[i + 1];
         const origZ = originalPositions[i + 2];
         
+        // Safety check for valid original positions
+        if (!isFinite(origX) || !isFinite(origY) || !isFinite(origZ)) {
+          continue;
+        }
+        
         // Mathematical fractal deformation
         const phi = Math.atan2(origY, origX);
-        const theta = Math.acos(origZ / Math.sqrt(origX * origX + origY * origY + origZ * origZ));
+        
+        // Safe theta calculation with bounds checking
+        const vectorLength = Math.sqrt(origX * origX + origY * origY + origZ * origZ);
+        const theta = vectorLength > 0 ? Math.acos(Math.max(-1, Math.min(1, origZ / vectorLength))) : 0;
         
         // Multiple fractal layers
         const fractal1 = Math.sin(phi * 3 + time * 0.8) * Math.cos(theta * 2 + time * 0.5) * 0.4;
@@ -428,6 +440,12 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         
         // Combine all deformations
         const totalDeformation = fractal1 + fractal2 + fractal3 + chaos + alienState.pulse;
+        
+        // Safety check for deformation factor
+        if (!isFinite(totalDeformation)) {
+          continue;
+        }
+        
         const deformationFactor = 1 + totalDeformation * 0.12;
         
         // Apply speaking/listening effects
@@ -439,9 +457,17 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
           speakingMod = 1 + 0.2 * Math.sin(time * 12 + phi * 7) * Math.cos(time * 10 + theta * 4);
         }
         
-        positions[i] = origX * deformationFactor * speakingMod;
-        positions[i + 1] = origY * deformationFactor * speakingMod;
-        positions[i + 2] = origZ * deformationFactor * speakingMod;
+        // Calculate new positions with safety checks
+        const newX = origX * deformationFactor * speakingMod;
+        const newY = origY * deformationFactor * speakingMod;
+        const newZ = origZ * deformationFactor * speakingMod;
+        
+        // Only apply if all values are finite
+        if (isFinite(newX) && isFinite(newY) && isFinite(newZ)) {
+          positions[i] = newX;
+          positions[i + 1] = newY;
+          positions[i + 2] = newZ;
+        }
       }
       
       // Only flag positions as dirty - DON'T recreate wireframe
@@ -450,11 +476,17 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       // Update wireframe efficiently
       const wireframe = orbMeshRef.current.userData.wireframeGeometry;
       if (wireframe) {
-        // Dispose old wireframe and create new one
-        wireframe.dispose();
-        const newWireframe = new THREE.WireframeGeometry(geometry);
-        orbMeshRef.current.geometry = newWireframe;
-        orbMeshRef.current.userData.wireframeGeometry = newWireframe;
+        try {
+          // Dispose old wireframe and create new one
+          wireframe.dispose();
+          const newWireframe = new THREE.WireframeGeometry(geometry);
+          orbMeshRef.current.geometry = newWireframe;
+          orbMeshRef.current.userData.wireframeGeometry = newWireframe;
+        } catch (error) {
+          // If wireframe creation fails, skip this frame
+          console.warn('[ORB] Wireframe update failed, skipping frame');
+          return;
+        }
       }
     }
 
