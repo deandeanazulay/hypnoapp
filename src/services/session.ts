@@ -392,7 +392,7 @@ export class SessionManager {
   }
 
   private async _playWithBrowserTTS(text: string) {
-    if (!window.speechSynthesis) {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
       console.error('Session: speechSynthesis not available');
       setTimeout(() => {
         this._handleSegmentEnd();
@@ -403,21 +403,27 @@ export class SessionManager {
     // Stop any existing speech before starting new utterance
     window.speechSynthesis.cancel();
     
+    // Small delay to ensure clean state
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Wait for voices to load
     await this.voicesLoadedPromise;
     
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.7;  // Slower for hypnotic effect
-    utterance.pitch = 0.8; // Lower pitch for male-like calming effect
+    utterance.rate = 0.8;  // Slightly faster for better clarity
+    utterance.pitch = 0.9; // Higher pitch for better audibility
     utterance.volume = 1.0;
     
     // Voice selection (handle async loading properly)
     await this._selectBestVoice(utterance);
     
     // Event handlers
-    utterance.onstart = () => {};
+    utterance.onstart = () => {
+      console.log('[SESSION] Browser TTS started speaking');
+    };
     
     utterance.onend = () => {
+      console.log('[SESSION] Browser TTS finished speaking');
       this.currentUtterance = null;
       this._handleSegmentEnd();
     };
@@ -425,8 +431,7 @@ export class SessionManager {
     utterance.onerror = (event) => {
       // Only log non-interruption errors
       if (event.error !== 'interrupted' && event.error !== 'canceled') {
-        console.error('Browser TTS error:', event.error);
-      } else {
+        console.error('[SESSION] Browser TTS error:', event.error);
       }
       
       this.currentUtterance = null;
@@ -442,12 +447,13 @@ export class SessionManager {
     // Store current utterance
     this.currentUtterance = utterance;
     
-    // Small delay to ensure clean state before speaking
+    // Ensure clean state and force speech to start
     setTimeout(() => {
       if (this.currentUtterance === utterance && !this._isDisposed) {
+        console.log('[SESSION] Starting browser TTS speech');
         window.speechSynthesis.speak(utterance);
       }
-    }, 100);
+    }, 50);
   }
 
   private async _selectBestVoice(utterance: SpeechSynthesisUtterance) {
@@ -461,15 +467,16 @@ export class SessionManager {
     // Prefer male voices for hypnotic effect
     const preferredVoices = [
       'Microsoft David',
+      'Google US English Male',
+      'Alex',
+      'Microsoft David',
       'Microsoft Mark', 
       'Daniel (Enhanced)',
       'Daniel',
-      'Google US English Male',
-      'Alex',
       'Tom',
-      'Microsoft Zira', // Male-sounding female voice
+      'Microsoft Zira',
       'Google US English',
-      'Microsoft Aria', // Female fallback
+      'Microsoft Aria',
       'Samantha'
     ];
     
@@ -484,6 +491,9 @@ export class SessionManager {
     
     if (selectedVoice) {
       utterance.voice = selectedVoice;
+      console.log('[SESSION] Selected voice:', selectedVoice.name);
+    } else {
+      console.log('[SESSION] No suitable voice found, using default');
     }
   }
 

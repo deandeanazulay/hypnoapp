@@ -20,6 +20,16 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   const [breathing, setBreathing] = useState<'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale' | 'rest'>('rest');
   const [phase, setPhase] = useState('preparation');
 
+  // Auto-start session when opened
+  useEffect(() => {
+    if (isOpen && sessionHandle && sessionState.isInitialized && sessionState.playState === 'stopped') {
+      console.log('[SESSION-WORLD] Auto-starting session');
+      setTimeout(() => {
+        play();
+      }, 1000);
+    }
+  }, [isOpen, sessionHandle, sessionState.isInitialized, sessionState.playState, play]);
+
   // Handle session state changes
   useEffect(() => {
     if (sessionHandle) {
@@ -255,14 +265,14 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
           />
         </div>
 
-        {/* Premium Breathing Indicator - Bottom Row */}
-        <div className="absolute bottom-8 left-0 right-0 z-30 px-4">
-          <div className="w-full bg-black/95 backdrop-blur-xl rounded-2xl px-8 py-6 border border-white/10 shadow-2xl shadow-purple-500/20">
-            <div className="flex items-center justify-between">
+        {/* Premium Breathing Dock - Bottom */}
+        <div className="absolute bottom-0 left-0 right-0 z-30">
+          <div className="w-full bg-gradient-to-r from-black/95 via-purple-950/95 to-black/95 backdrop-blur-xl border-t border-white/10 px-6 py-4">
+            <div className="flex items-center justify-between max-w-6xl mx-auto">
               {/* Breathing State */}
               <div className="flex items-center space-x-4">
                 <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Breathing</div>
-                <div className={`inline-flex items-center justify-center w-24 h-10 rounded-xl border-2 transition-all duration-1000 ${getBreathingColor()}`}>
+                <div className={`inline-flex items-center justify-center w-20 h-8 rounded-xl border-2 transition-all duration-1000 ${getBreathingColor()}`}>
                   <span className="text-sm font-bold capitalize">
                     {breathing === 'hold-inhale' ? 'Hold' : 
                      breathing === 'hold-exhale' ? 'Hold' :
@@ -275,8 +285,8 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
               <div className="flex items-center space-x-3">
                 <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Cycle</div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-400/20 border border-teal-400/40 flex items-center justify-center">
-                    <span className="text-teal-400 text-lg font-bold">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-400/20 border border-teal-400/40 flex items-center justify-center">
+                    <span className="text-teal-400 text-sm font-bold">
                       {Math.floor((Date.now() / 2000) % 8) + 1}s
                     </span>
                   </div>
@@ -290,7 +300,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
                 <div className="flex items-center space-x-1">
                   {['Inhale', 'Hold', 'Exhale', 'Hold'].map((breathPhase, index) => (
                     <div key={breathPhase} className="flex items-center">
-                      <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
                         (breathing === 'inhale' && index === 0) ||
                         (breathing === 'hold-inhale' && index === 1) ||
                         (breathing === 'exhale' && index === 2) ||
@@ -298,7 +308,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
                           ? 'bg-teal-400 scale-125 animate-pulse'
                           : 'bg-white/20'
                       }`} />
-                      {index < 3 && <div className="w-4 h-0.5 bg-white/20 mx-1" />}
+                      {index < 3 && <div className="w-3 h-0.5 bg-white/20 mx-1" />}
                     </div>
                   ))}
                 </div>
