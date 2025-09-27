@@ -64,7 +64,6 @@ export default function GlobalHUD() {
 
   // Calculate XP progress
   const xpProgress = (user.experience % 100) / 100;
-  const sessionsLeft = user.plan === 'free' ? Math.max(0, 1 - user.daily_sessions_used) : '∞';
   const egoState = getEgoState(activeEgoState);
   const egoColor = getEgoColor(activeEgoState);
 
@@ -102,19 +101,6 @@ export default function GlobalHUD() {
     }
   };
 
-  const handleAwardsClick = () => {
-    if (user.achievements.length > 0) {
-      showToast({
-        type: 'success',
-        message: `You've earned ${user.achievements.length} achievements! View them in your profile.`
-      });
-    } else {
-      showToast({
-        type: 'info',
-        message: 'Complete sessions to unlock achievements and badges!'
-      });
-    }
-  };
   return (
     <div 
       data-hud
@@ -180,20 +166,6 @@ export default function GlobalHUD() {
             <span className="text-white/60 hidden sm:inline">streak</span>
           </button>
 
-          {/* Sessions */}
-          <div className="flex items-center space-x-1">
-            <span className="text-purple-400 font-medium">{user.daily_sessions_used}</span>
-            <span className="text-white/60 hidden sm:inline">Sessions</span>
-          </div>
-
-          {/* Awards */}
-          <button 
-            onClick={handleAwardsClick}
-            className="flex items-center space-x-1 hover:scale-105 transition-all"
-          >
-            <span className="text-blue-400 font-medium">{user.achievements.length}</span>
-            <span className="text-white/60 hidden sm:inline">Awards</span>
-          </button>
         </div>
 
         {/* Right: Tokens & Plan */}
@@ -213,11 +185,6 @@ export default function GlobalHUD() {
             <span className="text-green-400 font-medium uppercase">{user.plan}</span>
             <span className="text-white/60 hidden sm:inline">Plan</span>
           </button>
-          
-          <div className="flex items-center space-x-1">
-            <span className="text-teal-400 font-medium">{sessionsLeft}</span>
-            <span className="text-white/60 hidden sm:inline">Left</span>
-          </div>
         </div>
         
         {/* Right Controls */}
@@ -229,13 +196,6 @@ export default function GlobalHUD() {
             title="Help & Documentation"
           >
             <HelpCircle size={16} className="text-white/80" />
-          </button>
-          
-          <button 
-            onClick={() => openModal('settings')}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
-          >
-            <Settings size={16} className="text-white/80" />
           </button>
         </div>
       </div>
