@@ -154,7 +154,7 @@ function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPrevie
         <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black via-black/95 to-transparent z-10 pointer-events-none" />
         
         {/* Scrollable milestone path */}
-        <div className="flex items-center space-x-8 overflow-x-auto scrollbar-hide ">
+        <div className="flex items-center space-x-8 justify-center ">
           {currentMilestones.map((milestone, index) => {
             const IconComponent = milestone.icon;
             const isCompleted = milestone.completed;
