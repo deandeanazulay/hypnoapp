@@ -275,7 +275,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       name: 'First Steps',
       icon: Play,
       unlocked: true,
-      completed: getTotalSessions() > 0,
+      completed: (user?.session_streak || 0) >= 1,
       active: getTotalSessions() === 0,
       xpReward: 25,
       tokenReward: 5,
@@ -292,9 +292,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       id: 'three-day-streak',
       name: 'Momentum',
       icon: Zap,
-      unlocked: getTotalSessions() > 0,
+      unlocked: (user?.session_streak || 0) >= 1,
       completed: (user?.session_streak || 0) >= 3,
-      active: getTotalSessions() > 0 && (user?.session_streak || 0) < 3,
+      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
       xpReward: 50,
       tokenReward: 10,
       difficulty: 'easy',
@@ -311,7 +311,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       name: 'Guide Discovery',
       icon: Star,
       unlocked: (user?.session_streak || 0) >= 3,
-      completed: getUniqueEgoStatesUsed() >= 3,
+      completed: (user?.session_streak || 0) >= 3 && getUniqueEgoStatesUsed() >= 3,
       active: (user?.session_streak || 0) >= 3 && getUniqueEgoStatesUsed() < 3,
       xpReward: 75,
       tokenReward: 15,
@@ -328,9 +328,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       id: 'week-warrior',
       name: 'Week Warrior',
       icon: Trophy,
-      unlocked: getUniqueEgoStatesUsed() >= 2,
+      unlocked: (user?.session_streak || 0) >= 3 && getUniqueEgoStatesUsed() >= 3,
       completed: (user?.session_streak || 0) >= 7,
-      active: getUniqueEgoStatesUsed() >= 2 && (user?.session_streak || 0) < 7,
+      active: (user?.session_streak || 0) >= 3 && getUniqueEgoStatesUsed() >= 3 && (user?.session_streak || 0) < 7,
       xpReward: 100,
       tokenReward: 25,
       difficulty: 'hard',
@@ -346,9 +346,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       id: 'level-master',
       name: 'Level 5',
       icon: Crown,
-      unlocked: (user?.session_streak || 0) >= 7,
+      unlocked: (user?.session_streak || 0) >= 7 && getUniqueEgoStatesUsed() >= 3,
       completed: (user?.level || 1) >= 5,
-      active: (user?.session_streak || 0) >= 7 && (user?.level || 1) < 5,
+      active: (user?.session_streak || 0) >= 7 && getUniqueEgoStatesUsed() >= 3 && (user?.level || 1) < 5,
       xpReward: 200,
       tokenReward: 50,
       difficulty: 'hard',
@@ -540,7 +540,7 @@ export default function HomeScreen({
       </div>
 
       {/* NOTE: no justify-center on the whole page to avoid giant top/bottom gaps */}
-<div className="relative z-10 min-h-0 h-auto flex flex-col items-center px-4 pt-2 pb-[calc(var(--total-nav-height,96px)+4px)]">
+      <div className="relative z-10 min-h-0 h-auto flex flex-col items-center px-4 pt-2 pb-[calc(var(--total-nav-height,96px)+4px)]" style={{ overflow: 'visible' }}>
         {/* Tagline */}
         <div className="text-center mb-1">
           <h2 className="text-white text-[15px] font-light leading-tight">
@@ -550,14 +550,15 @@ export default function HomeScreen({
         </div>
 
         {/* Orb */}
-        <div className="" style={{ overflow: 'visible' }}>
+        <div className="relative" style={{ overflow: 'visible', zIndex: 10 }}>
           <Orb
             onTap={handleOrbTap}
             egoState={currentState.id}
             size={orbSize}
             variant="webgl"
             afterglow={false}
-            className=""
+            className="relative"
+            style={{ overflow: 'visible' }}
           />
         </div>
 
