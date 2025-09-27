@@ -1,1446 +1,395 @@
-import React, { useState } from 'react';
-import { CheckCircle, Lock, Play, Star, Gift, Trophy, Zap, Target, Shield, Flame, Crown, ArrowRight, Heart, Sparkles, ChevronRight, Clock } from 'lucide-react';
-import Orb from '../Orb';
-import { EGO_STATES, useAppStore } from '../../store';
-import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
-import { useProtocolStore } from '../../state/protocolStore';
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Volume2, VolumeX, MessageCircle, Brain, Mic, MicOff, Loader, Copy } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
-import { TabId } from '../../types/Navigation';
-import { THEME, getEgoColor, LIBERO_BRAND } from '../../config/theme';
+import { useAppStore, getEgoState } from '../../store';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
+import PageShell from '../layout/PageShell';
+import ChatMessages from '../chat/ChatMessages';
+import ChatInput from '../chat/ChatInput';
+import ChatSuggestions from '../chat/ChatSuggestions';
+import HorizontalMilestoneRoadmap from '../shared/HorizontalMilestoneRoadmap';
+import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../../utils/apiErrorHandler';
 
-interface HomeScreenProps {
-  onOrbTap: () => void;
-  onTabChange: (tabId: TabId) => void;
-  selectedEgoState?: string;
-  onEgoStateChange?: (egoStateId: string) => void;
-  activeTab?: TabId;
-  onShowAuth: () => void;
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'libero';
+  content: string;
+  timestamp: Date;
+  isLoading?: boolean;
+  error?: boolean;
+  audioUrl?: string;
 }
 
-// 1. Ego States Carousel Component - Perfectly centered
-interface EgoStatesCarouselProps {
-  activeEgoState: string;
-  onEgoStateChange: (egoStateId: string) => void;
-}
-
-function EgoStatesCarousel({ activeEgoState, onEgoStateChange }: EgoStatesCarouselProps) {
-  return (
-    <div className="relative w-full flex justify-center items-center">
-      {/* Gradient overlays for fade effect */}
-      <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
-      
-      {/* Perfectly centered scrolling container */}
-      <div className="flex items-center justify-center space-x-3 px-8 animate-scroll-x">
-        {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => {
-          const isSelected = activeEgoState === state.id;
-          const egoColor = getEgoColor(state.id);
-          return (
-            <div key={`${state.id}-${index}`} className="flex-shrink-0">
-              <button
-                onClick={() => onEgoStateChange(state.id)}
-                className={`w-12 h-12 rounded-full bg-gradient-to-br ${egoColor.bg} border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
-                  isSelected ? 'border-white/80 scale-115 opacity-100' : 'border-white/30 opacity-60 hover:opacity-80'
-                }`}
-                style={{
-                  boxShadow: isSelected ? `0 0 20px ${egoColor.accent}80` : `0 0 10px ${egoColor.accent}40`
-                }}
-              >
-                <span className="text-lg">{state.icon}</span>
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-interface CurrentRoadmapPreviewProps {
-  user: any;
-  onMilestoneSelect: (milestone: any) => void;
-}
-
-function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPreviewProps) {
-  // Define the same milestone structure as JourneyPath for consistency
-  const currentMilestones = [
-    {
-      id: 'first-session',
-      name: 'First Steps',
-      icon: Play,
-      unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
-      xpReward: 25,
-      tokenReward: 5,
-      difficulty: 'easy'
-    },
-    {
-      id: 'three-day-streak',
-      name: 'Building Momentum',
-      icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
-      completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
-      xpReward: 50,
-      tokenReward: 10,
-      difficulty: 'easy'
-    },
-    {
-      id: 'ego-state-explorer',
-      name: 'Guide Discovery',
-      icon: Star,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
-      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
-      xpReward: 75,
-      tokenReward: 15,
-      difficulty: 'medium'
-    },
-    {
-      id: 'week-warrior',
-      name: 'Week Warrior',
-      icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: (user?.session_streak || 0) >= 7,
-      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
-      xpReward: 100,
-      tokenReward: 25,
-      difficulty: 'hard'
-    },
-    {
-      id: 'development-unlock',
-      name: 'Development',
-      icon: Flame,
-      unlocked: user?.level >= 5,
-      completed: user?.level >= 10,
-      active: user?.level >= 5 && user?.level < 10,
-      xpReward: 200,
-      tokenReward: 50,
-      difficulty: 'hard'
-    }
-  ];
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy': return 'text-green-400 bg-green-500/20 border-green-500/40';
-      case 'medium': return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/40';
-      case 'hard': return 'text-red-400 bg-red-500/20 border-red-500/40';
-      default: return 'text-white/60 bg-white/10 border-white/20';
-    }
-  };
-
-  return (
-    <div className="bg-black/90 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl shadow-purple-500/10">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-white font-semibold text-lg flex items-center space-x-2">
-          <Target size={20} className="text-teal-400" />
-          <span>Your Path</span>
-        </h3>
-        <button
-          onClick={() => onMilestoneSelect(null)}
-          className="text-teal-400 hover:text-teal-300 text-sm font-medium transition-colors flex items-center space-x-1 hover:scale-105"
-        >
-          <span>View Full Journey</span>
-          <ArrowRight size={14} />
-        </button>
-      </div>
-
-      {/* Horizontal Roadmap */}
-      <div className="relative overflow-hidden mb-4">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black via-black/95 to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black via-black/95 to-transparent z-10 pointer-events-none" />
-        
-        {/* Scrollable milestone path */}
-        <div className="flex items-center space-x-8 overflow-x-auto scrollbar-hide px-8 py-4">
-          {currentMilestones.map((milestone, index) => {
-            const IconComponent = milestone.icon;
-            const isCompleted = milestone.completed;
-            const isActive = milestone.active;
-            const isUnlocked = milestone.unlocked;
-            
-            return (
-              <div key={milestone.id} className="flex items-center space-x-6 flex-shrink-0">
-                {/* Milestone Node */}
-                <button
-                  onClick={() => isUnlocked ? onMilestoneSelect(milestone) : null}
-                  disabled={!isUnlocked}
-                  className={`relative w-20 h-20 rounded-full border-3 flex items-center justify-center transition-all duration-300 hover:scale-110 group ${
-                    isCompleted
-                      ? 'bg-green-500/30 border-green-400 shadow-xl shadow-green-400/50 animate-breathe-glow'
-                      : isActive  
-                      ? 'bg-orange-500/30 border-orange-400 animate-pulse shadow-xl shadow-orange-400/50'
-                      : isUnlocked
-                      ? 'bg-teal-500/20 border-teal-400 shadow-xl shadow-teal-400/40 hover:bg-teal-500/30'
-                      : 'bg-white/10 border-white/20 cursor-not-allowed'
-                  }`}
-                  style={{
-                    boxShadow: isCompleted 
-                      ? '0 0 32px rgba(34, 197, 94, 0.6), inset 0 0 16px rgba(255,255,255,0.1)'
-                      : isActive 
-                      ? '0 0 32px rgba(251, 146, 60, 0.6), inset 0 0 16px rgba(255,255,255,0.1)'
-                      : isUnlocked
-                      ? '0 0 24px rgba(20, 184, 166, 0.4), inset 0 0 12px rgba(255,255,255,0.1)'
-                      : '0 0 8px rgba(255,255,255,0.1)'
-                  }}
-                >
-                  {/* Completion badge */}
-                  {isCompleted && (
-                    <div className="absolute -top-3 -right-3 w-8 h-8 bg-green-400 rounded-full flex items-center justify-center animate-bounce-in border-2 border-black">
-                      <CheckCircle size={16} className="text-black" />
-                    </div>
-                  )}
-                  
-                  {/* Active pulse rings */}
-                  {isActive && (
-                    <>
-                      <div className="absolute -inset-2 rounded-full border-2 border-orange-400/60 animate-ping" />
-                      <div className="absolute -inset-4 rounded-full border border-orange-400/40 animate-ping" style={{ animationDelay: '0.5s' }} />
-                    </>
-                  )}
-                  
-                  {/* Icon */}
-                  {isCompleted ? (
-                    <CheckCircle size={24} className="text-green-400" />
-                  ) : !isUnlocked ? (
-                    <Lock size={24} className="text-white/40" />
-                  ) : (
-                    <IconComponent size={24} className={`${
-                      isActive ? 'text-orange-400' : 'text-teal-400'
-                    }`} />
-                  )}
-                </button>
-
-                {/* Milestone Label */}
-                <div className="absolute top-24 left-1/2 transform -translate-x-1/2 text-center min-w-max">
-                  <div className={`px-3 py-2 rounded-xl border backdrop-blur-sm text-sm font-medium ${
-                    isCompleted
-                      ? 'bg-green-500/30 border-green-500/50 text-green-300'
-                      : isActive
-                      ? 'bg-orange-500/30 border-orange-500/50 text-orange-300'
-                      : isUnlocked
-                      ? 'bg-teal-500/30 border-teal-500/50 text-teal-300'
-                      : 'bg-white/10 border-white/20 text-white/40'
-                  }`}>
-                    <div>{milestone.name}</div>
-                    {isUnlocked && (
-                      <div className="flex items-center justify-center space-x-2 text-xs mt-1">
-                        {milestone.xpReward && (
-                          <span className="px-2 py-0.5 bg-orange-400/20 text-orange-400 rounded-full">
-                            +{milestone.xpReward} XP
-                          </span>
-                        )}
-                        {milestone.tokenReward && (
-                          <span className="px-2 py-0.5 bg-yellow-400/20 text-yellow-400 rounded-full">
-                            +{milestone.tokenReward}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Connection Line */}
-                {index < currentMilestones.length - 1 && (
-                  <div className={`w-12 h-1 ${
-                    isCompleted && currentMilestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-green-400 to-teal-400 shadow-lg shadow-green-400/50'
-                      : isCompleted
-                      ? 'bg-gradient-to-r from-green-400/60 to-white/20'
-                      : isUnlocked && currentMilestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-teal-400/60 to-orange-400/60 animate-pulse'
-                      : 'bg-white/20'
-                  } rounded-full relative overflow-hidden`}>
-                    {/* Flowing progress dot */}
-                    {isCompleted && currentMilestones[index + 1].unlocked && (
-                      <div className="absolute left-0 top-0 w-2 h-full bg-white rounded-full animate-flow-right" />
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Quick Progress Summary */}
-      <div className="grid grid-cols-3 gap-4 text-center">
-        <div className="bg-green-500/10 rounded-lg p-3 border border-green-500/20">
-          <div className="text-green-400 text-lg font-bold">
-            {currentMilestones.filter(m => m.completed).length}
-          </div>
-          <div className="text-white/60 text-xs">Completed</div>
-        </div>
-        <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/20">
-          <div className="text-orange-400 text-lg font-bold">
-            {currentMilestones.filter(m => m.active).length}
-          </div>
-          <div className="text-white/60 text-xs">Active</div>
-        </div>
-        <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-          <div className="text-white text-lg font-bold">
-            {currentMilestones.filter(m => !m.unlocked).length}
-          </div>
-          <div className="text-white/60 text-xs">Locked</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Horizontal Milestone Roadmap Component
-interface HorizontalMilestoneRoadmapProps {
-  user: any;
-  onMilestoneSelect: (milestone: any) => void;
-  onTabChange: (tabId: TabId) => void;
-}
-
-function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: HorizontalMilestoneRoadmapProps) {
-  const milestones = [
-    {
-      id: 'first-session',
-      name: 'First Steps',
-      icon: Play,
-      unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
-      xpReward: 25,
-      tokenReward: 5,
-      difficulty: 'easy'
-    },
-    {
-      id: 'three-day-streak',
-      name: 'Momentum',
-      icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
-      completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
-      xpReward: 50,
-      tokenReward: 10,
-      difficulty: 'easy'
-    },
-    {
-      id: 'ego-explorer',
-      name: 'Guide Discovery',
-      icon: Star,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
-      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
-      xpReward: 75,
-      tokenReward: 15,
-      difficulty: 'medium'
-    },
-    {
-      id: 'week-warrior',
-      name: 'Week Warrior',
-      icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: (user?.session_streak || 0) >= 7,
-      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
-      xpReward: 100,
-      tokenReward: 25,
-      difficulty: 'hard'
-    },
-    {
-      id: 'level-master',
-      name: 'Level 5',
-      icon: Crown,
-      unlocked: user?.level >= 3,
-      completed: user?.level >= 5,
-      active: user?.level >= 3 && user?.level < 5,
-      xpReward: 200,
-      tokenReward: 50,
-      difficulty: 'hard'
-    }
-  ];
-
-  const handleMilestoneClick = (milestone: any) => {
-    if (!milestone.unlocked) return;
-    onTabChange('explore');
-    // Future: could pass milestone ID to focus on specific milestone
-  };
-
-  return (
-    <div className="w-full max-w-md mx-auto mb-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white/80 text-sm font-medium">Your Next Milestones</h3>
-        <button
-          onClick={() => onTabChange('explore')}
-          className="text-teal-400 hover:text-teal-300 text-xs font-medium transition-colors flex items-center space-x-1"
-        >
-          <span>View All</span>
-          <ArrowRight size={12} />
-        </button>
-      </div>
-
-      {/* Horizontal Roadmap */}
-      <div className="relative overflow-hidden">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
-        
-        {/* Scrollable container */}
-        <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 py-2">
-          {milestones.map((milestone, index) => {
-            const IconComponent = milestone.icon;
-            const isCompleted = milestone.completed;
-            const isActive = milestone.active;
-            const isUnlocked = milestone.unlocked;
-            
-            return (
-              <div key={milestone.id} className="flex items-center space-x-6 flex-shrink-0">
-                {/* Milestone Node */}
-                <button
-                  onClick={() => handleMilestoneClick(milestone)}
-                  disabled={!isUnlocked}
-                  className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 group ${
-                    isCompleted
-                      ? 'bg-green-500/30 border-green-400 shadow-lg shadow-green-400/50'
-                      : isActive  
-                      ? 'bg-orange-500/30 border-orange-400 animate-pulse shadow-lg shadow-orange-400/50'
-                      : isUnlocked
-                      ? 'bg-teal-500/20 border-teal-400 shadow-lg shadow-teal-400/40 hover:bg-teal-500/30'
-                      : 'bg-white/10 border-white/20 cursor-not-allowed opacity-60'
-                  }`}
-                >
-                  {/* Completion badge */}
-                  {isCompleted && (
-                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center animate-bounce-in border border-black">
-                      <CheckCircle size={12} className="text-black" />
-                    </div>
-                  )}
-                  
-                  {/* Active pulse ring */}
-                  {isActive && (
-                    <div className="absolute -inset-1 rounded-full border border-orange-400 animate-ping" />
-                  )}
-                  
-                  {/* Icon */}
-                  {isCompleted ? (
-                    <CheckCircle size={16} className="text-green-400" />
-                  ) : !isUnlocked ? (
-                    <Lock size={16} className="text-white/40" />
-                  ) : (
-                    <IconComponent size={16} className={`${
-                      isActive ? 'text-orange-400' : 'text-teal-400'
-                    }`} />
-                  )}
-                </button>
-
-                {/* Connection Line */}
-                {index < milestones.length - 1 && (
-                  <div className={`w-8 h-0.5 ${
-                    isCompleted && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-green-400 to-teal-400'
-                      : isCompleted
-                      ? 'bg-gradient-to-r from-green-400 to-white/20'
-                      : isUnlocked && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-teal-400 to-orange-400 animate-pulse'
-                      : 'bg-white/20'
-                  } rounded-full`} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Milestone Labels - Below the roadmap */}
-      <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 mt-2">
-        {milestones.map((milestone, index) => (
-          <div key={milestone.id} className="flex-shrink-0 text-center" style={{ width: '72px' }}>
-            <div className={`text-xs font-medium ${
-              milestone.completed
-                ? 'text-green-400'
-                : milestone.active
-                ? 'text-orange-400'
-                : milestone.unlocked
-                ? 'text-teal-400'
-                : 'text-white/40'
-            }`}>
-              {milestone.name}
-            </div>
-            {milestone.unlocked && (
-              <div className="flex items-center justify-center space-x-1 text-xs mt-1">
-                {milestone.xpReward && (
-                  <span className="text-orange-400/80">+{milestone.xpReward}</span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Horizontal Milestone Roadmap Component
-interface HorizontalMilestoneRoadmapProps {
-  user: any;
-  onMilestoneSelect: (milestone: any) => void;
-  onTabChange: (tabId: TabId) => void;
-}
-
-function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: HorizontalMilestoneRoadmapProps) {
-  const milestones = [
-    {
-      id: 'first-session',
-      name: 'First Steps',
-      icon: Play,
-      unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
-      xpReward: 25,
-      tokenReward: 5,
-      difficulty: 'easy'
-    },
-    {
-      id: 'three-day-streak',
-      name: 'Momentum',
-      icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
-      completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
-      xpReward: 50,
-      tokenReward: 10,
-      difficulty: 'easy'
-    },
-    {
-      id: 'ego-explorer',
-      name: 'Guide Discovery',
-      icon: Star,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
-      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
-      xpReward: 75,
-      tokenReward: 15,
-      difficulty: 'medium'
-    },
-    {
-      id: 'week-warrior',
-      name: 'Week Warrior',
-      icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: (user?.session_streak || 0) >= 7,
-      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
-      xpReward: 100,
-      tokenReward: 25,
-      difficulty: 'hard'
-    },
-    {
-      id: 'level-master',
-      name: 'Level 5',
-      icon: Crown,
-      unlocked: user?.level >= 3,
-      completed: user?.level >= 5,
-      active: user?.level >= 3 && user?.level < 5,
-      xpReward: 200,
-      tokenReward: 50,
-      difficulty: 'hard'
-    }
-  ];
-
-  const handleMilestoneClick = (milestone: any) => {
-    if (!milestone.unlocked) return;
-    onTabChange('explore');
-    // Future: could pass milestone ID to focus on specific milestone
-  };
-
-  return (
-    <div className="w-full max-w-md mx-auto mb-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white/80 text-sm font-medium">Your Next Milestones</h3>
-        <button
-          onClick={() => onTabChange('explore')}
-          className="text-teal-400 hover:text-teal-300 text-xs font-medium transition-colors flex items-center space-x-1"
-        >
-          <span>View All</span>
-          <ArrowRight size={12} />
-        </button>
-      </div>
-
-      {/* Horizontal Roadmap */}
-      <div className="relative overflow-hidden">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
-        
-        {/* Scrollable container */}
-        <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 py-2">
-          {milestones.map((milestone, index) => {
-            const IconComponent = milestone.icon;
-            const isCompleted = milestone.completed;
-            const isActive = milestone.active;
-            const isUnlocked = milestone.unlocked;
-            
-            return (
-              <div key={milestone.id} className="flex items-center space-x-6 flex-shrink-0">
-                {/* Milestone Node */}
-                <button
-                  onClick={() => handleMilestoneClick(milestone)}
-                  disabled={!isUnlocked}
-                  className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 group ${
-                    isCompleted
-                      ? 'bg-green-500/30 border-green-400 shadow-lg shadow-green-400/50'
-                      : isActive  
-                      ? 'bg-orange-500/30 border-orange-400 animate-pulse shadow-lg shadow-orange-400/50'
-                      : isUnlocked
-                      ? 'bg-teal-500/20 border-teal-400 shadow-lg shadow-teal-400/40 hover:bg-teal-500/30'
-                      : 'bg-white/10 border-white/20 cursor-not-allowed opacity-60'
-                  }`}
-                >
-                  {/* Completion badge */}
-                  {isCompleted && (
-                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center animate-bounce-in border border-black">
-                      <CheckCircle size={12} className="text-black" />
-                    </div>
-                  )}
-                  
-                  {/* Active pulse ring */}
-                  {isActive && (
-                    <div className="absolute -inset-1 rounded-full border border-orange-400 animate-ping" />
-                  )}
-                  
-                  {/* Icon */}
-                  {isCompleted ? (
-                    <CheckCircle size={16} className="text-green-400" />
-                  ) : !isUnlocked ? (
-                    <Lock size={16} className="text-white/40" />
-                  ) : (
-                    <IconComponent size={16} className={`${
-                      isActive ? 'text-orange-400' : 'text-teal-400'
-                    }`} />
-                  )}
-                </button>
-
-                {/* Connection Line */}
-                {index < milestones.length - 1 && (
-                  <div className={`w-8 h-0.5 ${
-                    isCompleted && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-green-400 to-teal-400'
-                      : isCompleted
-                      ? 'bg-gradient-to-r from-green-400 to-white/20'
-                      : isUnlocked && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-teal-400 to-orange-400 animate-pulse'
-                      : 'bg-white/20'
-                  } rounded-full`} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Milestone Labels - Below the roadmap */}
-      <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 mt-2">
-        {milestones.map((milestone, index) => (
-          <div key={milestone.id} className="flex-shrink-0 text-center" style={{ width: '72px' }}>
-            <div className={`text-xs font-medium ${
-              milestone.completed
-                ? 'text-green-400'
-                : milestone.active
-                ? 'text-orange-400'
-                : milestone.unlocked
-                ? 'text-teal-400'
-                : 'text-white/40'
-            }`}>
-              {milestone.name}
-            </div>
-            {milestone.unlocked && (
-              <div className="flex items-center justify-center space-x-1 text-xs mt-1">
-                {milestone.xpReward && (
-                  <span className="text-orange-400/80">+{milestone.xpReward}</span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Horizontal Milestone Roadmap Component
-interface HorizontalMilestoneRoadmapProps {
-  user: any;
-  onMilestoneSelect: (milestone: any) => void;
-  onTabChange: (tabId: TabId) => void;
-}
-
-function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: HorizontalMilestoneRoadmapProps) {
-  const milestones = [
-    {
-      id: 'first-session',
-      name: 'First Steps',
-      icon: Play,
-      unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
-      xpReward: 25,
-      tokenReward: 5,
-      difficulty: 'easy'
-    },
-    {
-      id: 'three-day-streak',
-      name: 'Momentum',
-      icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
-      completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
-      xpReward: 50,
-      tokenReward: 10,
-      difficulty: 'easy'
-    },
-    {
-      id: 'ego-explorer',
-      name: 'Guide Discovery',
-      icon: Star,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
-      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
-      xpReward: 75,
-      tokenReward: 15,
-      difficulty: 'medium'
-    },
-    {
-      id: 'week-warrior',
-      name: 'Week Warrior',
-      icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: (user?.session_streak || 0) >= 7,
-      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
-      xpReward: 100,
-      tokenReward: 25,
-      difficulty: 'hard'
-    },
-    {
-      id: 'level-master',
-      name: 'Level 5',
-      icon: Crown,
-      unlocked: user?.level >= 3,
-      completed: user?.level >= 5,
-      active: user?.level >= 3 && user?.level < 5,
-      xpReward: 200,
-      tokenReward: 50,
-      difficulty: 'hard'
-    }
-  ];
-
-  const handleMilestoneClick = (milestone: any) => {
-    if (!milestone.unlocked) return;
-    onTabChange('explore');
-    // Future: could pass milestone ID to focus on specific milestone
-  };
-
-  return (
-    <div className="w-full max-w-md mx-auto mb-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white/80 text-sm font-medium">Your Next Milestones</h3>
-        <button
-          onClick={() => onTabChange('explore')}
-          className="text-teal-400 hover:text-teal-300 text-xs font-medium transition-colors flex items-center space-x-1"
-        >
-          <span>View All</span>
-          <ArrowRight size={12} />
-        </button>
-      </div>
-
-      {/* Horizontal Roadmap */}
-      <div className="relative overflow-hidden">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
-        
-        {/* Scrollable container */}
-        <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 py-2">
-          {milestones.map((milestone, index) => {
-            const IconComponent = milestone.icon;
-            const isCompleted = milestone.completed;
-            const isActive = milestone.active;
-            const isUnlocked = milestone.unlocked;
-            
-            return (
-              <div key={milestone.id} className="flex items-center space-x-6 flex-shrink-0">
-                {/* Milestone Node */}
-                <button
-                  onClick={() => handleMilestoneClick(milestone)}
-                  disabled={!isUnlocked}
-                  className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 group ${
-                    isCompleted
-                      ? 'bg-green-500/30 border-green-400 shadow-lg shadow-green-400/50'
-                      : isActive  
-                      ? 'bg-orange-500/30 border-orange-400 animate-pulse shadow-lg shadow-orange-400/50'
-                      : isUnlocked
-                      ? 'bg-teal-500/20 border-teal-400 shadow-lg shadow-teal-400/40 hover:bg-teal-500/30'
-                      : 'bg-white/10 border-white/20 cursor-not-allowed opacity-60'
-                  }`}
-                >
-                  {/* Completion badge */}
-                  {isCompleted && (
-                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center animate-bounce-in border border-black">
-                      <CheckCircle size={12} className="text-black" />
-                    </div>
-                  )}
-                  
-                  {/* Active pulse ring */}
-                  {isActive && (
-                    <div className="absolute -inset-1 rounded-full border border-orange-400 animate-ping" />
-                  )}
-                  
-                  {/* Icon */}
-                  {isCompleted ? (
-                    <CheckCircle size={16} className="text-green-400" />
-                  ) : !isUnlocked ? (
-                    <Lock size={16} className="text-white/40" />
-                  ) : (
-                    <IconComponent size={16} className={`${
-                      isActive ? 'text-orange-400' : 'text-teal-400'
-                    }`} />
-                  )}
-                </button>
-
-                {/* Connection Line */}
-                {index < milestones.length - 1 && (
-                  <div className={`w-8 h-0.5 ${
-                    isCompleted && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-green-400 to-teal-400'
-                      : isCompleted
-                      ? 'bg-gradient-to-r from-green-400 to-white/20'
-                      : isUnlocked && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-teal-400 to-orange-400 animate-pulse'
-                      : 'bg-white/20'
-                  } rounded-full`} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Milestone Labels - Below the roadmap */}
-      <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 mt-2">
-        {milestones.map((milestone, index) => (
-          <div key={milestone.id} className="flex-shrink-0 text-center" style={{ width: '72px' }}>
-            <div className={`text-xs font-medium ${
-              milestone.completed
-                ? 'text-green-400'
-                : milestone.active
-                ? 'text-orange-400'
-                : milestone.unlocked
-                ? 'text-teal-400'
-                : 'text-white/40'
-            }`}>
-              {milestone.name}
-            </div>
-            {milestone.unlocked && (
-              <div className="flex items-center justify-center space-x-1 text-xs mt-1">
-                {milestone.xpReward && (
-                  <span className="text-orange-400/80">+{milestone.xpReward}</span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Horizontal Milestone Roadmap Component
-interface HorizontalMilestoneRoadmapProps {
-  user: any;
-  onMilestoneSelect: (milestone: any) => void;
-  onTabChange: (tabId: TabId) => void;
-}
-
-function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: HorizontalMilestoneRoadmapProps) {
-  const milestones = [
-    {
-      id: 'first-session',
-      name: 'First Steps',
-      icon: Play,
-      unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
-      xpReward: 25,
-      tokenReward: 5,
-      difficulty: 'easy'
-    },
-    {
-      id: 'three-day-streak',
-      name: 'Momentum',
-      icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
-      completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
-      xpReward: 50,
-      tokenReward: 10,
-      difficulty: 'easy'
-    },
-    {
-      id: 'ego-explorer',
-      name: 'Guide Discovery',
-      icon: Star,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
-      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
-      xpReward: 75,
-      tokenReward: 15,
-      difficulty: 'medium'
-    },
-    {
-      id: 'week-warrior',
-      name: 'Week Warrior',
-      icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: (user?.session_streak || 0) >= 7,
-      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
-      xpReward: 100,
-      tokenReward: 25,
-      difficulty: 'hard'
-    },
-    {
-      id: 'level-master',
-      name: 'Level 5',
-      icon: Crown,
-      unlocked: user?.level >= 3,
-      completed: user?.level >= 5,
-      active: user?.level >= 3 && user?.level < 5,
-      xpReward: 200,
-      tokenReward: 50,
-      difficulty: 'hard'
-    }
-  ];
-
-  const handleMilestoneClick = (milestone: any) => {
-    if (!milestone.unlocked) return;
-    onTabChange('explore');
-    // Future: could pass milestone ID to focus on specific milestone
-  };
-
-  return (
-    <div className="w-full max-w-md mx-auto mb-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white/80 text-sm font-medium">Your Next Milestones</h3>
-        <button
-          onClick={() => onTabChange('explore')}
-          className="text-teal-400 hover:text-teal-300 text-xs font-medium transition-colors flex items-center space-x-1"
-        >
-          <span>View All</span>
-          <ArrowRight size={12} />
-        </button>
-      </div>
-
-      {/* Horizontal Roadmap */}
-      <div className="relative overflow-hidden">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
-        
-        {/* Scrollable container */}
-        <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 py-2">
-          {milestones.map((milestone, index) => {
-            const IconComponent = milestone.icon;
-            const isCompleted = milestone.completed;
-            const isActive = milestone.active;
-            const isUnlocked = milestone.unlocked;
-            
-            return (
-              <div key={milestone.id} className="flex items-center space-x-6 flex-shrink-0">
-                {/* Milestone Node */}
-                <button
-                  onClick={() => handleMilestoneClick(milestone)}
-                  disabled={!isUnlocked}
-                  className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 group ${
-                    isCompleted
-                      ? 'bg-green-500/30 border-green-400 shadow-lg shadow-green-400/50'
-                      : isActive  
-                      ? 'bg-orange-500/30 border-orange-400 animate-pulse shadow-lg shadow-orange-400/50'
-                      : isUnlocked
-                      ? 'bg-teal-500/20 border-teal-400 shadow-lg shadow-teal-400/40 hover:bg-teal-500/30'
-                      : 'bg-white/10 border-white/20 cursor-not-allowed opacity-60'
-                  }`}
-                >
-                  {/* Completion badge */}
-                  {isCompleted && (
-                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center animate-bounce-in border border-black">
-                      <CheckCircle size={12} className="text-black" />
-                    </div>
-                  )}
-                  
-                  {/* Active pulse ring */}
-                  {isActive && (
-                    <div className="absolute -inset-1 rounded-full border border-orange-400 animate-ping" />
-                  )}
-                  
-                  {/* Icon */}
-                  {isCompleted ? (
-                    <CheckCircle size={16} className="text-green-400" />
-                  ) : !isUnlocked ? (
-                    <Lock size={16} className="text-white/40" />
-                  ) : (
-                    <IconComponent size={16} className={`${
-                      isActive ? 'text-orange-400' : 'text-teal-400'
-                    }`} />
-                  )}
-                </button>
-
-                {/* Connection Line */}
-                {index < milestones.length - 1 && (
-                  <div className={`w-8 h-0.5 ${
-                    isCompleted && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-green-400 to-teal-400'
-                      : isCompleted
-                      ? 'bg-gradient-to-r from-green-400 to-white/20'
-                      : isUnlocked && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-teal-400 to-orange-400 animate-pulse'
-                      : 'bg-white/20'
-                  } rounded-full`} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Milestone Labels - Below the roadmap */}
-      <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 mt-2">
-        {milestones.map((milestone, index) => (
-          <div key={milestone.id} className="flex-shrink-0 text-center" style={{ width: '72px' }}>
-            <div className={`text-xs font-medium ${
-              milestone.completed
-                ? 'text-green-400'
-                : milestone.active
-                ? 'text-orange-400'
-                : milestone.unlocked
-                ? 'text-teal-400'
-                : 'text-white/40'
-            }`}>
-              {milestone.name}
-            </div>
-            {milestone.unlocked && (
-              <div className="flex items-center justify-center space-x-1 text-xs mt-1">
-                {milestone.xpReward && (
-                  <span className="text-orange-400/80">+{milestone.xpReward}</span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Horizontal Milestone Roadmap Component
-interface HorizontalMilestoneRoadmapProps {
-  user: any;
-  onMilestoneSelect: (milestone: any) => void;
-  onTabChange: (tabId: TabId) => void;
-}
-
-function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: HorizontalMilestoneRoadmapProps) {
-  const milestones = [
-    {
-      id: 'first-session',
-      name: 'First Steps',
-      icon: Play,
-      unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
-      xpReward: 25,
-      tokenReward: 5,
-      difficulty: 'easy'
-    },
-    {
-      id: 'three-day-streak',
-      name: 'Momentum',
-      icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
-      completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
-      xpReward: 50,
-      tokenReward: 10,
-      difficulty: 'easy'
-    },
-    {
-      id: 'ego-explorer',
-      name: 'Guide Discovery',
-      icon: Star,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
-      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
-      xpReward: 75,
-      tokenReward: 15,
-      difficulty: 'medium'
-    },
-    {
-      id: 'week-warrior',
-      name: 'Week Warrior',
-      icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: (user?.session_streak || 0) >= 7,
-      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
-      xpReward: 100,
-      tokenReward: 25,
-      difficulty: 'hard'
-    },
-    {
-      id: 'level-master',
-      name: 'Level 5',
-      icon: Crown,
-      unlocked: user?.level >= 3,
-      completed: user?.level >= 5,
-      active: user?.level >= 3 && user?.level < 5,
-      xpReward: 200,
-      tokenReward: 50,
-      difficulty: 'hard'
-    }
-  ];
-
-  const handleMilestoneClick = (milestone: any) => {
-    if (!milestone.unlocked) return;
-    onTabChange('explore');
-    // Future: could pass milestone ID to focus on specific milestone
-  };
-
-  return (
-    <div className="w-full max-w-md mx-auto mb-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white/80 text-sm font-medium">Your Next Milestones</h3>
-        <button
-          onClick={() => onTabChange('explore')}
-          className="text-teal-400 hover:text-teal-300 text-xs font-medium transition-colors flex items-center space-x-1"
-        >
-          <span>View All</span>
-          <ArrowRight size={12} />
-        </button>
-      </div>
-
-      {/* Horizontal Roadmap */}
-      <div className="relative overflow-hidden">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
-        
-        {/* Scrollable container */}
-        <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 py-2">
-          {milestones.map((milestone, index) => {
-            const IconComponent = milestone.icon;
-            const isCompleted = milestone.completed;
-            const isActive = milestone.active;
-            const isUnlocked = milestone.unlocked;
-            
-            return (
-              <div key={milestone.id} className="flex items-center space-x-6 flex-shrink-0">
-                {/* Milestone Node */}
-                <button
-                  onClick={() => handleMilestoneClick(milestone)}
-                  disabled={!isUnlocked}
-                  className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 group ${
-                    isCompleted
-                      ? 'bg-green-500/30 border-green-400 shadow-lg shadow-green-400/50'
-                      : isActive  
-                      ? 'bg-orange-500/30 border-orange-400 animate-pulse shadow-lg shadow-orange-400/50'
-                      : isUnlocked
-                      ? 'bg-teal-500/20 border-teal-400 shadow-lg shadow-teal-400/40 hover:bg-teal-500/30'
-                      : 'bg-white/10 border-white/20 cursor-not-allowed opacity-60'
-                  }`}
-                >
-                  {/* Completion badge */}
-                  {isCompleted && (
-                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center animate-bounce-in border border-black">
-                      <CheckCircle size={12} className="text-black" />
-                    </div>
-                  )}
-                  
-                  {/* Active pulse ring */}
-                  {isActive && (
-                    <div className="absolute -inset-1 rounded-full border border-orange-400 animate-ping" />
-                  )}
-                  
-                  {/* Icon */}
-                  {isCompleted ? (
-                    <CheckCircle size={16} className="text-green-400" />
-                  ) : !isUnlocked ? (
-                    <Lock size={16} className="text-white/40" />
-                  ) : (
-                    <IconComponent size={16} className={`${
-                      isActive ? 'text-orange-400' : 'text-teal-400'
-                    }`} />
-                  )}
-                </button>
-
-                {/* Connection Line */}
-                {index < milestones.length - 1 && (
-                  <div className={`w-8 h-0.5 ${
-                    isCompleted && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-green-400 to-teal-400'
-                      : isCompleted
-                      ? 'bg-gradient-to-r from-green-400 to-white/20'
-                      : isUnlocked && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-teal-400 to-orange-400 animate-pulse'
-                      : 'bg-white/20'
-                  } rounded-full`} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Milestone Labels - Below the roadmap */}
-      <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 mt-2">
-        {milestones.map((milestone, index) => (
-          <div key={milestone.id} className="flex-shrink-0 text-center" style={{ width: '72px' }}>
-            <div className={`text-xs font-medium ${
-              milestone.completed
-                ? 'text-green-400'
-                : milestone.active
-                ? 'text-orange-400'
-                : milestone.unlocked
-                ? 'text-teal-400'
-                : 'text-white/40'
-            }`}>
-              {milestone.name}
-            </div>
-            {milestone.unlocked && (
-              <div className="flex items-center justify-center space-x-1 text-xs mt-1">
-                {milestone.xpReward && (
-                  <span className="text-orange-400/80">+{milestone.xpReward}</span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Horizontal Milestone Roadmap Component
-interface HorizontalMilestoneRoadmapProps {
-  user: any;
-  onMilestoneSelect: (milestone: any) => void;
-  onTabChange: (tabId: TabId) => void;
-}
-
-function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: HorizontalMilestoneRoadmapProps) {
-  const milestones = [
-    {
-      id: 'first-session',
-      name: 'First Steps',
-      icon: Play,
-      unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
-      xpReward: 25,
-      tokenReward: 5,
-      difficulty: 'easy'
-    },
-    {
-      id: 'three-day-streak',
-      name: 'Momentum',
-      icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
-      completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
-      xpReward: 50,
-      tokenReward: 10,
-      difficulty: 'easy'
-    },
-    {
-      id: 'ego-explorer',
-      name: 'Guide Discovery',
-      icon: Star,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
-      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
-      xpReward: 75,
-      tokenReward: 15,
-      difficulty: 'medium'
-    },
-    {
-      id: 'week-warrior',
-      name: 'Week Warrior',
-      icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: (user?.session_streak || 0) >= 7,
-      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
-      xpReward: 100,
-      tokenReward: 25,
-      difficulty: 'hard'
-    },
-    {
-      id: 'level-master',
-      name: 'Level 5',
-      icon: Crown,
-      unlocked: user?.level >= 3,
-      completed: user?.level >= 5,
-      active: user?.level >= 3 && user?.level < 5,
-      xpReward: 200,
-      tokenReward: 50,
-      difficulty: 'hard'
-    }
-  ];
-
-  const handleMilestoneClick = (milestone: any) => {
-    if (!milestone.unlocked) return;
-    onTabChange('explore');
-    // Future: could pass milestone ID to focus on specific milestone
-  };
-
-  return (
-    <div className="w-full max-w-md mx-auto mb-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white/80 text-sm font-medium">Your Next Milestones</h3>
-        <button
-          onClick={() => onTabChange('explore')}
-          className="text-teal-400 hover:text-teal-300 text-xs font-medium transition-colors flex items-center space-x-1"
-        >
-          <span>View All</span>
-          <ArrowRight size={12} />
-        </button>
-      </div>
-
-      {/* Horizontal Roadmap */}
-      <div className="relative overflow-hidden">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
-        
-        {/* Scrollable container */}
-        <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 py-2">
-          {milestones.map((milestone, index) => {
-            const IconComponent = milestone.icon;
-            const isCompleted = milestone.completed;
-            const isActive = milestone.active;
-            const isUnlocked = milestone.unlocked;
-            
-            return (
-              <div key={milestone.id} className="flex items-center space-x-6 flex-shrink-0">
-                {/* Milestone Node */}
-                <button
-                  onClick={() => handleMilestoneClick(milestone)}
-                  disabled={!isUnlocked}
-                  className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 group ${
-                    isCompleted
-                      ? 'bg-green-500/30 border-green-400 shadow-lg shadow-green-400/50'
-                      : isActive  
-                      ? 'bg-orange-500/30 border-orange-400 animate-pulse shadow-lg shadow-orange-400/50'
-                      : isUnlocked
-                      ? 'bg-teal-500/20 border-teal-400 shadow-lg shadow-teal-400/40 hover:bg-teal-500/30'
-                      : 'bg-white/10 border-white/20 cursor-not-allowed opacity-60'
-                  }`}
-                >
-                  {/* Completion badge */}
-                  {isCompleted && (
-                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center animate-bounce-in border border-black">
-                      <CheckCircle size={12} className="text-black" />
-                    </div>
-                  )}
-                  
-                  {/* Active pulse ring */}
-                  {isActive && (
-                    <div className="absolute -inset-1 rounded-full border border-orange-400 animate-ping" />
-                  )}
-                  
-                  {/* Icon */}
-                  {isCompleted ? (
-                    <CheckCircle size={16} className="text-green-400" />
-                  ) : !isUnlocked ? (
-                    <Lock size={16} className="text-white/40" />
-                  ) : (
-                    <IconComponent size={16} className={`${
-                      isActive ? 'text-orange-400' : 'text-teal-400'
-                    }`} />
-                  )}
-                </button>
-
-                {/* Connection Line */}
-                {index < milestones.length - 1 && (
-                  <div className={`w-8 h-0.5 ${
-                    isCompleted && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-green-400 to-teal-400'
-                      : isCompleted
-                      ? 'bg-gradient-to-r from-green-400 to-white/20'
-                      : isUnlocked && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-teal-400 to-orange-400 animate-pulse'
-                      : 'bg-white/20'
-                  } rounded-full`} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Milestone Labels - Below the roadmap */}
-      <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 mt-2">
-        {milestones.map((milestone, index) => (
-          <div key={milestone.id} className="flex-shrink-0 text-center" style={{ width: '72px' }}>
-            <div className={`text-xs font-medium ${
-              milestone.completed
-                ? 'text-green-400'
-                : milestone.active
-                ? 'text-orange-400'
-                : milestone.unlocked
-                ? 'text-teal-400'
-                : 'text-white/40'
-            }`}>
-              {milestone.name}
-            </div>
-            {milestone.unlocked && (
-              <div className="flex items-center justify-center space-x-1 text-xs mt-1">
-                {milestone.xpReward && (
-                  <span className="text-orange-400/80">+{milestone.xpReward}</span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export default function HomeScreen({ 
-  onOrbTap, 
-  onTabChange,
-  selectedEgoState,
-  onEgoStateChange,
-  activeTab,
-  onShowAuth
-}: HomeScreenProps) {
-  const { activeEgoState } = useAppStore();
-  const { isAuthenticated } = useAuth();
+export default function ChatScreen() {
   const { user } = useGameState();
-  const { customActions } = useProtocolStore();
+  const { activeEgoState, openModal, showToast } = useAppStore();
+  const { isAuthenticated } = useAuth();
   
-  const currentState = EGO_STATES.find(s => s.id === activeEgoState) || EGO_STATES[0];
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [hasRecording, setHasRecording] = useState(false);
+  const [isPlayingRecording, setIsPlayingRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [micPermission, setMicPermission] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking');
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Handle orb tap with authentication check
-  const handleOrbTap = () => {
-    if (import.meta.env.DEV) {
-      console.log('[HOME] Orb tapped, isAuthenticated:', isAuthenticated);
-    }
-    if (!isAuthenticated) {
-      if (import.meta.env.DEV) {
-        console.log('[HOME] Not authenticated, showing auth modal');
-      }
-      onShowAuth();
+  const currentEgoState = getEgoState(activeEgoState);
+
+  // Check microphone permission on mount
+  useEffect(() => {
+    checkMicrophonePermission();
+  }, []);
+
+  const checkMicrophonePermission = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setMicPermission('denied');
       return;
     }
-    onOrbTap();
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      setMicPermission('granted');
+    } catch (error) {
+      setMicPermission('denied');
+    }
   };
+
+  const startRecording = async () => {
+    if (micPermission !== 'granted') {
+      await checkMicrophonePermission();
+      if (micPermission !== 'granted') {
+        showToast({ type: 'error', message: 'Microphone access required for voice input' });
+        return;
+      }
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      recordingChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordingChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(track => track.stop());
+        if (recordingChunksRef.current.length > 0) {
+          setHasRecording(true);
+        }
+      };
+
+      setIsRecording(true);
+      setRecordingDuration(0);
+      mediaRecorder.start();
+
+      // Start recording timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      showToast({ type: 'error', message: 'Failed to start recording' });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
+  };
+
+  const playRecording = () => {
+    if (recordingChunksRef.current.length === 0) return;
+
+    const blob = new Blob(recordingChunksRef.current, { type: 'audio/wav' });
+    const audioUrl = URL.createObjectURL(blob);
+    
+    if (audioRef.current) {
+      audioRef.current.pause();
+      URL.revokeObjectURL(audioRef.current.src);
+    }
+    
+    audioRef.current = new Audio(audioUrl);
+    audioRef.current.onended = () => setIsPlayingRecording(false);
+    audioRef.current.play();
+    setIsPlayingRecording(true);
+  };
+
+  const deleteRecording = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      URL.revokeObjectURL(audioRef.current.src);
+      audioRef.current = null;
+    }
+    
+    recordingChunksRef.current = [];
+    setHasRecording(false);
+    setIsPlayingRecording(false);
+    setRecordingDuration(0);
+  };
+
+  const sendRecording = async () => {
+    if (recordingChunksRef.current.length === 0) return;
+
+    const blob = new Blob(recordingChunksRef.current, { type: 'audio/wav' });
+    const audioUrl = URL.createObjectURL(blob);
+
+    // Add user message with audio
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: '[Voice Message]',
+      timestamp: new Date(),
+      audioUrl
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Clean up recording
+    deleteRecording();
+    
+    // Process voice message (placeholder - would integrate with speech-to-text)
+    await sendMessage('I sent a voice message');
+  };
+
+  const sendMessage = async (message: string) => {
+    if (!message.trim()) return;
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: message,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputText('');
+    setIsLoading(true);
+
+    // Add loading message
+    const loadingMessage: ChatMessage = {
+      id: (Date.now() + 1).toString(),
+      role: 'libero',
+      content: '',
+      timestamp: new Date(),
+      isLoading: true
+    };
+    setMessages(prev => [...prev, loadingMessage]);
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new ApiError(
+          'Chat service not configured',
+          500,
+          'MISSING_CONFIG',
+          'Supabase URL or API key missing',
+          'Check environment variables'
+        );
+      }
+
+      const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
+      
+      const response = await safeFetch(
+        `${baseUrl}/functions/v1/ai-hypnosis`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`
+          },
+          body: JSON.stringify({
+            message: message,
+            sessionContext: {
+              egoState: activeEgoState,
+              phase: 'conversation',
+              depth: 1,
+              breathing: 'rest',
+              userProfile: {
+                level: user?.level || 1,
+                experience: user?.experience || 0
+              },
+              conversationHistory: messages
+                .filter(msg => !msg.isLoading)
+                .map(msg => ({
+                  role: msg.role === 'libero' ? 'assistant' : 'user',
+                  content: msg.content
+                }))
+            },
+            requestType: 'guidance'
+          })
+        },
+        {
+          operation: 'AI Chat',
+          additionalContext: {
+            messageLength: message.length,
+            egoState: activeEgoState,
+            userLevel: user?.level || 1
+          }
+        }
+      );
+
+      const data = await response.json();
+      
+      if (!data.response) {
+        throw new ApiError(
+          'No response from AI service',
+          500,
+          'NO_RESPONSE',
+          'AI service returned empty response',
+          'Try again or rephrase your message'
+        );
+      }
+
+      // Remove loading message and add AI response
+      setMessages(prev => {
+        const filtered = prev.filter(msg => !msg.isLoading);
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          role: 'libero',
+          content: data.response,
+          timestamp: new Date()
+        };
+        return [...filtered, aiMessage];
+      });
+
+      // Speak the response if voice is enabled
+      speakMessage(data.response);
+
+    } catch (error: any) {
+      let errorMessage = 'Failed to connect to Libero';
+      
+      if (error instanceof ApiError) {
+        errorMessage = getUserFriendlyErrorMessage(error);
+        console.error('Chat API error:', errorMessage);
+      } else {
+        console.error('Chat unexpected error:', error);
+      }
+      
+      // Remove loading message and add error message
+      setMessages(prev => {
+        const filtered = prev.filter(msg => !msg.isLoading);
+        const errorMsg: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          role: 'libero',
+          content: `I'm having trouble connecting right now. ${errorMessage}`,
+          timestamp: new Date(),
+          error: true
+        };
+        return [...filtered, errorMsg];
+      });
+      
+      showToast({
+        type: 'error',
+        message: errorMessage
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const speakMessage = (text: string) => {
+    if (!window.speechSynthesis) return;
+
+    // Cancel any existing speech
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.8;
+    utterance.pitch = 0.9;
+    utterance.volume = 1.0;
+
+    // Find a suitable voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.includes('Karen') ||
+      voice.name.includes('Samantha') ||
+      voice.name.includes('Female') ||
+      voice.lang.includes('en')
+    ) || voices[0];
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputText.trim() && !isLoading) {
+      sendMessage(inputText.trim());
+    }
+  };
+
+  const handleClearChat = () => {
+    setMessages([]);
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  const handleCopyMessage = (content: string) => {
+    navigator.clipboard.writeText(content);
+    showToast({ type: 'success', message: 'Message copied to clipboard' });
+  };
+
+  const handleSuggestionSelect = (suggestion: string) => {
+    setInputText(suggestion);
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
+        </div>
+
+        <PageShell
+          body={
+            <div className="h-full flex items-center justify-center p-4">
+              <div className="text-center max-w-sm">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
+                  <MessageCircle size={32} className="text-purple-400" />
+                </div>
+                <h3 className="text-white text-xl font-light mb-4">Sign in to chat with Libero</h3>
+                <button
+                  onClick={() => openModal('auth')}
+                  className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
+                >
+                  Sign In
+                </button>
+              </div>
+            </div>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
@@ -1449,190 +398,91 @@ export default function HomeScreen({
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 py-2">
-        {/* Tagline - Above orb */}
-        <div className="text-center mb-2">
-          <h2 className="text-white text-lg font-light mb-1">
-            Enter with Libero in {currentState.name}
-          </h2>
-          <p className="text-white/70 text-xs">Tap to begin with Libero</p>
-        </div>
-
-        {/* Center Orb */}
-        <div>
-          <Orb 
-            onTap={handleOrbTap}
-            egoState={currentState.id}
-            size={window.innerWidth < 768 ? 320 : 400}
-            variant="webgl"
-            afterglow={false}
-          />
-        </div>
-
-        {/* Horizontal Milestone Roadmap */}
-        {isAuthenticated && user && (
-          <HorizontalMilestoneRoadmap 
-            user={user}
-            onMilestoneSelect={(milestone) => {
-              // Navigate to journey tab and focus on milestone
-              onTabChange('explore');
-            }}
-            onTabChange={onTabChange}
-          />
-        )}
-
-        {/* Horizontal Milestone Roadmap */}
-        {isAuthenticated && user && (
-          <HorizontalMilestoneRoadmap 
-            user={user}
-            onMilestoneSelect={(milestone) => {
-              // Navigate to journey tab and focus on milestone
-              onTabChange('explore');
-            }}
-            onTabChange={onTabChange}
-          />
-        )}
-
-        {/* Horizontal Milestone Roadmap */}
-        {isAuthenticated && user && (
-          <HorizontalMilestoneRoadmap 
-            user={user}
-            onMilestoneSelect={(milestone) => {
-              // Navigate to journey tab and focus on milestone
-              onTabChange('explore');
-            }}
-            onTabChange={onTabChange}
-          />
-        )}
-
-        {/* Horizontal Milestone Roadmap */}
-        {isAuthenticated && user && (
-          <HorizontalMilestoneRoadmap 
-            user={user}
-            onMilestoneSelect={(milestone) => {
-              // Navigate to journey tab and focus on milestone
-              onTabChange('explore');
-            }}
-            onTabChange={onTabChange}
-          />
-        )}
-
-        {/* Horizontal Milestone Roadmap */}
-        {isAuthenticated && user && (
-          <HorizontalMilestoneRoadmap 
-            user={user}
-            onMilestoneSelect={(milestone) => {
-              // Navigate to journey tab and focus on milestone
-              onTabChange('explore');
-            }}
-            onTabChange={onTabChange}
-          />
-        )}
-
-        {/* Horizontal Milestone Roadmap */}
-        {isAuthenticated && user && (
-          <HorizontalMilestoneRoadmap 
-            user={user}
-            onMilestoneSelect={(milestone) => {
-              // Navigate to journey tab and focus on milestone
-              onTabChange('explore');
-            }}
-            onTabChange={onTabChange}
-          />
-        )}
-
-        <div className="grid grid-cols-2 gap-2 max-w-xs w-full mb-3">
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                onShowAuth();
-                return;
-              }
-              // TODO: Start quick session
-            }}
-            className="bg-gradient-to-br from-teal-500/20 to-cyan-500/20 backdrop-blur-xl rounded-lg p-2 border border-teal-500/30 hover:border-teal-500/40 hover:scale-105 transition-all text-center"
-          >
-            <div className="w-6 h-6 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center mx-auto mb-1">
-              <Zap size={12} className="text-teal-400" />
+      <PageShell
+        body={
+          <div className="relative z-10 h-full flex flex-col">
+            {/* Chat Header */}
+            <div className="flex-shrink-0 bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl border-b border-white/10 px-4 py-3">
+              <div className="flex items-center space-x-3">
+                <div 
+                  className="w-10 h-10 rounded-full bg-gradient-to-br border-2 flex items-center justify-center"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${getEgoColor(activeEgoState).accent}60, ${getEgoColor(activeEgoState).accent}40)`,
+                    borderColor: getEgoColor(activeEgoState).accent + '80'
+                  }}
+                >
+                  <span className="text-lg">{currentEgoState.icon}</span>
+                </div>
+                <div>
+                  <h2 className="text-white font-semibold text-lg">Chat with {currentEgoState.name}</h2>
+                  <p className="text-white/70 text-sm">{currentEgoState.description}</p>
+                </div>
+              </div>
             </div>
-            <h3 className="text-white font-semibold text-xs mb-0.5">Quick Session</h3>
-            <p className="text-white/70 text-xs">5-10 minute transformation</p>
-          </button>
 
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                onShowAuth();
-                return;
-              }
-              onTabChange('explore');
-            }}
-            className="bg-gradient-to-br from-purple-500/20 to-indigo-500/20 backdrop-blur-xl rounded-lg p-2 border border-purple-500/30 hover:border-purple-500/40 hover:scale-105 transition-all text-center"
-          >
-            <div className="w-6 h-6 rounded-full bg-purple-500/20 border border-purple-500/40 flex items-center justify-center mx-auto mb-1">
-              <Target size={12} className="text-purple-400" />
+            {/* Messages Area */}
+            <div className="flex-1 min-h-0">
+              {messages.length === 0 ? (
+                /* Welcome State */
+                <div className="h-full flex items-center justify-center p-4">
+                  <div className="text-center max-w-sm">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
+                      <Brain size={32} className="text-purple-400" />
+                    </div>
+                    <h3 className="text-white text-xl font-light mb-2">Connect with {currentEgoState.name}</h3>
+                    <p className="text-white/70 text-sm mb-6">Share what's on your mind and let Libero guide you through transformation</p>
+                    
+                    {/* Horizontal Milestone Roadmap */}
+                    <HorizontalMilestoneRoadmap 
+                      user={user}
+                      onMilestoneSelect={(milestone) => {
+                        console.log('Milestone selected:', milestone);
+                      }}
+                      onTabChange={(tabId) => {
+                        console.log('Tab change:', tabId);
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <ChatMessages 
+                  messages={messages}
+                  onCopyMessage={handleCopyMessage}
+                  activeEgoState={activeEgoState}
+                  isSpeaking={isSpeaking}
+                />
+              )}
             </div>
-            <h3 className="text-white font-semibold text-xs mb-0.5">Deep Journey</h3>
-            <p className="text-white/70 text-xs">15-30 minute protocols</p>
-          </button>
 
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                onShowAuth();
-                return;
-              }
-              onTabChange('create');
-            }}
-            className="bg-gradient-to-br from-orange-500/20 to-amber-500/20 backdrop-blur-xl rounded-lg p-2 border border-orange-500/30 hover:border-orange-500/40 hover:scale-105 transition-all text-center"
-          >
-            <div className="w-6 h-6 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center mx-auto mb-1">
-              <Sparkles size={12} className="text-orange-400" />
-            </div>
-            <h3 className="text-white font-semibold text-xs mb-0.5">Custom</h3>
-            <p className="text-white/70 text-xs">Create your own protocol</p>
-          </button>
+            {/* Chat Suggestions */}
+            {messages.length === 0 && (
+              <ChatSuggestions 
+                onSuggestionSelect={handleSuggestionSelect}
+                egoState={activeEgoState}
+              />
+            )}
 
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                onShowAuth();
-                return;
-              }
-              onTabChange('chat');
-            }}
-            className="bg-gradient-to-br from-rose-500/20 to-pink-500/20 backdrop-blur-xl rounded-lg p-2 border border-rose-500/30 hover:border-rose-500/40 hover:scale-105 transition-all text-center"
-          >
-            <div className="w-6 h-6 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center mx-auto mb-1">
-              <Heart size={12} className="text-rose-400" />
-            </div>
-            <h3 className="text-white font-semibold text-xs mb-0.5">Chat</h3>
-            <p className="text-white/70 text-xs">Talk with Libero</p>
-          </button>
-        </div>
-
-        {/* Current State Display */}
-        <div className="text-center">
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                onShowAuth();
-                return;
-              }
-              // Open ego states modal
-              useAppStore.getState().openModal('egoStates');
-            }}
-            className="flex items-center space-x-2 bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-lg p-2 border border-white/20 hover:border-white/30 hover:scale-105 transition-all"
-          >
-            <div className="text-lg">{currentState.icon}</div>
-            <div className="text-left">
-              <div className="text-white font-semibold text-xs">{currentState.name}</div>
-              <div className="text-white/70 text-xs">{currentState.role}</div>
-            </div>
-            <ChevronRight size={12} className="text-white/40" />
-          </button>
-        </div>
-      </div>
+            {/* Chat Input */}
+            <ChatInput
+              inputText={inputText}
+              onInputChange={setInputText}
+              onSubmit={handleSubmit}
+              onClearChat={handleClearChat}
+              onStartRecording={startRecording}
+              onStopRecording={stopRecording}
+              onPlayRecording={playRecording}
+              onDeleteRecording={deleteRecording}
+              onSendRecording={sendRecording}
+              isLoading={isLoading}
+              isRecording={isRecording}
+              hasRecording={hasRecording}
+              isPlayingRecording={isPlayingRecording}
+              recordingDuration={recordingDuration}
+              hasMessages={messages.length > 0}
+            />
+          </div>
+        }
+      />
     </div>
   );
 }
