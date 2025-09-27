@@ -15,7 +15,7 @@ export default function PageShell({ header, body, footer, className = '' }: Page
       className={`flex flex-col ${className}`}
       style={{
         height: `calc(100vh - ${NAV_HEIGHT}px)`,
-        overflowY: 'auto', // Allow vertical scrolling for the entire page content area
+        overflow: 'visible', // Allow orb effects to show
         maxHeight: `calc(100vh - ${NAV_HEIGHT}px)`,
       }}
     >

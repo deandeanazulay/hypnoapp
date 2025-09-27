@@ -12,7 +12,8 @@
 html, body, #root {
   height: 100%;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* iOS Safari Safe Area Support */

@@ -161,7 +161,7 @@ export default function App() {
   return (
     <Router>
       <ErrorBoundary>
-        <div className="min-h-screen bg-black overflow-hidden">
+        <div className="min-h-screen bg-black">
           {/* Global HUD */}
           <GlobalHUD />
           
