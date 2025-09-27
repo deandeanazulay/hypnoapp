@@ -60,7 +60,7 @@ export default function HomeScreen({
           <Orb 
             onTap={handleOrbTap}
             egoState={currentState.id}
-            size={window.innerWidth < 768 ? 350 : 450}
+            size={window.innerWidth < 768 ? 400 : 550}
             variant="webgl"
             afterglow={false}
           />
