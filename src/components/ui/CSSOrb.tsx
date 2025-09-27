@@ -105,7 +105,7 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
           style={{
             width: `${coreSize}px`,
             height: `${coreSize}px`,
-           background: `radial-gradient(circle at 30% 30%, ${egoColor.accent}, ${egoColor.accent}aa, ${egoColor.accent}66)`,
+            background: 'transparent',
             boxShadow: afterglow 
               ? `0 0 ${orbSize * 0.3 * (evolutionLevel === 'master' ? 1.5 : 1)}px ${egoColor.accent}70, 0 0 ${orbSize * 0.6}px ${egoColor.accent}40, inset 0 0 ${orbSize * 0.1}px rgba(255,255,255,0.3)`
               : `0 0 ${orbSize * 0.2 * (evolutionLevel === 'master' ? 1.2 : 1)}px ${egoColor.accent}60, inset 0 0 ${orbSize * 0.05}px rgba(255,255,255,0.2)`,
