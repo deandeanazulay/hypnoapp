@@ -1,396 +1,219 @@
-import React, { useState, useEffect } from 'react';
-import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
-import { useAppStore, getEgoState } from '../../store';
-import { useGameState } from '../GameStateManager';
-import { useProtocolStore } from '../../state/protocolStore';
-import { track } from '../../services/analytics';
-import { Heart } from 'lucide-react';
-import { CheckCircle, Lock, Play, Star, Gift, Trophy, Zap, Target, Shield, Flame, Crown, ArrowRight, Heart, Sparkles, ChevronRight, Clock } from 'lucide-react';
-import Orb from '../Orb';
-import ActionsBar from '../ActionsBar';
-import SessionInitiationFlow from '../session/SessionInitiationFlow';
-import HorizontalMilestoneRoadmap from '../shared/HorizontalMilestoneRoadmap';
-import PageShell from '../layout/PageShell';
-import { TabId } from '../../types/Navigation';
+import { createClient } from 'npm:@supabase/supabase-js@2'
 
-interface HomeScreenProps {
-  onOrbTap: () => void;
-  onTabChange: (tabId: TabId) => void;
-  onShowAuth: () => void;
-  activeTab: string;
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 }
 
-// Horizontal Milestone Roadmap Component
-interface HorizontalMilestoneRoadmapProps {
-  user: any;
-  onMilestoneSelect: (milestone: any) => void;
-  onTabChange: (tabId: TabId) => void;
+interface RequestBody {
+  message: string
+  egoState: string
+  sessionContext?: any
+  userId?: string
 }
 
-function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: HorizontalMilestoneRoadmapProps) {
-  const milestones = [
-    {
-      id: 'first-session',
-      name: 'First Steps',
-      icon: Play,
-      unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
-      xpReward: 25,
-      tokenReward: 5,
-      difficulty: 'easy'
-    },
-    {
-      id: 'three-day-streak',
-      name: 'Momentum',
-      icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
-      completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
-      xpReward: 50,
-      tokenReward: 10,
-      difficulty: 'easy'
-    },
-    {
-      id: 'ego-explorer',
-      name: 'Guide Discovery',
-      icon: Star,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
-      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
-      xpReward: 75,
-      tokenReward: 15,
-      difficulty: 'medium'
-    },
-    {
-      id: 'week-warrior',
-      name: 'Week Warrior',
-      icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: (user?.session_streak || 0) >= 7,
-      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
-      xpReward: 100,
-      tokenReward: 25,
-      difficulty: 'hard'
-    },
-    {
-      id: 'level-master',
-      name: 'Level 5',
-      icon: Crown,
-      unlocked: user?.level >= 3,
-      completed: user?.level >= 5,
-      active: user?.level >= 3 && user?.level < 5,
-      xpReward: 200,
-      tokenReward: 50,
-      difficulty: 'hard'
-    }
-  ];
-
-  const handleMilestoneClick = (milestone: any) => {
-    if (!milestone.unlocked) return;
-    onTabChange('explore');
-    // Future: could pass milestone ID to focus on specific milestone
-  };
-
-  return (
-    <div className="w-full max-w-md mx-auto mb-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white/80 text-sm font-medium">Your Next Milestones</h3>
-        <button
-          onClick={() => onTabChange('explore')}
-          className="text-teal-400 hover:text-teal-300 text-xs font-medium transition-colors flex items-center space-x-1"
-        >
-          <span>View All</span>
-          <ArrowRight size={12} />
-        </button>
-      </div>
-
-      {/* Horizontal Roadmap */}
-      <div className="relative overflow-hidden">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
-        
-        {/* Scrollable container */}
-        <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 py-2">
-          {milestones.map((milestone, index) => {
-            const IconComponent = milestone.icon;
-            const isCompleted = milestone.completed;
-            const isActive = milestone.active;
-            const isUnlocked = milestone.unlocked;
-            
-            return (
-              <div key={milestone.id} className="flex items-center space-x-6 flex-shrink-0">
-                {/* Milestone Node */}
-                <button
-                  onClick={() => handleMilestoneClick(milestone)}
-                  disabled={!isUnlocked}
-                  className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 group ${
-                    isCompleted
-                      ? 'bg-green-500/30 border-green-400 shadow-lg shadow-green-400/50'
-                      : isActive  
-                      ? 'bg-orange-500/30 border-orange-400 animate-pulse shadow-lg shadow-orange-400/50'
-                      : isUnlocked
-                      ? 'bg-teal-500/20 border-teal-400 shadow-lg shadow-teal-400/40 hover:bg-teal-500/30'
-                      : 'bg-white/10 border-white/20 cursor-not-allowed opacity-60'
-                  }`}
-                >
-                  {/* Completion badge */}
-                  {isCompleted && (
-                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center animate-bounce-in border border-black">
-                      <CheckCircle size={12} className="text-black" />
-                    </div>
-                  )}
-                  
-                  {/* Active pulse ring */}
-                  {isActive && (
-                    <div className="absolute -inset-1 rounded-full border border-orange-400 animate-ping" />
-                  )}
-                  
-                  {/* Icon */}
-                  {isCompleted ? (
-                    <CheckCircle size={16} className="text-green-400" />
-                  ) : !isUnlocked ? (
-                    <Lock size={16} className="text-white/40" />
-                  ) : (
-                    <IconComponent size={16} className={`${
-                      isActive ? 'text-orange-400' : 'text-teal-400'
-                    }`} />
-                  )}
-                </button>
-
-                {/* Connection Line */}
-                {index < milestones.length - 1 && (
-                  <div className={`w-8 h-0.5 ${
-                    isCompleted && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-green-400 to-teal-400'
-                      : isCompleted
-                      ? 'bg-gradient-to-r from-green-400 to-white/20'
-                      : isUnlocked && milestones[index + 1].unlocked
-                      ? 'bg-gradient-to-r from-teal-400 to-orange-400 animate-pulse'
-                      : 'bg-white/20'
-                  } rounded-full`} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Milestone Labels - Below the roadmap */}
-      <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 mt-2">
-        {milestones.map((milestone, index) => (
-          <div key={milestone.id} className="flex-shrink-0 text-center" style={{ width: '72px' }}>
-            <div className={`text-xs font-medium ${
-              milestone.completed
-                ? 'text-green-400'
-                : milestone.active
-                ? 'text-orange-400'
-                : milestone.unlocked
-                ? 'text-teal-400'
-                : 'text-white/40'
-            }`}>
-              {milestone.name}
-            </div>
-            {milestone.unlocked && (
-              <div className="flex items-center justify-center space-x-1 text-xs mt-1">
-                {milestone.xpReward && (
-                  <span className="text-orange-400/80">+{milestone.xpReward}</span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+interface EgoState {
+  name: string
+  description: string
+  voice: string
 }
 
-export default function HomeScreen({ onOrbTap, onTabChange, onShowAuth, activeTab }: HomeScreenProps) {
-  const { isAuthenticated } = useAuth();
-  const { user } = useGameState();
-  const { activeEgoState, showToast } = useAppStore();
-  const { customActions } = useProtocolStore();
+const egoStates: Record<string, EgoState> = {
+  guardian: {
+    name: 'Guardian',
+    description: 'Protective, nurturing, creates safe spaces',
+    voice: 'calm, protective, reassuring'
+  },
+  rebel: {
+    name: 'Rebel',
+    description: 'Challenges limitations, breaks through barriers',
+    voice: 'bold, challenging, empowering'
+  },
+  mystic: {
+    name: 'Mystic', 
+    description: 'Spiritual, intuitive, connects to deeper wisdom',
+    voice: 'mystical, flowing, transcendent'
+  },
+  lover: {
+    name: 'Lover',
+    description: 'Compassionate, heart-centered, builds connection',
+    voice: 'warm, loving, heart-centered'
+  },
+  builder: {
+    name: 'Builder',
+    description: 'Creative, constructive, manifests reality',
+    voice: 'practical, encouraging, action-oriented'
+  }
+}
 
-  const [selectedAction, setSelectedAction] = useState<any>(null);
-  const [showSessionFlow, setShowSessionFlow] = useState(false);
-  const [sessionCount, setSessionCount] = useState(0);
-  const [isLoadingData, setIsLoadingData] = useState(true);
+function buildHypnosisPrompt(message: string, egoState: string, sessionContext: any): string {
+  const state = egoStates[egoState] || egoStates.guardian
+  
+  return `You are Libero, an AI hypnotist guide manifesting as the ${state.name} archetype.
 
-  const currentEgoState = getEgoState(activeEgoState);
+${state.name} Voice: ${state.voice}
+Description: ${state.description}
 
-  // Fetch real session data for accurate milestone tracking
-  useEffect(() => {
-    const fetchSessionData = async () => {
-      if (!isAuthenticated || !user?.id) {
-        setIsLoadingData(false);
-        return;
-      }
+User's message: "${message}"
 
-      try {
-        const { data, error } = await supabase
-          .from('sessions')
-          .select('id, ego_state, completed_at')
-          .eq('user_id', user.id);
+Respond as Libero in the ${state.name} state. Your response should:
+- Be 2-3 sentences maximum
+- Use hypnotic language patterns (embedded commands, presuppositions)
+- Match the ${state.name}'s energy and approach
+- Guide toward relaxation and positive transformation
+- End with a gentle suggestion or invitation
 
-        if (error) {
-          console.error('Error fetching session data:', error);
-          setSessionCount(0);
-        } else {
-          setSessionCount(data?.length || 0);
-          if (import.meta.env.DEV) {
-            console.log('Session data loaded:', { 
-              totalSessions: data?.length || 0,
-              userStreak: user?.session_streak || 0,
-              userLevel: user?.level || 1,
-              egoStateUsage: Object.keys(user?.ego_state_usage || {}).length
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching sessions:', error);
-        setSessionCount(0);
-      } finally {
-        setIsLoadingData(false);
-      }
-    };
+Current session context: ${JSON.stringify(sessionContext || {})}
 
-    fetchSessionData();
-  }, [isAuthenticated, user?.id, user?.session_streak]);
+Respond only as Libero, staying in character.`
+}
 
-  const handleOrbTap = () => {
-    if (!isAuthenticated) {
-      onShowAuth();
-      return;
-    }
+function getFallbackResponse(egoState: string, message: string): string {
+  const state = egoStates[egoState] || egoStates.guardian
+  
+  const fallbacks: Record<string, string[]> = {
+    guardian: [
+      "Feel yourself settling into this safe space... as you breathe deeply, allow your mind to find its natural rhythm of peace.",
+      "Let this moment become a sanctuary where you can release what no longer serves you... and embrace what nurtures your soul.",
+      "Notice how easily you can let go now... trusting in your own inner wisdom to guide you toward healing."
+    ],
+    rebel: [
+      "Break free from those limiting thoughts... and step boldly into the power that's always been yours.",
+      "Challenge the old patterns that held you back... as you discover the fierce strength within.",
+      "Shatter those barriers... and emerge transformed, knowing you can conquer anything you choose."
+    ],
+    mystic: [
+      "Connect with the infinite wisdom flowing through you... as ancient knowledge awakens in your consciousness.",
+      "Feel the mystical currents of transformation... weaving through every cell of your being with divine purpose.",
+      "Open to the sacred mysteries within... where your deepest truths reveal themselves in perfect timing."
+    ],
+    lover: [
+      "Feel love's gentle embrace surrounding you... as your heart opens to receive all the healing you deserve.",
+      "Let compassion flow through every breath... connecting you to the beautiful soul you truly are.",
+      "Embrace yourself with tender acceptance... as love transforms every part of your being."
+    ],
+    builder: [
+      "Construct new pathways of possibility... as your mind architects the reality you truly desire.",
+      "Build momentum with each conscious breath... creating the foundation for lasting transformation.",
+      "Manifest your highest vision... as each moment becomes a stepping stone toward your dreams."
+    ]
+  }
+  
+  const responses = fallbacks[egoState] || fallbacks.guardian
+  return responses[Math.floor(Math.random() * responses.length)]
+}
 
-    setShowSessionFlow(true);
-    track('orb_interaction', { 
-      state: 'tapped', 
-      authenticated: isAuthenticated,
-      egoState: activeEgoState 
-    });
-  };
-
-  const handleMilestoneSelect = (milestone: any) => {
-    onTabChange('explore');
-    track('milestone_selected', { 
-      milestoneId: milestone.id, 
-      source: 'home_roadmap' 
-    });
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
-        {/* Background Effects */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
-        </div>
-
-        {/* Horizontal Milestone Roadmap */}
-        {isAuthenticated && user && (
-          <HorizontalMilestoneRoadmap 
-            user={user}
-            onMilestoneSelect={(milestone) => {
-              // Navigate to journey tab and focus on milestone
-              onTabChange('explore');
-            }}
-            onTabChange={onTabChange}
-          />
-        )}
-
-        <PageShell
-          body={
-            <div className="h-full flex items-center justify-center p-4">
-              <div className="text-center max-w-sm">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6 border border-teal-500/30">
-                  <Heart size={32} className="text-teal-400" />
-                </div>
-                <h3 className="text-white text-xl font-light mb-4">Sign in to begin your transformation</h3>
-                <button
-                  onClick={onShowAuth}
-                  className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
-                >
-                  Sign In
-                </button>
-              </div>
-            </div>
-          }
-        />
-      </div>
-    );
+async function callOpenAI(prompt: string): Promise<string> {
+  const openaiKey = Deno.env.get('OPENAI_API_KEY')
+  
+  if (!openaiKey) {
+    throw new Error('OpenAI API key not configured')
   }
 
-  return (
-    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <PageShell
-        body={
-          <div className="relative z-10 h-full overflow-hidden">
-            {/* Main Content */}
-            <div 
-              id="scene" 
-              className="relative h-full flex flex-col items-center justify-center px-4"
-              style={{ 
-                paddingTop: '60px',
-                paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)'
-              }}
-            >
-              {/* Orb Section */}
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="mb-6">
-                    <Orb
-                      onTap={handleOrbTap}
-                      size={Math.min(window.innerWidth * 0.8, 400)}
-                      egoState={activeEgoState}
-                      variant="auto"
-                      className="mx-auto"
-                    />
-                  </div>
-                  
-                  {/* Orb Tagline */}
-                  <div className="max-w-xs mx-auto">
-                    <p className="text-white/90 text-lg font-light mb-2">
-                      Enter with Libero in <span className="text-teal-400 font-medium">{currentEgoState.name}</span>
-                    </p>
-                    <p className="text-white/60 text-sm">
-                      Tap to begin your transformation
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Section - Milestone Roadmap */}
-              <div className="flex-shrink-0 w-full max-w-lg mx-auto mb-4">
-                <HorizontalMilestoneRoadmap 
-                  user={user}
-                  onMilestoneSelect={handleMilestoneSelect}
-                  onTabChange={onTabChange}
-                />
-              </div>
-            </div>
-
-            {/* Session Initiation Flow */}
-            <SessionInitiationFlow
-              isOpen={showSessionFlow}
-              onClose={() => setShowSessionFlow(false)}
-              onSessionStart={() => {
-                track('session_started_from_home', { egoState: activeEgoState });
-              }}
-              egoState={activeEgoState}
-            />
-          </div>
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openaiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are Libero, a hypnotic AI guide. Respond with brief, hypnotic language that helps users relax and transform.'
+        },
+        {
+          role: 'user', 
+          content: prompt
         }
-      />
-    </div>
-  );
+      ],
+      max_tokens: 150,
+      temperature: 0.8,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`OpenAI API error: ${response.status}`)
+  }
+
+  const data = await response.json()
+  return data.choices[0]?.message?.content || 'Let yourself relax into this moment of peace...'
 }
+
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { 
+      status: 200, 
+      headers: corsHeaders 
+    })
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { 
+        status: 405, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  }
+
+  try {
+    const body: RequestBody = await req.json()
+    const { message, egoState = 'guardian', sessionContext, userId } = body
+
+    if (!message || typeof message !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Message is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Build the prompt for the AI
+    const prompt = buildHypnosisPrompt(message, egoState, sessionContext)
+    
+    let aiResponse: string
+
+    try {
+      // Try to call OpenAI
+      aiResponse = await callOpenAI(prompt)
+    } catch (error) {
+      console.warn('OpenAI unavailable, using fallback:', error.message)
+      // Use fallback response if OpenAI fails
+      aiResponse = getFallbackResponse(egoState, message)
+    }
+
+    // Return the response
+    return new Response(
+      JSON.stringify({ 
+        response: aiResponse,
+        egoState: egoState,
+        timestamp: new Date().toISOString()
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+
+  } catch (error) {
+    console.error('AI Hypnosis function error:', error)
+    
+    return new Response(
+      JSON.stringify({ 
+        error: 'Internal server error',
+        fallback: getFallbackResponse('guardian', 'help')
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  }
+})
