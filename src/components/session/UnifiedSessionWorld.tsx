@@ -345,6 +345,3 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   );
 }
 
-
-
-export default UnifiedSessionWorld
