@@ -368,7 +368,6 @@ export default function HomeScreen({ onOrbTap, onTabChange, onShowAuth, activeTa
               </div>
             </div>
 
-
             {/* Session Initiation Flow */}
             <SessionInitiationFlow
               isOpen={showSessionFlow}
