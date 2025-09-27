@@ -161,3 +161,5 @@ export default function HomeScreen({
             <div className="text-lg">{currentState.icon}</div>
             <div className="text-left">
               <div className="text-white font-semibold text-xs">{currentState.name}</div>
+  )
+}
