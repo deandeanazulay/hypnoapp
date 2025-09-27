@@ -366,6 +366,22 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     if (import.meta.env.DEV) {
       console.log('[ORB] Geometry initialized successfully');
     }
+  };
+
+  const animate = () => {
+    if (!isActiveRef.current || !rendererRef.current || !sceneRef.current || !cameraRef.current || contextLost) {
+      return;
+    }
+
+    const time = Date.now() * 0.001; // Time in seconds
+    const alienState = alienStateRef.current;
+
+    // Update alien state with smooth animation
+    alienState.pulse = Math.sin(time * 0.8) * 0.5 + Math.cos(time * 0.3) * 0.3;
+    alienState.intensity = 0.8 + 0.2 * Math.sin(time * 0.5);
+    alienState.colorShift = time * 0.1;
+    alienState.organicOffset = time * 0.2;
+    alienState.fractalPhase = time * 0.15;
 
     // Alien breathing - more dramatic and irregular
     const evolutionComplexity = evolutionLevel === 'basic' ? 1 : evolutionLevel === 'enhanced' ? 1.5 : evolutionLevel === 'advanced' ? 2 : 3;
