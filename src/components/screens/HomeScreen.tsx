@@ -278,30 +278,6 @@ export default function HomeScreen({ onOrbTap, onTabChange, onShowAuth, activeTa
           />
         )}
 
-        {/* Horizontal Milestone Roadmap */}
-        {isAuthenticated && user && (
-          <HorizontalMilestoneRoadmap 
-            user={user}
-            onMilestoneSelect={(milestone) => {
-              // Navigate to journey tab and focus on milestone
-              onTabChange('explore');
-            }}
-            onTabChange={onTabChange}
-          />
-        )}
-
-        {/* Horizontal Milestone Roadmap */}
-        {isAuthenticated && user && (
-          <HorizontalMilestoneRoadmap 
-            user={user}
-            onMilestoneSelect={(milestone) => {
-              // Navigate to journey tab and focus on milestone
-              onTabChange('explore');
-            }}
-            onTabChange={onTabChange}
-          />
-        )}
-
         <PageShell
           body={
             <div className="h-full flex items-center justify-center p-4">
