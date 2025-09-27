@@ -29,6 +29,7 @@ import FavoritesModal from './components/modals/FavoritesModal';
 import DocumentationHubModal from './components/modals/DocumentationHubModal';
 import PersonalLibraryModal from './components/modals/PersonalLibraryModal';
 import UnifiedSessionWorld from './components/session/UnifiedSessionWorld';
+import AIVoiceSystem from './components/AIVoiceSystem';
 
 // Session Components
 import { TabId } from './types/Navigation';
@@ -107,8 +108,34 @@ export default function App() {
         <ErrorBoundary>
           <div className="min-h-screen">
             <Routes>
-              <Route path="/payment-success" element={<div className="min-h-screen bg-black flex items-center justify-center text-white">Payment Successful!</div>} />
-              <Route path="/payment-cancelled" element={<div className="min-h-screen bg-black flex items-center justify-center text-white">Payment Cancelled</div>} />
+              <Route path="/payment-success" element={
+                <div className="h-full bg-black flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-white text-2xl font-light mb-4">Payment Successful!</div>
+                    <AIVoiceSystem 
+                      isActive={true}
+                      sessionType="integration"
+                      onStateChange={() => {}}
+                      sessionState={{ phase: 'completion', depth: 1, breathing: 'rest' }}
+                      sessionConfig={{ egoState: 'guardian' }}
+                    />
+                  </div>
+                </div>
+              } />
+              <Route path="/payment-cancelled" element={
+                <div className="h-full bg-black flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-white text-2xl font-light mb-4">Payment Cancelled</div>
+                    <AIVoiceSystem 
+                      isActive={true}
+                      sessionType="integration"
+                      onStateChange={() => {}}
+                      sessionState={{ phase: 'preparation', depth: 1, breathing: 'rest' }}
+                      sessionConfig={{ egoState: 'guardian' }}
+                    />
+                  </div>
+                </div>
+              } />
               <Route path="*" element={
                 <LandingPage 
                   onEnterApp={handleEnterApp}
@@ -141,8 +168,34 @@ export default function App() {
           {/* Main Content */}
           <div className="h-screen pt-16">
             <Routes>
-              <Route path="/payment-success" element={<div className="h-full bg-black flex items-center justify-center text-white">Payment Successful!</div>} />
-              <Route path="/payment-cancelled" element={<div className="h-full bg-black flex items-center justify-center text-white">Payment Cancelled</div>} />
+              <Route path="/payment-success" element={
+                <div className="h-full bg-black flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-white text-2xl font-light mb-4">Payment Successful!</div>
+                    <AIVoiceSystem 
+                      isActive={true}
+                      sessionType="integration"
+                      onStateChange={() => {}}
+                      sessionState={{ phase: 'completion', depth: 1, breathing: 'rest' }}
+                      sessionConfig={{ egoState: activeEgoState }}
+                    />
+                  </div>
+                </div>
+              } />
+              <Route path="/payment-cancelled" element={
+                <div className="h-full bg-black flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-white text-2xl font-light mb-4">Payment Cancelled</div>
+                    <AIVoiceSystem 
+                      isActive={true}
+                      sessionType="integration"
+                      onStateChange={() => {}}
+                      sessionState={{ phase: 'preparation', depth: 1, breathing: 'rest' }}
+                      sessionConfig={{ egoState: activeEgoState }}
+                    />
+                  </div>
+                </div>
+              } />
               <Route path="*" element={
                 <div className="h-full">
                   {/* Screen Content */}

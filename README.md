@@ -69,9 +69,9 @@ src/
 ## 📦 Removed Dependencies
 
 - `@react-three/drei` (364KB)
-- `@react-three/fiber` (124KB) 
-- `three` (1.2MB)
-- `@types/three` (dev dependency)
+- `@react-three/fiber` (124KB)
+
+**Note**: `three.js` is still used by the WebGL Orb component for advanced 3D rendering when WebGL is supported. The CSS Orb provides a lightweight fallback for devices without WebGL support.
 
 ## 🎨 Design System
 
