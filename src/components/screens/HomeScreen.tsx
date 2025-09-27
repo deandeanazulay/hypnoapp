@@ -149,9 +149,6 @@ function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPrevie
 
       {/* Horizontal Roadmap */}
       <div className="relative overflow-hidden mb-4">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black via-black/95 to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black via-black/95 to-transparent z-10 pointer-events-none" />
         
         {/* Scrollable milestone path */}
         <div className="flex items-center space-x-8 overflow-x-auto scrollbar-hide px-8 py-4">
