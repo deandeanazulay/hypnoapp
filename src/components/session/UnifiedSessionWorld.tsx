@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import { X, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react';
 import { useSessionStore } from '../../store/sessionStore';
 import { useAppStore } from '../../store';
 import Orb from '../Orb';
-import SessionIndicators from './SessionIndicators';
-import SessionProgress from './SessionProgress';
-import SessionControls from './SessionControls';
 
 interface UnifiedSessionWorldProps {
   isOpen: boolean;
@@ -118,6 +115,30 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
     return null;
   }
 
+  const getPhaseColor = () => {
+    switch (phase.toLowerCase()) {
+      case 'preparation': return 'text-blue-400 bg-blue-500/20 border-blue-500/40';
+      case 'induction': return 'text-teal-400 bg-teal-500/20 border-teal-500/40';
+      case 'deepening': return 'text-purple-400 bg-purple-500/20 border-purple-500/40';
+      case 'exploration': return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/40';
+      case 'transformation': return 'text-orange-400 bg-orange-500/20 border-orange-500/40';
+      case 'integration': return 'text-green-400 bg-green-500/20 border-green-500/40';
+      case 'completion': return 'text-white bg-white/20 border-white/40';
+      case 'paused': return 'text-gray-400 bg-gray-500/20 border-gray-500/40';
+      default: return 'text-white/60 bg-white/10 border-white/20';
+    }
+  };
+
+  const getBreathingColor = () => {
+    switch (breathing) {
+      case 'inhale': return 'text-blue-400 bg-blue-500/20 border-blue-400';
+      case 'hold-inhale': return 'text-teal-400 bg-teal-500/20 border-teal-400';
+      case 'exhale': return 'text-green-400 bg-green-500/20 border-green-400';
+      case 'hold-exhale': return 'text-purple-400 bg-purple-500/20 border-purple-400';
+      default: return 'text-white/60 bg-white/10 border-white/20';
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black">
       {/* Session Header */}
@@ -153,12 +174,76 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
           <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl animate-pulse" />
         </div>
 
-        {/* Session Indicators */}
-        <SessionIndicators 
-          depth={depth}
-          breathing={breathing}
-          phase={phase}
-        />
+        {/* Top Indicators - Only Phase and Depth */}
+        <div className="absolute top-20 left-4 right-4 z-30">
+          <div className="flex items-center justify-center space-x-8">
+            {/* Depth Indicator */}
+            <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20">
+              <div className="text-white/80 text-xs font-medium mb-2 text-center">DEPTH</div>
+              <div className="flex items-center space-x-1">
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <div
+                    key={level}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      level <= depth ? 'bg-blue-400 animate-pulse' : 'bg-white/20'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Phase Indicator */}
+            <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20">
+              <div className="text-white/80 text-xs font-medium mb-2 text-center">PHASE</div>
+              <div className={`px-3 py-1 rounded-full border transition-all ${getPhaseColor()}`}>
+                <span className="text-sm font-medium capitalize">{phase}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Session Controls Sidebar */}
+        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30 space-y-3">
+          {/* Play/Pause */}
+          <button
+            onClick={handlePlayPause}
+            className={`w-14 h-14 rounded-full backdrop-blur-xl border transition-all hover:scale-110 flex items-center justify-center ${
+              sessionState.playState === 'playing' 
+                ? 'bg-orange-500/20 border-orange-500/40 text-orange-400' 
+                : 'bg-green-500/20 border-green-500/40 text-green-400'
+            }`}
+          >
+            {sessionState.playState === 'playing' ? <Pause size={24} /> : <Play size={24} className="ml-1" />}
+          </button>
+
+          {/* Skip Back */}
+          <button
+            onClick={prevSegment}
+            className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all"
+          >
+            <SkipBack size={18} className="text-white/80" />
+          </button>
+
+          {/* Skip Forward */}
+          <button
+            onClick={nextSegment}
+            className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all"
+          >
+            <SkipForward size={18} className="text-white/80" />
+          </button>
+
+          {/* Volume Control */}
+          <button
+            onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+            className={`w-12 h-12 rounded-full backdrop-blur-xl border transition-all hover:scale-110 flex items-center justify-center ${
+              isVoiceEnabled 
+                ? 'bg-green-500/20 border-green-500/40 text-green-400' 
+                : 'bg-red-500/20 border-red-500/40 text-red-400'
+            }`}
+          >
+            {isVoiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          </button>
+        </div>
 
         {/* Central Orb */}
         <div className="absolute inset-0 flex items-center justify-center">
@@ -170,21 +255,15 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
           />
         </div>
 
-        {/* Premium Breathing Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30">
-          <div className="bg-black/95 backdrop-blur-xl rounded-2xl px-8 py-6 border border-white/10 shadow-2xl shadow-purple-500/20">
-            <div className="text-center">
+        {/* Premium Breathing Indicator - Bottom Row */}
+        <div className="absolute bottom-8 left-0 right-0 z-30 px-4">
+          <div className="w-full bg-black/95 backdrop-blur-xl rounded-2xl px-8 py-6 border border-white/10 shadow-2xl shadow-purple-500/20">
+            <div className="flex items-center justify-between">
               {/* Breathing State */}
-              <div className="mb-4">
-                <div className="text-white/60 text-xs font-medium tracking-wider uppercase mb-2">Breathing Guide</div>
-                <div className={`inline-flex items-center justify-center w-32 h-12 rounded-xl border-2 transition-all duration-1000 ${
-                  breathing === 'inhale' ? 'bg-blue-500/20 border-blue-400 text-blue-400 scale-110' :
-                  breathing === 'hold-inhale' ? 'bg-teal-500/20 border-teal-400 text-teal-400 scale-105' :
-                  breathing === 'exhale' ? 'bg-green-500/20 border-green-400 text-green-400 scale-110' :
-                  breathing === 'hold-exhale' ? 'bg-purple-500/20 border-purple-400 text-purple-400 scale-105' :
-                  'bg-white/10 border-white/20 text-white/60'
-                }`}>
-                  <span className="text-lg font-bold capitalize">
+              <div className="flex items-center space-x-4">
+                <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Breathing</div>
+                <div className={`inline-flex items-center justify-center w-24 h-10 rounded-xl border-2 transition-all duration-1000 ${getBreathingColor()}`}>
+                  <span className="text-sm font-bold capitalize">
                     {breathing === 'hold-inhale' ? 'Hold' : 
                      breathing === 'hold-exhale' ? 'Hold' :
                      breathing}
@@ -193,11 +272,11 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
               </div>
 
               {/* Breathing Timer */}
-              <div className="mb-4">
-                <div className="text-white/60 text-xs font-medium tracking-wider uppercase mb-2">Cycle Timer</div>
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-400/20 border border-teal-400/40 flex items-center justify-center">
-                    <span className="text-teal-400 text-xl font-bold">
+              <div className="flex items-center space-x-3">
+                <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Cycle</div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-400/20 border border-teal-400/40 flex items-center justify-center">
+                    <span className="text-teal-400 text-lg font-bold">
                       {Math.floor((Date.now() / 2000) % 8) + 1}s
                     </span>
                   </div>
@@ -206,11 +285,11 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
               </div>
 
               {/* Breathing Pattern Visualization */}
-              <div className="mb-4">
-                <div className="text-white/60 text-xs font-medium tracking-wider uppercase mb-2">Pattern</div>
-                <div className="flex items-center justify-center space-x-1">
-                  {['Inhale', 'Hold', 'Exhale', 'Hold'].map((phase, index) => (
-                    <div key={phase} className="flex items-center">
+              <div className="flex items-center space-x-3">
+                <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Pattern</div>
+                <div className="flex items-center space-x-1">
+                  {['Inhale', 'Hold', 'Exhale', 'Hold'].map((breathPhase, index) => (
+                    <div key={breathPhase} className="flex items-center">
                       <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
                         (breathing === 'inhale' && index === 0) ||
                         (breathing === 'hold-inhale' && index === 1) ||
@@ -225,38 +304,22 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
                 </div>
               </div>
 
-              {/* Session Info */}
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="bg-black/20 rounded-lg p-2 border border-white/10">
+              {/* Session Stats */}
+              <div className="flex items-center space-x-4">
+                <div className="text-center">
                   <div className="text-white text-sm font-bold">{sessionState.currentSegmentIndex + 1}</div>
                   <div className="text-white/60 text-xs">Segment</div>
                 </div>
-                <div className="bg-black/20 rounded-lg p-2 border border-white/10">
+                <div className="text-center">
                   <div className="text-purple-400 text-sm font-bold">{depth}</div>
                   <div className="text-white/60 text-xs">Depth</div>
                 </div>
-                <div className="bg-black/20 rounded-lg p-2 border border-white/10">
+                <div className="text-center">
                   <div className="text-orange-400 text-sm font-bold">{sessionState.totalSegments}</div>
                   <div className="text-white/60 text-xs">Total</div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Current Segment Info */}
-        <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 z-30">
-          <div className="bg-black/80 backdrop-blur-xl rounded-xl px-6 py-3 border border-white/20 text-center">
-            <div className="text-white/90 text-sm font-medium">
-              {sessionState.currentSegmentId ? (
-                <span className="capitalize">{sessionState.currentSegmentId.replace(/[-_]/g, ' ')}</span>
-              ) : (
-                'Preparing session...'
-              )}
-            </div>
-            {sessionState.error && (
-              <div className="text-red-400 text-xs mt-1">{sessionState.error}</div>
-            )}
           </div>
         </div>
 
