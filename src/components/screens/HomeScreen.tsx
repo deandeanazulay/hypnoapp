@@ -589,7 +589,8 @@ export default function HomeScreen({
           </button>
         </div>
 
-
+        {/* Current ego-state chip */}
+      </div>
 
       {/* Session Selection Modal */}
       <SessionSelectionModal
