@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, Lock, Play, Star, Gift, Trophy, Zap, Target, Shield, Flame, Crown } from 'lucide-react';
+import { CheckCircle, Lock, Play, Star, Gift, Trophy, Zap, Target, Shield, Flame, Crown, ArrowRight } from 'lucide-react';
 import Orb from '../Orb';
 import { EGO_STATES, useAppStore } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
@@ -270,116 +270,6 @@ function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPrevie
       difficulty: 'hard'
     }
   ];
-        </div>
-      )}
-    </div>
-  );
-}
-
-// 1. Ego States Carousel Component - Perfectly centered
-interface EgoStatesCarouselProps {
-  activeEgoState: string;
-  onEgoStateChange: (egoStateId: string) => void;
-}
-
-function EgoStatesCarousel({ activeEgoState, onEgoStateChange }: EgoStatesCarouselProps) {
-  return (
-    <div className="relative w-full flex justify-center items-center">
-      {/* Gradient overlays for fade effect */}
-      <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
-      
-      {/* Perfectly centered scrolling container */}
-      <div className="flex items-center justify-center space-x-3 px-8 animate-scroll-x">
-        {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => {
-          const isSelected = activeEgoState === state.id;
-          const egoColor = getEgoColor(state.id);
-          return (
-            <div key={`${state.id}-${index}`} className="flex-shrink-0">
-              <button
-                onClick={() => onEgoStateChange(state.id)}
-                className={`w-12 h-12 rounded-full bg-gradient-to-br ${egoColor.bg} border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
-                  isSelected ? 'border-white/80 scale-115 opacity-100' : 'border-white/30 opacity-60 hover:opacity-80'
-                }`}
-                style={{
-                  boxShadow: isSelected ? `0 0 20px ${egoColor.accent}80` : `0 0 10px ${egoColor.accent}40`
-                }}
-              >
-                <span className="text-lg">{state.icon}</span>
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// Current Roadmap Preview Component
-interface CurrentRoadmapPreviewProps {
-  user: any;
-  onMilestoneSelect: (milestone: any) => void;
-}
-
-function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPreviewProps) {
-  // Define the same milestone structure as JourneyPath for consistency
-  const currentMilestones = [
-    {
-      id: 'first-session',
-      name: 'First Steps',
-      icon: Play,
-      unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
-      active: (user?.session_streak || 0) === 0,
-      xpReward: 25,
-      tokenReward: 5,
-      difficulty: 'easy'
-    },
-    {
-      id: 'three-day-streak',
-      name: 'Building Momentum',
-      icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
-      completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
-      xpReward: 50,
-      tokenReward: 10,
-      difficulty: 'easy'
-    },
-    {
-      id: 'ego-state-explorer',
-      name: 'Guide Discovery',
-      icon: Star,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
-      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
-      xpReward: 75,
-      tokenReward: 15,
-      difficulty: 'medium'
-    },
-    {
-      id: 'week-warrior',
-      name: 'Week Warrior',
-      icon: Trophy,
-      unlocked: (user?.session_streak || 0) >= 3,
-      completed: (user?.session_streak || 0) >= 7,
-      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
-      xpReward: 100,
-      tokenReward: 25,
-      difficulty: 'hard'
-    },
-    {
-      id: 'development-unlock',
-      name: 'Development',
-      icon: Flame,
-      unlocked: user?.level >= 5,
-      completed: user?.level >= 10,
-      active: user?.level >= 5 && user?.level < 10,
-      xpReward: 200,
-      tokenReward: 50,
-      difficulty: 'hard'
-    }
-  ];
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -479,6 +369,18 @@ function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPrevie
                     isCompleted
                       ? 'bg-green-500/30 border-green-500/50 text-green-300'
                       : isActive
+                      ? 'bg-orange-500/30 border-orange-500/50 text-orange-300'
+                      : isUnlocked
+                      ? 'bg-teal-500/20 border-teal-500/40 text-teal-300'
+                      : 'bg-white/10 border-white/20 text-white/40'
+                  }`}>
+                    {milestone.name}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
