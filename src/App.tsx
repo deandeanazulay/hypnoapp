@@ -1,9 +1,9 @@
 import React from 'react';
 import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, HelpCircle, BookOpen } from 'lucide-react';
-import { useGameState } from '../GameStateManager';
-import { useAppStore, getEgoState } from '../../store';
-import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
-import { getEgoColor } from '../../config/theme';
+import { useGameState } from './components/GameStateManager';
+import { useAppStore, getEgoState } from './store';
+import { useSimpleAuth as useAuth } from './hooks/useSimpleAuth';
+import { getEgoColor } from './config/theme';
 
 export default function GlobalHUD() {
   const { user } = useGameState();
