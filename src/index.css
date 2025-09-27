@@ -68,8 +68,7 @@ html, body, #root {
     font-family: var(--font-body);
     background: var(--midnight);
     color: var(--text-primary);
-    overflow-x: hidden;
-    overflow-y: hidden;
+    overflow: visible;
   }
 }
 

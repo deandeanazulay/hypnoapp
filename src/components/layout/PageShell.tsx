@@ -12,10 +12,9 @@ const NAV_HEIGHT = 72; // Bottom nav height
 export default function PageShell({ header, body, footer, className = '' }: PageShellProps) {
   return (
     <div 
-      className={`flex flex-col ${className}`}
+      className={`flex flex-col overflow-visible ${className}`}
       style={{
         height: `calc(100vh - ${NAV_HEIGHT}px)`,
-        overflow: 'visible', // Allow orb effects to show
         maxHeight: `calc(100vh - ${NAV_HEIGHT}px)`,
       }}
     >
@@ -25,7 +24,7 @@ export default function PageShell({ header, body, footer, className = '' }: Page
         </div>
       )}
       
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-visible">
         {body}
       </div>
       
