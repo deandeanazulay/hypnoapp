@@ -1,555 +1,396 @@
-import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import React, { useState, useEffect } from 'react';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
+import { useAppStore, getEgoState } from '../../store';
+import { useGameState } from '../GameStateManager';
+import { useProtocolStore } from '../../state/protocolStore';
+import { track } from '../../services/analytics';
+import { Heart } from 'lucide-react';
+import { CheckCircle, Lock, Play, Star, Gift, Trophy, Zap, Target, Shield, Flame, Crown, ArrowRight, Heart, Sparkles, ChevronRight, Clock } from 'lucide-react';
+import Orb from '../Orb';
+import ActionsBar from '../ActionsBar';
+import SessionInitiationFlow from '../session/SessionInitiationFlow';
+import HorizontalMilestoneRoadmap from '../shared/HorizontalMilestoneRoadmap';
+import PageShell from '../layout/PageShell';
+import { TabId } from '../../types/Navigation';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+interface HomeScreenProps {
+  onOrbTap: () => void;
+  onTabChange: (tabId: TabId) => void;
+  onShowAuth: () => void;
+  activeTab: string;
 }
 
-interface SessionContext {
-  egoState: string
-  phase: string
-  depth: number
-  breathing: string
-  userProfile: any
-  conversationHistory: Array<{role: 'user' | 'assistant', content: string}>
+// Horizontal Milestone Roadmap Component
+interface HorizontalMilestoneRoadmapProps {
+  user: any;
+  onMilestoneSelect: (milestone: any) => void;
+  onTabChange: (tabId: TabId) => void;
 }
 
-interface HypnosisRequest {
-  message: string
-  sessionContext: SessionContext
-  requestType: 'guidance' | 'response' | 'induction' | 'deepening' | 'script_generation'
-  scriptParams?: {
-    goalId: string
-    egoState: string
-    lengthSec: number
-    level: number
-    streak: number
-    locale: string
-    userPrefs: any
-  }
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    })
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({
-        error: 'Method not allowed',
-        code: 'METHOD_NOT_ALLOWED',
-        details: 'Only POST requests are supported'
-      }),
-      {
-        status: 405,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
-      }
-    );
-  }
-
-  try {
-    let requestData: HypnosisRequest;
-    try {
-      requestData = await req.json();
-    } catch (parseError) {
-      return new Response(
-        JSON.stringify({
-          error: 'Invalid JSON in request body',
-          code: 'INVALID_JSON',
-          details: parseError.message
-        }),
-        {
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        }
-      );
-    }
-
-    const { message, sessionContext, requestType, scriptParams } = requestData;
-
-    // Validate required fields
-    if (!message || !sessionContext || !requestType) {
-      return new Response(
-        JSON.stringify({
-          error: 'Missing required fields',
-          code: 'MISSING_FIELDS',
-          details: 'message, sessionContext, and requestType are required'
-        }),
-        {
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        }
-      );
-    }
-
-
-    // Get OpenAI API key from environment
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
-    if (!openaiApiKey) {
-      console.error('OPENAI_API_KEY environment variable not set')
-      
-      // For script generation, return proper JSON structure
-      if (requestType === 'script_generation') {
-        const mockScript = getMockScript(scriptParams)
-        return new Response(
-          JSON.stringify({
-            response: JSON.stringify(mockScript),
-            sessionUpdates: {},
-            error: 'API key not configured',
-            code: 'MISSING_API_KEY',
-            details: 'OPENAI_API_KEY environment variable not set',
-            suggestion: 'Configure OPENAI_API_KEY in Supabase Edge Functions settings',
-            timestamp: Date.now()
-          }),
-          {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              ...corsHeaders,
-            },
-          }
-        )
-      }
-      
-      const fallbackResponse = getFallbackResponse(requestType)
-      return new Response(
-        JSON.stringify({
-          response: fallbackResponse,
-          sessionUpdates: {},
-          error: 'API key not configured',
-          code: 'MISSING_API_KEY',
-          details: 'OPENAI_API_KEY environment variable not set',
-          suggestion: 'Configure OPENAI_API_KEY in Supabase Edge Functions settings',
-          timestamp: Date.now()
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        }
-      )
-    }
-
-
-    let messages: any[]
-    
-    // Handle script generation differently
-    if (requestType === 'script_generation' && scriptParams) {
-      // For script generation, try ChatGPT with hardened JSON rules, fallback to mock
-      try {
-        messages = [
-          {
-            role: 'system',
-            content: `You are a professional hypnotherapist creating a detailed script. Return ONLY a valid JSON object with this structure:
-
-{
-  "title": "Session Title",
-  "segments": [
+function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: HorizontalMilestoneRoadmapProps) {
+  const milestones = [
     {
-      "id": "segment_name", 
-      "text": "Complete hypnosis script text for this segment...",
-      "mood": "calming|deepening|transformative|energizing",
-      "voice": "female",
-      "sfx": "ambient|gentle|energy"
+      id: 'first-session',
+      name: 'First Steps',
+      icon: Play,
+      unlocked: true,
+      completed: (user?.session_streak || 0) > 0,
+      active: (user?.session_streak || 0) === 0,
+      xpReward: 25,
+      tokenReward: 5,
+      difficulty: 'easy'
+    },
+    {
+      id: 'three-day-streak',
+      name: 'Momentum',
+      icon: Zap,
+      unlocked: (user?.session_streak || 0) >= 1,
+      completed: (user?.session_streak || 0) >= 3,
+      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
+      xpReward: 50,
+      tokenReward: 10,
+      difficulty: 'easy'
+    },
+    {
+      id: 'ego-explorer',
+      name: 'Guide Discovery',
+      icon: Star,
+      unlocked: (user?.session_streak || 0) >= 3,
+      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
+      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
+      xpReward: 75,
+      tokenReward: 15,
+      difficulty: 'medium'
+    },
+    {
+      id: 'week-warrior',
+      name: 'Week Warrior',
+      icon: Trophy,
+      unlocked: (user?.session_streak || 0) >= 3,
+      completed: (user?.session_streak || 0) >= 7,
+      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
+      xpReward: 100,
+      tokenReward: 25,
+      difficulty: 'hard'
+    },
+    {
+      id: 'level-master',
+      name: 'Level 5',
+      icon: Crown,
+      unlocked: user?.level >= 3,
+      completed: user?.level >= 5,
+      active: user?.level >= 3 && user?.level < 5,
+      xpReward: 200,
+      tokenReward: 50,
+      difficulty: 'hard'
     }
-  ],
-  "metadata": {
-    "durationSec": ${scriptParams.lengthSec},
-    "style": "hypnosis"
-  }
+  ];
+
+  const handleMilestoneClick = (milestone: any) => {
+    if (!milestone.unlocked) return;
+    onTabChange('explore');
+    // Future: could pass milestone ID to focus on specific milestone
+  };
+
+  return (
+    <div className="w-full max-w-md mx-auto mb-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-white/80 text-sm font-medium">Your Next Milestones</h3>
+        <button
+          onClick={() => onTabChange('explore')}
+          className="text-teal-400 hover:text-teal-300 text-xs font-medium transition-colors flex items-center space-x-1"
+        >
+          <span>View All</span>
+          <ArrowRight size={12} />
+        </button>
+      </div>
+
+      {/* Horizontal Roadmap */}
+      <div className="relative overflow-hidden">
+        {/* Fade edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
+        
+        {/* Scrollable container */}
+        <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 py-2">
+          {milestones.map((milestone, index) => {
+            const IconComponent = milestone.icon;
+            const isCompleted = milestone.completed;
+            const isActive = milestone.active;
+            const isUnlocked = milestone.unlocked;
+            
+            return (
+              <div key={milestone.id} className="flex items-center space-x-6 flex-shrink-0">
+                {/* Milestone Node */}
+                <button
+                  onClick={() => handleMilestoneClick(milestone)}
+                  disabled={!isUnlocked}
+                  className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 group ${
+                    isCompleted
+                      ? 'bg-green-500/30 border-green-400 shadow-lg shadow-green-400/50'
+                      : isActive  
+                      ? 'bg-orange-500/30 border-orange-400 animate-pulse shadow-lg shadow-orange-400/50'
+                      : isUnlocked
+                      ? 'bg-teal-500/20 border-teal-400 shadow-lg shadow-teal-400/40 hover:bg-teal-500/30'
+                      : 'bg-white/10 border-white/20 cursor-not-allowed opacity-60'
+                  }`}
+                >
+                  {/* Completion badge */}
+                  {isCompleted && (
+                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center animate-bounce-in border border-black">
+                      <CheckCircle size={12} className="text-black" />
+                    </div>
+                  )}
+                  
+                  {/* Active pulse ring */}
+                  {isActive && (
+                    <div className="absolute -inset-1 rounded-full border border-orange-400 animate-ping" />
+                  )}
+                  
+                  {/* Icon */}
+                  {isCompleted ? (
+                    <CheckCircle size={16} className="text-green-400" />
+                  ) : !isUnlocked ? (
+                    <Lock size={16} className="text-white/40" />
+                  ) : (
+                    <IconComponent size={16} className={`${
+                      isActive ? 'text-orange-400' : 'text-teal-400'
+                    }`} />
+                  )}
+                </button>
+
+                {/* Connection Line */}
+                {index < milestones.length - 1 && (
+                  <div className={`w-8 h-0.5 ${
+                    isCompleted && milestones[index + 1].unlocked
+                      ? 'bg-gradient-to-r from-green-400 to-teal-400'
+                      : isCompleted
+                      ? 'bg-gradient-to-r from-green-400 to-white/20'
+                      : isUnlocked && milestones[index + 1].unlocked
+                      ? 'bg-gradient-to-r from-teal-400 to-orange-400 animate-pulse'
+                      : 'bg-white/20'
+                  } rounded-full`} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Milestone Labels - Below the roadmap */}
+      <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide px-4 mt-2">
+        {milestones.map((milestone, index) => (
+          <div key={milestone.id} className="flex-shrink-0 text-center" style={{ width: '72px' }}>
+            <div className={`text-xs font-medium ${
+              milestone.completed
+                ? 'text-green-400'
+                : milestone.active
+                ? 'text-orange-400'
+                : milestone.unlocked
+                ? 'text-teal-400'
+                : 'text-white/40'
+            }`}>
+              {milestone.name}
+            </div>
+            {milestone.unlocked && (
+              <div className="flex items-center justify-center space-x-1 text-xs mt-1">
+                {milestone.xpReward && (
+                  <span className="text-orange-400/80">+{milestone.xpReward}</span>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
-CRITICAL REQUIREMENTS:
-- Total script must be exactly ${scriptParams.lengthSec / 60} minutes (${scriptParams.targetWords || Math.floor(scriptParams.lengthSec * 2.5)} words total)
-- Create 6-8 segments with realistic timing
-- Each segment should be ${Math.floor((scriptParams.targetWords || Math.floor(scriptParams.lengthSec * 2.5)) / 7)} words on average
-- Use ${scriptParams.egoState} archetypal energy throughout
-- Focus on goal: ${scriptParams.goalName || scriptParams.goalId}
-${scriptParams.userPrefs?.customProtocol ? `
-- This is a CUSTOM PROTOCOL: "${scriptParams.userPrefs.customProtocol.name}"
-- Specific goals: ${scriptParams.userPrefs.customProtocol.goals?.join(', ') || 'transformation'}
-- Use ${scriptParams.userPrefs.customProtocol.induction || 'progressive'} induction method
-- Custom notes: ${scriptParams.userPrefs.customProtocol.deepener || 'standard approach'}` : ''}
+export default function HomeScreen({ onOrbTap, onTabChange, onShowAuth, activeTab }: HomeScreenProps) {
+  const { isAuthenticated } = useAuth();
+  const { user } = useGameState();
+  const { activeEgoState, showToast } = useAppStore();
+  const { customActions } = useProtocolStore();
 
-SEGMENT STRUCTURE:
-1. Welcome (8% of time) - Introduce the session and goal
-2. Induction (25% of time) - Guide into hypnotic state
-3. Deepening (20% of time) - Deepen the trance
-4. Core Work (30% of time) - Main transformation work on the goal
-5. Integration (12% of time) - Lock in the changes
-6. Emergence (5% of time) - Return to full awareness
+  const [selectedAction, setSelectedAction] = useState<any>(null);
+  const [showSessionFlow, setShowSessionFlow] = useState(false);
+  const [sessionCount, setSessionCount] = useState(0);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-Make each segment substantial and detailed. No short sentences - create full, rich hypnotic language that fills the time allocation.
+  const currentEgoState = getEgoState(activeEgoState);
 
-Return ONLY the JSON object above - no markdown, no explanations.`
-          },
-          {
-            role: 'user',
-            content: `Generate script for: ${scriptParams.goalId || scriptParams.goalName} using ${scriptParams.egoState} energy`
-          }
-        ];
+  // Fetch real session data for accurate milestone tracking
+  useEffect(() => {
+    const fetchSessionData = async () => {
+      if (!isAuthenticated || !user?.id) {
+        setIsLoadingData(false);
+        return;
+      }
 
-        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openaiApiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o',
-            messages: messages,
-            temperature: 0.3,
-            max_tokens: 2048,
-            response_format: { type: 'json_object' }
-          })
-        });
+      try {
+        const { data, error } = await supabase
+          .from('sessions')
+          .select('id, ego_state, completed_at')
+          .eq('user_id', user.id);
 
-        if (openaiResponse.ok) {
-          const openaiData = await openaiResponse.json();
-          const aiResponse = openaiData.choices?.[0]?.message?.content;
-          
-          if (aiResponse) {
-            // Try to parse as JSON - use defensive extraction
-            let scriptResponse: any;
-            try {
-              scriptResponse = JSON.parse(aiResponse);
-            } catch {
-              // Try extracting JSON from mixed content
-              const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-              if (jsonMatch) {
-                scriptResponse = JSON.parse(jsonMatch[0]);
-              } else {
-                throw new Error('No JSON found in response');
-              }
-            }
-            
-            // Validate basic structure
-            if (scriptResponse.segments && Array.isArray(scriptResponse.segments)) {
-              return new Response(
-                JSON.stringify({
-                  response: JSON.stringify(scriptResponse),
-                  sessionUpdates: {},
-                  timestamp: Date.now()
-                }),
-                {
-                  headers: {
-                    'Content-Type': 'application/json',
-                    ...corsHeaders,
-                  },
-                }
-              );
-            }
+        if (error) {
+          console.error('Error fetching session data:', error);
+          setSessionCount(0);
+        } else {
+          setSessionCount(data?.length || 0);
+          if (import.meta.env.DEV) {
+            console.log('Session data loaded:', { 
+              totalSessions: data?.length || 0,
+              userStreak: user?.session_streak || 0,
+              userLevel: user?.level || 1,
+              egoStateUsage: Object.keys(user?.ego_state_usage || {}).length
+            });
           }
         }
       } catch (error) {
-        console.warn('Script generation failed, using mock:', error);
+        console.error('Error fetching sessions:', error);
+        setSessionCount(0);
+      } finally {
+        setIsLoadingData(false);
       }
-      
-      // Fallback to mock script
-      const mockScript = getMockScript(scriptParams)
-      return new Response(
-        JSON.stringify({
-          response: JSON.stringify(mockScript),
-          sessionUpdates: {},
-          error: 'Script generation failed',
-          code: 'SCRIPT_GENERATION_FAILED',
-          details: 'Using mock script as fallback',
-          timestamp: Date.now()
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        }
-      )
-    } else {
-      // Build system prompt based on ego state and session context for regular conversations
-      const systemPrompt = buildHypnosisPrompt(sessionContext, requestType, message)
-      
-      // Prepare messages for OpenAI
-      messages = [
-        {
-          role: 'system',
-          content: systemPrompt
-        },
-        ...sessionContext.conversationHistory,
-        {
-          role: 'user',
-          content: message
-        }
-      ];
+    };
+
+    fetchSessionData();
+  }, [isAuthenticated, user?.id, user?.session_streak]);
+
+  const handleOrbTap = () => {
+    if (!isAuthenticated) {
+      onShowAuth();
+      return;
     }
 
+    setShowSessionFlow(true);
+    track('orb_interaction', { 
+      state: 'tapped', 
+      authenticated: isAuthenticated,
+      egoState: activeEgoState 
+    });
+  };
 
-    // Call OpenAI API
-    let response: Response
-    try {
-      response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiApiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: messages,
-          temperature: 0.7,
-          max_tokens: requestType === 'script_generation' ? 2048 : 1024
-        })
-      })
-    } catch (fetchError) {
-      console.error('Network error calling OpenAI API:', fetchError)
-      console.error('This likely means the Edge Function needs network permissions to access generativelanguage.googleapis.com')
-      
-      // For script generation, return proper JSON structure
-      if (requestType === 'script_generation') {
-        const mockScript = getMockScript(scriptParams)
-        return new Response(
-          JSON.stringify({
-            response: JSON.stringify(mockScript),
-            sessionUpdates: {},
-            error: 'Network error occurred',
-            code: 'NETWORK_ERROR',
-            details: fetchError.message,
-            suggestion: 'Check network connectivity and try again',
-            timestamp: Date.now()
-          }),
-          {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              ...corsHeaders,
-            },
+  const handleMilestoneSelect = (milestone: any) => {
+    onTabChange('explore');
+    track('milestone_selected', { 
+      milestoneId: milestone.id, 
+      source: 'home_roadmap' 
+    });
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
+        </div>
+
+        {/* Horizontal Milestone Roadmap */}
+        {isAuthenticated && user && (
+          <HorizontalMilestoneRoadmap 
+            user={user}
+            onMilestoneSelect={(milestone) => {
+              // Navigate to journey tab and focus on milestone
+              onTabChange('explore');
+            }}
+            onTabChange={onTabChange}
+          />
+        )}
+
+        <PageShell
+          body={
+            <div className="h-full flex items-center justify-center p-4">
+              <div className="text-center max-w-sm">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6 border border-teal-500/30">
+                  <Heart size={32} className="text-teal-400" />
+                </div>
+                <h3 className="text-white text-xl font-light mb-4">Sign in to begin your transformation</h3>
+                <button
+                  onClick={onShowAuth}
+                  className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
+                >
+                  Sign In
+                </button>
+              </div>
+            </div>
           }
-        )
-      }
-      
-      // Return a contextual fallback based on the session state
-      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
-      return new Response(
-        JSON.stringify({
-          response: contextualResponse,
-          sessionUpdates: {},
-          error: 'Network error occurred',
-          code: 'NETWORK_ERROR',
-          details: fetchError.message,
-          suggestion: 'Check network connectivity and try again',
-          timestamp: Date.now()
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        }
-      )
-    }
-
-    if (!response.ok) {
-      const errorData = await response.text()
-      console.error('OpenAI API error:', errorData)
-      
-      // For script generation, return proper JSON structure
-      if (requestType === 'script_generation') {
-        const mockScript = getMockScript(scriptParams)
-        return new Response(
-          JSON.stringify({
-            response: JSON.stringify(mockScript),
-            sessionUpdates: {},
-            error: 'OpenAI API error',
-            code: 'OPENAI_API_ERROR',
-            details: errorData,
-            suggestion: 'Check API key and quota limits',
-            timestamp: Date.now()
-          }),
-          {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              ...corsHeaders,
-            },
-          }
-        )
-      }
-      
-      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
-      return new Response(
-        JSON.stringify({
-          response: contextualResponse,
-          sessionUpdates: {},
-          error: 'OpenAI API error',
-          code: 'OPENAI_API_ERROR',
-          details: errorData,
-          suggestion: 'Check API key and quota limits',
-          timestamp: Date.now()
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        }
-      )
-    }
-
-    const data = await response.json()
-    const aiResponse = data.choices?.[0]?.message?.content
-
-    if (!aiResponse) {
-      console.error('No response content from ChatGPT')
-      
-      // For script generation, return proper JSON structure
-      if (requestType === 'script_generation') {
-        const mockScript = getMockScript(scriptParams)
-        return new Response(
-          JSON.stringify({
-            response: JSON.stringify(mockScript),
-            sessionUpdates: {},
-            error: 'No response from OpenAI',
-            code: 'NO_AI_RESPONSE',
-            details: 'OpenAI returned empty response',
-            suggestion: 'Try again or check API service status',
-            timestamp: Date.now()
-          }),
-          {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              ...corsHeaders,
-            },
-          }
-        )
-      }
-      
-      const contextualResponse = getContextualFallback(sessionContext, message, requestType)
-      return new Response(
-        JSON.stringify({
-          response: contextualResponse,
-          sessionUpdates: {},
-          error: 'No response from OpenAI',
-          code: 'NO_AI_RESPONSE',
-          details: 'OpenAI returned empty response',
-          suggestion: 'Try again or check API service status',
-          timestamp: Date.now()
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        }
-      )
-    }
-
-
-    // For script generation, ensure response is valid JSON
-    if (requestType === 'script_generation') {
-      let scriptResponse: any
-      try {
-        scriptResponse = JSON.parse(aiResponse)
-      } catch {
-        console.warn('AI returned non-JSON script, using mock')
-        scriptResponse = getMockScript(scriptParams)
-      }
-      
-      return new Response(
-        JSON.stringify({
-          response: JSON.stringify(scriptResponse),
-          sessionUpdates: {},
-          timestamp: Date.now()
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        }
-      )
-    }
-
-    // Parse any session updates from the AI response for regular conversations
-    const sessionUpdates = parseSessionUpdates(aiResponse, sessionContext)
-
-    return new Response(
-      JSON.stringify({
-        response: aiResponse,
-        sessionUpdates,
-        timestamp: Date.now()
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
-      }
-    )
-
-  } catch (error: any) {
-    console.error('AI Hypnosis error:', error)
-    
-    // For script generation, return proper JSON structure
-    if (requestType === 'script_generation') {
-      const mockScript = getMockScript(scriptParams)
-      return new Response(
-        JSON.stringify({
-          response: JSON.stringify(mockScript),
-          sessionUpdates: {},
-          error: 'Unexpected error occurred',
-          code: 'UNEXPECTED_ERROR',
-          details: error.message,
-          suggestion: 'Try again or contact support if issue persists',
-          timestamp: Date.now()
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        }
-      )
-    }
-    
-    // Fallback response for errors
-    const fallbackResponse = getFallbackResponse(requestType || 'guidance')
-    
-    return new Response(
-      JSON.stringify({
-        response: fallbackResponse,
-        sessionUpdates: {},
-        error: 'Unexpected error occurred',
-        code: 'UNEXPECTED_ERROR',
-        details: error.message,
-        suggestion: 'Try again or contact support if issue persists',
-        timestamp: Date.now()
-      }),
-      {
-        status: 200, // Don't fail the session, provide fallback
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
-      }
-    )
+        />
+      </div>
+    );
   }
-})
+
+  return (
+    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-full blur-3xl" />
+      </div>
+
+      <PageShell
+        body={
+          <div className="relative z-10 h-full overflow-hidden">
+            {/* Main Content */}
+            <div 
+              id="scene" 
+              className="relative h-full flex flex-col items-center justify-center px-4"
+              style={{ 
+                paddingTop: '60px',
+                paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)'
+              }}
+            >
+              {/* Orb Section */}
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="mb-6">
+                    <Orb
+                      onTap={handleOrbTap}
+                      size={Math.min(window.innerWidth * 0.8, 400)}
+                      egoState={activeEgoState}
+                      variant="auto"
+                      className="mx-auto"
+                    />
+                  </div>
+                  
+                  {/* Orb Tagline */}
+                  <div className="max-w-xs mx-auto">
+                    <p className="text-white/90 text-lg font-light mb-2">
+                      Enter with Libero in <span className="text-teal-400 font-medium">{currentEgoState.name}</span>
+                    </p>
+                    <p className="text-white/60 text-sm">
+                      Tap to begin your transformation
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Section - Milestone Roadmap */}
+              <div className="flex-shrink-0 w-full max-w-lg mx-auto mb-4">
+                <HorizontalMilestoneRoadmap 
+                  user={user}
+                  onMilestoneSelect={handleMilestoneSelect}
+                  onTabChange={onTabChange}
+                />
+              </div>
+            </div>
+
+            {/* Session Initiation Flow */}
+            <SessionInitiationFlow
+              isOpen={showSessionFlow}
+              onClose={() => setShowSessionFlow(false)}
+              onSessionStart={() => {
+                track('session_started_from_home', { egoState: activeEgoState });
+              }}
+              egoState={activeEgoState}
+            />
+          </div>
+        }
+      />
+    </div>
+  );
+}
