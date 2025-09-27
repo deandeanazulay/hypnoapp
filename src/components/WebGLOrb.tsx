@@ -570,14 +570,6 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       
       // Update glow layers too
       const userData = orbMeshRef.current.userData;
-      if (userData.glowMesh1) {
-        const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
-        glowMat.color = color;
-      }
-      if (userData.pulseMesh) {
-        const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
-        pulseMat.color = color;
-      }
       if (userData.glowMeshes) {
         userData.glowMeshes.forEach((glowMesh: any) => {
           const glowMat = glowMesh.material as THREE.MeshBasicMaterial;
