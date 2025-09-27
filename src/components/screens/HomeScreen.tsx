@@ -54,7 +54,6 @@ interface HorizontalMilestoneRoadmapProps {
             const isActive = milestone.active;
             const isUnlocked = milestone.unlocked;
             
-            return (
               <div key={milestone.id} className="flex items-center space-x-6 flex-shrink-0">
                 {/* Milestone Node */}
                 <button
