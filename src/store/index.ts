@@ -1,5 +1,5 @@
 import React from 'react';
-        documentationHub: false,
+import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, HelpCircle, BookOpen } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
@@ -24,8 +24,6 @@ export default function GlobalHUD() {
             >
               Sign In
             </button>
-            {/* <button 
-              onClick={() => openModal('chatgptChat')} // Removed as per prompt
               className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110" // Removed as per prompt
               title="Test ChatGPT API & Get Help"
             >
