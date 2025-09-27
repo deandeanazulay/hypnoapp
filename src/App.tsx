@@ -161,12 +161,12 @@ export default function App() {
   return (
     <Router>
       <ErrorBoundary>
-        <div className="min-h-screen bg-black">
+        <div className="min-h-screen bg-black overflow-visible">
           {/* Global HUD */}
           <GlobalHUD />
           
           {/* Main Content */}
-          <div className="h-screen pt-16">
+          <div className="h-screen pt-16 overflow-visible">
             <Routes>
               <Route path="/payment-success" element={
                 <div className="h-full bg-black flex items-center justify-center">
@@ -197,7 +197,7 @@ export default function App() {
                 </div>
               } />
               <Route path="*" element={
-                <div className="h-full">
+                <div className="h-full overflow-visible">
                   {/* Screen Content */}
                   {activeTab === 'home' && (
                     <HomeScreen

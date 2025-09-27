@@ -533,14 +533,14 @@ export default function HomeScreen({
   const orbSize = Math.round(Math.min(typeof window !== 'undefined' ? window.innerWidth : 360, 480) * 1);
 
   return (
-    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative" style={{ overflow: 'visible' }}>
+    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-visible">
       {/* Subtle BG */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
       </div>
 
       {/* NOTE: no justify-center on the whole page to avoid giant top/bottom gaps */}
-      <div className="relative z-10 min-h-0 h-auto flex flex-col items-center px-4 pt-2 pb-[calc(var(--total-nav-height,96px)+4px)]" style={{ overflow: 'visible', minHeight: '100vh' }}>
+      <div className="relative z-10 min-h-0 h-auto flex flex-col items-center px-4 pt-2 pb-[calc(var(--total-nav-height,96px)+4px)] overflow-visible" style={{ minHeight: '100vh' }}>
         {/* Tagline */}
         <div className="text-center mb-1">
           <h2 className="text-white text-[15px] font-light leading-tight">
@@ -550,14 +550,14 @@ export default function HomeScreen({
         </div>
 
         {/* Orb */}
-        <div className="relative" style={{ overflow: 'visible', zIndex: 10, minHeight: `${orbSize + 200}px`, padding: '50px' }}>
+        <div className="relative overflow-visible" style={{ zIndex: 10, minHeight: `${orbSize + 300}px`, padding: '100px 50px' }}>
           <Orb
             onTap={handleOrbTap}
             egoState={currentState.id}
             size={orbSize}
             variant="webgl"
             afterglow={false}
-            className="relative"
+            className="relative overflow-visible"
           />
         </div>
 
