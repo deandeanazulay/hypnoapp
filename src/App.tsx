@@ -1,426 +1,242 @@
-import React, { useState, useEffect, Suspense } from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import { GameStateProvider } from './components/GameStateManager';
-import ErrorBoundary from './components/ErrorBoundary';
-import { useAppStore } from './store';
-import { useSimpleAuth } from './hooks/useSimpleAuth';
-import { useViewportLayout } from './hooks/useViewportLayout';
+import React from 'react';
+import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, HelpCircle, BookOpen } from 'lucide-react';
+import { useGameState } from '../GameStateManager';
+import { useAppStore, getEgoState } from '../../store';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
+import { getEgoColor } from '../../config/theme';
 
-// Lazy-loaded Screens
-const HomeScreen = React.lazy(() => import('./components/screens/HomeScreen'));
-const ExploreScreen = React.lazy(() => import('./components/screens/ExploreScreen'));
-const CreateScreen = React.lazy(() => import('./components/screens/CreateScreen'));
-const ChatScreen = React.lazy(() => import('./components/screens/ChatScreen'));
-const ProfileScreen = React.lazy(() => import('./components/screens/ProfileScreen'));
-
-// Layout Components
-import NavigationTabs from './components/NavigationTabs';
-import GlobalHUD from './components/HUD/GlobalHUD';
-import ToastManager from './components/layout/ToastManager';
-
-// Modals
-import AuthModal from './components/auth/AuthModal';
-import EgoStatesModal from './components/modals/EgoStatesModal';
-import SettingsModal from './components/modals/SettingsModal';
-import PlanModal from './components/modals/PlanModal';
-import TokensModal from './components/modals/TokensModal';
-import FavoritesModal from './components/modals/FavoritesModal';
-import ChatGPTChatWidget from './components/ChatGPTChatWidget';
-
-// Session Components
-import UnifiedSessionWorld from './components/UnifiedSessionWorld';
-
-// Pickers
-import GoalPicker from './components/GoalPicker';
-import MethodPicker from './components/MethodPicker';
-import ModePicker from './components/ModePicker';
-
-// Landing Page
-import LandingPage from './components/LandingPage';
-
-import { QUICK_ACTIONS } from './utils/actions';
-import { useProtocolStore } from './state/protocolStore';
-
-// Loading fallback component for lazy-loaded screens
-function ScreenLoadingFallback() {
-  return (
-    <div className="h-full flex items-center justify-center bg-black">
-      <div className="text-center">
-        <div className="w-8 h-8 border-2 border-teal-400/30 border-t-teal-400 rounded-full animate-spin mx-auto mb-3"></div>
-        <p className="text-white/60 text-sm">Loading...</p>
-      </div>
-    </div>
-  );
-}
-
-export default function App() {
-  useViewportLayout();
+export default function GlobalHUD() {
+  const { user } = useGameState();
+  const { activeEgoState, openModal, openEgoModal, showToast } = useAppStore();
+  const { isAuthenticated } = useAuth();
   
-  const { 
-    activeTab, 
-    setActiveTab, 
-    modals, 
-    openModal, 
-    closeModal,
-    activeEgoState, 
-    setActiveEgoState,
-    showToast 
-  } = useAppStore();
-  
-  const { isAuthenticated, loading: authLoading } = useSimpleAuth();
-  const { customActions } = useProtocolStore();
-  
-  // UI States
-  const [showGoalPicker, setShowGoalPicker] = useState(false);
-  const [showMethodPicker, setShowMethodPicker] = useState(false);
-  const [showModePicker, setShowModePicker] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState<any>(null);
-  const [selectedMethod, setSelectedMethod] = useState<any>(null);
-  const [showSessionWorld, setShowSessionWorld] = useState(false);
-  const [sessionConfig, setSessionConfig] = useState<any>(null);
-  const [showLanding, setShowLanding] = useState(true);
-
-  // Update landing page visibility when auth state changes
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Auth effect triggered:', { authLoading, isAuthenticated });
-    }
-    if (!authLoading) {
-      if (import.meta.env.DEV) {
-        console.log('[APP] Setting showLanding to:', !isAuthenticated);
-      }
-      setShowLanding(!isAuthenticated);
-    }
-  }, [isAuthenticated, authLoading]);
-
-  // Show loading screen while auth is loading
-  if (authLoading) {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Auth loading state - showing spinner');
-    }
+  if (!isAuthenticated || !user) {
     return (
-      <div className="h-screen w-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-teal-400/20 border-t-teal-400 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white/60 text-sm">Loading Libero...</p>
+      <div 
+        data-hud
+        className="global-hud fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 px-4 py-2"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => openModal('auth')}
+              className="px-3 py-1 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all text-xs font-medium"
+            >
+              Sign In
+            </button>
+              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110" // Removed as per prompt
+              title="Test ChatGPT API & Get Help"
+            >
+              <MessageCircle size={16} className="text-purple-400" />
+            </button>
+          </div>
+          
+          <h1 className="text-white text-lg font-light">Libero</h1>
+          
+          <div className="flex items-center space-x-2">
+            {/* Helper Button */}
+            <button
+              onClick={() => openModal('documentationHub')}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+              title="Help & Documentation"
+            >
+              <HelpCircle size={16} className="text-white/80" />
+            </button>
+            {/* <button 
+              onClick={() => openModal('chatgptChat')} // Removed as per prompt
+              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110" // Removed as per prompt
+              title="Test ChatGPT API" // Removed as per prompt
+            > */}
+            
+            <button 
+              onClick={() => openModal('settings')}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+            >
+              <Settings size={16} className="text-white/80" />
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Show landing page first
-  if (showLanding) {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Showing landing page');
-    }
-    return (
-      <div style={{ height: '100vh', overflow: 'hidden' }}>
-        <LandingPage
-          onEnterApp={handleEnterApp}
-          onShowAuth={handleShowAuth}
-        />
-      </div>
-    );
-  }
+  // Calculate XP progress
+  const xpProgress = (user.experience % 100) / 100;
+  const sessionsLeft = user.plan === 'free' ? Math.max(0, 1 - user.daily_sessions_used) : '∞';
+  const egoState = getEgoState(activeEgoState);
+  const egoColor = getEgoColor(activeEgoState);
 
-  if (import.meta.env.DEV) {
-    console.log('[APP] Showing main app');
-  }
-
-  // Render current tab content
-  const renderCurrentTab = () => {
-    return (
-      <Suspense fallback={<ScreenLoadingFallback />}>
-        {(() => {
-          switch (activeTab) {
-            case 'home':
-              return (
-                <HomeScreen
-                  onOrbTap={handleOrbTap}
-                  onTabChange={setActiveTab}
-                  selectedEgoState={activeEgoState}
-                  onEgoStateChange={setActiveEgoState}
-                  activeTab={activeTab}
-                  onShowAuth={handleShowAuth}
-                />
-              );
-            case 'explore':
-              return <ExploreScreen onProtocolSelect={handleProtocolSelect} />;
-            case 'create':
-              return <CreateScreen onProtocolCreate={handleProtocolCreate} onShowAuth={handleShowAuth} />;
-            case 'chat':
-              return <ChatScreen />;
-            case 'profile':
-              return (
-                <ProfileScreen
-                  selectedEgoState={activeEgoState}
-                  onEgoStateChange={setActiveEgoState}
-                />
-              );
-            default:
-              return null;
-          }
-        })()}
-      </Suspense>
-    );
+  const handleEgoStateClick = () => {
+    openEgoModal();
   };
 
-  // Event Handlers
-  function handleEnterApp() {
-    if (import.meta.env.DEV) {
-      console.log('[APP] handleEnterApp called');
-    }
-    setShowLanding(false);
-  }
+  const handlePlanClick = () => {
+    openModal('plan');
+  };
 
-  function handleShowAuth() {
-    if (import.meta.env.DEV) {
-      console.log('[APP] handleShowAuth called');
-    }
-    openModal('auth');
-  }
+  const handleTokensClick = () => {
+    openModal('tokens');
+  };
 
-  function handleOrbTap() {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Orb tapped, opening goal picker');
-    }
-    setShowGoalPicker(true);
-  }
+  const handleLevelClick = () => {
+    const nextLevelXp = (user.level * 100) - user.experience;
+    showToast({
+      type: 'info',
+      message: `Level ${user.level}! ${nextLevelXp} XP needed for next level.`
+    });
+  };
 
-  function handleGoalSelect(goal: any) {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Goal selected:', goal);
-    }
-    setSelectedGoal(goal);
-    setShowGoalPicker(false);
-    setShowMethodPicker(true);
-  }
-
-  function handleMethodSelect(method: any) {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Method selected:', method);
-    }
-    setSelectedMethod(method);
-    setShowMethodPicker(false);
-    setShowModePicker(true);
-  }
-
-  function handleModeSelect({ mode, duration }: any) {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Mode selected:', { mode, duration });
-    }
-    
-    const config = {
-      egoState: activeEgoState,
-      action: { id: 'custom', name: 'Personal Transformation' }, // Default action since we removed action bar
-      goal: selectedGoal,
-      method: selectedMethod,
-      mode,
-      duration: parseInt(duration),
-      type: 'unified' as const
-    };
-    
-    setSessionConfig(config);
-    setShowModePicker(false);
-    setShowSessionWorld(true);
-  }
-
-  function handleProtocolSelect(protocol: any) {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Protocol selected:', protocol);
-    }
-    
-    if (!isAuthenticated) {
-      if (import.meta.env.DEV) {
-        console.log('[APP] Not authenticated, showing auth modal');
-      }
-      openModal('auth');
+  const handleStreakClick = () => {
+    if (user.session_streak > 0) {
       showToast({
-        type: 'warning',
-        message: 'Please sign in to start a session'
+        type: 'success',
+        message: `Amazing! ${user.session_streak} day streak. Keep the momentum going!`
       });
-      return;
-    }
-    
-    const config = {
-      egoState: activeEgoState,
-      protocol,
-      type: 'protocol' as const,
-      duration: protocol.duration
-    };
-    
-    setSessionConfig(config);
-    setShowSessionWorld(true);
-  }
-
-  function handleProtocolCreate(protocol: any) {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Protocol created:', protocol);
-    }
-    
-    if (!isAuthenticated) {
-      if (import.meta.env.DEV) {
-        console.log('[APP] Not authenticated, showing auth modal');
-      }
-      openModal('auth');
+    } else {
       showToast({
-        type: 'warning',
-        message: 'Please sign in to create and use protocols'
+        type: 'info',
+        message: 'Start a session today to begin your transformation streak!'
       });
-      return;
     }
-    
-    const config = {
-      egoState: activeEgoState,
-      customProtocol: protocol,
-      type: 'protocol' as const,
-      duration: protocol.duration
-    };
-    
-    setSessionConfig(config);
-    setShowSessionWorld(true);
-  }
+  };
 
-  function handleFavoriteSelect(session: any) {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Favorite selected:', session);
-    }
-    
-    if (!isAuthenticated) {
-      if (import.meta.env.DEV) {
-        console.log('[APP] Not authenticated, showing auth modal');
-      }
-      openModal('auth');
+  const handleAwardsClick = () => {
+    if (user.achievements.length > 0) {
       showToast({
-        type: 'warning',
-        message: 'Please sign in to access your favorites'
+        type: 'success',
+        message: `You've earned ${user.achievements.length} achievements! View them in your profile.`
       });
-      return;
+    } else {
+      showToast({
+        type: 'info',
+        message: 'Complete sessions to unlock achievements and badges!'
+      });
     }
-    
-    const config = {
-      egoState: session.egoState,
-      session,
-      type: 'favorite' as const,
-      duration: session.duration
-    };
-    
-    setSessionConfig(config);
-    setShowSessionWorld(true);
-  }
-
-  function handleSessionComplete() {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Session completed');
-    }
-    setShowSessionWorld(false);
-    setSelectedGoal(null);
-    setSelectedMethod(null);
-    setSessionConfig(null);
-    setActiveTab('home');
-  }
-
-  function handleSessionCancel() {
-    if (import.meta.env.DEV) {
-      console.log('[APP] Session cancelled');
-    }
-    setShowSessionWorld(false);
-    setSelectedGoal(null);
-    setSelectedMethod(null);
-    setSessionConfig(null);
-  }
-
-  // Show session world if active
-  if (showSessionWorld && sessionConfig) {
-    return (
-      <GameStateProvider>
-        <UnifiedSessionWorld
-          onComplete={handleSessionComplete}
-          onCancel={handleSessionCancel}
-          sessionConfig={sessionConfig}
-        />
-      </GameStateProvider>
-    );
-  }
-
+  };
   return (
-    <BrowserRouter>
-      <ErrorBoundary>
-        <GameStateProvider>
-          <div className="h-screen w-screen bg-black flex flex-col overflow-hidden relative">
-            {/* Global Header HUD */}
-            <GlobalHUD />
-            
-            {/* Main Body Content - Flex grow */}
-            <div className="flex-1 min-h-0 flex flex-col relative z-10 app-content" style={{ paddingTop: '40px' }}>
-              {/* Current Tab Content */}
-              <div className="relative z-10 h-full">
-                {renderCurrentTab()}
-              </div>
-            </div>
-
-            {/* Bottom Navigation */}
-            <NavigationTabs 
-              activeTab={activeTab} 
-              onTabChange={setActiveTab} 
-            />
-
-            {/* Pickers */}
-            {showGoalPicker && (
-              <GoalPicker
-                onSelect={handleGoalSelect}
-                onClose={() => setShowGoalPicker(false)}
-                onNavigateToCreate={() => setActiveTab('create')}
-              />
-            )}
-
-            {showMethodPicker && selectedGoal && (
-              <MethodPicker
-                selectedGoal={selectedGoal}
-                onSelect={handleMethodSelect}
-                onClose={() => setShowMethodPicker(false)}
-              />
-            )}
-
-            {showModePicker && (
-              <ModePicker
-                onSelect={handleModeSelect}
-                onClose={() => setShowModePicker(false)}
-              />
-            )}
-
-            {/* Global Modals */}
-            <AuthModal 
-              isOpen={modals.auth} 
-              onClose={() => closeModal('auth')} 
-            />
-            
-            <EgoStatesModal />
-            
-            <SettingsModal 
-              isOpen={modals.settings} 
-              onClose={() => closeModal('settings')}
-              selectedEgoState={activeEgoState}
-              onEgoStateChange={setActiveEgoState}
-            />
-            
-            <PlanModal />
-            <TokensModal />
-            
-            <ChatGPTChatWidget 
-              isOpen={modals.chatgptChat}
-              onClose={() => closeModal('chatgptChat')}
-            />
-
-            <FavoritesModal 
-              onSessionSelect={handleFavoriteSelect}
-            />
-
-            {/* Toast Manager */}
-            <ToastManager />
+    <div 
+      data-hud
+      className="global-hud fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 px-2 py-2"
+    >
+      <div className="flex items-center justify-between text-xs sm:text-sm">
+        {/* Left: Ego State */}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleEgoStateClick}
+            className="w-8 h-8 rounded-full bg-gradient-to-br border-2 flex items-center justify-center"
+            style={{ 
+              background: `linear-gradient(135deg, ${egoColor.accent}60, ${egoColor.accent}40)`,
+              borderColor: egoColor.accent + '80'
+            }}
+          >
+            <span className="text-sm">{egoState.icon}</span>
+          </button>
+          <div className="hidden sm:block">
+            <button 
+              onClick={handleEgoStateClick}
+              className="text-white font-medium hover:text-white/80 transition-colors text-left"
+            >
+              {egoState.name}
+            </button>
+            <div className="text-white/60 text-xs">{egoState.role}</div>
           </div>
-        </GameStateProvider>
-      </ErrorBoundary>
-    </BrowserRouter>
+        </div>
+
+        {/* Center: Stats */}
+        <div className="flex items-center space-x-3 sm:space-x-6">
+          {/* Level */}
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={handleLevelClick}
+              className="w-5 h-5 rounded bg-teal-500/20 border border-teal-500/40 flex items-center justify-center hover:bg-teal-500/30 hover:scale-110 transition-all text-xxs"
+            >
+              <span className="text-teal-400 font-bold text-xs">L{user.level}</span>
+            </button>
+            <span className="text-white/60 hidden sm:inline">Level</span>
+          </div>
+
+          {/* XP Progress */}
+          <button 
+            onClick={handleLevelClick}
+            className="flex items-center space-x-2 hover:scale-105 transition-all"
+          > 
+            <span className="text-orange-400 font-medium">{user.experience % 100} XP</span>
+            <div className="w-16 h-2 bg-white/20 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-orange-400 to-amber-400 transition-all duration-300"
+                style={{ width: `${xpProgress * 100}%` }}
+              />
+            </div>
+          </button>
+
+          {/* Streak */}
+          <button 
+            onClick={handleStreakClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
+            <span className="text-yellow-400 font-medium">{user.session_streak}d</span>
+            <span className="text-white/60 hidden sm:inline">streak</span>
+          </button>
+
+          {/* Sessions */}
+          <div className="flex items-center space-x-1">
+            <span className="text-purple-400 font-medium">{user.daily_sessions_used}</span>
+            <span className="text-white/60 hidden sm:inline">Sessions</span>
+          </div>
+
+          {/* Awards */}
+          <button 
+            onClick={handleAwardsClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
+            <span className="text-blue-400 font-medium">{user.achievements.length}</span>
+            <span className="text-white/60 hidden sm:inline">Awards</span>
+          </button>
+        </div>
+
+        {/* Right: Tokens & Plan */}
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={handleTokensClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
+            <span className="text-yellow-400 font-medium">{user.tokens}</span>
+            <span className="text-white/60 hidden sm:inline">tokens</span>
+          </button>
+          
+          <button 
+            onClick={handlePlanClick}
+            className="flex items-center space-x-1 hover:scale-105 transition-all"
+          >
+            <span className="text-green-400 font-medium uppercase">{user.plan}</span>
+            <span className="text-white/60 hidden sm:inline">Plan</span>
+          </button>
+          
+          <div className="flex items-center space-x-1">
+            <span className="text-teal-400 font-medium">{sessionsLeft}</span>
+            <span className="text-white/60 hidden sm:inline">Left</span>
+          </div>
+        </div>
+        
+        {/* Right Controls */}
+        <div className="flex items-center space-x-2"> 
+          {/* Helper Button */}
+          <button
+            onClick={() => openModal('documentationHub')}
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+            title="Help & Documentation"
+          >
+            <HelpCircle size={16} className="text-white/80" />
+          </button>
+          
+          <button 
+            onClick={() => openModal('settings')}
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+          >
+            <Settings size={16} className="text-white/80" />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
