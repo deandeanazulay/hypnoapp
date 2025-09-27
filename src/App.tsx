@@ -1,237 +1,199 @@
-import React from 'react';
-import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, HelpCircle, BookOpen } from 'lucide-react';
-import { useGameState } from './components/GameStateManager';
-import { useAppStore, getEgoState } from './store';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useSimpleAuth as useAuth } from './hooks/useSimpleAuth';
-import { getEgoColor } from './config/theme';
+import { useAppStore } from './store';
+import { useViewportLayout } from './hooks/useViewportLayout';
 
-export default function GlobalHUD() {
-  const { user } = useGameState();
-  const { activeEgoState, openModal, openEgoModal, showToast } = useAppStore();
-  const { isAuthenticated } = useAuth();
-  
-  if (!isAuthenticated || !user) {
+// Components
+import ErrorBoundary from './components/ErrorBoundary';
+import GlobalHUD from './components/HUD/GlobalHUD';
+import NavigationTabs from './components/NavigationTabs';
+import ToastManager from './components/layout/ToastManager';
+import LandingPage from './components/LandingPage';
+
+// Screens
+import HomeScreen from './components/screens/HomeScreen';
+import ExploreScreen from './components/screens/ExploreScreen';
+import CreateScreen from './components/screens/CreateScreen';
+import ChatScreen from './components/screens/ChatScreen';
+import ProfileScreen from './components/screens/ProfileScreen';
+
+// Modals
+import AuthModal from './components/auth/AuthModal';
+import SettingsModal from './components/modals/SettingsModal';
+import EgoStatesModal from './components/modals/EgoStatesModal';
+import PlanModal from './components/modals/PlanModal';
+import TokensModal from './components/modals/TokensModal';
+import FavoritesModal from './components/modals/FavoritesModal';
+import DocumentationHubModal from './components/modals/DocumentationHubModal';
+
+// Session Components
+import { TabId } from './types/Navigation';
+import { track } from './services/analytics';
+
+export default function App() {
+  const { isAuthenticated, loading } = useAuth();
+  const { activeTab, setActiveTab, modals, closeModal, openModal } = useAppStore();
+  const [showLanding, setShowLanding] = useState(!isAuthenticated);
+
+  // Set up viewport layout
+  useViewportLayout();
+
+  // Update landing page visibility based on auth state
+  useEffect(() => {
+    setShowLanding(!isAuthenticated);
+  }, [isAuthenticated]);
+
+  // Handle tab changes
+  const handleTabChange = (tabId: TabId) => {
+    setActiveTab(tabId);
+    track('navigation', { tab: tabId, source: 'bottom_tabs' });
+  };
+
+  // Session handlers
+  const handleOrbTap = () => {
+    if (!isAuthenticated) {
+      openModal('auth');
+      return;
+    }
+    // TODO: Handle session start
+    track('orb_interaction', { state: 'tapped', authenticated: isAuthenticated });
+  };
+
+  const handleProtocolSelect = (protocol: any) => {
+    // TODO: Handle protocol selection
+    track('protocol_selected', { protocolId: protocol.id, source: 'explore' });
+  };
+
+  const handleProtocolCreate = (protocol: any) => {
+    // TODO: Handle custom protocol creation
+    track('protocol_created', { protocolId: protocol.id, source: 'create' });
+  };
+
+  const handleFavoriteSelect = (session: any) => {
+    // TODO: Handle favorite session selection
+    track('favorite_selected', { sessionId: session.id, source: 'favorites' });
+  };
+
+  const handleShowAuth = () => {
+    openModal('auth');
+  };
+
+  const handleEnterApp = () => {
+    setShowLanding(false);
+    setActiveTab('home');
+  };
+
+  // Show loading state
+  if (loading) {
     return (
-      <div 
-        data-hud
-        className="global-hud fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 px-4 py-2"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <button 
-              onClick={() => openModal('auth')}
-              className="px-3 py-1 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all text-xs font-medium"
-            >
-              Sign In
-            </button>
-          </div>
-          
-          <h1 className="text-white text-lg font-light">Libero</h1>
-          
-          <div className="flex items-center space-x-2">
-            {/* Helper Button */}
-            <button
-              onClick={() => openModal('documentationHub')}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
-              title="Help & Documentation"
-            >
-              <HelpCircle size={16} className="text-white/80" />
-            </button>
-            {/* <button 
-              onClick={() => openModal('chatgptChat')} // Removed as per prompt
-              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110" // Removed as per prompt
-              title="Test ChatGPT API" // Removed as per prompt
-            > */}
-            
-            <button 
-              onClick={() => openModal('settings')}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
-            >
-              <Settings size={16} className="text-white/80" />
-            </button>
-          </div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-teal-400/20 border-t-teal-400 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white/60 text-sm">Loading Libero...</p>
         </div>
       </div>
     );
   }
 
-  // Calculate XP progress
-  const xpProgress = (user.experience % 100) / 100;
-  const sessionsLeft = user.plan === 'free' ? Math.max(0, 1 - user.daily_sessions_used) : '∞';
-  const egoState = getEgoState(activeEgoState);
-  const egoColor = getEgoColor(activeEgoState);
+  // Show landing page if not authenticated or explicitly showing landing
+  if (showLanding) {
+    return (
+      <Router>
+        <ErrorBoundary>
+          <div className="min-h-screen">
+            <Routes>
+              <Route path="/payment-success" element={<div className="min-h-screen bg-black flex items-center justify-center text-white">Payment Successful!</div>} />
+              <Route path="/payment-cancelled" element={<div className="min-h-screen bg-black flex items-center justify-center text-white">Payment Cancelled</div>} />
+              <Route path="*" element={
+                <LandingPage 
+                  onEnterApp={handleEnterApp}
+                  onShowAuth={handleShowAuth}
+                />
+              } />
+            </Routes>
+            
+            {/* Auth Modal */}
+            <AuthModal isOpen={modals.auth} onClose={() => closeModal('auth')} />
+            <ToastManager />
+          </div>
+        </ErrorBoundary>
+      </Router>
+    );
+  }
 
-  const handleEgoStateClick = () => {
-    openEgoModal();
-  };
-
-  const handlePlanClick = () => {
-    openModal('plan');
-  };
-
-  const handleTokensClick = () => {
-    openModal('tokens');
-  };
-
-  const handleLevelClick = () => {
-    const nextLevelXp = (user.level * 100) - user.experience;
-    showToast({
-      type: 'info',
-      message: `Level ${user.level}! ${nextLevelXp} XP needed for next level.`
-    });
-  };
-
-  const handleStreakClick = () => {
-    if (user.session_streak > 0) {
-      showToast({
-        type: 'success',
-        message: `Amazing! ${user.session_streak} day streak. Keep the momentum going!`
-      });
-    } else {
-      showToast({
-        type: 'info',
-        message: 'Start a session today to begin your transformation streak!'
-      });
-    }
-  };
-
-  const handleAwardsClick = () => {
-    if (user.achievements.length > 0) {
-      showToast({
-        type: 'success',
-        message: `You've earned ${user.achievements.length} achievements! View them in your profile.`
-      });
-    } else {
-      showToast({
-        type: 'info',
-        message: 'Complete sessions to unlock achievements and badges!'
-      });
-    }
-  };
+  // Main app interface
   return (
-    <div 
-      data-hud
-      className="global-hud fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/10 px-2 py-2"
-    >
-      <div className="flex items-center justify-between text-xs sm:text-sm">
-        {/* Left: Ego State */}
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={handleEgoStateClick}
-            className="w-8 h-8 rounded-full bg-gradient-to-br border-2 flex items-center justify-center"
-            style={{ 
-              background: `linear-gradient(135deg, ${egoColor.accent}60, ${egoColor.accent}40)`,
-              borderColor: egoColor.accent + '80'
-            }}
-          >
-            <span className="text-sm">{egoState.icon}</span>
-          </button>
-          <div className="hidden sm:block">
-            <button 
-              onClick={handleEgoStateClick}
-              className="text-white font-medium hover:text-white/80 transition-colors text-left"
-            >
-              {egoState.name}
-            </button>
-            <div className="text-white/60 text-xs">{egoState.role}</div>
-          </div>
-        </div>
-
-        {/* Center: Stats */}
-        <div className="flex items-center space-x-3 sm:space-x-6">
-          {/* Level */}
-          <div className="flex items-center space-x-1">
-            <button
-              onClick={handleLevelClick}
-              className="w-5 h-5 rounded bg-teal-500/20 border border-teal-500/40 flex items-center justify-center hover:bg-teal-500/30 hover:scale-110 transition-all text-xxs"
-            >
-              <span className="text-teal-400 font-bold text-xs">L{user.level}</span>
-            </button>
-            <span className="text-white/60 hidden sm:inline">Level</span>
-          </div>
-
-          {/* XP Progress */}
-          <button 
-            onClick={handleLevelClick}
-            className="flex items-center space-x-2 hover:scale-105 transition-all"
-          > 
-            <span className="text-orange-400 font-medium">{user.experience % 100} XP</span>
-            <div className="w-16 h-2 bg-white/20 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-orange-400 to-amber-400 transition-all duration-300"
-                style={{ width: `${xpProgress * 100}%` }}
-              />
-            </div>
-          </button>
-
-          {/* Streak */}
-          <button 
-            onClick={handleStreakClick}
-            className="flex items-center space-x-1 hover:scale-105 transition-all"
-          >
-            <span className="text-yellow-400 font-medium">{user.session_streak}d</span>
-            <span className="text-white/60 hidden sm:inline">streak</span>
-          </button>
-
-          {/* Sessions */}
-          <div className="flex items-center space-x-1">
-            <span className="text-purple-400 font-medium">{user.daily_sessions_used}</span>
-            <span className="text-white/60 hidden sm:inline">Sessions</span>
-          </div>
-
-          {/* Awards */}
-          <button 
-            onClick={handleAwardsClick}
-            className="flex items-center space-x-1 hover:scale-105 transition-all"
-          >
-            <span className="text-blue-400 font-medium">{user.achievements.length}</span>
-            <span className="text-white/60 hidden sm:inline">Awards</span>
-          </button>
-        </div>
-
-        {/* Right: Tokens & Plan */}
-        <div className="flex items-center space-x-3">
-          <button 
-            onClick={handleTokensClick}
-            className="flex items-center space-x-1 hover:scale-105 transition-all"
-          >
-            <span className="text-yellow-400 font-medium">{user.tokens}</span>
-            <span className="text-white/60 hidden sm:inline">tokens</span>
-          </button>
+    <Router>
+      <ErrorBoundary>
+        <div className="min-h-screen bg-black overflow-hidden">
+          {/* Global HUD */}
+          <GlobalHUD />
           
-          <button 
-            onClick={handlePlanClick}
-            className="flex items-center space-x-1 hover:scale-105 transition-all"
-          >
-            <span className="text-green-400 font-medium uppercase">{user.plan}</span>
-            <span className="text-white/60 hidden sm:inline">Plan</span>
-          </button>
-          
-          <div className="flex items-center space-x-1">
-            <span className="text-teal-400 font-medium">{sessionsLeft}</span>
-            <span className="text-white/60 hidden sm:inline">Left</span>
+          {/* Main Content */}
+          <div className="h-screen pt-16">
+            <Routes>
+              <Route path="/payment-success" element={<div className="h-full bg-black flex items-center justify-center text-white">Payment Successful!</div>} />
+              <Route path="/payment-cancelled" element={<div className="h-full bg-black flex items-center justify-center text-white">Payment Cancelled</div>} />
+              <Route path="*" element={
+                <div className="h-full">
+                  {/* Screen Content */}
+                  {activeTab === 'home' && (
+                    <HomeScreen
+                      onOrbTap={handleOrbTap}
+                      onTabChange={handleTabChange}
+                      onShowAuth={handleShowAuth}
+                      activeTab={activeTab}
+                    />
+                  )}
+                  
+                  {activeTab === 'explore' && (
+                    <ExploreScreen
+                      onProtocolSelect={handleProtocolSelect}
+                    />
+                  )}
+                  
+                  {activeTab === 'create' && (
+                    <CreateScreen
+                      onProtocolCreate={handleProtocolCreate}
+                      onShowAuth={handleShowAuth}
+                    />
+                  )}
+                  
+                  {activeTab === 'chat' && (
+                    <ChatScreen />
+                  )}
+                  
+                  {activeTab === 'profile' && (
+                    <ProfileScreen
+                      selectedEgoState={'guardian'}
+                      onEgoStateChange={() => {}}
+                    />
+                  )}
+                  
+                  {/* Bottom Navigation */}
+                  <NavigationTabs
+                    activeTab={activeTab}
+                    onTabChange={handleTabChange}
+                  />
+                </div>
+              } />
+            </Routes>
           </div>
-        </div>
-        
-        {/* Right Controls */}
-        <div className="flex items-center space-x-2"> 
-          {/* Helper Button */}
-          <button
-            onClick={() => openModal('documentationHub')}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
-            title="Help & Documentation"
-          >
-            <HelpCircle size={16} className="text-white/80" />
-          </button>
+
+          {/* Modals */}
+          <AuthModal isOpen={modals.auth} onClose={() => closeModal('auth')} />
+          <SettingsModal isOpen={modals.settings} onClose={() => closeModal('settings')} />
+          <EgoStatesModal />
+          <PlanModal />
+          <TokensModal />
+          <FavoritesModal onSessionSelect={handleFavoriteSelect} />
+          <DocumentationHubModal />
           
-          <button 
-            onClick={() => openModal('settings')}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
-          >
-            <Settings size={16} className="text-white/80" />
-          </button>
+          {/* Toast System */}
+          <ToastManager />
         </div>
-      </div>
-    </div>
+      </ErrorBoundary>
+    </Router>
   );
 }
