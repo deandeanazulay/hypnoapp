@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, BarChart3, Award, TrendingUp, Crown, Zap, Target, Heart, Users, Shield, Star, ChevronRight, Sparkles, Brain, Coins } from 'lucide-react';
+import { Settings, BarChart3, Award, TrendingUp, Crown, Zap, Target, Heart, Users, Shield, Star, ChevronRight, Sparkles, Brain, Coins, BookOpen } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState, EGO_STATES } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
@@ -209,6 +209,18 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
 
               {/* Quick Actions Grid */}
               <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => openModal('personalLibrary')}
+                  className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 backdrop-blur-xl rounded-xl p-4 border border-purple-500/20 hover:border-purple-500/30 hover:scale-105 transition-all text-left"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <BookOpen size={20} className="text-purple-400" />
+                    <ChevronRight size={16} className="text-white/40" />
+                  </div>
+                  <h4 className="text-white font-semibold mb-1">Library</h4>
+                  <p className="text-white/70 text-sm">Custom protocols</p>
+                </button>
+
                 <button
                   onClick={handleOpenPlan}
                   className="bg-gradient-to-br from-yellow-500/10 to-amber-500/10 backdrop-blur-xl rounded-xl p-4 border border-yellow-500/20 hover:border-yellow-500/30 hover:scale-105 transition-all text-left"
