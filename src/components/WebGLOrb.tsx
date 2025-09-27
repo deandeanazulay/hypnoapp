@@ -556,7 +556,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       const scale = currentRadius / radius;
       positions[i * 3] = x * scale;
       positions[i * 3 + 1] = y * scale;
-++ b/src/components/WebGLOrb.tsx
+      positions[i * 3 + 2] = z * scale;
     }
     
     positionAttribute.needsUpdate = true;
