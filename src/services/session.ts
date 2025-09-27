@@ -116,7 +116,7 @@ export class SessionManager {
       throw error;
     }
   }
-        `${baseUrl}/functions/v1/unified-session-world`,
+        
   private async _initializeSession(userContext: any) {
     try {
       console.log('[SESSION] Initializing session with context:', userContext);
@@ -493,24 +493,17 @@ export class SessionManager {
   private _handleSegmentEnd() {
     if (this._isDisposed) {
       return;
-            sessionContext: {
-              egoState: activeEgoState,
-              phase: 'conversation',
-              depth: 1,
-              breathing: 'rest',
-              userProfile: { level: user?.level || 1 },
-              conversationHistory: messages
-                .filter(msg => !msg.isLoading && !msg.error)
-                .map(msg => ({
-                  role: msg.role === 'libero' ? 'assistant' : 'user',
-                  content: msg.content
-                }))
-            },
-            requestType: 'guidance'
+    }
+    
+    // Move to next segment
+    if (this.currentSegmentIndex < this.segments.length - 1) {
+      this.currentSegmentIndex++;
+      
+      this._updateState({ 
+        currentSegmentIndex: this.currentSegmentIndex,
         currentSegmentId: this.segments[this.currentSegmentIndex]?.id || null
       });
       
-          operation: 'Unified Session World',
       if (this._state.playState === 'playing') {
         setTimeout(() => {
           if (this._state.playState === 'playing' && !this._isDisposed) {
