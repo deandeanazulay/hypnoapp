@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ChevronDown, ChevronRight, Book, Brain, Eye, ArrowRight, FileText, HelpCircle, Play, Edit } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Book, Brain, Eye, ArrowRight, FileText, HelpCircle, Play, CreditCard as Edit } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
 import { useAppStore } from '../../store';
 import { HYPNOSIS_PROTOCOLS, getRecommendedProtocols } from '../../data/protocols';
