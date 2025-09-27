@@ -65,7 +65,7 @@ export default function ChatInput({
   // Show recording interface if currently recording or has recording
   if (isRecording || hasRecording) {
     return (
-      <div className="fixed bottom-10 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/20 p-4"
+      <div className="fixed bottom-20 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/20 p-4"
            style={{ paddingBottom: 'calc(1rem + var(--safe-bottom, 0px))' }}>
         <div className="max-w-3xl mx-auto">
           {isRecording ? (
