@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronLeft, Target, Clock, Zap, BarChart3, Settings, Sparkles, Brain, ArrowRight } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Target, Clock, Zap, BarChart3, Settings, Sparkles, Brain, ArrowRight, Calendar } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
 import { useAppStore } from '../../store';
 import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../../utils/apiErrorHandler';
