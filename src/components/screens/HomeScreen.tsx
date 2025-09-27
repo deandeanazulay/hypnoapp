@@ -533,7 +533,7 @@ export default function HomeScreen({
   const orbSize = Math.round(Math.min(typeof window !== 'undefined' ? window.innerWidth : 360, 480) * 1);
 
   return (
-    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
+    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative">
       {/* Subtle BG */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
@@ -550,7 +550,7 @@ export default function HomeScreen({
         </div>
 
         {/* Orb */}
-        <div className="relative" style={{ overflow: 'visible', zIndex: 10 }}>
+        <div className="relative" style={{ overflow: 'visible', zIndex: 10, minHeight: `${orbSize + 100}px` }}>
           <Orb
             onTap={handleOrbTap}
             egoState={currentState.id}
