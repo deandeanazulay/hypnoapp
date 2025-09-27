@@ -4,7 +4,6 @@ import { useAppStore, getEgoState } from '../../store';
 import { useGameState } from '../GameStateManager';
 import { useProtocolStore } from '../../state/protocolStore';
 import { track } from '../../services/analytics';
-import { Heart } from 'lucide-react';
 import { CheckCircle, Lock, Play, Star, Gift, Trophy, Zap, Target, Shield, Flame, Crown, ArrowRight, Heart, Sparkles, ChevronRight, Clock } from 'lucide-react';
 import Orb from '../Orb';
 import ActionsBar from '../ActionsBar';
