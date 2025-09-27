@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useSimpleAuth } from '../hooks/useSimpleAuth';
+import { useAppStore } from '../store';
 import type { UserProfile } from '../lib/supabase';
 
 interface GameState {
