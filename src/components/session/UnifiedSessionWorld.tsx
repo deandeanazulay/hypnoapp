@@ -167,28 +167,79 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
             egoState={activeEgoState}
             size={window.innerWidth < 768 ? 320 : 480}
             variant="webgl"
-            afterglow={sessionState.playState === 'playing'}
-          />
+        {/* Premium Breathing Indicator */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30">
+          <div className="bg-black/95 backdrop-blur-xl rounded-2xl px-8 py-6 border border-white/10 shadow-2xl shadow-purple-500/20">
+            <div className="text-center">
+              {/* Breathing State */}
+              <div className="mb-4">
+                <div className="text-white/60 text-xs font-medium tracking-wider uppercase mb-2">Breathing Guide</div>
+                <div className={`inline-flex items-center justify-center w-32 h-12 rounded-xl border-2 transition-all duration-1000 ${
+                  breathing === 'inhale' ? 'bg-blue-500/20 border-blue-400 text-blue-400 scale-110' :
+                  breathing === 'hold-inhale' ? 'bg-teal-500/20 border-teal-400 text-teal-400 scale-105' :
+                  breathing === 'exhale' ? 'bg-green-500/20 border-green-400 text-green-400 scale-110' :
+                  breathing === 'hold-exhale' ? 'bg-purple-500/20 border-purple-400 text-purple-400 scale-105' :
+                  'bg-white/10 border-white/20 text-white/60'
+                }`}>
+                  <span className="text-lg font-bold capitalize">
+                    {breathing === 'hold-inhale' ? 'Hold' : 
+                     breathing === 'hold-exhale' ? 'Hold' :
+                     breathing}
+                  </span>
+                </div>
+              </div>
+
+              {/* Breathing Timer */}
+              <div className="mb-4">
+                <div className="text-white/60 text-xs font-medium tracking-wider uppercase mb-2">Cycle Timer</div>
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-400/20 border border-teal-400/40 flex items-center justify-center">
+                    <span className="text-teal-400 text-xl font-bold">
+                      {Math.floor((Date.now() / 2000) % 8) + 1}s
+                    </span>
+                  </div>
+                  <div className="text-white/40 text-sm">/ 8s</div>
+                </div>
+              </div>
+
+              {/* Breathing Pattern Visualization */}
+              <div className="mb-4">
+                <div className="text-white/60 text-xs font-medium tracking-wider uppercase mb-2">Pattern</div>
+                <div className="flex items-center justify-center space-x-1">
+                  {['Inhale', 'Hold', 'Exhale', 'Hold'].map((phase, index) => (
+                    <div key={phase} className="flex items-center">
+                      <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                        (breathing === 'inhale' && index === 0) ||
+                        (breathing === 'hold-inhale' && index === 1) ||
+                        (breathing === 'exhale' && index === 2) ||
+                        (breathing === 'hold-exhale' && index === 3)
+                          ? 'bg-teal-400 scale-125 animate-pulse'
+                          : 'bg-white/20'
+                      }`} />
+                      {index < 3 && <div className="w-4 h-0.5 bg-white/20 mx-1" />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Session Info */}
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="bg-black/20 rounded-lg p-2 border border-white/10">
+                  <div className="text-white text-sm font-bold">{sessionState.currentSegmentIndex + 1}</div>
+                  <div className="text-white/60 text-xs">Segment</div>
+                </div>
+                <div className="bg-black/20 rounded-lg p-2 border border-white/10">
+                  <div className="text-purple-400 text-sm font-bold">{depth}</div>
+                  <div className="text-white/60 text-xs">Depth</div>
+                </div>
+                <div className="bg-black/20 rounded-lg p-2 border border-white/10">
+                  <div className="text-orange-400 text-sm font-bold">{sessionState.totalSegments}</div>
+                  <div className="text-white/60 text-xs">Total</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* Session Controls */}
-        <SessionControls
-          isPlaying={sessionState.playState === 'playing'}
-          isVoiceEnabled={isVoiceEnabled}
-          audioLevel={audioLevel}
-          onPlayPause={handlePlayPause}
-          onSkipBack={prevSegment}
-          onSkipForward={nextSegment}
-          onToggleVoice={() => setIsVoiceEnabled(!isVoiceEnabled)}
-          onVolumeChange={handleVolumeChange}
-        />
-
-        {/* Session Progress */}
-        <SessionProgress
-          currentSegment={sessionState.currentSegmentIndex + 1}
-          totalSegments={sessionState.totalSegments}
-          bufferedAhead={sessionState.bufferedAhead}
-        />
 
         {/* Current Segment Info */}
         <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 z-30">
