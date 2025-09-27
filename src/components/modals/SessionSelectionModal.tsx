@@ -139,6 +139,8 @@ export default function SessionSelectionModal({
 
   const handleSessionStart = async (session: any) => {
     try {
+      console.log('[SESSION-MODAL] Starting session:', session);
+      
       showToast({
         type: 'info',
         message: `Starting ${session.protocol.name}...`
@@ -170,6 +172,8 @@ export default function SessionSelectionModal({
         }
       });
 
+      console.log('[SESSION-MODAL] Session handle created, starting play...');
+      
       // Start playing the session
       sessionHandle.play();
 
@@ -181,6 +185,7 @@ export default function SessionSelectionModal({
 
       // Update user stats when session completes
       sessionHandle.on('end', async () => {
+        console.log('[SESSION-MODAL] Session completed, updating stats...');
         try {
           // Add experience points
           await addExperience(session.xpReward || 25);

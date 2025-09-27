@@ -119,11 +119,14 @@ export class SessionManager {
         `${baseUrl}/functions/v1/unified-session-world`,
   private async _initializeSession(userContext: any) {
     try {
+      console.log('[SESSION] Initializing session with context:', userContext);
       this.scriptPlan = await getSessionScript(userContext);
       
       if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
         throw new Error('Script generation failed - no segments returned from API');
       }
+
+      console.log('[SESSION] Script generated successfully with', this.scriptPlan.segments.length, 'segments');
 
     } catch (error: any) {
       console.error('Session: Script generation FAILED - NO FALLBACK:', error.message);

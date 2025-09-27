@@ -18,7 +18,8 @@ export interface SessionScript {
 export async function getSessionScript(userContext: any): Promise<SessionScript> {
   try {
     if (import.meta.env.DEV) {
-      console.log('ChatGPT: Generating script for:', userContext.goalName, 'with', userContext.egoState);
+      console.log('[SCRIPT-GEN] Generating script for:', userContext.goalName, 'with', userContext.egoState);
+      console.log('[SCRIPT-GEN] Full context:', userContext);
     }
     
     // Add timestamp and randomness for unique scripts
@@ -38,6 +39,7 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
       customProtocolNotes: userContext.customProtocol?.deepener || ''
     };
     
+    console.log('[SCRIPT-GEN] Enhanced context prepared:', enhancedContext);
     
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -49,7 +51,7 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
         supabaseUrl === 'YOUR_SUPABASE_URL' || 
         supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY' ||
         supabaseUrl.trim() === '' || supabaseAnonKey.trim() === '') {
-      console.warn('ChatGPT: Invalid Supabase configuration detected');
+      console.warn('[SCRIPT-GEN] Invalid Supabase configuration detected');
       console.warn('VITE_SUPABASE_URL:', supabaseUrl);
       console.warn('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '[PRESENT]' : '[MISSING]');
       throw new Error('Invalid or missing Supabase configuration. Please check your environment variables.');
@@ -61,6 +63,7 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
     let validatedUrl: URL;
     try {
       validatedUrl = new URL(`${baseUrl}/functions/v1/generate-script`);
+      console.log('[SCRIPT-GEN] Calling script generation at:', validatedUrl.toString());
     
       const response = await safeFetch(
         validatedUrl.toString(),
@@ -89,8 +92,10 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
       );
 
       const result = await response.json();
+      console.log('[SCRIPT-GEN] Received response:', result);
       
       if (!result.segments || result.segments.length === 0) {
+        console.error('[SCRIPT-GEN] No segments in response:', result);
         throw new ApiError(
           'No segments returned from script generation',
           500,
@@ -101,7 +106,7 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
       }
 
       if (import.meta.env.DEV) {
-        console.log(`ChatGPT: Generated ${result.segments.length} segments`);
+        console.log(`[SCRIPT-GEN] Generated ${result.segments.length} segments successfully`);
       }
       return result;
       
