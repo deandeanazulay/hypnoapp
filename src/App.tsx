@@ -37,7 +37,7 @@ import { track } from './services/analytics';
 
 export default function App() {
   const { isAuthenticated, loading } = useAuth();
-  const { activeTab, setActiveTab, modals, closeModal, openModal } = useAppStore();
+  const { activeTab, setActiveTab, modals, closeModal, openModal, activeEgoState } = useAppStore();
   const { sessionHandle } = useSessionStore();
   const [showLanding, setShowLanding] = useState(!isAuthenticated);
 
