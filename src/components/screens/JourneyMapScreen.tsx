@@ -1,15 +1,241 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Lock, Play, Gift, Target, Calendar, Zap, Trophy, ArrowRight, CheckCircle } from 'lucide-react';
+import { Star, Lock, Play, Gift, Target, Calendar, Zap, Trophy, ArrowRight, CheckCircle, Crown } from 'lucide-react';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
 import PageShell from '../layout/PageShell';
 import OnboardingWizard from '../journey/OnboardingWizard';
-import JourneyPath from '../journey/JourneyPath';
 import DailyTasks from '../journey/DailyTasks';
 
 interface JourneyMapScreenProps {
   onProtocolSelect: (protocol: any) => void;
+}
+
+// Horizontal Milestone Roadmap Component (same as HomeScreen)
+interface HorizontalMilestoneRoadmapProps {
+  user: any;
+  onMilestoneSelect: (milestone: any) => void;
+  onTabChange?: (tabId: any) => void;
+}
+
+function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMilestoneRoadmapProps) {
+  const milestones = [
+    {
+      id: 'first-session',
+      name: 'First Steps',
+      icon: Play,
+      unlocked: true,
+      completed: false, // Reset to false
+      active: true, // Make this active since it's the first
+      xpReward: 25,
+      tokenReward: 5,
+      difficulty: 'easy',
+      protocol: {
+        id: 'progressive-relaxation-basic',
+        name: 'Progressive Relaxation',
+        category: 'stress-relief',
+        duration: 10,
+        description: 'Gentle introduction to hypnotherapy'
+      }
+    },
+    {
+      id: 'three-day-streak',
+      name: 'Building Momentum',
+      icon: Zap,
+      unlocked: false, // Reset to false
+      completed: false,
+      active: false,
+      xpReward: 50,
+      tokenReward: 10,
+      difficulty: 'easy',
+      protocol: {
+        id: 'rapid-stress-release',
+        name: 'Rapid Stress Release',
+        category: 'stress-relief',
+        duration: 10,
+        description: 'Quick stress relief technique'
+      }
+    },
+    {
+      id: 'ego-explorer',
+      name: 'Guide Discovery',
+      icon: Star,
+      unlocked: false, // Reset to false
+      completed: false,
+      active: false,
+      xpReward: 75,
+      tokenReward: 15,
+      difficulty: 'medium',
+      protocol: {
+        id: 'ego-exploration',
+        name: 'Ego State Exploration',
+        category: 'consciousness',
+        duration: 15,
+        description: 'Explore different archetypal energies'
+      }
+    },
+    {
+      id: 'week-warrior',
+      name: 'Week Warrior',
+      icon: Trophy,
+      unlocked: false, // Reset to false
+      completed: false,
+      active: false,
+      xpReward: 100,
+      tokenReward: 25,
+      difficulty: 'hard',
+      protocol: {
+        id: 'confidence-builder',
+        name: 'Confidence Building',
+        category: 'confidence',
+        duration: 20,
+        description: 'Build unshakeable confidence'
+      }
+    },
+    {
+      id: 'level-master',
+      name: 'Level 5',
+      icon: Crown,
+      unlocked: false, // Reset to false
+      completed: false,
+      active: false,
+      xpReward: 200,
+      tokenReward: 50,
+      difficulty: 'hard',
+      protocol: {
+        id: 'advanced-transformation',
+        name: 'Advanced Transformation',
+        category: 'advanced',
+        duration: 30,
+        description: 'Deep consciousness work'
+      }
+    }
+  ];
+
+  const handleMilestoneClick = (milestone: any) => {
+    if (!milestone.unlocked) return;
+    onMilestoneSelect(milestone);
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-white font-semibold text-lg flex items-center space-x-2">
+          <Target size={20} className="text-teal-400" />
+          <span>Transformation Roadmap</span>
+        </h3>
+        <span className="text-white/60 text-sm">{milestones.filter(m => m.completed).length}/{milestones.length} completed</span>
+      </div>
+
+      {/* Horizontal Roadmap */}
+      <div className="relative mb-6">
+        <div className="flex items-center justify-center gap-6">
+          {milestones.map((milestone, index) => {
+            const IconComponent = milestone.icon;
+            const isCompleted = milestone.completed;
+            const isActive = milestone.active;
+            const isUnlocked = milestone.unlocked;
+
+            return (
+              <div key={milestone.id} className="flex items-center gap-5 flex-shrink-0 relative">
+                <button
+                  onClick={() => (isUnlocked ? handleMilestoneClick(milestone) : null)}
+                  disabled={!isUnlocked}
+                  className={`relative w-16 h-16 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
+                    isCompleted
+                      ? 'bg-green-500/30 border-green-400 shadow-xl shadow-green-400/40'
+                      : isActive
+                      ? 'bg-orange-500/30 border-orange-400 animate-pulse shadow-xl shadow-orange-400/40'
+                      : isUnlocked
+                      ? 'bg-teal-500/20 border-teal-400 shadow-xl shadow-teal-400/30 hover:bg-teal-500/30'
+                      : 'bg-white/10 border-white/20 cursor-not-allowed'
+                  }`}
+                >
+                  {isCompleted ? (
+                    <CheckCircle size={20} className="text-green-400" />
+                  ) : !isUnlocked ? (
+                    <Lock size={20} className="text-white/40" />
+                  ) : (
+                    <IconComponent size={20} className={`${isActive ? 'text-orange-400' : 'text-teal-400'}`} />
+                  )}
+
+                  {isCompleted && (
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-400 rounded-full flex items-center justify-center border border-black">
+                      <CheckCircle size={12} className="text-black" />
+                    </div>
+                  )}
+                </button>
+
+                {/* Connector */}
+                {index < milestones.length - 1 && (
+                  <div
+                    className={`w-10 h-0.5 rounded-full ${
+                      isCompleted && milestones[index + 1].unlocked
+                        ? 'bg-gradient-to-r from-green-400 to-teal-400'
+                        : isCompleted
+                        ? 'bg-gradient-to-r from-green-400/70 to-white/20'
+                        : isUnlocked && milestones[index + 1].unlocked
+                        ? 'bg-gradient-to-r from-teal-400/70 to-orange-400/70'
+                        : 'bg-white/20'
+                    }`}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Labels */}
+      <div className="flex items-center justify-center gap-5 px-1 mb-4">
+        {milestones.map(milestone => (
+          <div key={milestone.id} className="text-center" style={{ width: 72 }}>
+            <div
+              className={`text-[11px] font-medium ${
+                milestone.completed
+                  ? 'text-green-400'
+                  : milestone.active
+                  ? 'text-orange-400'
+                  : milestone.unlocked
+                  ? 'text-teal-400'
+                  : 'text-white/40'
+              }`}
+            >
+              {milestone.name}
+            </div>
+            {milestone.unlocked && milestone.xpReward ? (
+              <div className="text-[10px] text-orange-300 mt-0.5">+{milestone.xpReward}</div>
+            ) : (
+              <div className="h-[14px]" />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="bg-green-500/10 rounded-lg p-3 border border-green-500/20">
+          <div className="text-green-400 text-lg font-bold">
+            {milestones.filter(m => m.completed).length}
+          </div>
+          <div className="text-white/60 text-xs">Completed</div>
+        </div>
+        <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/20">
+          <div className="text-orange-400 text-lg font-bold">
+            {milestones.filter(m => m.active).length}
+          </div>
+          <div className="text-white/60 text-xs">Active</div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+          <div className="text-white text-lg font-bold">
+            {milestones.filter(m => !m.unlocked).length}
+          </div>
+          <div className="text-white/60 text-xs">Locked</div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function JourneyMapScreen({ onProtocolSelect }: JourneyMapScreenProps) {
@@ -178,11 +404,9 @@ export default function JourneyMapScreen({ onProtocolSelect }: JourneyMapScreenP
                   userGoals={userGoals}
                 />
 
-                {/* Journey Path */}
-                <JourneyPath 
-                  currentLevel={user?.level || 1}
-                  userGoals={userGoals}
-                  journeyData={journeyData}
+                {/* Horizontal Milestone Roadmap */}
+                <HorizontalMilestoneRoadmap
+                  user={user}
                   onMilestoneSelect={(milestone) => {
                     onProtocolSelect(milestone.protocol);
                   }}
