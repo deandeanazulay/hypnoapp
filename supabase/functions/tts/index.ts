@@ -123,10 +123,10 @@ Deno.serve(async (req: Request) => {
 
     // Prepare OpenAI TTS request
     const openaiRequest = {
-      model: requestData.model || "gpt-4o-mini-tts",
+      model: requestData.model || "tts-1",
       input: requestData.text.trim(),
       voice: requestData.voice,
-      response_format: requestData.response_format || "wav",
+      response_format: requestData.response_format || "mp3",
       speed: requestData.speed || 1.0
     };
 
