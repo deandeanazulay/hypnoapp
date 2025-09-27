@@ -144,19 +144,19 @@ function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPrevie
 
       {/* Compact Horizontal Roadmap */}
       <div className="relative mb-4">
-        <div className="flex items-center justify-center gap-6">
-          {currentMilestones.map((milestone, index) => {
+        <div className="flex items-center justify-center gap-4 px-2">
+          {displayMilestones.map((milestone, index) => {
             const IconComponent = milestone.icon;
             const isCompleted = milestone.completed;
             const isActive = milestone.active;
             const isUnlocked = milestone.unlocked;
 
             return (
-              <div key={milestone.id} className="flex items-center gap-5 flex-shrink-0 relative">
+              <div key={milestone.id} className="flex items-center gap-3 flex-shrink-0 relative">
                 <button
                   onClick={() => (isUnlocked ? onMilestoneSelect(milestone) : null)}
                   disabled={!isUnlocked}
-                  className={`relative w-16 h-16 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
+                  className={`relative w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
                     isCompleted
                       ? 'bg-green-500/30 border-green-400 shadow-xl shadow-green-400/40'
                       : isActive
@@ -167,29 +167,29 @@ function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPrevie
                   }`}
                 >
                   {isCompleted ? (
-                    <CheckCircle size={20} className="text-green-400" />
+                    <CheckCircle size={18} className="text-green-400" />
                   ) : !isUnlocked ? (
-                    <Lock size={20} className="text-white/40" />
+                    <Lock size={18} className="text-white/40" />
                   ) : (
-                    <IconComponent size={20} className={`${isActive ? 'text-orange-400' : 'text-teal-400'}`} />
+                    <IconComponent size={18} className={`${isActive ? 'text-orange-400' : 'text-teal-400'}`} />
                   )}
 
                   {isCompleted && (
-                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-400 rounded-full flex items-center justify-center border border-black">
-                      <CheckCircle size={12} className="text-black" />
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center border border-black">
+                      <CheckCircle size={10} className="text-black" />
                     </div>
                   )}
                 </button>
 
                 {/* Connector */}
-                {index < currentMilestones.length - 1 && (
+                {index < displayMilestones.length - 1 && (
                   <div
-                    className={`w-10 h-0.5 rounded-full ${
-                      isCompleted && currentMilestones[index + 1].unlocked
+                    className={`w-6 h-0.5 rounded-full ${
+                      isCompleted && displayMilestones[index + 1].unlocked
                         ? 'bg-gradient-to-r from-green-400 to-teal-400'
                         : isCompleted
                         ? 'bg-gradient-to-r from-green-400/70 to-white/20'
-                        : isUnlocked && currentMilestones[index + 1].unlocked
+                        : isUnlocked && displayMilestones[index + 1].unlocked
                         ? 'bg-gradient-to-r from-teal-400/70 to-orange-400/70'
                         : 'bg-white/20'
                     }`}
@@ -228,19 +228,19 @@ function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPrevie
       <div className="grid grid-cols-3 gap-3 text-center">
         <div className="bg-green-500/10 rounded-lg p-3 border border-green-500/20">
           <div className="text-green-400 text-lg font-bold">
-            {currentMilestones.filter(m => m.completed).length}
+            {milestones.filter(m => m.completed).length}
           </div>
           <div className="text-white/60 text-xs">Completed</div>
         </div>
         <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/20">
           <div className="text-orange-400 text-lg font-bold">
-            {currentMilestones.filter(m => m.active).length}
+            {milestones.filter(m => m.active).length}
           </div>
           <div className="text-white/60 text-xs">Active</div>
         </div>
         <div className="bg-white/5 rounded-lg p-3 border border-white/10">
           <div className="text-white text-lg font-bold">
-            {currentMilestones.filter(m => !m.unlocked).length}
+            {milestones.filter(m => !m.unlocked).length}
           </div>
           <div className="text-white/60 text-xs">Locked</div>
         </div>
@@ -266,7 +266,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       name: 'First Steps',
       icon: Play,
       unlocked: true,
-      completed: (user?.session_streak || 0) > 0,
+      completed: (user?.session_streak || 0) >= 1,
       active: (user?.session_streak || 0) === 0,
       xpReward: 25,
       tokenReward: 5,
@@ -284,8 +284,8 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       name: 'Momentum',
       icon: Zap,
       unlocked: (user?.session_streak || 0) >= 1,
-      completed: false,
-      active: false,
+      completed: (user?.session_streak || 0) >= 3,
+      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
       xpReward: 50,
       tokenReward: 10,
       difficulty: 'easy',
@@ -302,8 +302,8 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       name: 'Guide Discovery',
       icon: Star,
       unlocked: (user?.session_streak || 0) >= 3,
-      completed: false,
-      active: false,
+      completed: Object.keys(user?.ego_state_usage || {}).length >= 3,
+      active: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length < 3,
       xpReward: 75,
       tokenReward: 15,
       difficulty: 'medium',
@@ -320,8 +320,8 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       name: 'Week Warrior',
       icon: Trophy,
       unlocked: (user?.session_streak || 0) >= 3,
-      completed: false,
-      active: false,
+      completed: (user?.session_streak || 0) >= 7,
+      active: (user?.session_streak || 0) >= 3 && (user?.session_streak || 0) < 7,
       xpReward: 100,
       tokenReward: 25,
       difficulty: 'hard',
@@ -338,8 +338,8 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       name: 'Level 5',
       icon: Crown,
       unlocked: (user?.level || 1) >= 5,
-      completed: false,
-      active: false,
+      completed: (user?.level || 1) >= 10,
+      active: (user?.level || 1) >= 5 && (user?.level || 1) < 10,
       xpReward: 200,
       tokenReward: 50,
       difficulty: 'hard',
@@ -352,6 +352,25 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       }
     }
   ];
+
+  // Get the current active milestone (first incomplete one)
+  const getActiveMilestone = () => {
+    return milestones.find(m => m.unlocked && !m.completed) || milestones[0];
+  };
+
+  // Get milestones to display (current + next 4, or first 5 if none active)
+  const getDisplayMilestones = () => {
+    const activeMilestone = getActiveMilestone();
+    const activeIndex = milestones.findIndex(m => m.id === activeMilestone.id);
+    
+    // Show 5 milestones starting from the active one
+    const startIndex = Math.max(0, activeIndex);
+    const endIndex = Math.min(milestones.length, startIndex + 5);
+    
+    return milestones.slice(startIndex, endIndex);
+  };
+
+  const displayMilestones = getDisplayMilestones();
 
   const handleMilestoneClick = (milestone: any) => {
     if (!milestone.unlocked) return;
@@ -430,11 +449,11 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       </div>
 
       {/* Labels */}
-      <div className="flex items-center justify-center gap-5 px-1 mt-1">
-        {milestones.map(milestone => (
-          <div key={milestone.id} className="text-center" style={{ width: 72 }}>
+      <div className="flex items-center justify-center gap-3 px-2 mb-4">
+        {displayMilestones.map(milestone => (
+          <div key={milestone.id} className="text-center" style={{ width: 64 }}>
             <div
-              className={`text-[11px] font-medium ${
+              className={`text-[10px] font-medium leading-tight ${
                 milestone.completed
                   ? 'text-green-400'
                   : milestone.active
@@ -447,9 +466,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
               {milestone.name}
             </div>
             {milestone.unlocked && milestone.xpReward ? (
-              <div className="text-[10px] text-orange-300 mt-0.5">+{milestone.xpReward}</div>
+              <div className="text-[9px] text-orange-300 mt-0.5">+{milestone.xpReward}</div>
             ) : (
-              <div className="h-[14px]" />
+              <div className="h-[12px]" />
             )}
           </div>
         ))}
@@ -530,6 +549,8 @@ export default function HomeScreen({
             size={orbSize}
             variant="webgl"
             afterglow={false}
+            className="overflow-visible"
+            style={{ overflow: 'visible' }}
           />
         </div>
 
