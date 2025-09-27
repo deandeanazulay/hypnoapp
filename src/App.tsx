@@ -24,8 +24,6 @@ export default function GlobalHUD() {
             >
               Sign In
             </button>
-              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110" // Removed as per prompt
-            </button>
           </div>
           
           <h1 className="text-white text-lg font-light">Libero</h1>
