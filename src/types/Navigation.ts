@@ -16,9 +16,9 @@ export const TABS: Tab[] = [
   },
   {
     id: 'explore',
-    name: 'Explore',
-    icon: '🔍',
-    description: 'Library & Protocols'
+    name: 'Journey',
+    icon: '🗺️',
+    description: 'Transformation Path'
   },
   {
     id: 'create',
