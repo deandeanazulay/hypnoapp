@@ -513,7 +513,7 @@ export default function HomeScreen({
       </div>
 
       {/* NOTE: no justify-center on the whole page to avoid giant top/bottom gaps */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center px-4 pt-3 pb-[calc(var(--total-nav-height,112px)+8px)]">
+      <div className="relative z-10 min-h-screen flex flex-col items-center">
         {/* Tagline */}
         <div className="text-center mb-1">
           <h2 className="text-white text-[15px] font-light leading-tight">
