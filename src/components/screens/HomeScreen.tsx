@@ -550,15 +550,20 @@ export default function HomeScreen({
         </div>
 
         {/* Orb */}
-        <div className="relative" style={{ zIndex: 10, minHeight: `${orbSize + 400}px`, padding: '150px 100px', overflow: 'visible' }}>
+        <div className="relative flex items-center justify-center" style={{ 
+          zIndex: 10, 
+          width: orbSize, 
+          height: orbSize,
+          margin: '20px auto',
+          overflow: 'visible'
+        }}>
           <Orb
             onTap={handleOrbTap}
             egoState={currentState.id}
             size={orbSize}
             variant="webgl"
             afterglow={false}
-            className="relative"
-            style={{ overflow: 'visible' }}
+            className=""
           />
         </div>
 
