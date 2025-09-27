@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import WebGLOrb, { WebGLOrbRef } from './WebGLOrb';
 import CSSOrb from './ui/CSSOrb';
+import { useGameState } from './GameStateManager';
 
 interface OrbProps {
   onTap: () => void;
@@ -9,6 +10,14 @@ interface OrbProps {
   className?: string;
   afterglow?: boolean;
   variant?: 'webgl' | 'css' | 'auto';
+}
+
+// Orb evolution based on user progress
+function getOrbEvolutionLevel(userLevel: number): 'basic' | 'enhanced' | 'advanced' | 'master' {
+  if (userLevel >= 15) return 'master';
+  if (userLevel >= 10) return 'advanced';
+  if (userLevel >= 5) return 'enhanced';
+  return 'basic';
 }
 
 function supportsWebGL(): boolean {
@@ -21,7 +30,9 @@ function supportsWebGL(): boolean {
 }
 
 export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps) {
+  const { user } = useGameState();
   const [useWebGL, setUseWebGL] = useState<boolean | null>(null);
+  const [evolutionLevel, setEvolutionLevel] = useState<'basic' | 'enhanced' | 'advanced' | 'master'>('basic');
 
   // Debug wrapper for onTap
   const debugOnTap = () => {
@@ -31,6 +42,20 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
     }
     props.onTap();
   };
+
+  // Update orb evolution based on user level
+  useEffect(() => {
+    if (user?.level) {
+      const newLevel = getOrbEvolutionLevel(user.level);
+      if (newLevel !== evolutionLevel) {
+        setEvolutionLevel(newLevel);
+        // Show evolution notification
+        if (user.level >= 5) {
+          console.log('Orb evolved to:', newLevel);
+        }
+      }
+    }
+  }, [user?.level, evolutionLevel]);
 
   // Detect WebGL support once and never change
   useEffect(() => {
@@ -76,7 +101,9 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
   }
 
   // Render the appropriate orb type - NEVER switch after initial render
-  return useWebGL ? <WebGLOrb {...props} onTap={debugOnTap} size={size} /> : <CSSOrb {...props} onTap={debugOnTap} size={size} />;
+  return useWebGL ? 
+    <WebGLOrb {...props} onTap={debugOnTap} size={size} evolutionLevel={evolutionLevel} /> : 
+    <CSSOrb {...props} onTap={debugOnTap} size={size} evolutionLevel={evolutionLevel} />;
 }
 
 // Re-export the ref type for convenience

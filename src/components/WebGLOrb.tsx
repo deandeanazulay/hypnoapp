@@ -14,6 +14,7 @@ interface WebGLOrbProps {
   egoState?: string;
   className?: string;
   afterglow?: boolean;
+  evolutionLevel?: 'basic' | 'enhanced' | 'advanced' | 'master';
 }
 
 function supportsWebGL(): boolean {
@@ -38,7 +39,8 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     size = 280,
     egoState = 'guardian',
     className = '',
-    afterglow = false
+    afterglow = false,
+    evolutionLevel = 'basic'
   } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -294,7 +296,8 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const scaleMultiplier = size / baseSize;
     const sphereRadius = 10 * scaleMultiplier;
     // Create fractal sphere geometry - ONCE
-    const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 64, 64);
+    const baseDetail = evolutionLevel === 'basic' ? 32 : evolutionLevel === 'enhanced' ? 48 : evolutionLevel === 'advanced' ? 64 : 96;
+    const sphereGeometry = new THREE.SphereGeometry(sphereRadius, baseDetail, baseDetail);
     
     // Store original vertex positions for fractal deformation
     const originalPositions = sphereGeometry.attributes.position.array.slice();
@@ -303,11 +306,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     // Create wireframe ONCE - don't recreate every frame
     const wireframeGeometry = new THREE.WireframeGeometry(sphereGeometry);
     
-    // Create material with ego state color
+    // Create material with ego state color and evolution effects
     const material = new THREE.LineBasicMaterial({
       color: color,
       transparent: true,
-      opacity: afterglow ? 0.6 : 0.4,
+      opacity: (afterglow ? 0.6 : 0.4) * (evolutionLevel === 'master' ? 1.2 : evolutionLevel === 'advanced' ? 1.1 : 1),
       linewidth: 2
     });
 
@@ -316,8 +319,29 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     orbMeshRef.current = orbMesh;
     scene.add(orbMesh);
 
-    // Add glow layers
-    const glowGeometry = new THREE.SphereGeometry(sphereRadius * 0.95, 32, 32);
+    // Add glow layers based on evolution
+    const glowLayers = evolutionLevel === 'basic' ? 1 : evolutionLevel === 'enhanced' ? 2 : evolutionLevel === 'advanced' ? 3 : 4;
+    
+    for (let layer = 0; layer < glowLayers; layer++) {
+      const layerScale = 0.95 - (layer * 0.1);
+      const layerOpacity = (afterglow ? 0.15 : 0.08) / (layer + 1);
+      
+      const glowGeometry = new THREE.SphereGeometry(sphereRadius * layerScale, 32, 32);
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: layerOpacity,
+        side: THREE.BackSide
+      });
+      const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
+      scene.add(glowMesh);
+      
+      // Store reference for animation
+      if (!orbMesh.userData.glowMeshes) orbMesh.userData.glowMeshes = [];
+      orbMesh.userData.glowMeshes.push(glowMesh);
+    }
+    
+    // Legacy single glow layer for backward compatibility
     const glowMaterial1 = new THREE.MeshBasicMaterial({
       color: color,
       transparent: true,
@@ -339,7 +363,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     scene.add(pulseMesh);
     
     // Store references for animation
-    orbMesh.userData = { glowMesh1, pulseMesh, sphereGeometry, wireframeGeometry };
+    orbMesh.userData = { glowMesh1, pulseMesh, sphereGeometry, wireframeGeometry, glowMeshes: orbMesh.userData.glowMeshes || [] };
 
     if (import.meta.env.DEV) {
       console.log('[ORB] Geometry initialized successfully');
@@ -434,12 +458,13 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     }
 
     // Alien breathing - more dramatic and irregular
-    const primaryPulse = 0.85 + 0.15 * Math.sin(time * 0.6);  // Main heartbeat
-    const secondaryPulse = 1 + alienState.pulse * 0.08;       // Irregular alien pulse
+    const evolutionComplexity = evolutionLevel === 'basic' ? 1 : evolutionLevel === 'enhanced' ? 1.5 : evolutionLevel === 'advanced' ? 2 : 3;
+    const primaryPulse = 0.85 + 0.15 * Math.sin(time * 0.6 * evolutionComplexity);  // Main heartbeat
+    const secondaryPulse = 1 + alienState.pulse * (0.08 * evolutionComplexity);       // Irregular alien pulse
     const breathingScale = primaryPulse * secondaryPulse;
     
     // Alien rotation - multi-axis, unpredictable
-    const baseRotationSpeed = afterglow ? 0.4 : 0.25;
+    const baseRotationSpeed = (afterglow ? 0.4 : 0.25) * evolutionComplexity;
     const alienRotationX = time * baseRotationSpeed + Math.sin(time * 0.3) * 0.1;
     const alienRotationY = time * baseRotationSpeed * 0.7 + Math.cos(time * 0.4) * 0.15;
     const alienRotationZ = Math.sin(time * 0.2) * 0.05;
@@ -457,10 +482,23 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       
       // Update material opacity for alien intensity
       const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
-      material.opacity = (afterglow ? 0.6 : 0.4) * alienState.intensity;
+      material.opacity = (afterglow ? 0.6 : 0.4) * alienState.intensity * (evolutionLevel === 'master' ? 1.3 : 1);
       
-      // Animate glow layers with more subtlety
+      // Animate all glow layers
       const userData = orbMeshRef.current.userData;
+      if (userData.glowMeshes) {
+        userData.glowMeshes.forEach((glowMesh: any, index: number) => {
+          const layerOffset = index * 0.2;
+          glowMesh.scale.setScalar(0.98 + alienState.pulse * (0.02 + layerOffset * 0.01));
+          glowMesh.rotation.x = -alienRotationX * (0.5 + layerOffset);
+          glowMesh.rotation.y = -alienRotationY * (0.3 + layerOffset);
+          
+          const glowMat = glowMesh.material as THREE.MeshBasicMaterial;
+          glowMat.opacity = ((afterglow ? 0.10 : 0.05) / (index + 1)) * (1 + alienState.pulse * 0.05);
+        });
+      }
+      
+      // Legacy glow layer
       if (userData.glowMesh1) {
         userData.glowMesh1.scale.setScalar(0.98 + alienState.pulse * 0.02);
         userData.glowMesh1.rotation.x = -alienRotationX * 0.5;

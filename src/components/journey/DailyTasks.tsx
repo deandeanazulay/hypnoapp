@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, Star, Play, CheckCircle, Target, Zap } from 'lucide-react';
+import { Calendar, Clock, Star, Play, CheckCircle, Target, Zap, Trophy } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 
 interface DailyTask {
@@ -182,9 +182,9 @@ export default function DailyTasks({ onTaskComplete, userLevel, userGoals }: Dai
 
       {/* Completion Bonus */}
       {completedTasks === dailyTasks.length && dailyTasks.length > 1 && (
-        <div className="mt-4 bg-gradient-to-br from-yellow-500/10 to-amber-500/10 rounded-xl p-4 border border-yellow-500/20">
+        <div className="mt-4 bg-gradient-to-br from-yellow-500/10 to-amber-500/10 rounded-xl p-4 border border-yellow-500/20 animate-bounce-in">
           <div className="text-center">
-            <div className="w-12 h-12 rounded-full bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center mx-auto mb-2">
+            <div className="w-12 h-12 rounded-full bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center mx-auto mb-2 animate-level-up">
               <Trophy size={20} className="text-yellow-400" />
             </div>
             <h4 className="text-white font-medium mb-1">Perfect Day Bonus!</h4>

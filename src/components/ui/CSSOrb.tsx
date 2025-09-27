@@ -14,6 +14,7 @@ interface OrbProps {
   egoState?: string;
   afterglow?: boolean;
   className?: string;
+  evolutionLevel?: 'basic' | 'enhanced' | 'advanced' | 'master';
 }
 
 const CSSOrb = forwardRef<OrbRef, OrbProps>(({
@@ -21,7 +22,8 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   size = 280,
   egoState = 'guardian',
   afterglow = false,
-  className = ''
+  className = '',
+  evolutionLevel = 'basic'
 }, ref) => {
   const [isPressed, setIsPressed] = React.useState(false);
   const [isHovering, setIsHovering] = React.useState(false);
@@ -70,8 +72,15 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   };
   // Calculate responsive sizing
   const orbSize = Math.min(size, 400);
-  const ringSize1 = orbSize * 0.8;
-  const ringSize2 = orbSize * 0.6;
+  
+  // Evolution affects number of rings and complexity
+  const ringCount = evolutionLevel === 'basic' ? 2 : evolutionLevel === 'enhanced' ? 3 : evolutionLevel === 'advanced' ? 4 : 5;
+  const rings = Array.from({ length: ringCount }, (_, i) => ({
+    size: orbSize * (0.9 - i * 0.15),
+    opacity: 0.6 - i * 0.1,
+    speed: 8 + i * 4
+  }));
+  
   const coreSize = orbSize * 0.4;
 
   return (
@@ -90,20 +99,24 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
       >
         {/* Main Orb Core */}
         <div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/40 shadow-2xl relative overflow-hidden"
+          className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/40 shadow-2xl relative overflow-hidden ${
+            evolutionLevel === 'master' ? 'animate-level-up' : ''
+          }`}
           style={{
             width: `${coreSize}px`,
             height: `${coreSize}px`,
            background: `radial-gradient(circle at 30% 30%, ${egoColor.accent}, ${egoColor.accent}aa, ${egoColor.accent}66)`,
             boxShadow: afterglow 
-              ? `0 0 ${orbSize * 0.3}px ${egoColor.accent}70, 0 0 ${orbSize * 0.6}px ${egoColor.accent}40, inset 0 0 ${orbSize * 0.1}px rgba(255,255,255,0.3)`
-              : `0 0 ${orbSize * 0.2}px ${egoColor.accent}60, inset 0 0 ${orbSize * 0.05}px rgba(255,255,255,0.2)`,
+              ? `0 0 ${orbSize * 0.3 * (evolutionLevel === 'master' ? 1.5 : 1)}px ${egoColor.accent}70, 0 0 ${orbSize * 0.6}px ${egoColor.accent}40, inset 0 0 ${orbSize * 0.1}px rgba(255,255,255,0.3)`
+              : `0 0 ${orbSize * 0.2 * (evolutionLevel === 'master' ? 1.2 : 1)}px ${egoColor.accent}60, inset 0 0 ${orbSize * 0.05}px rgba(255,255,255,0.2)`,
             filter: isHovering ? 'brightness(1.1)' : 'none'
           }}
         >
           {/* Inner Glow */}
           <div 
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full animate-pulse"
+            className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full ${
+              evolutionLevel === 'master' ? 'animate-spin-slow' : 'animate-pulse'
+            }`}
             style={{
               width: `${coreSize * 0.7}px`,
               height: `${coreSize * 0.7}px`,
@@ -112,38 +125,62 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
           />
         </div>
         
-        {/* Outer Ring 1 */}
-        <div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20 animate-spin-slow" 
-          style={{ 
-            width: `${ringSize1}px`,
-            height: `${ringSize1}px`
-          }} 
-        />
-        
-        {/* Outer Ring 2 */}
-        <div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 animate-spin-slower" 
-          style={{ 
-            width: `${ringSize2}px`,
-            height: `${ringSize2}px`
-          }} 
-        />
+        {/* Evolution-based Ring System */}
+        {rings.map((ring, index) => (
+          <div 
+            key={index}
+            className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border ${
+              index % 2 === 0 ? 'animate-spin-slow' : 'animate-spin-slower'
+            }`}
+            style={{ 
+              width: `${ring.size}px`,
+              height: `${ring.size}px`,
+              borderColor: `rgba(255, 255, 255, ${ring.opacity})`,
+              animationDuration: `${ring.speed}s`
+            }} 
+          />
+        ))}
         
         {/* Breathing Effect Ring */}
         <div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15"
+          className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border ${
+            evolutionLevel === 'master' ? 'border-white/25' : 'border-white/15'
+          }`}
           style={{
             width: `${orbSize * 0.9}px`,
             height: `${orbSize * 0.9}px`,
-            animation: 'breathe 6s ease-in-out infinite'
+            animation: `breathe ${evolutionLevel === 'master' ? 4 : 6}s ease-in-out infinite`
           }}
         />
+        
+        {/* Master level additional effects */}
+        {evolutionLevel === 'master' && (
+          <>
+            <div 
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border border-yellow-400/30 animate-spin-slower"
+              style={{
+                width: `${orbSize * 1.1}px`,
+                height: `${orbSize * 1.1}px`
+              }} 
+            />
+            <div 
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{
+                width: `${orbSize * 1.2}px`,
+                height: `${orbSize * 1.2}px`,
+                background: `conic-gradient(from 0deg, ${egoColor.accent}20, transparent, ${egoColor.accent}20)`,
+                animation: 'spin 20s linear infinite'
+              }} 
+            />
+          </>
+        )}
         
         {/* Speaking Indicator */}
         {isSpeaking && (
           <div 
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-teal-400 animate-pulse" 
+            className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-teal-400 ${
+              evolutionLevel === 'master' ? 'animate-ping' : 'animate-pulse'
+            }`}
             style={{
               width: `${orbSize}px`,
               height: `${orbSize}px`
@@ -154,7 +191,9 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
         {/* Listening Indicator */}
         {isListening && (
           <div 
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-red-400 animate-ping" 
+            className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-red-400 ${
+              evolutionLevel === 'master' ? 'animate-spin' : 'animate-ping'
+            }`}
             style={{
               width: `${orbSize}px`,
               height: `${orbSize}px`
