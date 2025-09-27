@@ -25,8 +25,8 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMiles
       name: 'First Steps',
       icon: Play,
       unlocked: true,
-      completed: false, // Reset to false
-      active: true, // Make this active since it's the first
+      completed: (user?.session_streak || 0) > 0,
+      active: (user?.session_streak || 0) === 0,
       xpReward: 25,
       tokenReward: 5,
       difficulty: 'easy',
@@ -42,7 +42,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMiles
       id: 'three-day-streak',
       name: 'Building Momentum',
       icon: Zap,
-      unlocked: false, // Reset to false
+      unlocked: (user?.session_streak || 0) >= 1,
       completed: false,
       active: false,
       xpReward: 50,
@@ -60,7 +60,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMiles
       id: 'ego-explorer',
       name: 'Guide Discovery',
       icon: Star,
-      unlocked: false, // Reset to false
+      unlocked: (user?.session_streak || 0) >= 3 && Object.keys(user?.ego_state_usage || {}).length >= 1,
       completed: false,
       active: false,
       xpReward: 75,
@@ -78,7 +78,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMiles
       id: 'week-warrior',
       name: 'Week Warrior',
       icon: Trophy,
-      unlocked: false, // Reset to false
+      unlocked: (user?.session_streak || 0) >= 3,
       completed: false,
       active: false,
       xpReward: 100,
@@ -96,7 +96,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMiles
       id: 'level-master',
       name: 'Level 5',
       icon: Crown,
-      unlocked: false, // Reset to false
+      unlocked: (user?.level || 1) >= 5,
       completed: false,
       active: false,
       xpReward: 200,
