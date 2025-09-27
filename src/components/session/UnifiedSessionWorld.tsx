@@ -150,7 +150,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
+    <div className="fixed inset-0 z-[60] bg-black h-screen w-screen overflow-hidden">
       {/* Session Header */}
       <div className="absolute top-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-xl border-b border-white/10 p-4">
         <div className="flex items-center justify-between">
@@ -178,14 +178,14 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
       </div>
 
       {/* Main Session Area */}
-      <div className="relative h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20">
+      <div className="relative h-screen bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 overflow-hidden">
         {/* Background Effects */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl animate-pulse" />
         </div>
 
         {/* Top Indicators - Only Phase and Depth */}
-        <div className="absolute top-20 left-4 right-4 z-30">
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-30">
           <div className="flex items-center justify-center space-x-8">
             {/* Depth Indicator */}
             <div className="bg-black/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/20">
@@ -213,7 +213,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
         </div>
 
         {/* Session Controls Sidebar */}
-        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30 space-y-3">
+        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30 space-y-3 flex flex-col">
           {/* Play/Pause */}
           <button
             onClick={handlePlayPause}
@@ -256,7 +256,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
         </div>
 
         {/* Central Orb */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center z-20">
           <Orb
             onTap={handlePlayPause}
             egoState={activeEgoState}
@@ -266,14 +266,14 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
         </div>
 
         {/* Premium Breathing Dock - Bottom */}
-        <div className="absolute bottom-0 left-0 right-0 z-30 px-4 pb-4">
-          <div className="w-full max-w-4xl mx-auto bg-gradient-to-r from-black/95 via-purple-950/95 to-black/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-purple-500/20 overflow-hidden">
+        <div className="absolute bottom-0 left-0 right-0 z-30 p-4">
+          <div className="w-full max-w-5xl mx-auto bg-gradient-to-r from-black/95 via-purple-950/95 to-black/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-purple-500/20 overflow-hidden">
             <div className="px-4 py-3">
-              <div className="flex items-center justify-center space-x-8">
+              <div className="flex items-center justify-between max-w-4xl mx-auto">
                 {/* Breathing State - Centered */}
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Breathing</div>
-                  <div className={`flex items-center justify-center w-16 h-7 rounded-lg border transition-all duration-1000 ${getBreathingColor()}`}>
+                  <div className={`flex items-center justify-center w-20 h-8 rounded-xl border-2 transition-all duration-1000 shadow-lg ${getBreathingColor()}`}>
                     <span className="text-xs font-bold capitalize">
                       {breathing === 'hold-inhale' ? 'Hold' : 
                        breathing === 'hold-exhale' ? 'Hold' :
@@ -283,44 +283,44 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
                 </div>
 
                 {/* Live Cycle Timer */}
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400/30 to-cyan-400/30 border border-teal-400/50 flex items-center justify-center shadow-lg shadow-teal-400/25">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400/40 to-cyan-400/40 border-2 border-teal-400/60 flex items-center justify-center shadow-xl shadow-teal-400/30">
                     <span className="text-teal-400 text-xs font-bold">
                       {Math.floor((Date.now() / 2000) % 8) + 1}s
                     </span>
                   </div>
-                  <div className="text-white/40 text-xs">/ 8s</div>
+                  <div className="text-white/50 text-sm font-medium">/ 8s</div>
                 </div>
 
                 {/* Pattern Visualization */}
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   {['Inhale', 'Hold', 'Exhale', 'Hold'].map((breathPhase, index) => (
                     <div key={breathPhase} className="flex items-center">
-                      <div className={`w-2 h-2 rounded-full transition-all duration-500 ${
+                      <div className={`w-3 h-3 rounded-full transition-all duration-500 shadow-lg ${
                         (breathing === 'inhale' && index === 0) ||
                         (breathing === 'hold-inhale' && index === 1) ||
                         (breathing === 'exhale' && index === 2) ||
                         (breathing === 'hold-exhale' && index === 3)
-                          ? 'bg-teal-400 scale-125 animate-pulse shadow-lg shadow-teal-400/50'
+                          ? 'bg-teal-400 scale-150 animate-pulse shadow-teal-400/60'
                           : 'bg-white/20'
                       }`} />
-                      {index < 3 && <div className="w-2 h-0.5 bg-white/20 mx-1" />}
+                      {index < 3 && <div className="w-3 h-0.5 bg-white/30 mx-2 rounded-full" />}
                     </div>
                   ))}
                 </div>
 
                 {/* Session Stats */}
-                <div className="flex items-center space-x-4">
-                  <div className="text-center">
-                    <div className="text-white text-xs font-bold">{sessionState.currentSegmentIndex + 1}</div>
+                <div className="flex items-center space-x-6">
+                  <div className="text-center bg-black/30 rounded-lg px-3 py-2 border border-white/10">
+                    <div className="text-white text-sm font-bold">{sessionState.currentSegmentIndex + 1}</div>
                     <div className="text-white/50 text-xs">Segment</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-purple-400 text-xs font-bold">{depth}</div>
+                  <div className="text-center bg-black/30 rounded-lg px-3 py-2 border border-white/10">
+                    <div className="text-purple-400 text-sm font-bold">{depth}</div>
                     <div className="text-white/50 text-xs">Depth</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-orange-400 text-xs font-bold">{sessionState.totalSegments}</div>
+                  <div className="text-center bg-black/30 rounded-lg px-3 py-2 border border-white/10">
+                    <div className="text-orange-400 text-sm font-bold">{sessionState.totalSegments}</div>
                     <div className="text-white/50 text-xs">Total</div>
                   </div>
                 </div>
@@ -331,7 +331,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
 
         {/* Loading State */}
         {!sessionState.isInitialized && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
             <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-8 border border-white/20 text-center">
               <div className="w-16 h-16 border-4 border-teal-400/20 border-t-teal-400 rounded-full animate-spin mx-auto mb-4"></div>
               <h3 className="text-white font-medium mb-2">Preparing Your Session</h3>
@@ -343,3 +343,5 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
     </div>
   );
 }
+
+export default UnifiedSessionWorld
