@@ -115,13 +115,15 @@ export default function App() {
                 />
               } />
             </Routes>
-              {/* Bottom Navigation - Hidden during session */}
-              {!sessionHandle && (
-                <NavigationTabs
-                  activeTab={activeTab}
-                  onTabChange={handleTabChange}
-                />
-              )}
+            
+            {/* Bottom Navigation - Hidden during session */}
+            {!sessionHandle && (
+              <NavigationTabs
+                activeTab={activeTab}
+                onTabChange={handleTabChange}
+              />
+            )}
+          </div>
         </ErrorBoundary>
       </Router>
     );
