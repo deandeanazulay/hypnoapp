@@ -293,7 +293,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
 
     // Calculate scale based on size prop (base size is 280px)
     const baseSize = 280;
-    const scaleMultiplier = size / baseSize;
+    // Validate size prop to prevent NaN values in geometry
+    const validSize = (typeof size === 'number' && !isNaN(size) && size > 0) ? size : 280;
+    const scaleMultiplier = validSize / baseSize;
     const sphereRadius = 10 * scaleMultiplier;
     
     // Create clean sphere geometry - NO DEFORMATION
