@@ -76,7 +76,7 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
 
   return (
     <div
-      className={`inline-flex justify-center items-center overflow-visible ${className}`}
+      className={`inline-flex justify-center items-center ${className}`}
       style={{
         width: orbSize,
         height: orbSize,

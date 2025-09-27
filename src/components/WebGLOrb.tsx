@@ -246,7 +246,6 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     canvas.style.position = 'relative';
     canvas.style.zIndex = '10';
     canvas.style.pointerEvents = 'auto';
-    canvas.style.overflow = 'visible';
     canvas.className = 'orb-canvas';
 
     try {

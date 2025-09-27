@@ -187,7 +187,21 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
     
     // Create subtle audio cues for breathing transitions
     try {
+      if (!window.AudioContext && !(window as any).webkitAudioContext) {
+        console.log('[BREATHING] Web Audio API not supported');
+        return;
+      }
+      
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Check if audio context is suspended (common on mobile)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(err => {
+          console.log('[BREATHING] Could not resume audio context:', err);
+          return;
+        });
+      }
+      
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -382,13 +396,14 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
         </div>
 
         {/* Central Orb */}
-        <div className="absolute inset-0 flex items-center justify-center z-20 overflow-visible">
+        <div className="absolute inset-0 flex items-center justify-center z-20" style={{ overflow: 'visible' }}>
           <Orb
             onTap={handlePlayPause}
             egoState={activeEgoState}
             size={window.innerWidth < 768 ? 320 : 480}
             variant="webgl"
-            className="overflow-visible"
+            className=""
+            style={{ overflow: 'visible' }}
           />
         </div>
 
