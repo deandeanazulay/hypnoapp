@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Play, Clock, Star, Trash2, Calendar, Edit, Copy, Search, Filter, Plus } from 'lucide-react';
+import { BookOpen, Play, Clock, Star, Trash2, Calendar, CreditCard as Edit, Copy, Search, Filter, Plus } from 'lucide-react';
 import ModalShell from '../layout/ModalShell';
 import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
