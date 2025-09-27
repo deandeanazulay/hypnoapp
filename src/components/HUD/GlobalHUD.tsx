@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, MessageCircle } from 'lucide-react';
+import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, MessageCircle, HelpCircle } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
@@ -20,13 +20,13 @@ export default function GlobalHUD() {
           <div className="flex items-center space-x-3">
             <button 
               onClick={() => openModal('auth')}
-              className="px-4 py-2 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all text-sm font-medium"
+              className="px-3 py-1 bg-teal-500/20 border border-teal-500/40 rounded-lg text-teal-400 hover:bg-teal-500/30 transition-all text-xs font-medium"
             >
               Sign In
             </button>
-            <button 
-              onClick={() => openModal('chatgptChat')}
-              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110"
+            {/* <button 
+              onClick={() => openModal('chatgptChat')} // Removed as per prompt
+              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110" // Removed as per prompt
               title="Test ChatGPT API & Get Help"
             >
               <MessageCircle size={16} className="text-purple-400" />
@@ -36,13 +36,19 @@ export default function GlobalHUD() {
           <h1 className="text-white text-lg font-light">Libero</h1>
           
           <div className="flex items-center space-x-2">
-            <button 
-              onClick={() => openModal('chatgptChat')}
-              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110"
-              title="Test ChatGPT API"
+            {/* Helper Button */}
+            <button
+              onClick={() => openModal('documentationHub')}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+              title="Help & Documentation"
             >
-              <MessageCircle size={16} className="text-purple-400" />
+              <HelpCircle size={16} className="text-white/80" />
             </button>
+            {/* <button 
+              onClick={() => openModal('chatgptChat')} // Removed as per prompt
+              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110" // Removed as per prompt
+              title="Test ChatGPT API" // Removed as per prompt
+            > */}
             
             <button 
               onClick={() => openModal('settings')}
@@ -142,9 +148,9 @@ export default function GlobalHUD() {
         <div className="flex items-center space-x-3 sm:space-x-6">
           {/* Level */}
           <div className="flex items-center space-x-1">
-            <button 
+            <button
               onClick={handleLevelClick}
-              className="w-6 h-6 rounded bg-teal-500/20 border border-teal-500/40 flex items-center justify-center hover:bg-teal-500/30 hover:scale-110 transition-all"
+              className="w-5 h-5 rounded bg-teal-500/20 border border-teal-500/40 flex items-center justify-center hover:bg-teal-500/30 hover:scale-110 transition-all text-xxs"
             >
               <span className="text-teal-400 font-bold text-xs">L{user.level}</span>
             </button>
@@ -155,8 +161,8 @@ export default function GlobalHUD() {
           <button 
             onClick={handleLevelClick}
             className="flex items-center space-x-2 hover:scale-105 transition-all"
-          >
-            <span className="text-orange-400 font-medium">{user.experience % 100}/100 XP</span>
+          > 
+            <span className="text-orange-400 font-medium">{user.experience % 100} XP</span>
             <div className="w-16 h-2 bg-white/20 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-orange-400 to-amber-400 transition-all duration-300"
@@ -215,13 +221,14 @@ export default function GlobalHUD() {
         </div>
         
         {/* Right Controls */}
-        <div className="flex items-center space-x-2">
-          <button 
-            onClick={() => openModal('chatgptChat')}
-            className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110"
-            title="Test ChatGPT API & Get Help"
+        <div className="flex items-center space-x-2"> 
+          {/* Helper Button */}
+          <button
+            onClick={() => openModal('documentationHub')}
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+            title="Help & Documentation"
           >
-            <MessageCircle size={16} className="text-purple-400" />
+            <HelpCircle size={16} className="text-white/80" />
           </button>
           
           <button 
