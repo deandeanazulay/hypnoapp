@@ -117,7 +117,7 @@ export default function App() {
             </Routes>
             
             {/* Bottom Navigation - Hidden during session */}
-            {!sessionHandle && (
+            {!sessionHandle && !showLanding && (
               <NavigationTabs
                 activeTab={activeTab}
                 onTabChange={handleTabChange}
@@ -179,10 +179,12 @@ export default function App() {
                   )}
                   
                   {/* Bottom Navigation */}
-                  <NavigationTabs
-                    activeTab={activeTab}
-                    onTabChange={handleTabChange}
-                  />
+                  {!sessionHandle && (
+                    <NavigationTabs
+                      activeTab={activeTab}
+                      onTabChange={handleTabChange}
+                    />
+                  )}
                 </div>
               } />
             </Routes>

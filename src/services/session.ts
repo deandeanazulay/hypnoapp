@@ -408,72 +408,77 @@ export class SessionManager {
     }
 
     try {
-      // Stop any existing speech before starting new utterance
+      // Stop any existing speech and ensure clean state
       window.speechSynthesis.cancel();
       
-      // Small delay to ensure clean state
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Wait for voices to load
+      // Wait for voices and ensure clean state
       await this.voicesLoadedPromise;
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Check if we're still supposed to be playing
+      if (this._isDisposed || this._state.playState !== 'playing') {
+        return;
+      }
       
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.8;  // Slightly faster for better clarity
-      utterance.pitch = 0.9; // Higher pitch for better audibility
+      utterance.rate = 0.7;  // Slower for hypnotherapy
+      utterance.pitch = 0.8; // Lower pitch for calming effect
       utterance.volume = 1.0;
       
-      // Voice selection (handle async loading properly)
+      // Voice selection with better error handling
       await this._selectBestVoice(utterance);
       
       // Event handlers
       utterance.onstart = () => {
-        console.log('[SESSION] Browser TTS started speaking');
+        console.log('[SESSION] Browser TTS started speaking segment');
       };
       
       utterance.onend = () => {
-        console.log('[SESSION] Browser TTS finished speaking');
+        console.log('[SESSION] Browser TTS finished speaking segment');
         this.currentUtterance = null;
         this._handleSegmentEnd();
       };
       
       utterance.onerror = (event) => {
-        // Only log non-interruption errors
+        console.log('[SESSION] Browser TTS error event:', event.error);
         if (event.error !== 'interrupted' && event.error !== 'canceled') {
           console.error('[SESSION] Browser TTS error:', event.error);
-        }
-        
-        this.currentUtterance = null;
-        
-        if (event.error === 'interrupted' || event.error === 'canceled') {
-          // Expected - don't advance
-        } else {
-          // Fallback advance to prevent stalling
+          this.currentUtterance = null;
           this._handleSegmentEnd();
+        } else {
+          // Expected interruption - don't advance
+          this.currentUtterance = null;
         }
       };
       
       // Store current utterance
       this.currentUtterance = utterance;
       
-      // Force speech to start with user interaction fallback
+      // Start speech synthesis
       console.log('[SESSION] Starting browser TTS speech');
       window.speechSynthesis.speak(utterance);
       
-      // Fallback: if speech doesn't start within 2 seconds, try again
+      // Verification that speech started
       setTimeout(() => {
-        if (this.currentUtterance === utterance && !this._isDisposed) {
-          console.log('[SESSION] TTS fallback: forcing speech restart');
-          window.speechSynthesis.cancel();
-          window.speechSynthesis.speak(utterance);
+        if (this.currentUtterance === utterance && !this._isDisposed && window.speechSynthesis.speaking === false) {
+          console.warn('[SESSION] TTS may not have started, attempting restart');
+          try {
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+          } catch (error) {
+            console.error('[SESSION] TTS restart failed:', error);
+            this.currentUtterance = null;
+            this._handleSegmentEnd();
+          }
         }
-      }, 2000);
+      }, 1500);
       
     } catch (error) {
       console.error('[SESSION] Browser TTS setup failed:', error);
-      // Continue to next segment if TTS completely fails
+      this.currentUtterance = null;
       setTimeout(() => {
         this._handleSegmentEnd();
-      }, 1000);
+      }, 500);
     }
   }
 
