@@ -1,0 +1,222 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import { useSessionStore } from '../../store/sessionStore';
+import { useAppStore } from '../../store';
+import Orb from '../Orb';
+import SessionIndicators from './SessionIndicators';
+import SessionProgress from './SessionProgress';
+import SessionControls from './SessionControls';
+
+interface UnifiedSessionWorldProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionWorldProps) {
+  const { sessionHandle, sessionState, play, pause, nextSegment, prevSegment, disposeSession } = useSessionStore();
+  const { activeEgoState, showToast } = useAppStore();
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [audioLevel, setAudioLevel] = useState(80);
+
+  // Session state
+  const [depth, setDepth] = useState(1);
+  const [breathing, setBreathing] = useState<'inhale' | 'hold-inhale' | 'exhale' | 'hold-exhale' | 'rest'>('rest');
+  const [phase, setPhase] = useState('preparation');
+
+  // Handle session state changes
+  useEffect(() => {
+    if (sessionHandle) {
+      sessionHandle.on('state-change', (newState) => {
+        console.log('[SESSION-WORLD] Session state changed:', newState);
+        
+        // Update local state based on session state
+        if (newState.currentSegmentId) {
+          // Update phase based on segment
+          const segmentId = newState.currentSegmentId;
+          if (segmentId.includes('intro') || segmentId.includes('welcome')) {
+            setPhase('preparation');
+          } else if (segmentId.includes('induction')) {
+            setPhase('induction');
+            setDepth(2);
+          } else if (segmentId.includes('deepening')) {
+            setPhase('deepening');
+            setDepth(3);
+          } else if (segmentId.includes('transformation') || segmentId.includes('core')) {
+            setPhase('transformation');
+            setDepth(4);
+          } else if (segmentId.includes('integration')) {
+            setPhase('integration');
+            setDepth(3);
+          } else if (segmentId.includes('emergence') || segmentId.includes('awakening')) {
+            setPhase('completion');
+            setDepth(1);
+          }
+        }
+      });
+
+      sessionHandle.on('play', () => {
+        console.log('[SESSION-WORLD] Session started playing');
+      });
+
+      sessionHandle.on('pause', () => {
+        console.log('[SESSION-WORLD] Session paused');
+      });
+
+      sessionHandle.on('end', () => {
+        console.log('[SESSION-WORLD] Session completed');
+        showToast({
+          type: 'success',
+          message: 'Session completed! Well done.'
+        });
+        onClose();
+      });
+    }
+  }, [sessionHandle, showToast, onClose]);
+
+  // Breathing animation effect
+  useEffect(() => {
+    if (sessionState.playState === 'playing') {
+      const breathingCycle = setInterval(() => {
+        setBreathing(prev => {
+          switch (prev) {
+            case 'rest': return 'inhale';
+            case 'inhale': return 'hold-inhale';
+            case 'hold-inhale': return 'exhale';
+            case 'exhale': return 'hold-exhale';
+            case 'hold-exhale': return 'rest';
+            default: return 'rest';
+          }
+        });
+      }, 2000); // 2 second breathing cycle
+
+      return () => clearInterval(breathingCycle);
+    }
+  }, [sessionState.playState]);
+
+  const handleClose = () => {
+    if (sessionHandle) {
+      sessionHandle.pause();
+      disposeSession();
+    }
+    onClose();
+  };
+
+  const handlePlayPause = () => {
+    if (sessionState.playState === 'playing') {
+      pause();
+    } else {
+      play();
+    }
+  };
+
+  const handleVolumeChange = (level: number) => {
+    setAudioLevel(level);
+    // TODO: Apply volume to audio elements
+  };
+
+  if (!isOpen || !sessionHandle) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black">
+      {/* Session Header */}
+      <div className="absolute top-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-xl border-b border-white/10 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400/30 to-cyan-400/30 border border-teal-400/50 flex items-center justify-center">
+              <div className={`w-2 h-2 rounded-full ${
+                sessionState.playState === 'playing' ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'
+              }`} />
+            </div>
+            <div>
+              <h1 className="text-white font-semibold">Session Active</h1>
+              <p className="text-white/60 text-sm">
+                Segment {sessionState.currentSegmentIndex + 1} of {sessionState.totalSegments}
+              </p>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleClose}
+            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+          >
+            <X size={18} className="text-white/80" />
+          </button>
+        </div>
+      </div>
+
+      {/* Main Session Area */}
+      <div className="relative h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20">
+        {/* Background Effects */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl animate-pulse" />
+        </div>
+
+        {/* Session Indicators */}
+        <SessionIndicators 
+          depth={depth}
+          breathing={breathing}
+          phase={phase}
+        />
+
+        {/* Central Orb */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Orb
+            onTap={handlePlayPause}
+            egoState={activeEgoState}
+            size={window.innerWidth < 768 ? 320 : 480}
+            variant="webgl"
+            afterglow={sessionState.playState === 'playing'}
+          />
+        </div>
+
+        {/* Session Controls */}
+        <SessionControls
+          isPlaying={sessionState.playState === 'playing'}
+          isVoiceEnabled={isVoiceEnabled}
+          audioLevel={audioLevel}
+          onPlayPause={handlePlayPause}
+          onSkipBack={prevSegment}
+          onSkipForward={nextSegment}
+          onToggleVoice={() => setIsVoiceEnabled(!isVoiceEnabled)}
+          onVolumeChange={handleVolumeChange}
+        />
+
+        {/* Session Progress */}
+        <SessionProgress
+          currentSegment={sessionState.currentSegmentIndex + 1}
+          totalSegments={sessionState.totalSegments}
+          bufferedAhead={sessionState.bufferedAhead}
+        />
+
+        {/* Current Segment Info */}
+        <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 z-30">
+          <div className="bg-black/80 backdrop-blur-xl rounded-xl px-6 py-3 border border-white/20 text-center">
+            <div className="text-white/90 text-sm font-medium">
+              {sessionState.currentSegmentId ? (
+                <span className="capitalize">{sessionState.currentSegmentId.replace(/[-_]/g, ' ')}</span>
+              ) : (
+                'Preparing session...'
+              )}
+            </div>
+            {sessionState.error && (
+              <div className="text-red-400 text-xs mt-1">{sessionState.error}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Loading State */}
+        {!sessionState.isInitialized && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-8 border border-white/20 text-center">
+              <div className="w-16 h-16 border-4 border-teal-400/20 border-t-teal-400 rounded-full animate-spin mx-auto mb-4"></div>
+              <h3 className="text-white font-medium mb-2">Preparing Your Session</h3>
+              <p className="text-white/70 text-sm">Generating personalized content...</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
