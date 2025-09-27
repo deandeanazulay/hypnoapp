@@ -188,4 +188,35 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
         {/* SPEAKING/LISTENING INDICATORS — clipped to frame so they don’t add outside space */}
         {isSpeaking && (
           <div
-            className="absolute top-1/2 le
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-teal-400 animate-pulse"
+            style={{ width: outerRingSize, height: outerRingSize }}
+          />
+        )}
+        {isListening && (
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-red-400 animate-ping"
+            style={{ width: outerRingSize, height: outerRingSize }}
+          />
+        )}
+      </div>
+
+      <style jsx>{`
+        @keyframes breathe {
+          0%, 100% { transform: scale(1); opacity: 0.85; }
+          50%      { transform: scale(1.015); opacity: 1; }
+        }
+        @keyframes spin-slow {
+          from { transform: translate(-50%, -50%) rotate(0deg); }
+          to   { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        @keyframes spin-slower {
+          from { transform: translate(-50%, -50%) rotate(360deg); }
+          to   { transform: translate(-50%, -50%) rotate(0deg); }
+        }
+      `}</style>
+    </div>
+  );
+});
+
+CSSOrb.displayName = 'CSSOrb';
+export default CSSOrb;
