@@ -325,52 +325,8 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     orbMeshRef.current = orbMesh;
     scene.add(orbMesh);
 
-    // Add contained glow layers that stay within bounds
-    const glowLayers = evolutionLevel === 'basic' ? 1 : evolutionLevel === 'enhanced' ? 2 : evolutionLevel === 'advanced' ? 3 : 4;
-    
-    for (let layer = 0; layer < glowLayers; layer++) {
-      const layerScale = 0.9 - (layer * 0.08); // Keep layers smaller
-      const layerOpacity = (afterglow ? 0.2 : 0.12) / (layer + 1);
-      
-      const glowGeometry = new THREE.SphereGeometry(sphereRadius * layerScale, 32, 32);
-      const glowMaterial = new THREE.MeshBasicMaterial({
-        color: color,
-        transparent: true,
-        opacity: layerOpacity,
-        side: THREE.BackSide
-      });
-      const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
-      scene.add(glowMesh);
-      
-      // Store reference for animation
-      if (!orbMesh.userData.glowMeshes) orbMesh.userData.glowMeshes = [];
-      orbMesh.userData.glowMeshes.push(glowMesh);
-    }
-    
-    // Legacy single glow layer for backward compatibility
-    const glowGeometry = new THREE.SphereGeometry(sphereRadius * 0.85, 32, 32);
-    const glowMaterial1 = new THREE.MeshBasicMaterial({
-      color: color,
-      transparent: true,
-      opacity: afterglow ? 0.2 : 0.12,
-      side: THREE.BackSide
-    });
-    const glowMesh1 = new THREE.Mesh(glowGeometry, glowMaterial1);
-    scene.add(glowMesh1);
-    
-    // Second pulsing layer
-    const pulseGeometry = new THREE.SphereGeometry(sphereRadius * 0.7, 32, 32);
-    const pulseMaterial = new THREE.MeshBasicMaterial({
-      color: color,
-      transparent: true,
-      opacity: 0.08,
-      side: THREE.BackSide
-    });
-    const pulseMesh = new THREE.Mesh(pulseGeometry, pulseMaterial);
-    scene.add(pulseMesh);
-    
-    // Store references for animation
-    orbMesh.userData = { glowMesh1, pulseMesh, glowMeshes: orbMesh.userData.glowMeshes || [] };
+    // Store references for animation (no glow layers)
+    orbMesh.userData = {};
 
     if (import.meta.env.DEV) {
       console.log('[ORB] Geometry initialized successfully');
@@ -425,39 +381,6 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       // Update material opacity for alien intensity
       const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
       material.opacity = (afterglow ? 0.8 : 0.6) * alienState.intensity * (evolutionLevel === 'master' ? 1.3 : 1);
-      
-      // Animate all glow layers
-      const userData = orbMeshRef.current.userData;
-      if (userData.glowMeshes) {
-        userData.glowMeshes.forEach((glowMesh: any, index: number) => {
-          const layerOffset = index * 0.2;
-          glowMesh.scale.setScalar(0.95 + alienState.pulse * (0.03 + layerOffset * 0.01));
-          glowMesh.rotation.x = Math.sin(time * 0.05) * (0.02 + layerOffset * 0.01);
-          glowMesh.rotation.y = Math.cos(time * 0.04) * (0.01 + layerOffset * 0.005);
-          
-          const glowMat = glowMesh.material as THREE.MeshBasicMaterial;
-          glowMat.opacity = ((afterglow ? 0.15 : 0.08) / (index + 1)) * (1 + alienState.pulse * 0.08);
-        });
-      }
-      
-      // Legacy glow layer
-      if (userData.glowMesh1) {
-        userData.glowMesh1.scale.setScalar(0.95 + alienState.pulse * 0.03);
-        userData.glowMesh1.rotation.x = Math.sin(time * 0.05) * 0.02;
-        userData.glowMesh1.rotation.y = Math.cos(time * 0.04) * 0.01;
-        
-        const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
-        glowMat.opacity = (afterglow ? 0.15 : 0.08) * (1 + alienState.pulse * 0.08);
-      }
-      
-      if (userData.pulseMesh) {
-        const pulseScale = 0.85 + Math.abs(alienState.pulse) * 0.08;
-        userData.pulseMesh.scale.setScalar(pulseScale);
-        userData.pulseMesh.rotation.z = Math.sin(time * 0.2) * 0.1;
-        
-        const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
-        pulseMat.opacity = 0.04 + Math.abs(alienState.pulse) * 0.02;
-      }
 
       // Speaking indicator - alien excitement
       if (isSpeaking) {
@@ -594,20 +517,6 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     // Clean up Three.js objects
     if (orbMeshRef.current) {
       const userData = orbMeshRef.current.userData;
-      if (userData.glowMesh1) {
-        userData.glowMesh1.geometry?.dispose();
-        userData.glowMesh1.material?.dispose();
-      }
-      if (userData.pulseMesh) {
-        userData.pulseMesh.geometry?.dispose();
-        userData.pulseMesh.material?.dispose();
-      }
-      if (userData.glowMeshes) {
-        userData.glowMeshes.forEach((glowMesh: any) => {
-          glowMesh.geometry?.dispose();
-          glowMesh.material?.dispose();
-        });
-      }
       orbMeshRef.current.geometry?.dispose();
       orbMeshRef.current.material?.dispose();
     }
