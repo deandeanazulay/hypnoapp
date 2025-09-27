@@ -256,12 +256,13 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
         </div>
 
         {/* Central Orb */}
-        <div className="absolute inset-0 flex items-center justify-center z-20">
+        <div className="absolute inset-0 flex items-center justify-center z-20 overflow-visible">
           <Orb
             onTap={handlePlayPause}
             egoState={activeEgoState}
             size={window.innerWidth < 768 ? 320 : 480}
             variant="webgl"
+            className="overflow-visible"
           />
         </div>
 
