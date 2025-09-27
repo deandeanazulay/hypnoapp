@@ -127,7 +127,8 @@ Deno.serve(async (req: Request) => {
       input: requestData.text.trim(),
       voice: requestData.voice,
       response_format: requestData.response_format || "wav",
-      speed: requestData.speed || 1.0
+      speed: requestData.speed || 1.0,
+      instructions: "speak in a hypnotic voice"
     };
 
     // Call OpenAI TTS API
