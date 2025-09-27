@@ -60,7 +60,9 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     intensity: 1,
     colorShift: 0,
     organicOffset: 0,
-    fractalPhase: 0
+    fractalPhase: 0,
+    geometryPhase: 0,
+    currentShape: 0
   });
 
   // State for animations
@@ -384,6 +386,10 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     alienState.colorShift = time * 0.1;
     alienState.organicOffset = time * 0.2;
     alienState.fractalPhase = time * 0.15;
+    
+    // Geometric shape transformation (changes every 3 seconds)
+    alienState.geometryPhase = time * 0.33; // Slower transformation
+    alienState.currentShape = Math.floor(alienState.geometryPhase) % 9;
 
     // Alien breathing - more dramatic and irregular
     const evolutionComplexity = evolutionLevel === 'basic' ? 1 : evolutionLevel === 'enhanced' ? 1.5 : evolutionLevel === 'advanced' ? 2 : 3;
@@ -391,17 +397,20 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const secondaryPulse = 1 + alienState.pulse * (0.08 * evolutionComplexity);       // Irregular alien pulse
     const breathingScale = primaryPulse * secondaryPulse;
     
-    // Alien rotation - multi-axis, unpredictable
-    const baseRotationSpeed = (afterglow ? 0.4 : 0.25) * evolutionComplexity;
-    const alienRotationX = time * baseRotationSpeed + Math.sin(time * 0.3) * 0.1;
-    const alienRotationY = time * baseRotationSpeed * 0.7 + Math.cos(time * 0.4) * 0.15;
-    const alienRotationZ = Math.sin(time * 0.2) * 0.05;
+    // Geometric shape transformation instead of rotation
+    const shapeTransition = (alienState.geometryPhase % 1); // 0-1 transition between shapes
+    const smoothTransition = 0.5 * (1 + Math.sin((shapeTransition - 0.5) * Math.PI)); // Smooth S-curve
     
     if (orbMeshRef.current) {
+      // Apply geometric transformation to vertices
+      applyGeometricShape(orbMeshRef.current, alienState.currentShape, smoothTransition, sphereRadius);
+      
       orbMeshRef.current.scale.setScalar(breathingScale);
-      orbMeshRef.current.rotation.x = alienRotationX;
-      orbMeshRef.current.rotation.y = alienRotationY; 
-      orbMeshRef.current.rotation.z = alienRotationZ;
+      
+      // Minimal rotation for visual interest, not spinning
+      orbMeshRef.current.rotation.x = Math.sin(time * 0.1) * 0.05;
+      orbMeshRef.current.rotation.y = Math.cos(time * 0.08) * 0.03;
+      orbMeshRef.current.rotation.z = Math.sin(time * 0.06) * 0.02;
       
       // Alien organic movement
       orbMeshRef.current.position.x = Math.sin(time * 0.3) * 0.5;
@@ -418,8 +427,8 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         userData.glowMeshes.forEach((glowMesh: any, index: number) => {
           const layerOffset = index * 0.2;
           glowMesh.scale.setScalar(0.98 + alienState.pulse * (0.02 + layerOffset * 0.01));
-          glowMesh.rotation.x = -alienRotationX * (0.5 + layerOffset);
-          glowMesh.rotation.y = -alienRotationY * (0.3 + layerOffset);
+          glowMesh.rotation.x = Math.sin(time * 0.05) * (0.02 + layerOffset * 0.01);
+          glowMesh.rotation.y = Math.cos(time * 0.04) * (0.01 + layerOffset * 0.005);
           
           const glowMat = glowMesh.material as THREE.MeshBasicMaterial;
           glowMat.opacity = ((afterglow ? 0.10 : 0.05) / (index + 1)) * (1 + alienState.pulse * 0.05);
@@ -429,8 +438,8 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       // Legacy glow layer
       if (userData.glowMesh1) {
         userData.glowMesh1.scale.setScalar(0.98 + alienState.pulse * 0.02);
-        userData.glowMesh1.rotation.x = -alienRotationX * 0.5;
-        userData.glowMesh1.rotation.y = -alienRotationY * 0.3;
+        userData.glowMesh1.rotation.x = Math.sin(time * 0.05) * 0.02;
+        userData.glowMesh1.rotation.y = Math.cos(time * 0.04) * 0.01;
         
         const glowMat = userData.glowMesh1.material as THREE.MeshBasicMaterial;
         glowMat.opacity = (afterglow ? 0.10 : 0.05) * (1 + alienState.pulse * 0.05);
@@ -439,7 +448,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       if (userData.pulseMesh) {
         const pulseScale = 0.9 + Math.abs(alienState.pulse) * 0.05;
         userData.pulseMesh.scale.setScalar(pulseScale);
-        userData.pulseMesh.rotation.z = time * 0.5;
+        userData.pulseMesh.rotation.z = Math.sin(time * 0.2) * 0.1;
         
         const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
         pulseMat.opacity = 0.02 + Math.abs(alienState.pulse) * 0.01;
@@ -478,6 +487,74 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         animationIdRef.current = requestAnimationFrame(animate);
       }
     }
+  };
+
+  // Apply geometric shape transformations to the orb
+  const applyGeometricShape = (mesh: THREE.LineSegments, shapeIndex: number, transition: number, baseRadius: number) => {
+    const geometry = mesh.geometry as THREE.WireframeGeometry;
+    const positionAttribute = geometry.attributes.position;
+    
+    if (!positionAttribute) return;
+    
+    const positions = positionAttribute.array as Float32Array;
+    const vertexCount = positions.length / 3;
+    
+    for (let i = 0; i < vertexCount; i++) {
+      const x = positions[i * 3];
+      const y = positions[i * 3 + 1]; 
+      const z = positions[i * 3 + 2];
+      
+      // Calculate original spherical coordinates
+      const radius = Math.sqrt(x * x + y * y + z * z);
+      const theta = Math.atan2(y, x);
+      const phi = Math.acos(z / radius);
+      
+      // Define 9 different geometric shapes
+      let newRadius = radius;
+      
+      switch (shapeIndex) {
+        case 0: // Sphere (original)
+          newRadius = baseRadius;
+          break;
+        case 1: // Cube
+          newRadius = baseRadius / Math.max(Math.abs(Math.cos(theta) * Math.sin(phi)), Math.abs(Math.sin(theta) * Math.sin(phi)), Math.abs(Math.cos(phi)));
+          break;
+        case 2: // Octahedron
+          newRadius = baseRadius / (Math.abs(x) + Math.abs(y) + Math.abs(z)) * baseRadius;
+          break;
+        case 3: // Tetrahedron
+          newRadius = baseRadius * (1 + 0.3 * Math.sin(4 * theta) * Math.sin(2 * phi));
+          break;
+        case 4: // Dodecahedron approximation
+          newRadius = baseRadius * (1 + 0.2 * Math.sin(5 * theta) * Math.sin(3 * phi));
+          break;
+        case 5: // Torus-like
+          const torusR = baseRadius * 0.6;
+          const torusRadius = torusR + baseRadius * 0.4 * Math.cos(3 * phi);
+          newRadius = torusRadius;
+          break;
+        case 6: // Star shape
+          newRadius = baseRadius * (1 + 0.4 * Math.sin(6 * theta));
+          break;
+        case 7: // Twisted shape
+          newRadius = baseRadius * (1 + 0.3 * Math.sin(theta + phi * 2));
+          break;
+        case 8: // Fractal-like
+          newRadius = baseRadius * (1 + 0.2 * Math.sin(8 * theta) * Math.cos(4 * phi));
+          break;
+      }
+      
+      // Smooth transition between shapes
+      const currentRadius = radius + (newRadius - radius) * transition;
+      
+      // Apply new position
+      const scale = currentRadius / radius;
+      positions[i * 3] = x * scale;
+      positions[i * 3 + 1] = y * scale;
+      positions[i * 3 + 2] = z * scale;
+    }
+    
+    positionAttribute.needsUpdate = true;
   };
 
   // Update orb color when ego state changes
