@@ -167,7 +167,7 @@ export default function OnboardingWizard({ isOpen, onClose, onComplete }: Onboar
         reasoning: result.response || 'AI will help optimize your transformation journey.',
         timeline: data.timeline,
         approach: 'Progressive archetypal hypnosis',
-        estimatedSessions: data.timeline === '1-year' ? 365 : 1825
+        estimatedSessions: (data.timeline === '1-year' ? 365 : 1825) * (data.frequency === '2x-daily' ? 2 : 1)
       };
       
       setRefinedGoal(aiRefinedGoal);
@@ -181,7 +181,7 @@ export default function OnboardingWizard({ isOpen, onClose, onComplete }: Onboar
         reasoning: 'Your selected goals will create meaningful transformation through consistent practice.',
         timeline: data.timeline,
         approach: 'Progressive archetypal hypnosis',
-        estimatedSessions: data.timeline === '1-year' ? 365 : 1825
+        estimatedSessions: (data.timeline === '1-year' ? 365 : 1825) * (data.frequency === '2x-daily' ? 2 : 1)
       };
       setRefinedGoal(fallbackGoal);
       
@@ -223,6 +223,10 @@ export default function OnboardingWizard({ isOpen, onClose, onComplete }: Onboar
   };
 
   const generateMockRoadmap = (goal: any, onboardingData: OnboardingData) => {
+    const baseSessions = onboardingData.timeline === '1-year' ? 365 : 1825;
+    const frequencyMultiplier = onboardingData.frequency === '2x-daily' ? 2 : 1;
+    const estimatedSessions = baseSessions * frequencyMultiplier;
+    
     return {
       stages: [
         {
@@ -255,11 +259,16 @@ export default function OnboardingWizard({ isOpen, onClose, onComplete }: Onboar
         }
       ],
       isPremium: true,
-      generatedAt: new Date().toISOString()
+      generatedAt: new Date().toISOString(),
+      estimatedSessions: estimatedSessions
     };
   };
 
   const generateBasicRoadmap = (goal: any, onboardingData: OnboardingData) => {
+    const baseSessions = onboardingData.timeline === '1-year' ? 365 : 1825;
+    const frequencyMultiplier = onboardingData.frequency === '2x-daily' ? 2 : 1;
+    const estimatedSessions = baseSessions * frequencyMultiplier;
+    
     return {
       stages: [
         {
@@ -273,7 +282,8 @@ export default function OnboardingWizard({ isOpen, onClose, onComplete }: Onboar
         }
       ],
       isPremium: false,
-      generatedAt: new Date().toISOString()
+      generatedAt: new Date().toISOString(),
+      estimatedSessions: estimatedSessions
     };
   };
 
