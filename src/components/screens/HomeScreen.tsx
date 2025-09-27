@@ -168,14 +168,6 @@ export default function HomeScreen({
         </div>
       </div>
     </div>
-              <div className="text-white/70 text-xs">{currentState.role}</div>
-            </div>
-            <ChevronRight size={12} className="text-white/40" />
-          </button>
-        </div>
-        </div>
-      </div>
-    </div>
   );
 }
 
