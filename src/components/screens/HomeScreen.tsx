@@ -54,13 +54,13 @@ export default function HomeScreen({
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4" style={{ paddingBottom: 'calc(var(--total-nav-height, 200) + 2rem)' }}>
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4" style={{ paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)' }}>
         {/* Center Orb */}
         <div className="mb-4">
           <Orb 
             onTap={handleOrbTap}
             egoState={currentState.id}
-            size={window.innerWidth < 768 ? 220 : 320}
+            size={window.innerWidth < 768 ? 350 : 450}
             variant="webgl"
             afterglow={false}
           />
