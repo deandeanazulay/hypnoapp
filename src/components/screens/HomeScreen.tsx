@@ -171,6 +171,45 @@ export default function HomeScreen({
   );
 }
 
+// 1. Ego States Carousel Component - Perfectly centered
+interface EgoStatesCarouselProps {
+  activeEgoState: string;
+  onEgoStateChange: (egoStateId: string) => void;
+}
+
+function EgoStatesCarousel({ activeEgoState, onEgoStateChange }: EgoStatesCarouselProps) {
+  return (
+    <div className="relative w-full flex justify-center items-center">
+      {/* Gradient overlays for fade effect */}
+      <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
+      
+      {/* Perfectly centered scrolling container */}
+      <div className="flex items-center justify-center space-x-3 px-8 animate-scroll-x">
+        {[...EGO_STATES, ...EGO_STATES, ...EGO_STATES].map((state, index) => {
+          const isSelected = activeEgoState === state.id;
+          const egoColor = getEgoColor(state.id);
+          return (
+            <div key={`${state.id}-${index}`} className="flex-shrink-0">
+              <button
+                onClick={() => onEgoStateChange(state.id)}
+                className={`w-12 h-12 rounded-full bg-gradient-to-br ${egoColor.bg} border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
+                  isSelected ? 'border-white/80 scale-115 opacity-100' : 'border-white/30 opacity-60 hover:opacity-80'
+                }`}
+                style={{
+                  boxShadow: isSelected ? `0 0 20px ${egoColor.accent}80` : `0 0 10px ${egoColor.accent}40`
+                }}
+              >
+                <span className="text-lg">{state.icon}</span>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 interface CurrentRoadmapPreviewProps {
   user: any;
   onMilestoneSelect: (milestone: any) => void;
