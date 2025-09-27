@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, MessageCircle, HelpCircle } from 'lucide-react';
+import { Settings, User, Crown, Coins, TrendingUp, Award, Zap, Target, MessageCircle, HelpCircle, BookOpen } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState, openEgoModal } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
@@ -43,6 +43,14 @@ export default function GlobalHUD() {
               title="Help & Documentation"
             >
               <HelpCircle size={16} className="text-white/80" />
+            </button>
+            
+            <button
+              onClick={() => openModal('personalLibrary')}
+              className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center justify-center transition-all hover:scale-110"
+              title="Personal Protocol Library"
+            >
+              <BookOpen size={16} className="text-purple-400" />
             </button>
             {/* <button 
               onClick={() => openModal('chatgptChat')} // Removed as per prompt

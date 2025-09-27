@@ -198,6 +198,7 @@ export default function App() {
           <TokensModal />
           <FavoritesModal onSessionSelect={handleFavoriteSelect} />
           <DocumentationHubModal />
+          <PersonalLibraryModal />
           
           {/* Toast System */}
           <ToastManager />

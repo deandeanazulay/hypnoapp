@@ -26,6 +26,7 @@ export interface AppState {
     egoStates: boolean;
     favorites: boolean;
     documentationHub: boolean;
+    personalLibrary: boolean;
   };
   
   // Toast system
@@ -138,6 +139,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     egoStates: false,
     favorites: false,
     documentationHub: false,
+    personalLibrary: false,
   },
   
   toasts: [],

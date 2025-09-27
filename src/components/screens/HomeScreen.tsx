@@ -266,7 +266,7 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       name: 'First Steps',
       icon: Play,
       unlocked: true,
-      completed: (user?.session_streak || 0) >= 1,
+      completed: (user?.session_streak || 0) > 0,
       active: (user?.session_streak || 0) === 0,
       xpReward: 25,
       tokenReward: 5,
@@ -283,9 +283,9 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
       id: 'three-day-streak',
       name: 'Momentum',
       icon: Zap,
-      unlocked: (user?.session_streak || 0) >= 1,
+      unlocked: (user?.session_streak || 0) > 0,
       completed: (user?.session_streak || 0) >= 3,
-      active: (user?.session_streak || 0) >= 1 && (user?.session_streak || 0) < 3,
+      active: (user?.session_streak || 0) > 0 && (user?.session_streak || 0) < 3,
       xpReward: 50,
       tokenReward: 10,
       difficulty: 'easy',
@@ -353,24 +353,8 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
     }
   ];
 
-  // Get the current active milestone (first incomplete one)
-  const getActiveMilestone = () => {
-    return milestones.find(m => m.unlocked && !m.completed) || milestones[0];
-  };
-
-  // Get milestones to display (current + next 4, or first 5 if none active)
-  const getDisplayMilestones = () => {
-    const activeMilestone = getActiveMilestone();
-    const activeIndex = milestones.findIndex(m => m.id === activeMilestone.id);
-    
-    // Show 5 milestones starting from the active one
-    const startIndex = Math.max(0, activeIndex);
-    const endIndex = Math.min(milestones.length, startIndex + 5);
-    
-    return milestones.slice(startIndex, endIndex);
-  };
-
-  const displayMilestones = getDisplayMilestones();
+  // Always show first 5 milestones for consistency
+  const displayMilestones = milestones.slice(0, 5);
 
   const handleMilestoneClick = (milestone: any) => {
     if (!milestone.unlocked) return;
@@ -542,15 +526,14 @@ export default function HomeScreen({
         </div>
 
         {/* Orb */}
-        <div className="">
+        <div className="" style={{ overflow: 'visible' }}>
           <Orb
             onTap={handleOrbTap}
             egoState={currentState.id}
             size={orbSize}
             variant="webgl"
             afterglow={false}
-            className="overflow-visible"
-            style={{ overflow: 'visible' }}
+            className=""
           />
         </div>
 

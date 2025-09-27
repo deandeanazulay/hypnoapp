@@ -56,14 +56,35 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       return;
     }
 
-    try {
-      // Save protocol to database
-      const { user } = await supabase.auth.getUser();
-      if (!user.user?.id) {
-        showToast({ type: 'error', message: 'User not authenticated' });
-        return;
-      }
+    // Check if user has enough tokens
+    const { user } = await supabase.auth.getUser();
+    if (!user.user?.id) {
+      showToast({ type: 'error', message: 'User not authenticated' });
+      return;
+    }
 
+    // Get current user profile to check tokens
+    const { data: userProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('tokens')
+      .eq('id', user.user.id)
+      .single();
+
+    if (profileError) {
+      console.error('[CREATE] Error fetching user profile:', profileError);
+      showToast({ type: 'error', message: 'Failed to check token balance' });
+      return;
+    }
+
+    if ((userProfile?.tokens || 0) < 5) {
+      showToast({ 
+        type: 'warning', 
+        message: 'You need 5 tokens to create a custom protocol. Complete sessions to earn more tokens!' 
+      });
+      return;
+    }
+
+    try {
       const protocolData = {
         user_id: user.user.id,
         name: protocol.name,
@@ -74,6 +95,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
         duration: protocol.duration
       };
 
+      // Save protocol and deduct tokens in a transaction
       const { data, error } = await supabase
         .from('custom_protocols')
         .insert(protocolData)
@@ -86,13 +108,25 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
         return;
       }
 
+      // Deduct 5 tokens from user
+      const { error: tokenError } = await supabase
+        .from('user_profiles')
+        .update({ tokens: (userProfile.tokens || 0) - 5 })
+        .eq('id', user.user.id);
+
+      if (tokenError) {
+        console.error('[CREATE] Error deducting tokens:', tokenError);
+        // Don't fail the protocol creation, just warn
+        showToast({ type: 'warning', message: 'Protocol created but tokens not deducted' });
+      }
+
       if (import.meta.env.DEV) {
         console.log('[CREATE] Protocol saved successfully:', data);
       }
       
       // Call the callback with the saved protocol data
       onProtocolCreate(data);
-      showToast({ type: 'success', message: 'Protocol created and saved!' });
+      showToast({ type: 'success', message: 'Protocol created! (-5 tokens)' });
     } catch (err) {
       console.error('[CREATE] Unexpected error saving protocol:', err);
       showToast({ type: 'error', message: 'Failed to create protocol' });
