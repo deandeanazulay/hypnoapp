@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useAppStore, getEgoState } from '../../store';
 import { useGameState } from '../GameStateManager';
 import { useProtocolStore } from '../../state/protocolStore';
 import { track } from '../../services/analytics';
 import { Heart } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import Orb from '../Orb';
 import ActionsBar from '../ActionsBar';
 import SessionInitiationFlow from '../session/SessionInitiationFlow';
@@ -22,13 +23,54 @@ interface HomeScreenProps {
 export default function HomeScreen({ onOrbTap, onTabChange, onShowAuth, activeTab }: HomeScreenProps) {
   const { isAuthenticated } = useAuth();
   const { user } = useGameState();
-  const { activeEgoState } = useAppStore();
+  const { activeEgoState, showToast } = useAppStore();
   const { customActions } = useProtocolStore();
 
   const [selectedAction, setSelectedAction] = useState<any>(null);
   const [showSessionFlow, setShowSessionFlow] = useState(false);
+  const [sessionCount, setSessionCount] = useState(0);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const currentEgoState = getEgoState(activeEgoState);
+
+  // Fetch real session data for accurate milestone tracking
+  useEffect(() => {
+    const fetchSessionData = async () => {
+      if (!isAuthenticated || !user?.id) {
+        setIsLoadingData(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('sessions')
+          .select('id, ego_state, completed_at')
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error fetching session data:', error);
+          setSessionCount(0);
+        } else {
+          setSessionCount(data?.length || 0);
+          if (import.meta.env.DEV) {
+            console.log('Session data loaded:', { 
+              totalSessions: data?.length || 0,
+              userStreak: user?.session_streak || 0,
+              userLevel: user?.level || 1,
+              egoStateUsage: Object.keys(user?.ego_state_usage || {}).length
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+        setSessionCount(0);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    fetchSessionData();
+  }, [isAuthenticated, user?.id, user?.session_streak]);
 
   const handleOrbTap = () => {
     if (!isAuthenticated) {
