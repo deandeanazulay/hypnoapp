@@ -13,7 +13,7 @@ import LandingPage from './components/LandingPage';
 
 // Screens
 import HomeScreen from './components/screens/HomeScreen';
-import ExploreScreen from './components/screens/ExploreScreen';
+import JourneyMapScreen from './components/screens/JourneyMapScreen';
 import CreateScreen from './components/screens/CreateScreen';
 import ChatScreen from './components/screens/ChatScreen';
 import ProfileScreen from './components/screens/ProfileScreen';
@@ -148,7 +148,7 @@ export default function App() {
                   )}
                   
                   {activeTab === 'explore' && (
-                    <ExploreScreen
+                    <JourneyMapScreen
                       onProtocolSelect={handleProtocolSelect}
                     />
                   )}
