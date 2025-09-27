@@ -161,12 +161,12 @@ export default function App() {
   return (
     <Router>
       <ErrorBoundary>
-        <div className="min-h-screen bg-black overflow-visible">
+        <div className="min-h-screen bg-black" style={{ overflow: 'visible' }}>
           {/* Global HUD */}
           <GlobalHUD />
           
           {/* Main Content */}
-          <div className="h-screen pt-16 overflow-visible">
+          <div className="h-screen pt-16" style={{ overflow: 'visible' }}>
             <Routes>
               <Route path="/payment-success" element={
                 <div className="h-full bg-black flex items-center justify-center">
