@@ -326,9 +326,12 @@ export class SessionManager {
         return;
       }
 
-      this._playWithBrowserTTS(text);
+      // Fall back to browser TTS
+      console.log('[SESSION] OpenAI TTS failed, falling back to browser TTS');
+      await this._playWithBrowserTTS(text);
     } catch (error) {
-      this._playWithBrowserTTS(text);
+      console.log('[SESSION] OpenAI TTS error, falling back to browser TTS:', error);
+      await this._playWithBrowserTTS(text);
     }
   }
 
@@ -343,20 +346,22 @@ export class SessionManager {
     };
     
     clonedAudio.onerror = (event) => {
+      console.log('[SESSION] Pre-buffered audio error, falling back to browser TTS');
       this.currentAudioElement = null;
       
       // Fall back to browser TTS on audio error  
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
-        this._playWithBrowserTTS(segment.text);
+        this._playWithBrowserTTS(segment.text).catch(console.error);
       }
     };
     
     clonedAudio.play().catch(error => {
+      console.log('[SESSION] Pre-buffered audio play failed, falling back to browser TTS:', error);
       this.currentAudioElement = null;
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
-        this._playWithBrowserTTS(segment.text);
+        this._playWithBrowserTTS(segment.text).catch(console.error);
       }
     });
   }
@@ -372,21 +377,23 @@ export class SessionManager {
     };
     
     this.currentAudioElement.onerror = (event) => {
+      console.log('[SESSION] OpenAI TTS audio error, falling back to browser TTS');
       this.currentAudioElement = null;
       
       // Fall back to browser TTS on audio error  
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
-        this._playWithBrowserTTS(segment.text);
+        this._playWithBrowserTTS(segment.text).catch(console.error);
       }
     };
     
     // Start playback with error handling
     this.currentAudioElement.play().catch(error => {
+      console.log('[SESSION] OpenAI TTS audio play failed, falling back to browser TTS:', error);
       this.currentAudioElement = null;
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
-        this._playWithBrowserTTS(segment.text);
+        this._playWithBrowserTTS(segment.text).catch(console.error);
       }
     });
   }
@@ -400,49 +407,150 @@ export class SessionManager {
       return;
     }
 
-    // Stop any existing speech before starting new utterance
-    window.speechSynthesis.cancel();
-    
-    // Small delay to ensure clean state
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Wait for voices to load
+    try {
+      // Stop any existing speech before starting new utterance
+      window.speechSynthesis.cancel();
+      
+      // Small delay to ensure clean state
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Wait for voices to load
+      await this.voicesLoadedPromise;
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.8;  // Slightly faster for better clarity
+      utterance.pitch = 0.9; // Higher pitch for better audibility
+      utterance.volume = 1.0;
+      
+      // Voice selection (handle async loading properly)
+      await this._selectBestVoice(utterance);
+      
+      // Event handlers
+      utterance.onstart = () => {
+        console.log('[SESSION] Browser TTS started speaking');
+      };
+      
+      utterance.onend = () => {
+        console.log('[SESSION] Browser TTS finished speaking');
+        this.currentUtterance = null;
+        this._handleSegmentEnd();
+      };
+      
+      utterance.onerror = (event) => {
+        // Only log non-interruption errors
+        if (event.error !== 'interrupted' && event.error !== 'canceled') {
+          console.error('[SESSION] Browser TTS error:', event.error);
+        }
+        
+        this.currentUtterance = null;
+        
+        if (event.error === 'interrupted' || event.error === 'canceled') {
+          // Expected - don't advance
+        } else {
+          // Fallback advance to prevent stalling
+          this._handleSegmentEnd();
+        }
+      };
+      
+      // Store current utterance
+      this.currentUtterance = utterance;
+      
+      // Force speech to start with user interaction fallback
+      console.log('[SESSION] Starting browser TTS speech');
+      window.speechSynthesis.speak(utterance);
+      
+      // Fallback: if speech doesn't start within 2 seconds, try again
+      setTimeout(() => {
+        if (this.currentUtterance === utterance && !this._isDisposed) {
+          console.log('[SESSION] TTS fallback: forcing speech restart');
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utterance);
+        }
+      }, 2000);
+      
+    } catch (error) {
+      console.error('[SESSION] Browser TTS setup failed:', error);
+      // Continue to next segment if TTS completely fails
+      setTimeout(() => {
+        this._handleSegmentEnd();
+      }, 1000);
+    }
+  }
+
+  private async _selectBestVoice(utterance: SpeechSynthesisUtterance) {
+    // Ensure voices are loaded
     await this.voicesLoadedPromise;
     
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.8;  // Slightly faster for better clarity
-    utterance.pitch = 0.9; // Higher pitch for better audibility
-    utterance.volume = 1.0;
+    const voices = window.speechSynthesis.getVoices();
+    console.log('[SESSION] Available voices:', voices.map(v => v.name));
     
-    // Voice selection (handle async loading properly)
-    await this._selectBestVoice(utterance);
+    let selectedVoice = null;
     
-    // Event handlers
-    utterance.onstart = () => {
-      console.log('[SESSION] Browser TTS started speaking');
-    };
+    // Prefer male voices for hypnotic effect
+    const preferredVoices = [
+      'Microsoft David',
+      'Google US English Male',
+      'Alex',
+      'Microsoft Mark', 
+      'Daniel (Enhanced)',
+      'Daniel',
+      'Tom',
+      'Microsoft Zira',
+      'Google US English',
+      'Microsoft Aria',
+      'Samantha'
+    ];
     
-    utterance.onend = () => {
-      console.log('[SESSION] Browser TTS finished speaking');
-      this.currentUtterance = null;
-      this._handleSegmentEnd();
-    };
+    for (const voiceName of preferredVoices) {
+      selectedVoice = voices.find(voice => voice.name.includes(voiceName));
+      if (selectedVoice) break;
+    }
     
-    utterance.onerror = (event) => {
-      // Only log non-interruption errors
-      if (event.error !== 'interrupted' && event.error !== 'canceled') {
-        console.error('[SESSION] Browser TTS error:', event.error);
+    if (!selectedVoice) {
+      selectedVoice = voices.find(voice => voice.lang.includes('en'));
+    }
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      console.log('[SESSION] Selected voice:', selectedVoice.name);
+    } else {
+      console.log('[SESSION] No suitable voice found, using default');
+    }
+  }
+
+  private async _ensureVoicesLoaded(): Promise<void> {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      this.voicesLoaded = true;
+      return;
+    }
+
+    return new Promise((resolve) => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        this.voicesLoaded = true;
+        resolve();
+        return;
       }
+
+      const handleVoicesChanged = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          this.voicesLoaded = true;
+          window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+          resolve();
+        }
+      };
+
+      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
       
-      this.currentUtterance = null;
-      
-      if (event.error === 'interrupted' || event.error === 'canceled') {
-        // Expected - don't advance
-      } else {
-        // Fallback advance to prevent stalling
-        this._handleSegmentEnd();
-      }
-    };
+      // Fallback timeout
+      setTimeout(() => {
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+        this.voicesLoaded = true;
+        resolve();
+      }, 2000);
+    });
+  }
     
     // Store current utterance
     this.currentUtterance = utterance;

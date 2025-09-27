@@ -266,18 +266,15 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
         </div>
 
         {/* Premium Breathing Dock - Bottom */}
-        {/* Premium Breathing Dock - Bottom */}
-        {/* Premium Breathing Dock - Bottom */}
         <div className="absolute bottom-0 left-0 right-0 z-30 px-4 pb-4">
-          <div className="w-full max-w-5xl mx-auto bg-gradient-to-r from-black/95 via-purple-950/95 to-black/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-purple-500/20 overflow-hidden">
-            {/* Main Breathing Row */}
-            <div className="px-6 py-4">
-              <div className="flex items-center justify-between">
-                {/* Breathing State */}
-                <div className="flex items-center space-x-4">
-                  <div className="text-white/50 text-xs font-medium tracking-wider uppercase">Breathing</div>
-                  <div className={`flex items-center justify-center w-20 h-8 rounded-xl border transition-all duration-1000 ${getBreathingColor()}`}>
-                    <span className="text-sm font-bold capitalize">
+          <div className="w-full max-w-4xl mx-auto bg-gradient-to-r from-black/95 via-purple-950/95 to-black/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-purple-500/20 overflow-hidden">
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-center space-x-8">
+                {/* Breathing State - Centered */}
+                <div className="flex items-center space-x-3">
+                  <div className="text-white/60 text-xs font-medium tracking-wider uppercase">Breathing</div>
+                  <div className={`flex items-center justify-center w-16 h-7 rounded-lg border transition-all duration-1000 ${getBreathingColor()}`}>
+                    <span className="text-xs font-bold capitalize">
                       {breathing === 'hold-inhale' ? 'Hold' : 
                        breathing === 'hold-exhale' ? 'Hold' :
                        breathing}
@@ -286,9 +283,9 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
                 </div>
 
                 {/* Live Cycle Timer */}
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400/30 to-cyan-400/30 border border-teal-400/50 flex items-center justify-center shadow-lg shadow-teal-400/25">
-                    <span className="text-teal-400 text-sm font-bold">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400/30 to-cyan-400/30 border border-teal-400/50 flex items-center justify-center shadow-lg shadow-teal-400/25">
+                    <span className="text-teal-400 text-xs font-bold">
                       {Math.floor((Date.now() / 2000) % 8) + 1}s
                     </span>
                   </div>
@@ -296,10 +293,10 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
                 </div>
 
                 {/* Pattern Visualization */}
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
                   {['Inhale', 'Hold', 'Exhale', 'Hold'].map((breathPhase, index) => (
                     <div key={breathPhase} className="flex items-center">
-                      <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${
+                      <div className={`w-2 h-2 rounded-full transition-all duration-500 ${
                         (breathing === 'inhale' && index === 0) ||
                         (breathing === 'hold-inhale' && index === 1) ||
                         (breathing === 'exhale' && index === 2) ||
@@ -307,23 +304,23 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
                           ? 'bg-teal-400 scale-125 animate-pulse shadow-lg shadow-teal-400/50'
                           : 'bg-white/20'
                       }`} />
-                      {index < 3 && <div className="w-3 h-0.5 bg-white/20 mx-1.5" />}
+                      {index < 3 && <div className="w-2 h-0.5 bg-white/20 mx-1" />}
                     </div>
                   ))}
                 </div>
 
                 {/* Session Stats */}
-                <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-4">
                   <div className="text-center">
-                    <div className="text-white text-sm font-bold">{sessionState.currentSegmentIndex + 1}</div>
+                    <div className="text-white text-xs font-bold">{sessionState.currentSegmentIndex + 1}</div>
                     <div className="text-white/50 text-xs">Segment</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-purple-400 text-sm font-bold">{depth}</div>
+                    <div className="text-purple-400 text-xs font-bold">{depth}</div>
                     <div className="text-white/50 text-xs">Depth</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-orange-400 text-sm font-bold">{sessionState.totalSegments}</div>
+                    <div className="text-orange-400 text-xs font-bold">{sessionState.totalSegments}</div>
                     <div className="text-white/50 text-xs">Total</div>
                   </div>
                 </div>
