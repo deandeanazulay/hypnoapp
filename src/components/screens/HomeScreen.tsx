@@ -589,21 +589,7 @@ export default function HomeScreen({
           </button>
         </div>
 
-        {/* Current ego-state chip */}
-        <div className="text-center mt-2">
-          <button
-            onClick={() => (isAuthenticated ? useAppStore.getState().openModal('egoStates') : onShowAuth())}
-            className="flex items-center space-x-2 bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-lg p-2 border border-white/20 hover:border-white/30 hover:scale-105 transition-all"
-          >
-            <div className="text-lg">{(currentState && currentState.icon) || '🧿'}</div>
-            <div className="text-left">
-              <div className="text-white font-semibold text-xs">{currentState.name}</div>
-              <div className="text-white/70 text-xs">{currentState.role}</div>
-            </div>
-            <ChevronRight size={12} className="text-white/40" />
-          </button>
-        </div>
-      </div>
+
 
       {/* Session Selection Modal */}
       <SessionSelectionModal
