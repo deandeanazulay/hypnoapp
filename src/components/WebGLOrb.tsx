@@ -295,15 +295,12 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const baseSize = 280;
     const scaleMultiplier = size / baseSize;
     const sphereRadius = 10 * scaleMultiplier;
-    // Create fractal sphere geometry - ONCE
+    
+    // Create clean sphere geometry - NO DEFORMATION
     const baseDetail = evolutionLevel === 'basic' ? 32 : evolutionLevel === 'enhanced' ? 48 : evolutionLevel === 'advanced' ? 64 : 96;
     const sphereGeometry = new THREE.SphereGeometry(sphereRadius, baseDetail, baseDetail);
     
-    // Store original vertex positions for fractal deformation
-    const originalPositions = sphereGeometry.attributes.position.array.slice();
-    sphereGeometry.userData = { originalPositions };
-    
-    // Create wireframe ONCE - don't recreate every frame
+    // Create wireframe geometry
     const wireframeGeometry = new THREE.WireframeGeometry(sphereGeometry);
     
     // Create material with ego state color and evolution effects
@@ -364,130 +361,10 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     scene.add(pulseMesh);
     
     // Store references for animation
-    orbMesh.userData = { glowMesh1, pulseMesh, sphereGeometry, wireframeGeometry, glowMeshes: orbMesh.userData.glowMeshes || [] };
+    orbMesh.userData = { glowMesh1, pulseMesh, glowMeshes: orbMesh.userData.glowMeshes || [] };
 
     if (import.meta.env.DEV) {
       console.log('[ORB] Geometry initialized successfully');
-    }
-  };
-
-  const animate = () => {
-    // Guard against inactive state
-    if (!isActiveRef.current) {
-      if (import.meta.env.DEV) {
-        console.log('[ORB] Animation stopped - component inactive');
-      }
-      return;
-    }
-    
-    if (!rendererRef.current || !cameraRef.current || !sceneRef.current || contextLost) {
-      // Retry animation in next frame if components aren't ready
-      animationIdRef.current = requestAnimationFrame(animate);
-      return;
-    }
-
-    const time = Date.now() * 0.001;
-    const alienState = alienStateRef.current;
-    
-    // Alien pulsing pattern - irregular, organic
-    alienState.pulse = Math.sin(time * 1.3) * 0.3 + 
-                      Math.sin(time * 2.7) * 0.2 + 
-                      Math.sin(time * 4.1) * 0.1;
-    
-    // Color intensity shifts
-    alienState.intensity = 1 + Math.sin(time * 0.7) * 0.3;
-    
-    // Organic offset for movement
-    alienState.organicOffset = Math.sin(time * 0.5) * 0.02;
-    
-    // Fractal deformation phase
-    alienState.fractalPhase = time * 0.6;
-
-    // Apply fractal deformations to the sphere geometry - NO WIREFRAME RECREATION
-    if (orbMeshRef.current && orbMeshRef.current.userData.sphereGeometry) {
-      const geometry = orbMeshRef.current.userData.sphereGeometry;
-      const originalPositions = geometry.userData.originalPositions;
-      const positions = geometry.attributes.position.array;
-      
-      // Safety check for positions array
-      if (!originalPositions || !positions || originalPositions.length !== positions.length) {
-        // Skip this frame if data is invalid
-        return;
-      }
-      
-      // Track if any NaN values are detected
-      let hasNaNValues = false;
-      
-      for (let i = 0; i < positions.length; i += 3) {
-        const origX = originalPositions[i];
-        const origY = originalPositions[i + 1];
-        const origZ = originalPositions[i + 2];
-        
-        // Safety check for valid original positions
-        if (!isFinite(origX) || !isFinite(origY) || !isFinite(origZ)) {
-          hasNaNValues = true;
-          continue;
-        }
-        
-        // Simplified, safer deformation that won't produce NaN
-        const radius = Math.sqrt(origX * origX + origY * origY + origZ * origZ);
-        
-        // Skip if radius is invalid
-        if (!isFinite(radius) || radius === 0) {
-          hasNaNValues = true;
-          continue;
-        }
-        
-        // Simple breathing effect only - no complex fractal math
-        const breathingFactor = 1 + alienState.pulse * 0.05;
-        
-        // Apply speaking/listening effects simply
-        let effectFactor = 1;
-        if (isSpeaking) {
-          effectFactor = 1 + 0.1 * Math.sin(time * 6);
-        }
-        if (isListening) {
-          effectFactor = 1 + 0.05 * Math.sin(time * 8);
-        }
-        
-        const totalFactor = breathingFactor * effectFactor;
-        
-        // Validate total factor
-        if (!isFinite(totalFactor) || totalFactor <= 0) {
-          hasNaNValues = true;
-          continue;
-        }
-        
-        // Calculate new positions with simple scaling
-        const newX = origX * totalFactor;
-        const newY = origY * totalFactor;
-        const newZ = origZ * totalFactor;
-        
-        // Final validation before assignment
-        if (isFinite(newX) && isFinite(newY) && isFinite(newZ)) {
-          positions[i] = newX;
-          positions[i + 1] = newY;
-          positions[i + 2] = newZ;
-        } else {
-          hasNaNValues = true;
-        }
-      }
-      
-      // If we detected NaN values, reset to original positions
-      if (hasNaNValues) {
-        if (import.meta.env.DEV) {
-          console.warn('[ORB] NaN values detected, resetting geometry');
-        }
-        for (let i = 0; i < positions.length; i++) {
-          if (i < originalPositions.length && isFinite(originalPositions[i])) {
-            positions[i] = originalPositions[i];
-          }
-        }
-      }
-      
-      // Only update positions, don't recreate wireframe
-      geometry.attributes.position.needsUpdate = true;
-    }
 
     // Alien breathing - more dramatic and irregular
     const evolutionComplexity = evolutionLevel === 'basic' ? 1 : evolutionLevel === 'enhanced' ? 1.5 : evolutionLevel === 'advanced' ? 2 : 3;
@@ -602,6 +479,12 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         const pulseMat = userData.pulseMesh.material as THREE.MeshBasicMaterial;
         pulseMat.color = color;
       }
+      if (userData.glowMeshes) {
+        userData.glowMeshes.forEach((glowMesh: any) => {
+          const glowMat = glowMesh.material as THREE.MeshBasicMaterial;
+          glowMat.color = color;
+        });
+      }
     }
   }, [egoState]);
 
@@ -628,11 +511,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
         userData.pulseMesh.geometry?.dispose();
         userData.pulseMesh.material?.dispose();
       }
-      if (userData.sphereGeometry) {
-        userData.sphereGeometry.dispose();
-      }
-      if (userData.wireframeGeometry) {
-        userData.wireframeGeometry.dispose();
+      if (userData.glowMeshes) {
+        userData.glowMeshes.forEach((glowMesh: any) => {
+          glowMesh.geometry?.dispose();
+          glowMesh.material?.dispose();
+        });
       }
       orbMeshRef.current.geometry?.dispose();
       orbMeshRef.current.material?.dispose();
