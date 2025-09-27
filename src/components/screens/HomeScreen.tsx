@@ -523,7 +523,7 @@ export default function HomeScreen({
         </div>
 
         {/* Orb */}
-        <div className="mt-1 mb-2">
+        <div className="">
           <Orb
             onTap={handleOrbTap}
             egoState={currentState.id}
