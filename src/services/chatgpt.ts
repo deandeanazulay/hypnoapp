@@ -44,29 +44,62 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
-    // Robust validation for environment variables
+    // Enhanced validation for environment variables
     if (!supabaseUrl || !supabaseAnonKey || 
         supabaseUrl === 'null' || supabaseUrl === 'undefined' || 
         supabaseAnonKey === 'null' || supabaseAnonKey === 'undefined' ||
         supabaseUrl === 'YOUR_SUPABASE_URL' || 
         supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY' ||
-        supabaseUrl.trim() === '' || supabaseAnonKey.trim() === '') {
+        supabaseUrl.trim() === '' || supabaseAnonKey.trim() === '' ||
+        supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1')) {
       console.warn('[SCRIPT-GEN] Invalid Supabase configuration detected');
       console.warn('VITE_SUPABASE_URL:', supabaseUrl);
       console.warn('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '[PRESENT]' : '[MISSING]');
-      throw new Error('Invalid or missing Supabase configuration. Please check your environment variables.');
+      
+      // Create emergency fallback script instead of throwing error
+      console.warn('[SCRIPT-GEN] Using emergency fallback script due to missing Supabase config');
+      return createEmergencyScript(enhancedContext);
     }
     
-    const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
-    
-    // Validate the final URL before making the request
-    let validatedUrl: URL;
+    // Ensure URL is properly formatted
+    let baseUrl: string;
     try {
-      validatedUrl = new URL(`${baseUrl}/functions/v1/generate-script`);
-      console.log('[SCRIPT-GEN] Calling script generation at:', validatedUrl.toString());
+      if (supabaseUrl.startsWith('http://') || supabaseUrl.startsWith('https://')) {
+        baseUrl = supabaseUrl;
+      } else {
+        baseUrl = `https://${supabaseUrl}`;
+      }
+      
+      // Validate URL format
+      new URL(baseUrl);
+    } catch (urlError) {
+      console.error('[SCRIPT-GEN] Invalid Supabase URL format:', supabaseUrl);
+      return createEmergencyScript(enhancedContext);
+    }
     
+    const functionUrl = `${baseUrl}/functions/v1/generate-script`;
+    
+    // Test connectivity before making the actual request
+    try {
+      console.log('[SCRIPT-GEN] Testing connectivity to:', functionUrl);
+      
+      // Quick connectivity test with shorter timeout
+      const testResponse = await fetch(functionUrl, {
+        method: 'HEAD',
+        signal: AbortSignal.timeout(3000) // 3 second timeout for connectivity test
+      });
+      
+      console.log('[SCRIPT-GEN] Connectivity test result:', testResponse.status);
+    } catch (connectivityError) {
+      console.error('[SCRIPT-GEN] Connectivity test failed:', connectivityError);
+      console.warn('[SCRIPT-GEN] Cannot reach Supabase Edge Functions, using emergency script');
+      return createEmergencyScript(enhancedContext);
+    }
+    
+    try {
+      console.log('[SCRIPT-GEN] Calling script generation at:', functionUrl);
       const response = await safeFetch(
-        validatedUrl.toString(),
+        functionUrl,
         {
           method: 'POST',
           headers: {
@@ -96,13 +129,8 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
       
       if (!result.segments || result.segments.length === 0) {
         console.error('[SCRIPT-GEN] No segments in response:', result);
-        throw new ApiError(
-          'No segments returned from script generation',
-          500,
-          'NO_SEGMENTS',
-          'Script generation API returned empty or invalid response',
-          'Try again or check API configuration'
-        );
+        console.warn('[SCRIPT-GEN] No segments returned, using emergency script');
+        return createEmergencyScript(enhancedContext);
       }
 
       if (import.meta.env.DEV) {
@@ -110,40 +138,15 @@ export async function getSessionScript(userContext: any): Promise<SessionScript>
       }
       return result;
       
-    } catch (urlError) {
-      console.error('ChatGPT: Invalid Supabase URL construction');
-      console.error('Base URL:', baseUrl);
-      throw new ApiError(
-        'Invalid Supabase URL configuration',
-        500,
-        'INVALID_URL',
-        `Base URL: ${baseUrl}`,
-        'Verify VITE_SUPABASE_URL is correct'
-      );
+    } catch (fetchError) {
+      console.error('[SCRIPT-GEN] Fetch error:', fetchError);
+      console.warn('[SCRIPT-GEN] API call failed, using emergency script');
+      return createEmergencyScript(enhancedContext);
     }
     
   } catch (error: any) {
-    if (error instanceof ApiError) {
-      console.error('Script generation failed:', getUserFriendlyErrorMessage(error));
-      throw error;
-    }
-    
-    console.error('Script generation failed with unexpected error:', error);
-    
-    // Try one more time with a direct API call as final backup
-    console.warn('Edge function failed, attempting direct API call...');
-    try {
-      const script = await generateScriptDirectly(enhancedContext);
-      if (script.segments && script.segments.length > 0) {
-        console.log('Direct API call succeeded!');
-        return script;
-      }
-    } catch (directError) {
-      console.error('Direct API call also failed:', directError);
-    }
-    
-    // Final emergency fallback - guaranteed to work
-    console.warn('All AI attempts failed, using final emergency script');
+    console.error('[SCRIPT-GEN] Unexpected error:', error);
+    console.warn('[SCRIPT-GEN] Using emergency fallback script');
     return createEmergencyScript(enhancedContext);
   }
 }
