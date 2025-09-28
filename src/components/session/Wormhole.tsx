@@ -633,3 +633,5 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
 
 
 export default Wormhole
+
+export default Wormhole
