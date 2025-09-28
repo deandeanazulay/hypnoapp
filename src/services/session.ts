@@ -388,23 +388,38 @@ export class SessionManager {
 
   private async _tryOpenAITTSLive(text: string) {
     try {
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] Attempting OpenAI TTS with ash voice for text:', text.substring(0, 50) + '...');
+      }
+      
       const result = await synthesizeSegment(text, {
-        voiceId: AI.voice.defaultVoiceId,
+        voiceId: 'ash',
         cacheKey: `live-segment-${this.currentSegmentIndex}`,
         mode: 'live',
-        model: AI.voice.model
+        model: 'tts-1'
       });
 
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] TTS result:', result);
+      }
+
       if (result.provider === 'openai-tts' && result.audioUrl) {
+        if (import.meta.env.DEV) {
+          console.log('[SESSION] Playing OpenAI TTS audio with ash voice');
+        }
         this._playOpenAITTSAudio(result.audioUrl);
         return;
       }
 
       // Fall back to browser TTS
-      console.log('[SESSION] OpenAI TTS failed, falling back to browser TTS');
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] OpenAI TTS failed, falling back to browser TTS. Result:', result);
+      }
       await this._playWithBrowserTTS(text);
     } catch (error) {
-      console.log('[SESSION] OpenAI TTS error, falling back to browser TTS:', error);
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] OpenAI TTS error, falling back to browser TTS:', error);
+      }
       await this._playWithBrowserTTS(text);
     }
   }
@@ -451,22 +466,30 @@ export class SessionManager {
   }
 
   private _playOpenAITTSAudio(audioUrl: string) {
+    if (import.meta.env.DEV) {
+      console.log('[SESSION] Creating audio element for OpenAI TTS with URL:', audioUrl);
+    }
+    
     // Create audio element for OpenAI TTS
     this.currentAudioElement = new Audio(audioUrl);
-    this.currentAudioElement.volume = 0.8;
+    this.currentAudioElement.volume = 1.0; // Full volume for ash voice
     this.currentAudioElement.preload = 'auto';
+    this.currentAudioElement.crossOrigin = 'anonymous';
     
     // Emit audio element for analysis
     this._emit('audio-element', this.currentAudioElement);
     
     this.currentAudioElement.onended = () => {
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] OpenAI TTS audio ended');
+      }
       this.currentAudioElement = null;
       this._emit('audio-ended');
       this._handleSegmentEnd();
     };
     
     this.currentAudioElement.onerror = (event) => {
-      console.log('[SESSION] OpenAI TTS audio error, falling back to browser TTS');
+      console.error('[SESSION] OpenAI TTS audio error:', event);
       this.currentAudioElement = null;
       this._emit('audio-error');
       
@@ -478,12 +501,27 @@ export class SessionManager {
     };
     
     this.currentAudioElement.onplay = () => {
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] OpenAI TTS audio started playing');
+      }
       this._emit('audio-started');
+    };
+    
+    this.currentAudioElement.onloadstart = () => {
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] OpenAI TTS audio loading started');
+      }
+    };
+    
+    this.currentAudioElement.oncanplay = () => {
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] OpenAI TTS audio can play');
+      }
     };
     
     // Start playback with error handling
     this.currentAudioElement.play().catch(error => {
-      console.log('[SESSION] OpenAI TTS audio play failed, falling back to browser TTS:', error);
+      console.error('[SESSION] OpenAI TTS audio play failed, falling back to browser TTS:', error);
       this.currentAudioElement = null;
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {

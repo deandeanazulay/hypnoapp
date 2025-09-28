@@ -123,12 +123,22 @@ Deno.serve(async (req: Request) => {
 
     // Prepare OpenAI TTS request
     const openaiRequest = {
-      model: requestData.model || "gpt-4o-mini-tts",
+      model: requestData.model || "tts-1",
       input: requestData.text.trim(),
       voice: requestData.voice,
-      response_format: requestData.response_format || "wav",
-      speed: requestData.speed || 0.9
+      response_format: requestData.response_format || "mp3",
+      speed: requestData.speed || 1.0
     };
+
+    if (import.meta.env.DEV) {
+      console.log('OpenAI TTS: Request details:', {
+        model: openaiRequest.model,
+        voice: openaiRequest.voice,
+        textLength: openaiRequest.input.length,
+        speed: openaiRequest.speed,
+        format: openaiRequest.response_format
+      });
+    }
 
     // Call OpenAI TTS API
     const openaiResponse = await fetch('https://api.openai.com/v1/audio/speech', {
@@ -195,12 +205,12 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log('OpenAI TTS: Successfully generated audio, size:', audioBlob.size);
+    console.log('OpenAI TTS: Successfully generated audio with ash voice, size:', audioBlob.size);
 
     return new Response(audioBlob, {
       status: 200,
       headers: {
-        'Content-Type': 'audio/wav',
+        'Content-Type': 'audio/mpeg',
         'Content-Length': audioBlob.size.toString(),
         'Cache-Control': 'public, max-age=3600',
         ...corsHeaders,

@@ -27,7 +27,10 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !supabaseAnonKey || 
+      supabaseUrl === 'YOUR_SUPABASE_URL' || 
+      supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY' ||
+      supabaseUrl.trim() === '' || supabaseAnonKey.trim() === '') {
     if (import.meta.env.DEV) {
       console.log('Voice: Supabase not configured, using browser TTS');
     }
@@ -39,6 +42,8 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     
     if (import.meta.env.DEV) {
       console.log('Voice: Calling TTS function at:', `${baseUrl}/functions/v1/tts`);
+      console.log('Voice: Using voice:', opts.voiceId || 'ash');
+      console.log('Voice: Text preview:', text.substring(0, 100) + '...');
     }
     
     const response = await safeFetch(
@@ -48,14 +53,13 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
         headers: { 
           "content-type": "application/json",
           "Authorization": `Bearer ${supabaseAnonKey}`,
-          "x-client-info": "libero-app"
         },
         body: JSON.stringify({ 
           text: text.trim(), 
           voice: opts.voiceId || "ash",
-          model: opts.model || "gpt-4o-mini-tts",
+          model: opts.model || "tts-1",
           speed: 1.0,
-          response_format: "wav"
+          response_format: "mp3"
         }),
       },
       {
@@ -79,7 +83,7 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     if (contentType.includes("application/json")) {
       const fallbackData = await response.json();
       if (import.meta.env.DEV) {
-        console.log('Voice: OpenAI TTS returned fallback data:', fallbackData);
+        console.log('Voice: TTS API returned fallback/error:', fallbackData);
       }
       return { provider: "browser-tts", error: fallbackData.details || fallbackData.error };
     }
@@ -90,14 +94,14 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       
       if (audioBlob.size === 0) {
         if (import.meta.env.DEV) {
-          console.log('Voice: Received empty audio blob from OpenAI TTS');
+          console.log('Voice: Received empty audio blob from TTS API');
         }
         return { provider: 'browser-tts' };
       }
       
       const audioUrl = URL.createObjectURL(audioBlob);
       if (import.meta.env.DEV) {
-        console.log('Voice: Successfully received OpenAI TTS audio, size:', audioBlob.size);
+        console.log('Voice: Successfully received TTS audio, size:', audioBlob.size, 'URL:', audioUrl);
       }
       return { provider: "openai-tts", audioUrl };
     }
@@ -143,25 +147,35 @@ export function synthesizeWithBrowserTTS(
     const setVoiceAndSpeak = () => {
       // Set voice immediately
       const voices = speechSynthesis.getVoices();
+      
+      // Try to find a voice similar to "ash" characteristics (calm, soothing)
       const preferredVoice = voices.find(voice => 
-        voice.name.includes('Samantha') ||
-        voice.name.includes('Karen') ||
-        voice.name.includes('Daniel') ||
-        voice.name.includes('Alex') ||
-        (voice.lang.includes('en') && !voice.name.toLowerCase().includes('google'))
-      ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
+        voice.name.toLowerCase().includes('samantha') ||
+        voice.name.toLowerCase().includes('karen') ||
+        voice.name.toLowerCase().includes('daniel') ||
+        voice.name.toLowerCase().includes('alex') ||
+        voice.name.toLowerCase().includes('fiona') ||
+        voice.name.toLowerCase().includes('moira') ||
+        (voice.lang.includes('en') && voice.name.toLowerCase().includes('female'))
+      ) || voices.find(voice => voice.lang.includes('en') && !voice.name.toLowerCase().includes('google')) || voices[0];
       
       if (preferredVoice) {
         utterance.voice = preferredVoice;
-        console.log('[VOICE] Selected voice:', preferredVoice.name);
+        if (import.meta.env.DEV) {
+          console.log('[VOICE] Selected voice for ash-like experience:', preferredVoice.name);
+        }
       }
 
       utterance.onstart = () => {
-        console.log('[VOICE] Browser TTS started speaking');
+        if (import.meta.env.DEV) {
+          console.log('[VOICE] Browser TTS started speaking');
+        }
       };
 
       utterance.onend = () => {
-        console.log('[VOICE] Browser TTS finished');
+        if (import.meta.env.DEV) {
+          console.log('[VOICE] Browser TTS finished');
+        }
         resolve();
       };
 
@@ -176,13 +190,17 @@ export function synthesizeWithBrowserTTS(
 
       // Start speech immediately
       try {
-        console.log('[VOICE] Starting speech synthesis...');
+        if (import.meta.env.DEV) {
+          console.log('[VOICE] Starting speech synthesis with ash-like voice...');
+        }
         speechSynthesis.speak(utterance);
         
         // Force start on mobile devices
         setTimeout(() => {
           if (!speechSynthesis.speaking && !speechSynthesis.pending) {
-            console.log('[VOICE] Forcing speech start for mobile...');
+            if (import.meta.env.DEV) {
+              console.log('[VOICE] Forcing speech start for mobile...');
+            }
             speechSynthesis.speak(utterance);
           }
         }, 100);
@@ -221,6 +239,6 @@ export function synthesizeWithBrowserTTS(
       } else {
         setVoiceAndSpeak();
       }
-    }, 50); // Reduced delay for faster response
+    }, 50);
   });
 }
