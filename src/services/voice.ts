@@ -21,18 +21,22 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
   }
   
   if (import.meta.env.DEV) {
-    console.log('Voice: Attempting TTS for text length:', text.length);
+    console.log('[VOICE] Attempting OpenAI TTS for text length:', text.length, 'with voice:', opts.voiceId || 'ash');
   }
   
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
+  // More strict validation - ensure we have real Supabase config
   if (!supabaseUrl || !supabaseAnonKey || 
       supabaseUrl === 'YOUR_SUPABASE_URL' || 
       supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY' ||
-      supabaseUrl.trim() === '' || supabaseAnonKey.trim() === '') {
+      supabaseUrl.trim() === '' || supabaseAnonKey.trim() === '' ||
+      supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1')) {
     if (import.meta.env.DEV) {
-      console.log('Voice: Supabase not configured, using browser TTS');
+      console.warn('[VOICE] Supabase not properly configured, falling back to browser TTS');
+      console.warn('[VOICE] VITE_SUPABASE_URL:', supabaseUrl);
+      console.warn('[VOICE] VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '[PRESENT]' : '[MISSING]');
     }
     return { provider: 'browser-tts' };
   }
@@ -41,9 +45,9 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
     
     if (import.meta.env.DEV) {
-      console.log('Voice: Calling TTS function at:', `${baseUrl}/functions/v1/tts`);
-      console.log('Voice: Using voice:', opts.voiceId || 'ash');
-      console.log('Voice: Text preview:', text.substring(0, 100) + '...');
+      console.log('[VOICE] Calling OpenAI TTS function at:', `${baseUrl}/functions/v1/tts`);
+      console.log('[VOICE] Using ash voice with model:', opts.model || 'tts-1');
+      console.log('[VOICE] Text preview:', text.substring(0, 100) + '...');
     }
     
     const response = await safeFetch(
@@ -56,9 +60,9 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
         },
         body: JSON.stringify({ 
           text: text.trim(), 
-          voice: opts.voiceId || "ash",
+          voice: "ash", // Force ash voice
           model: opts.model || "tts-1",
-          speed: 1.0,
+          speed: 0.9, // Slightly slower for hypnotherapy
           response_format: "mp3"
         }),
       },
@@ -66,15 +70,15 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
         operation: 'Text-to-Speech',
         additionalContext: {
           textLength: text.length,
-          voiceId: opts.voiceId,
+          voiceId: "ash",
           model: opts.model
         }
       }
     );
 
     if (import.meta.env.DEV) {
-      console.log('Voice: TTS response status:', response.status);
-      console.log('Voice: TTS response content-type:', response.headers.get("content-type"));
+      console.log('[VOICE] OpenAI TTS response status:', response.status);
+      console.log('[VOICE] OpenAI TTS content-type:', response.headers.get("content-type"));
     }
 
     const contentType = response.headers.get("content-type") || "";
@@ -83,7 +87,7 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     if (contentType.includes("application/json")) {
       const fallbackData = await response.json();
       if (import.meta.env.DEV) {
-        console.log('Voice: TTS API returned fallback/error:', fallbackData);
+        console.warn('[VOICE] OpenAI TTS API returned error, falling back to browser TTS:', fallbackData);
       }
       return { provider: "browser-tts", error: fallbackData.details || fallbackData.error };
     }
@@ -94,14 +98,16 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       
       if (audioBlob.size === 0) {
         if (import.meta.env.DEV) {
-          console.log('Voice: Received empty audio blob from TTS API');
+          console.warn('[VOICE] Received empty audio blob from OpenAI TTS API');
         }
         return { provider: 'browser-tts' };
       }
       
       const audioUrl = URL.createObjectURL(audioBlob);
       if (import.meta.env.DEV) {
-        console.log('Voice: Successfully received TTS audio, size:', audioBlob.size, 'URL:', audioUrl);
+        console.log('[VOICE] ✅ Successfully received OpenAI TTS audio with ash voice!');
+        console.log('[VOICE] Audio blob size:', audioBlob.size, 'bytes');
+        console.log('[VOICE] Audio URL created:', audioUrl);
       }
       return { provider: "openai-tts", audioUrl };
     }
@@ -117,9 +123,13 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
 
   } catch (error: any) {
     if (error instanceof ApiError) {
-      console.error('Voice: TTS error:', getUserFriendlyErrorMessage(error));
+      console.error('[VOICE] OpenAI TTS API error:', getUserFriendlyErrorMessage(error));
     } else {
-      console.error('Voice: Unexpected TTS error:', error.message);
+      console.error('[VOICE] Unexpected OpenAI TTS error:', error.message);
+    }
+    
+    if (import.meta.env.DEV) {
+      console.warn('[VOICE] Falling back to browser TTS due to OpenAI TTS failure');
     }
     // Always fall back to browser TTS on error
     return { provider: 'browser-tts', error: error.message || 'TTS service unavailable' };
@@ -162,19 +172,19 @@ export function synthesizeWithBrowserTTS(
       if (preferredVoice) {
         utterance.voice = preferredVoice;
         if (import.meta.env.DEV) {
-          console.log('[VOICE] Selected voice for ash-like experience:', preferredVoice.name);
+          console.log('[VOICE] Selected browser voice for ash-like experience:', selectedVoice.name);
         }
       }
 
       utterance.onstart = () => {
         if (import.meta.env.DEV) {
-          console.log('[VOICE] Browser TTS started speaking');
+          console.log('[VOICE] ✅ Browser TTS started speaking with ash-like voice');
         }
       };
 
       utterance.onend = () => {
         if (import.meta.env.DEV) {
-          console.log('[VOICE] Browser TTS finished');
+          console.log('[VOICE] Browser TTS finished speaking');
         }
         resolve();
       };
@@ -191,7 +201,7 @@ export function synthesizeWithBrowserTTS(
       // Start speech immediately
       try {
         if (import.meta.env.DEV) {
-          console.log('[VOICE] Starting speech synthesis with ash-like voice...');
+          console.log('[VOICE] Starting browser speech synthesis with ash-like voice...');
         }
         speechSynthesis.speak(utterance);
         
@@ -199,14 +209,14 @@ export function synthesizeWithBrowserTTS(
         setTimeout(() => {
           if (!speechSynthesis.speaking && !speechSynthesis.pending) {
             if (import.meta.env.DEV) {
-              console.log('[VOICE] Forcing speech start for mobile...');
+              console.log('[VOICE] Forcing speech start for mobile compatibility...');
             }
             speechSynthesis.speak(utterance);
           }
         }, 100);
         
       } catch (error) {
-        console.error('[VOICE] Failed to start speech:', error);
+        console.error('[VOICE] Failed to start browser speech synthesis:', error);
         reject(error);
       }
     };
