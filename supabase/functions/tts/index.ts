@@ -127,8 +127,7 @@ Deno.serve(async (req: Request) => {
       input: requestData.text.trim(),
       voice: requestData.voice,
       response_format: requestData.response_format || "wav",
-      speed: requestData.speed || 1.0,
-      instructions: "speak in a hypnotic voice"
+      speed: requestData.speed || 0.9
     };
 
     // Call OpenAI TTS API
@@ -196,11 +195,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    console.log('OpenAI TTS: Successfully generated audio, size:', audioBlob.size);
+
     return new Response(audioBlob, {
       status: 200,
       headers: {
         'Content-Type': 'audio/wav',
         'Content-Length': audioBlob.size.toString(),
+        'Cache-Control': 'public, max-age=3600',
         ...corsHeaders,
       },
     });

@@ -339,6 +339,7 @@ export class SessionManager {
     // Clone to avoid conflicts
     const clonedAudio = audioElement.cloneNode() as HTMLAudioElement;
     this.currentAudioElement = clonedAudio;
+    clonedAudio.volume = 0.8; // Set appropriate volume
     
     clonedAudio.onended = () => {
       this.currentAudioElement = null;
@@ -369,7 +370,8 @@ export class SessionManager {
   private _playOpenAITTSAudio(audioUrl: string) {
     // Create audio element for OpenAI TTS
     this.currentAudioElement = new Audio(audioUrl);
-    this.currentAudioElement.volume = 1.0;
+    this.currentAudioElement.volume = 0.8;
+    this.currentAudioElement.preload = 'auto';
     
     this.currentAudioElement.onended = () => {
       this.currentAudioElement = null;
@@ -413,7 +415,7 @@ export class SessionManager {
       
       // Wait for voices and ensure clean state
       await this.voicesLoadedPromise;
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Check if we're still supposed to be playing
       if (this._isDisposed || this._state.playState !== 'playing') {
@@ -421,8 +423,8 @@ export class SessionManager {
       }
       
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.7;  // Slower for hypnotherapy
-      utterance.pitch = 0.8; // Lower pitch for calming effect
+      utterance.rate = 0.8;  // Slightly faster for better clarity
+      utterance.pitch = 0.9; // Higher pitch for better audibility
       utterance.volume = 1.0;
       
       // Voice selection with better error handling
@@ -464,14 +466,17 @@ export class SessionManager {
           console.warn('[SESSION] TTS may not have started, attempting restart');
           try {
             window.speechSynthesis.cancel();
+            // Add small delay before restart
+            setTimeout(() => {
             window.speechSynthesis.speak(utterance);
+            }, 100);
           } catch (error) {
             console.error('[SESSION] TTS restart failed:', error);
             this.currentUtterance = null;
             this._handleSegmentEnd();
           }
         }
-      }, 1500);
+      }, 1000);
       
     } catch (error) {
       console.error('[SESSION] Browser TTS setup failed:', error);
@@ -493,17 +498,17 @@ export class SessionManager {
     
     // Prefer male voices for hypnotic effect
     const preferredVoices = [
+      'Google US English',
+      'Microsoft David Desktop',
       'Microsoft David',
-      'Google US English Male',
       'Alex',
       'Microsoft Mark', 
       'Daniel (Enhanced)',
       'Daniel',
-      'Tom',
-      'Microsoft Zira',
-      'Google US English',
+      'Google UK English Male',
       'Microsoft Aria',
-      'Samantha'
+      'Samantha',
+      'Karen'
     ];
     
     for (const voiceName of preferredVoices) {
@@ -512,7 +517,11 @@ export class SessionManager {
     }
     
     if (!selectedVoice) {
-      selectedVoice = voices.find(voice => voice.lang.includes('en'));
+      // Find any English voice
+      selectedVoice = voices.find(voice => 
+        voice.lang.includes('en') && 
+        !voice.name.includes('Google') // Avoid robotic Google voices
+      ) || voices.find(voice => voice.lang.includes('en'));
     }
     
     if (selectedVoice) {

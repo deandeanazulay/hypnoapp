@@ -138,8 +138,8 @@ export function synthesizeWithBrowserTTS(
     // Small delay to ensure clean state
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = voiceConfig.rate ?? 0.8; // Slightly faster for clarity
-      utterance.pitch = voiceConfig.pitch ?? 0.9; // Higher pitch for better audibility
+      utterance.rate = voiceConfig.rate ?? 0.8; // Good pace for hypnotherapy
+      utterance.pitch = voiceConfig.pitch ?? 0.9; // Clear and calming
       utterance.volume = voiceConfig.volume ?? 1.0;
 
       // Wait for voices to load if needed
@@ -149,13 +149,15 @@ export function synthesizeWithBrowserTTS(
         
         // Find the most suitable voice for hypnotherapy
         const preferredVoice = voices.find(voice => 
+          voice.name.includes('Google US English') ||
           voice.name.includes('David') ||
           voice.name.includes('Daniel') ||
           voice.name.includes('Mark') ||
           voice.name.includes('Alex') ||
-          voice.name.includes('Tom') ||
           voice.name.includes('Samantha') ||
-          (voice.lang.includes('en') && voice.name.includes('Google'))
+          voice.name.includes('Karen')
+        ) || voices.find(voice => 
+          voice.lang.includes('en') && !voice.name.toLowerCase().includes('google')
         ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
         
         if (preferredVoice) {
@@ -184,6 +186,15 @@ export function synthesizeWithBrowserTTS(
         // Force speech synthesis to start
         try {
           speechSynthesis.speak(utterance);
+          
+          // Ensure speech actually starts on mobile
+          setTimeout(() => {
+            if (!speechSynthesis.speaking && !speechSynthesis.pending) {
+              console.warn('[VOICE] Speech may not have started, retrying...');
+              speechSynthesis.cancel();
+              speechSynthesis.speak(utterance);
+            }
+          }, 500);
           console.log('[VOICE] Speech synthesis started');
         } catch (error) {
           console.error('[VOICE] Failed to start speech:', error);
@@ -215,6 +226,6 @@ export function synthesizeWithBrowserTTS(
       } else {
         setVoiceAndSpeak();
       }
-    }, 100); // Small delay for clean state
+    }, 50); // Reduced delay for faster response
   });
 }
