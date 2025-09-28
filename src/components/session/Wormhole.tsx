@@ -687,3 +687,5 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
 Wormhole.displayName = 'Wormhole';
 
 export default Wormhole;
+
+export default Wormhole
