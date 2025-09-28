@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { ArrowRight, ArrowLeft, Wand2, Target, Brain, Heart, Clock, Plus, Sparkles } from 'lucide-react';
 import PageShell from '../layout/PageShell';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
-import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
 import { supabase } from '../../lib/supabase';
 
