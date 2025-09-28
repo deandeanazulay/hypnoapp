@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Lock, Play, Gift, Target, Calendar, Zap, Trophy, ArrowRight, CheckCircle, Crown } from 'lucide-react';
+import { Star, Lock, Play, Gift, Target, Calendar, Zap, Trophy, ArrowRight, CheckCircle, Crown, Clock } from 'lucide-react';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
