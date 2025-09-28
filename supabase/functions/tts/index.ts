@@ -123,15 +123,15 @@ Deno.serve(async (req: Request) => {
 
     // Prepare OpenAI TTS request
     const openaiRequest = {
-      model: requestData.model || "tts-1",
+      model: requestData.model || "tts-1", // Use same model as working setup
       input: requestData.text.trim(),
-      voice: requestData.voice,
+      voice: requestData.voice || "ash", // Default to ash voice
       response_format: requestData.response_format || "mp3",
       speed: requestData.speed || 1.0
     };
 
     if (import.meta.env.DEV) {
-      console.log('OpenAI TTS: Request details:', {
+      console.log('🎤 OpenAI TTS: Calling API with ash voice:', {
         model: openaiRequest.model,
         voice: openaiRequest.voice,
         textLength: openaiRequest.input.length,
@@ -141,6 +141,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Call OpenAI TTS API
+    console.log('🎤 Making OpenAI TTS API call...');
     const openaiResponse = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
@@ -150,6 +151,8 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify(openaiRequest)
     });
 
+    console.log('🎤 OpenAI TTS API response status:', openaiResponse.status);
+    
     if (!openaiResponse.ok) {
       let errorMessage = `OpenAI TTS API error: ${openaiResponse.status}`;
       

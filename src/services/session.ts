@@ -413,38 +413,39 @@ export class SessionManager {
   private async _tryOpenAITTSLive(text: string) {
     try {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] 🎤 Attempting OpenAI TTS with ash voice for text:', text.substring(0, 50) + '...');
+        console.log('[SESSION] 🎤 Calling OpenAI TTS with ash voice for:', text.substring(0, 50) + '...');
       }
       
       const result = await synthesizeSegment(text, {
         voiceId: 'ash',
         cacheKey: `live-segment-${this.currentSegmentIndex}`,
         mode: 'live',
-        model: 'tts-1-hd' // Use HD model for better quality
+        model: 'tts-1' // Use standard model that works with chatgpt-chat
       });
 
       if (import.meta.env.DEV) {
-        console.log('[SESSION] OpenAI TTS result provider:', result.provider);
+        console.log('[SESSION] 🎤 TTS Result - Provider:', result.provider);
         if (result.audioUrl) {
-          console.log('[SESSION] ✅ Got OpenAI TTS audio URL, playing ash voice');
+          console.log('[SESSION] ✅ SUCCESS! Got OpenAI ash voice audio URL');
         } else {
-          console.log('[SESSION] ⚠️ No audio URL from OpenAI TTS, falling back to browser');
+          console.log('[SESSION] ❌ No OpenAI audio URL, using robotic browser TTS');
         }
       }
 
       if (result.provider === 'openai-tts' && result.audioUrl) {
+        console.log('[SESSION] 🔊 Playing OpenAI ash voice audio');
         this._playOpenAITTSAudio(result.audioUrl);
         return;
       }
 
       // Fall back to browser TTS
       if (import.meta.env.DEV) {
-        console.warn('[SESSION] OpenAI TTS not available, using browser TTS with ash-like voice');
+        console.warn('[SESSION] ⚠️ OpenAI TTS failed, falling back to robotic browser TTS');
       }
       await this._playWithBrowserTTS(text);
     } catch (error) {
       if (import.meta.env.DEV) {
-        console.error('[SESSION] OpenAI TTS error, falling back to browser TTS:', error);
+        console.error('[SESSION] ❌ OpenAI TTS error, using robotic fallback:', error);
       }
       await this._playWithBrowserTTS(text);
     }

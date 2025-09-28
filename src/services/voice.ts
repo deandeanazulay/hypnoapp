@@ -43,15 +43,18 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
   try {
     const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
     
+    // Use the same pattern as the working chatgpt-chat function
+    const ttsEndpoint = `${baseUrl}/functions/v1/tts`;
+    
     if (import.meta.env.DEV) {
-      console.log('[VOICE] Calling OpenAI TTS function at:', `${baseUrl}/functions/v1/tts`);
-      console.log('[VOICE] Using ash voice with model:', opts.model || 'tts-1-hd');
+      console.log('[VOICE] 🎤 Calling OpenAI TTS at:', ttsEndpoint);
+      console.log('[VOICE] Using ash voice with model:', opts.model || 'tts-1');
       console.log('[VOICE] Text preview:', text.substring(0, 100) + '...');
     }
     
-    // Force OpenAI TTS call
+    // Call OpenAI TTS using the same pattern as chatgpt-chat
     const response = await safeFetch(
-      `${baseUrl}/functions/v1/tts`,
+      ttsEndpoint,
       {
         method: "POST",
         headers: { 
@@ -61,8 +64,8 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
         body: JSON.stringify({ 
           text: text.trim(), 
           voice: "ash", // Force ash voice
-          model: opts.model || "tts-1-hd",
-          speed: 0.9, // Slightly slower for hypnotherapy
+          model: opts.model || "tts-1", // Use standard model like chatgpt-chat
+          speed: 1.0, // Standard speed
           response_format: "mp3"
         }),
       },
