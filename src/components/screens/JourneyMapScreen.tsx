@@ -390,11 +390,11 @@ export default function JourneyMapScreen({ onProtocolSelect }: JourneyMapScreenP
               /* Journey Map Interface */
               <div className="px-4 space-y-6">
                 {/* Journey Header */}
-                <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h1 className="text-white text-2xl font-light mb-1">Your Transformation Map</h1>
-                      <p className="text-white/70">{userGoals?.mainGoal || 'Personal Transformation'}</p>
+                      <h1 className="text-white text-xl font-light mb-1">Your Transformation Map</h1>
+                      <p className="text-white/70 text-sm">{userGoals?.mainGoal || 'Personal Transformation'}</p>
                     </div>
                     <button
                       onClick={handleResetJourney}
@@ -405,60 +405,149 @@ export default function JourneyMapScreen({ onProtocolSelect }: JourneyMapScreenP
                   </div>
                   
                   {/* Progress Overview */}
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="bg-black/20 rounded-lg p-3 border border-white/10">
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="bg-black/20 rounded-lg p-2 border border-white/10">
                       <div className="text-teal-400 text-xl font-bold">{user?.level || 1}</div>
                       <div className="text-white/60 text-xs">Current Stage</div>
                     </div>
-                    <div className="bg-black/20 rounded-lg p-3 border border-white/10">
+                    <div className="bg-black/20 rounded-lg p-2 border border-white/10">
                       <div className="text-purple-400 text-xl font-bold">3</div>
                       <div className="text-white/60 text-xs">Milestones Unlocked</div>
                     </div>
-                    <div className="bg-black/20 rounded-lg p-3 border border-white/10">
+                    <div className="bg-black/20 rounded-lg p-2 border border-white/10">
                       <div className="text-orange-400 text-xl font-bold">{user?.session_streak || 0}</div>
                       <div className="text-white/60 text-xs">Day Streak</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Daily Tasks */}
-                <DailyTasks 
-                  onTaskComplete={(task) => {
-                    onProtocolSelect(task.protocol);
-                  }}
-                  userLevel={user?.level || 1}
-                  userGoals={userGoals}
-                />
+                {/* Two Column Layout: Daily Tasks + Roadmap */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Daily Tasks - Compressed */}
+                  <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="text-white font-semibold text-lg flex items-center space-x-2">
+                        <Calendar size={18} className="text-teal-400" />
+                        <span>Today's Practice</span>
+                      </h2>
+                      <div className="text-white/60 text-sm">0/1 completed</div>
+                    </div>
+                    
+                    {/* Compressed Daily Task */}
+                    <button
+                      onClick={() => onProtocolSelect({
+                        id: 'daily-primary',
+                        name: `Daily ${userGoals?.mainGoal || 'Transformation'}`,
+                        category: 'daily',
+                        duration: 15,
+                        goals: [userGoals?.mainGoal || 'transformation']
+                      })}
+                      className="w-full bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-xl p-3 border border-teal-500/30 hover:scale-105 transition-all text-left"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center">
+                          <Target size={16} className="text-teal-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-white font-medium">Daily {userGoals?.mainGoal || 'Transformation'}</h3>
+                          <div className="flex items-center space-x-3 text-xs text-white/60">
+                            <span className="flex items-center space-x-1">
+                              <Clock size={10} />
+                              <span>15m</span>
+                            </span>
+                            <span className="flex items-center space-x-1">
+                              <Star size={10} className="text-orange-400" />
+                              <span>+25 XP</span>
+                            </span>
+                          </div>
+                        </div>
+                        <Play size={16} className="text-white/40" />
+                      </div>
+                    </button>
+                  </div>
 
-                {/* Horizontal Milestone Roadmap */}
-                <HorizontalMilestoneRoadmap
-                  user={user}
-                  onMilestoneSelect={(milestone) => {
-                    onProtocolSelect(milestone.protocol);
-                  }}
-                />
+                  {/* Transformation Roadmap - Compressed */}
+                  <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-white font-semibold text-lg flex items-center space-x-2">
+                        <Target size={18} className="text-teal-400" />
+                        <span>Roadmap</span>
+                      </h3>
+                      <span className="text-white/60 text-sm">1/5 completed</span>
+                    </div>
+
+                    {/* Compact Milestone Grid */}
+                    <div className="grid grid-cols-5 gap-2 mb-3">
+                      {[
+                        { id: 'first', icon: Play, completed: true, active: false, unlocked: true },
+                        { id: 'momentum', icon: Zap, completed: false, active: true, unlocked: true },
+                        { id: 'explorer', icon: Star, completed: false, active: false, unlocked: false },
+                        { id: 'warrior', icon: Trophy, completed: false, active: false, unlocked: false },
+                        { id: 'master', icon: Crown, completed: false, active: false, unlocked: false }
+                      ].map((milestone, i) => {
+                        const IconComponent = milestone.icon;
+                        return (
+                          <button
+                            key={milestone.id}
+                            className={`w-full aspect-square rounded-lg border-2 flex items-center justify-center transition-all hover:scale-110 ${
+                              milestone.completed
+                                ? 'bg-green-500/30 border-green-400'
+                                : milestone.active
+                                ? 'bg-orange-500/30 border-orange-400 animate-pulse'
+                                : milestone.unlocked
+                                ? 'bg-teal-500/20 border-teal-400'
+                                : 'bg-white/10 border-white/20 opacity-50'
+                            }`}
+                          >
+                            <IconComponent size={14} className={`${
+                              milestone.completed ? 'text-green-400' :
+                              milestone.active ? 'text-orange-400' :
+                              milestone.unlocked ? 'text-teal-400' : 'text-white/40'
+                            }`} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Progress Summary */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-green-500/10 rounded-lg p-2 border border-green-500/20">
+                        <div className="text-green-400 text-sm font-bold">1</div>
+                        <div className="text-white/60 text-xs">Done</div>
+                      </div>
+                      <div className="bg-orange-500/10 rounded-lg p-2 border border-orange-500/20">
+                        <div className="text-orange-400 text-sm font-bold">1</div>
+                        <div className="text-white/60 text-xs">Active</div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2 border border-white/10">
+                        <div className="text-white text-sm font-bold">3</div>
+                        <div className="text-white/60 text-xs">Locked</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Weekly Challenge */}
-                <div className="bg-gradient-to-br from-yellow-500/10 to-amber-500/10 backdrop-blur-xl rounded-2xl p-6 border border-yellow-500/20">
+                <div className="bg-gradient-to-br from-yellow-500/10 to-amber-500/10 backdrop-blur-xl rounded-2xl p-4 border border-yellow-500/20">
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center">
-                      <Trophy size={20} className="text-yellow-400" />
+                    <div className="w-10 h-10 rounded-full bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center">
+                      <Trophy size={18} className="text-yellow-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-semibold text-lg">Weekly Challenge</h3>
+                      <h3 className="text-white font-semibold">Weekly Challenge</h3>
                       <p className="text-white/70 text-sm">Complete for bonus rewards</p>
                     </div>
                   </div>
                   
-                  <div className="bg-black/20 rounded-xl p-4 border border-white/10">
-                    <div className="flex items-center justify-between mb-3">
+                  <div className="bg-black/20 rounded-xl p-3 border border-white/10">
+                    <div className="flex items-center justify-between mb-2">
                       <h4 className="text-white font-medium">Master Your Morning Ritual</h4>
                       <div className="flex items-center space-x-1">
                         <Gift size={14} className="text-yellow-400" />
                         <span className="text-yellow-400 font-bold">+50 tokens</span>
                       </div>
                     </div>
-                    <p className="text-white/70 text-sm mb-4">Complete 7 consecutive morning sessions this week</p>
+                    <p className="text-white/70 text-sm mb-3">Complete 7 consecutive morning sessions this week</p>
                     
                     <div className="flex items-center justify-between">
                       <div className="flex space-x-1">
@@ -477,31 +566,31 @@ export default function JourneyMapScreen({ onProtocolSelect }: JourneyMapScreenP
                 </div>
 
                 {/* Achievement Showcase */}
-                <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-                  <h3 className="text-white font-semibold text-lg mb-4 flex items-center space-x-2">
-                    <Star size={20} className="text-purple-400" />
+                <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
+                  <h3 className="text-white font-semibold mb-3 flex items-center space-x-2">
+                    <Star size={18} className="text-purple-400" />
                     <span>Recent Achievements</span>
                   </h3>
                   
                   {(user?.achievements?.length || 0) > 0 ? (
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-2">
                       {user?.achievements?.slice(0, 4).map((achievement, i) => (
-                        <div key={i} className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl p-3 border border-purple-500/20">
+                        <div key={i} className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl p-2 border border-purple-500/20">
                           <div className="text-center">
-                            <div className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/40 flex items-center justify-center mx-auto mb-2">
-                              <Trophy size={16} className="text-purple-400" />
+                            <div className="w-6 h-6 rounded-full bg-purple-500/20 border border-purple-500/40 flex items-center justify-center mx-auto mb-1">
+                              <Trophy size={12} className="text-purple-400" />
                             </div>
-                            <span className="text-white/80 text-sm font-medium">{achievement}</span>
+                            <span className="text-white/80 text-xs font-medium">{achievement}</span>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-6">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-500/20 to-slate-500/20 flex items-center justify-center mx-auto mb-4 border border-gray-500/30">
-                        <Star size={24} className="text-gray-400" />
+                    <div className="text-center py-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-500/20 to-slate-500/20 flex items-center justify-center mx-auto mb-3 border border-gray-500/30">
+                        <Star size={18} className="text-gray-400" />
                       </div>
-                      <h4 className="text-white font-medium mb-2">No Achievements Yet</h4>
+                      <h4 className="text-white font-medium mb-1">No Achievements Yet</h4>
                       <p className="text-white/60 text-sm">Complete sessions to unlock badges and rewards</p>
                     </div>
                   )}

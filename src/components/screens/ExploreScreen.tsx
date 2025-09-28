@@ -108,10 +108,10 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
             <div className="px-4 space-y-6">
               
               {/* Explore Header */}
-              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h1 className="text-white text-2xl font-light mb-1">Protocol Library</h1>
+                    <h1 className="text-white text-xl font-light mb-1">Protocol Library</h1>
                     <p className="text-white/70">Professional hypnotherapy sessions for every need</p>
                   </div>
                   <button
@@ -124,14 +124,14 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                 </div>
                 
                 {/* Search */}
-                <div className="relative mb-4">
+                <div className="relative mb-3">
                   <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search protocols, benefits, techniques..."
-                    className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-teal-400/50 focus:bg-white/15 transition-all"
+                    className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white placeholder-white/50 focus:outline-none focus:border-teal-400/50 focus:bg-white/15 transition-all"
                   />
                   {searchQuery && (
                     <button
@@ -273,17 +273,17 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
               </div>
 
               {/* Results */}
-              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white font-semibold text-lg flex items-center space-x-2">
-                    <BookOpen size={20} className="text-teal-400" />
+                  <h3 className="text-white font-semibold flex items-center space-x-2">
+                    <BookOpen size={18} className="text-teal-400" />
                     <span>Available Protocols</span>
                   </h3>
                   <span className="text-white/60 text-sm">{filteredProtocols.length} found</span>
                 </div>
                 
                 {filteredProtocols.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {filteredProtocols.map((protocol) => {
                       const categoryInfo = getCategoryInfo(protocol.category);
                       
@@ -291,11 +291,11 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                         <button
                           key={protocol.id}
                           onClick={() => setSelectedProtocol(protocol)}
-                          className="group relative bg-gradient-to-br from-white/10 to-gray-500/10 backdrop-blur-sm border border-white/20 transition-all duration-300 hover:border-white/30 hover:scale-105 rounded-xl p-4 text-left overflow-hidden w-full min-h-[140px] flex flex-col justify-between"
+                          className="group relative bg-gradient-to-br from-white/10 to-gray-500/10 backdrop-blur-sm border border-white/20 transition-all duration-300 hover:border-white/30 hover:scale-105 rounded-xl p-3 text-left overflow-hidden w-full min-h-[120px] flex flex-col justify-between"
                         >
                           {/* Popular/Recommended Badge */}
                           {(protocol.isPopular || protocol.isRecommended) && (
-                            <div className="absolute top-3 right-3">
+                            <div className="absolute top-2 right-2">
                               {protocol.isPopular && (
                                 <div className="px-2 py-1 bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 rounded-full text-xs font-medium">
                                   Popular
@@ -311,15 +311,15 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
 
                           <div className="relative z-10">
                             <div className="flex items-center space-x-2 mb-2">
-                              <span className="text-lg">{categoryInfo.icon}</span>
+                              <span className="text-base">{categoryInfo.icon}</span>
                               <span className="text-white/60 text-xs uppercase tracking-wider">{categoryInfo.name}</span>
                             </div>
                             
-                            <h3 className="text-white font-semibold mb-2 line-clamp-2 group-hover:text-white/95 transition-colors text-base pr-16">
+                            <h3 className="text-white font-semibold mb-1 line-clamp-2 group-hover:text-white/95 transition-colors text-sm pr-12">
                               {protocol.name}
                             </h3>
                             
-                            <div className="flex items-center space-x-2 mb-3">
+                            <div className="flex items-center space-x-2 mb-2">
                               <span className={`text-xs font-bold px-2 py-1 rounded-full border ${getDifficultyColor(protocol.difficulty)}`}>
                                 {protocol.difficulty}
                               </span>
@@ -329,20 +329,20 @@ export default function ExploreScreen({ onProtocolSelect }: ExploreScreenProps) 
                               </div>
                             </div>
                             
-                            <p className="text-white/70 mb-3 line-clamp-2 leading-relaxed text-sm">
+                            <p className="text-white/70 mb-2 line-clamp-2 leading-relaxed text-xs">
                               {protocol.description}
                             </p>
 
                             {/* Benefits Preview */}
                             <div className="flex flex-wrap gap-1">
-                              {protocol.benefits.slice(0, 2).map((benefit, i) => (
-                                <span key={i} className="text-xs px-2 py-1 bg-black/30 text-white/60 rounded-full border border-white/10">
+                              {protocol.benefits.slice(0, 1).map((benefit, i) => (
+                                <span key={i} className="text-xs px-1.5 py-0.5 bg-black/30 text-white/60 rounded-full border border-white/10">
                                   {benefit}
                                 </span>
                               ))}
-                              {protocol.benefits.length > 2 && (
-                                <span className="text-xs px-2 py-1 bg-black/30 text-white/60 rounded-full border border-white/10">
-                                  +{protocol.benefits.length - 2} more
+                              {protocol.benefits.length > 1 && (
+                                <span className="text-xs px-1.5 py-0.5 bg-black/30 text-white/60 rounded-full border border-white/10">
+                                  +{protocol.benefits.length - 1} more
                                 </span>
                               )}
                             </div>

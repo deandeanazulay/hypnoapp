@@ -380,13 +380,13 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
             <div className="px-4 space-y-4">
               
               {/* Create Header */}
-              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-3 border border-white/20">
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-purple-500/40 flex items-center justify-center">
-                    <Wand2 size={20} className="text-black" />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-purple-500/40 flex items-center justify-center">
+                    <Wand2 size={18} className="text-black" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-white text-xl font-light mb-1">Protocol Builder</h2>
+                    <h2 className="text-white text-lg font-light mb-1">Protocol Builder</h2>
                     <p className="text-white/70 text-sm">Create your custom transformation journey</p>
                   </div>
                 </div>
@@ -396,17 +396,17 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                   <div className="flex items-center space-x-3">
                     {[1, 2, 3].map((step) => (
                       <div key={step} className="flex items-center">
-                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
                           step === currentStep
                             ? 'border-purple-400 bg-purple-400/20 text-purple-400'
                             : step < currentStep
                             ? 'border-teal-400 bg-teal-400/20 text-teal-400'
                             : 'border-white/30 text-white/50'
                         }`}>
-                          <span className="text-sm">{step}</span>
+                          <span className="text-xs">{step}</span>
                         </div>
                         {step < 3 && (
-                          <div className={`w-6 h-0.5 mx-2 ${
+                          <div className={`w-4 h-0.5 mx-2 ${
                             step < currentStep ? 'bg-teal-400' : 'bg-white/30'
                           }`} />
                         )}
@@ -417,18 +417,18 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
               </div>
 
               {/* Current Step Content */}
-              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-3 border border-white/20">
                 {renderStepContent()}
               </div>
 
               {/* Step Navigation */}
-              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-3 border border-white/20">
                 <div className="text-center mb-3">
                   <div className="flex justify-center space-x-2">
                     {[1, 2, 3].map((step) => (
                       <div
                         key={step}
-                        className={`w-6 h-1 rounded-full transition-all duration-300 ${
+                        className={`w-5 h-1 rounded-full transition-all duration-300 ${
                           step <= currentStep ? 'bg-teal-400' : 'bg-white/20'
                         }`}
                       />
@@ -441,7 +441,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                   <button
                     onClick={handleBack}
                     disabled={currentStep === 1}
-                    className={`px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 ${
+                    className={`px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 ${
                       currentStep === 1 ? 'invisible' : ''
                     }`}
                   >
@@ -455,7 +455,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                     <button
                       onClick={handleNext}
                       disabled={!canProceed()}
-                      className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="px-4 py-2 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                       <div className="flex items-center space-x-2">
                         <span>Next</span>
@@ -465,7 +465,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
                   ) : (
                     <button
                       onClick={handleComplete}
-                      className="px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 flex items-center space-x-2"
+                      className="px-4 py-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200 flex items-center space-x-2"
                     >
                       <Wand2 size={16} />
                       <span>Create Protocol</span>
@@ -476,12 +476,12 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
 
               {/* Protocol Preview */}
               {protocol.name && (
-                <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/20">
+                <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl rounded-2xl p-3 border border-white/20">
                   <h3 className="text-white font-semibold mb-3 flex items-center space-x-2">
                     <Brain size={16} className="text-teal-400" />
                     <span>Protocol Preview</span>
                   </h3>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <div className="flex items-center justify-between bg-black/20 rounded-lg p-2 border border-white/10">
                       <span className="text-white/70">Name</span>
                       <span className="text-white font-medium">{protocol.name || 'Untitled'}</span>

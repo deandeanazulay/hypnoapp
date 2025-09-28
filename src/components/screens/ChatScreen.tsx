@@ -472,17 +472,17 @@ export default function ChatScreen() {
       <div className="relative z-10 h-full flex flex-col">
         {/* Welcome Orb - Show when no conversation */}
         {!hasRealMessages && (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center py-8">
             <div className="text-center">
               <Orb
                 onTap={() => {}}
                 egoState={activeEgoState}
-                size={window.innerWidth < 768 ? 280 : 420}
+                size={window.innerWidth < 768 ? 240 : 320}
                 variant="webgl"
                 afterglow={false}
               />
-              <div className="mt-6">
-                <h2 className="text-white text-xl font-light mb-2">Chat with Libero</h2>
+              <div className="mt-4">
+                <h2 className="text-white text-lg font-light mb-2">Chat with Libero</h2>
                 <p className="text-white/70 text-sm">Your consciousness guide is ready to help</p>
               </div>
             </div>
@@ -491,7 +491,7 @@ export default function ChatScreen() {
 
         {/* Chat Messages */}
         {hasRealMessages && (
-          <div className="flex-1 flex flex-col min-h-0" style={{ paddingTop: '60px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 140px + 1rem)' }}>
+          <div className="flex-1 flex flex-col min-h-0" style={{ paddingTop: '40px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 140px + 1rem)' }}>
             <ChatMessages
               messages={messages}
               onCopyMessage={copyMessage}
