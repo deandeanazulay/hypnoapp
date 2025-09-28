@@ -113,6 +113,7 @@ export default function FavoritesModal({ onSessionSelect }: FavoritesModalProps)
       // Start the session using the session store
       startNewSession({
         egoState: session.ego_state,
+        userId: user?.id,
         goal: {
           id: 'replay-' + session.id,
           name: session.action

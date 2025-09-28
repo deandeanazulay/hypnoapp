@@ -163,6 +163,7 @@ export default function SessionSelectionModal({
       // Start the actual session using the session store
       await startNewSession({
         egoState: activeEgoState,
+        userId: user?.id,
         protocol: session.protocol,
         goal: {
           id: session.id,

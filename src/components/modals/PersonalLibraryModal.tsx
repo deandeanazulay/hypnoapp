@@ -90,6 +90,7 @@ export default function PersonalLibraryModal({ onProtocolSelect }: PersonalLibra
       // Start the session using the session store
       startNewSession({
         egoState: activeEgoState,
+        userId: user?.id,
         customProtocol: protocol,
         goal: {
           id: 'custom-' + protocol.id,

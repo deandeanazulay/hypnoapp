@@ -450,20 +450,13 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   const handleVolumeChange = (level: number) => {
     setAudioLevel(level);
     
-    // Apply volume to current audio element
-    if (sessionHandle) {
-      // Update volume for any playing audio
-      const audioElements = document.querySelectorAll('audio');
-      audioElements.forEach(audio => {
-        audio.volume = level / 100;
-      });
-    }
+    // Apply volume to all audio elements
+    const audioElements = document.querySelectorAll('audio');
+    audioElements.forEach(audio => {
+      audio.volume = level / 100;
+    });
     
-    // Update speech synthesis volume
-    if (window.speechSynthesis && window.speechSynthesis.speaking) {
-      // Note: Can't change volume of active utterance, but will apply to next one
-      console.log('[SESSION] Volume updated to:', level);
-    }
+    console.log('[SESSION] Volume updated to:', level);
   };
 
   // Store session configuration when session starts
@@ -590,9 +583,29 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
                 ? 'bg-green-500/20 border-green-500/40 text-green-400' 
                 : 'bg-red-500/20 border-red-500/40 text-red-400'
             }`}
+            title={isVoiceEnabled ? 'Voice On' : 'Voice Off'}
           >
             {isVoiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
+
+          {/* Volume Slider */}
+          {isVoiceEnabled && (
+            <div className="w-12 bg-black/80 backdrop-blur-xl rounded-xl p-2 border border-white/20">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={audioLevel}
+                onChange={(e) => handleVolumeChange(parseInt(e.target.value))}
+                className="w-full h-1 bg-white/20 rounded-full appearance-none slider-vertical"
+                style={{
+                  writingMode: 'bt-lr',
+                  WebkitAppearance: 'slider-vertical'
+                }}
+              />
+              <div className="text-white/60 text-xs text-center mt-1">{audioLevel}%</div>
+            </div>
+          )}
         </div>
 
         {/* Central Orb */}

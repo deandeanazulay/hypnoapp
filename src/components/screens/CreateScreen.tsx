@@ -89,7 +89,10 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
       // Save protocol to database
       const { data, error } = await supabase
         .from('custom_protocols')
-        .insert(protocolData)
+        .insert({
+          ...protocolData,
+          script: generatedScript // Save the generated script
+        })
         .select()
         .single();
 
