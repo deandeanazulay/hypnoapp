@@ -453,6 +453,24 @@ html, body, #root {
     animation: twinkle 2s ease-in-out infinite;
   }
   
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse-slow 3s ease-in-out infinite;
+  }
+  
+  @keyframes spin-fast {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  .animate-spin-fast {
+    animation: spin-fast 1s linear infinite;
+  }
+  
   @keyframes milestone-unlock {
     0% { transform: scale(1) rotate(0deg); }
     25% { transform: scale(1.1) rotate(90deg); }
