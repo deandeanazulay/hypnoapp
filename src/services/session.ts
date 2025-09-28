@@ -493,16 +493,16 @@ export class SessionManager {
 
   private _playOpenAITTSAudio(audioUrl: string) {
     if (import.meta.env.DEV) {
-      console.log('[SESSION] 🔊 Setting up OpenAI ash voice audio element');
+      console.log('[SESSION] 🔊 Playing OpenAI ash voice audio from URL:', audioUrl);
     }
     
     // Create audio element for OpenAI TTS
     this.currentAudioElement = new Audio(audioUrl);
-    this.currentAudioElement.volume = 0.8; // Good volume for ash voice
+    this.currentAudioElement.volume = 1.0; // Full volume for ash voice
     this.currentAudioElement.preload = 'auto';
     this.currentAudioElement.crossOrigin = 'anonymous';
     
-    // Force load the audio
+    // Immediately load and prepare audio
     this.currentAudioElement.load();
     
     // Emit audio element for analysis
@@ -510,7 +510,7 @@ export class SessionManager {
     
     this.currentAudioElement.onended = () => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] ✅ Ash voice segment completed');
+        console.log('[SESSION] ✅ OpenAI ash voice segment finished');
       }
       this.currentAudioElement = null;
       this._emit('audio-ended');
@@ -518,58 +518,62 @@ export class SessionManager {
     };
     
     this.currentAudioElement.onerror = (event) => {
-      console.error('[SESSION] ❌ Ash voice audio error, falling back to browser TTS:', event);
+      console.error('[SESSION] ❌ OpenAI ash voice audio error:', event);
       this.currentAudioElement = null;
       this._emit('audio-error');
       
       // Fall back to browser TTS on audio error  
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
+        console.log('[SESSION] Falling back to robotic browser TTS');
         this._playWithBrowserTTS(segment.text).catch(console.error);
       }
     };
     
     this.currentAudioElement.onplay = () => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] 🎤 Ash voice is now speaking!');
+        console.log('[SESSION] ✅ OpenAI ash voice is now speaking!');
       }
       this._emit('audio-started');
     };
     
-    this.currentAudioElement.oncanplay = () => {
+    this.currentAudioElement.oncanplaythrough = () => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] 🎤 Ash voice audio ready, starting playback');
+        console.log('[SESSION] OpenAI ash voice audio fully loaded and ready');
       }
       
-      // Play immediately when ready
+      // Immediately play when fully loaded
       if (this._state.playState === 'playing') {
         this.currentAudioElement?.play().then(() => {
           if (import.meta.env.DEV) {
-            console.log('[SESSION] ✅ Ash voice auto-play successful');
+            console.log('[SESSION] ✅ OpenAI ash voice auto-play successful');
           }
         }).catch(error => {
-          console.error('[SESSION] ❌ Ash voice auto-play failed:', error);
+          console.error('[SESSION] ❌ OpenAI ash voice auto-play failed:', error);
           // Fall back to browser TTS
           const segment = this.segments[this.currentSegmentIndex];
           if (segment) {
+            console.log('[SESSION] Using robotic browser TTS as fallback');
             this._playWithBrowserTTS(segment.text).catch(console.error);
           }
         });
       }
     };
     
-    // Try immediate play first, then rely on canplay for backup
+    // Try immediate play first, then rely on canplaythrough for backup
     this.currentAudioElement.play().then(() => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] ✅ Ash voice immediate play successful');
+        console.log('[SESSION] ✅ OpenAI ash voice immediate play successful');
       }
     }).catch(error => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] Immediate play failed, waiting for canplay event:', error.message);
+        console.log('[SESSION] Immediate play failed, waiting for audio to load:', error.message);
       }
-      // The canplay event will handle playback when ready
+      // The canplaythrough event will handle playback when ready
     });
-  }
+    
+    // Additional fallback timer
+    setTimeout(() => {
       if (this.currentAudioElement && this._state.playState === 'playing') {
         this.currentAudioElement.play().catch(error => {
           if (import.meta.env.DEV) {
@@ -829,7 +833,8 @@ export function startSession(options: StartSessionOptions): SessionHandle {
     sessionUniqueId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     promptVariation: Math.floor(Math.random() * 5) + 1,
     // Session type for AI context
-    sessionType: options.customProtocol ? 'custom_protocol' : options.protocol ? 'predefined_protocol' : 'guided_session'
+    sessionType: options.customProtocol ? 'custom_protocol' : options.protocol ? 'predefined_protocol' : 'guided_session',
+    customProtocol: options.customProtocol
   };
   
   // Initialize asynchronously
