@@ -13,6 +13,8 @@ interface TTSRequest {
   speed?: number;
   response_format?: string;
 }
+
+Deno.serve(async (req) => {
   console.log('🎤 OpenAI TTS: Calling API with ash voice:', {
     model: openaiRequest.model,
     voice: openaiRequest.voice,
