@@ -389,36 +389,38 @@ export class SessionManager {
   private async _tryOpenAITTSLive(text: string) {
     try {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] Attempting OpenAI TTS with ash voice for text:', text.substring(0, 50) + '...');
+        console.log('[SESSION] 🎤 Attempting OpenAI TTS with ash voice for text:', text.substring(0, 50) + '...');
       }
       
       const result = await synthesizeSegment(text, {
         voiceId: 'ash',
         cacheKey: `live-segment-${this.currentSegmentIndex}`,
         mode: 'live',
-        model: 'tts-1'
+        model: 'tts-1-hd' // Use HD model for better quality
       });
 
       if (import.meta.env.DEV) {
-        console.log('[SESSION] TTS result:', result);
+        console.log('[SESSION] OpenAI TTS result provider:', result.provider);
+        if (result.audioUrl) {
+          console.log('[SESSION] ✅ Got OpenAI TTS audio URL, playing ash voice');
+        } else {
+          console.log('[SESSION] ⚠️ No audio URL from OpenAI TTS, falling back to browser');
+        }
       }
 
       if (result.provider === 'openai-tts' && result.audioUrl) {
-        if (import.meta.env.DEV) {
-          console.log('[SESSION] Playing OpenAI TTS audio with ash voice');
-        }
         this._playOpenAITTSAudio(result.audioUrl);
         return;
       }
 
       // Fall back to browser TTS
       if (import.meta.env.DEV) {
-        console.log('[SESSION] OpenAI TTS failed, falling back to browser TTS. Result:', result);
+        console.warn('[SESSION] OpenAI TTS not available, using browser TTS with ash-like voice');
       }
       await this._playWithBrowserTTS(text);
     } catch (error) {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] OpenAI TTS error, falling back to browser TTS:', error);
+        console.error('[SESSION] OpenAI TTS error, falling back to browser TTS:', error);
       }
       await this._playWithBrowserTTS(text);
     }
@@ -467,21 +469,24 @@ export class SessionManager {
 
   private _playOpenAITTSAudio(audioUrl: string) {
     if (import.meta.env.DEV) {
-      console.log('[SESSION] Creating audio element for OpenAI TTS with URL:', audioUrl);
+      console.log('[SESSION] 🔊 Creating audio element for OpenAI ash voice');
     }
     
     // Create audio element for OpenAI TTS
     this.currentAudioElement = new Audio(audioUrl);
-    this.currentAudioElement.volume = 1.0; // Full volume for ash voice
+    this.currentAudioElement.volume = 0.9; // Slightly lower for comfort
     this.currentAudioElement.preload = 'auto';
     this.currentAudioElement.crossOrigin = 'anonymous';
+    
+    // Force load the audio immediately
+    this.currentAudioElement.load();
     
     // Emit audio element for analysis
     this._emit('audio-element', this.currentAudioElement);
     
     this.currentAudioElement.onended = () => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] OpenAI TTS audio ended');
+        console.log('[SESSION] ✅ OpenAI ash voice audio segment completed');
       }
       this.currentAudioElement = null;
       this._emit('audio-ended');
@@ -489,45 +494,60 @@ export class SessionManager {
     };
     
     this.currentAudioElement.onerror = (event) => {
-      console.error('[SESSION] OpenAI TTS audio error:', event);
+      console.error('[SESSION] ❌ OpenAI TTS audio playback error:', event);
       this.currentAudioElement = null;
       this._emit('audio-error');
       
       // Fall back to browser TTS on audio error  
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
+        console.log('[SESSION] Falling back to browser TTS for current segment');
         this._playWithBrowserTTS(segment.text).catch(console.error);
       }
     };
     
     this.currentAudioElement.onplay = () => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] OpenAI TTS audio started playing');
+        console.log('[SESSION] ✅ OpenAI ash voice started playing');
       }
       this._emit('audio-started');
     };
     
-    this.currentAudioElement.onloadstart = () => {
-      if (import.meta.env.DEV) {
-        console.log('[SESSION] OpenAI TTS audio loading started');
-      }
-    };
-    
     this.currentAudioElement.oncanplay = () => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] OpenAI TTS audio can play');
+        console.log('[SESSION] OpenAI ash voice audio ready to play');
+      }
+      
+      // Auto-play when ready
+      if (this._state.playState === 'playing') {
+        this.currentAudioElement?.play().catch(error => {
+          console.error('[SESSION] Auto-play failed:', error);
+          // Fall back to browser TTS
+          const segment = this.segments[this.currentSegmentIndex];
+          if (segment) {
+            this._playWithBrowserTTS(segment.text).catch(console.error);
+          }
+        });
       }
     };
     
-    // Start playback with error handling
-    this.currentAudioElement.play().catch(error => {
-      console.error('[SESSION] OpenAI TTS audio play failed, falling back to browser TTS:', error);
-      this.currentAudioElement = null;
-      const segment = this.segments[this.currentSegmentIndex];
-      if (segment) {
-        this._playWithBrowserTTS(segment.text).catch(console.error);
+    this.currentAudioElement.onloadstart = () => {
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] OpenAI ash voice loading...');
       }
-    });
+    };
+    
+    // Try to play immediately, but don't fail if not ready
+    setTimeout(() => {
+      if (this.currentAudioElement && this._state.playState === 'playing') {
+        this.currentAudioElement.play().catch(error => {
+          if (import.meta.env.DEV) {
+            console.log('[SESSION] Immediate play failed, waiting for canplay event:', error.message);
+          }
+          // The canplay event handler will try again
+        });
+      }
+    }, 100);
   }
 
   private async _playWithBrowserTTS(text: string) {
@@ -550,8 +570,8 @@ export class SessionManager {
       }
       
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.7;  // Slower for hypnotherapy
-      utterance.pitch = 0.8; // Lower pitch for calming effect
+      utterance.rate = 0.65; // Even slower for hypnotherapy to match ash voice
+      utterance.pitch = 0.75; // Lower pitch for calming, ash-like effect
       utterance.volume = 1.0;
       
       // Select best voice
@@ -559,19 +579,23 @@ export class SessionManager {
       
       // Event handlers
       utterance.onstart = () => {
-        console.log('[SESSION] Browser TTS started speaking segment');
+        if (import.meta.env.DEV) {
+          console.log('[SESSION] ✅ Browser TTS started with ash-like voice');
+        }
         this._emit('audio-started');
       };
       
       utterance.onend = () => {
-        console.log('[SESSION] Browser TTS finished speaking segment');
+        if (import.meta.env.DEV) {
+          console.log('[SESSION] Browser TTS segment completed');
+        }
         this.currentUtterance = null;
         this._emit('audio-ended');
         this._handleSegmentEnd();
       };
       
       utterance.onerror = (event) => {
-        console.log('[SESSION] Browser TTS error event:', event.error);
+        console.error('[SESSION] Browser TTS error:', event.error);
         this.currentUtterance = null;
         this._emit('audio-error');
         if (event.error !== 'interrupted' && event.error !== 'canceled') {
@@ -583,7 +607,9 @@ export class SessionManager {
       this.currentUtterance = utterance;
       
       // Start speech synthesis
-      console.log('[SESSION] Starting browser TTS speech');
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] Starting browser TTS with ash-like voice settings');
+      }
       window.speechSynthesis.speak(utterance);
       
     } catch (error) {
@@ -598,22 +624,30 @@ export class SessionManager {
     await this.voicesLoadedPromise;
     
     const voices = window.speechSynthesis.getVoices();
-    console.log('[SESSION] Available voices:', voices.map(v => v.name));
+    if (import.meta.env.DEV) {
+      console.log('[SESSION] Available browser voices:', voices.map(v => `${v.name} (${v.lang})`));
+    }
     
-    // Find the best available voice for hypnotherapy
+    // Find the best available voice for ash-like hypnotherapy experience
     const selectedVoice = voices.find(voice => 
       voice.name.includes('Samantha') ||
       voice.name.includes('Karen') ||
       voice.name.includes('Daniel') ||
       voice.name.includes('Alex') ||
+      voice.name.includes('Fiona') ||
+      voice.name.includes('Moira') ||
       (voice.lang.includes('en') && voice.name.includes('Female'))
     ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
     
     if (selectedVoice) {
       utterance.voice = selectedVoice;
-      console.log('[SESSION] Selected voice:', selectedVoice.name);
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] ✅ Selected ash-like voice:', selectedVoice.name, '(' + selectedVoice.lang + ')');
+      }
     } else {
-      console.log('[SESSION] No suitable voice found, using default');
+      if (import.meta.env.DEV) {
+        console.warn('[SESSION] No suitable ash-like voice found, using default');
+      }
     }
   }
 
