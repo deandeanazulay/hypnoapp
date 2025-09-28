@@ -185,14 +185,12 @@ export class UnrealBloomPass extends Pass {
             this.oldClearColor = new Color(0, 0, 0);
         }
         
-        // Get the current clear color and validate it's a proper Color instance
-        const currentRendererClearColor = renderer.getClearColor();
-        if (currentRendererClearColor && 
-            currentRendererClearColor instanceof Color && 
-            typeof currentRendererClearColor.copy === 'function') {
-            this.oldClearColor.copy(currentRendererClearColor);
-        } else {
-            // Fallback: set to black if renderer's clear color is invalid
+        // Get the current clear color safely
+        try {
+            const currentRendererClearColor = renderer.getClearColor(this.oldClearColor);
+            // getClearColor with target parameter should populate this.oldClearColor directly
+        } catch (error) {
+            // Fallback: set to black if getClearColor fails
             this.oldClearColor.set(0x000000);
         }
         
