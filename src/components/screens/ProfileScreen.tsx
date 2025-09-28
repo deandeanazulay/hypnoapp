@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, BarChart3, Award, TrendingUp, Crown, Zap, Target, Heart, Users, Shield, Star, ChevronRight, Sparkles, Brain, Coins, BookOpen } from 'lucide-react';
 import { useGameState } from '../GameStateManager';
 import { useAppStore, getEgoState, EGO_STATES } from '../../store';
