@@ -17,6 +17,9 @@ interface OrbProps {
   evolutionLevel?: 'basic' | 'enhanced' | 'advanced' | 'master';
   /** When true (default), keeps all visuals inside the frame (no overflow halos). */
   compact?: boolean;
+  isSpeaking?: boolean;
+  audioLevel?: number;
+  audioFrequency?: number;
 }
 
 const CSSOrb = forwardRef<OrbRef, OrbProps>(({
@@ -26,16 +29,19 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   afterglow = false,
   className = '',
   evolutionLevel = 'basic',
-  compact = true
+  compact = true,
+  isSpeaking = false,
+  audioLevel = 0,
+  audioFrequency = 0
 }, ref) => {
   const [isPressed, setIsPressed] = React.useState(false);
   const [isHovering, setIsHovering] = React.useState(false);
-  const [isSpeaking, setIsSpeaking] = React.useState(false);
+  const [internalSpeaking, setInternalSpeaking] = React.useState(false);
   const [isListening, setIsListening] = React.useState(false);
 
   useImperativeHandle(ref, () => ({
     updateState: () => {},
-    setSpeaking: setIsSpeaking,
+    setSpeaking: setInternalSpeaking,
     setListening: setIsListening
   }));
 
@@ -54,11 +60,18 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
   const handleClick = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); onTap(); };
   const handleTouchEnd = (e: React.TouchEvent) => { e.preventDefault(); e.stopPropagation(); onTap(); };
 
+  // Audio-reactive calculations
+  const isCurrentlySpeaking = isSpeaking || internalSpeaking;
+  const audioReactiveScale = isCurrentlySpeaking ? 
+    1.0 + (audioLevel / 100) * 0.1 + Math.sin(Date.now() * 0.01) * 0.03 : 1.0;
+  const audioReactivePulse = isCurrentlySpeaking ?
+    0.8 + (audioLevel / 100) * 0.4 + Math.sin(Date.now() * 0.008) * 0.2 : 1.0;
+
   // Visual frame size (tight)
   const orbSize = Math.min(size, 400);
   // Keep the **outermost ring at 100%** of the frame to avoid inner “dead margins”
   const outerRingSize = orbSize;            // 100% frame
-  const coreSize = orbSize * 0.42;          // slightly larger core to fill visually
+  const coreSize = orbSize * 0.42 * audioReactiveScale;          // Audio-reactive core size
   const midRingSize = orbSize * 0.82;       // inner animated ring
   const innerGlowSize = coreSize * 0.72;    // glow inside core
 
@@ -88,7 +101,7 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
       <div
         className={`relative cursor-pointer select-none transition-transform duration-300 ${
           isPressed ? 'scale-95' : isHovering ? 'scale-105' : 'scale-100'
-        }`}
+        } ${isCurrentlySpeaking ? 'animate-pulse' : ''}`}
         style={{ width: orbSize, height: orbSize }}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
@@ -99,22 +112,28 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
       >
         {/* OUTER BREATHING RING — exactly frame-sized to eliminate perceived top/bottom “dead space” */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border"
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-all duration-200 ${
+            isCurrentlySpeaking ? 'animate-pulse' : ''
+          }`}
           style={{
             width: outerRingSize,
-            height: outerRingSize,
-            borderColor: 'rgba(255,255,255,0.15)'
+            height: outerRingSize * audioReactiveScale,
+            borderColor: `rgba(255,255,255,${0.15 * audioReactivePulse})`,
+            transform: `translate(-50%, -50%) scale(${audioReactiveScale})`
           }}
         />
 
         {/* MID RING (subtle motion) */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border animate-spin-slower"
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border ${
+            isCurrentlySpeaking ? 'animate-spin' : 'animate-spin-slower'
+          }`}
           style={{
             width: midRingSize,
-            height: midRingSize,
-            borderColor: 'rgba(255,255,255,0.18)',
-            animationDuration: '18s'
+            height: midRingSize * audioReactiveScale,
+            borderColor: `rgba(255,255,255,${0.18 * audioReactivePulse})`,
+            animationDuration: isCurrentlySpeaking ? '2s' : '18s',
+            transform: `translate(-50%, -50%) scale(${audioReactiveScale})`
           }}
         />
 
@@ -127,20 +146,22 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
             background: 'transparent',
             // Keep glow contained (tight) — avoid huge spread that looks like empty halo
             boxShadow: afterglow
-              ? `0 0 ${orbSize * 0.22}px ${egoColor.accent}70, inset 0 0 ${orbSize * 0.08}px rgba(255,255,255,0.28)`
-              : `0 0 ${orbSize * 0.15}px ${egoColor.accent}60, inset 0 0 ${orbSize * 0.05}px rgba(255,255,255,0.2)`,
-            filter: isHovering ? 'brightness(1.08)' : 'none'
+              ? `0 0 ${orbSize * 0.22 * audioReactivePulse}px ${egoColor.accent}70, inset 0 0 ${orbSize * 0.08}px rgba(255,255,255,0.28)`
+              : `0 0 ${orbSize * 0.15 * audioReactivePulse}px ${egoColor.accent}60, inset 0 0 ${orbSize * 0.05}px rgba(255,255,255,0.2)`,
+            filter: isHovering ? 'brightness(1.08)' : isCurrentlySpeaking ? `brightness(${1.0 + (audioLevel / 100) * 0.3})` : 'none',
+            transform: `translate(-50%, -50%) scale(${audioReactiveScale})`
           }}
         >
           {/* INNER GLOW */}
           <div
             className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full ${
-              evolutionLevel === 'master' ? 'animate-spin-slow' : 'animate-pulse'
+              isCurrentlySpeaking ? 'animate-spin' : evolutionLevel === 'master' ? 'animate-spin-slow' : 'animate-pulse'
             }`}
             style={{
               width: innerGlowSize,
               height: innerGlowSize,
-              background: `radial-gradient(circle, ${egoColor.accent}80 0%, transparent 70%)`
+              background: `radial-gradient(circle, ${egoColor.accent}${Math.floor(80 * audioReactivePulse).toString(16)} 0%, transparent 70%)`,
+              animationDuration: isCurrentlySpeaking ? '1s' : undefined
             }}
           />
         </div>
@@ -186,10 +207,14 @@ const CSSOrb = forwardRef<OrbRef, OrbProps>(({
         )}
 
         {/* SPEAKING/LISTENING INDICATORS — clipped to frame so they don’t add outside space */}
-        {isSpeaking && (
+        {isCurrentlySpeaking && (
           <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-teal-400 animate-pulse"
-            style={{ width: outerRingSize, height: outerRingSize }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-teal-400 animate-ping"
+            style={{ 
+              width: outerRingSize * (1.1 + (audioLevel / 100) * 0.2), 
+              height: outerRingSize * (1.1 + (audioLevel / 100) * 0.2),
+              borderColor: `rgba(20, 184, 166, ${0.6 + (audioLevel / 100) * 0.4})`
+            }}
           />
         )}
         {isListening && (

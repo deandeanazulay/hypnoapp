@@ -415,20 +415,29 @@ export class SessionManager {
     this.currentAudioElement = clonedAudio;
     clonedAudio.volume = 0.8; // Set appropriate volume
     
+    // Emit audio element for analysis
+    this._emit('audio-element', clonedAudio);
+    
     clonedAudio.onended = () => {
       this.currentAudioElement = null;
+      this._emit('audio-ended');
       this._handleSegmentEnd();
     };
     
     clonedAudio.onerror = (event) => {
       console.log('[SESSION] Pre-buffered audio error, falling back to browser TTS');
       this.currentAudioElement = null;
+      this._emit('audio-error');
       
       // Fall back to browser TTS on audio error  
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
         this._playWithBrowserTTS(segment.text).catch(console.error);
       }
+    };
+    
+    clonedAudio.onplay = () => {
+      this._emit('audio-started');
     };
     
     clonedAudio.play().catch(error => {
@@ -447,20 +456,29 @@ export class SessionManager {
     this.currentAudioElement.volume = 0.8;
     this.currentAudioElement.preload = 'auto';
     
+    // Emit audio element for analysis
+    this._emit('audio-element', this.currentAudioElement);
+    
     this.currentAudioElement.onended = () => {
       this.currentAudioElement = null;
+      this._emit('audio-ended');
       this._handleSegmentEnd();
     };
     
     this.currentAudioElement.onerror = (event) => {
       console.log('[SESSION] OpenAI TTS audio error, falling back to browser TTS');
       this.currentAudioElement = null;
+      this._emit('audio-error');
       
       // Fall back to browser TTS on audio error  
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
         this._playWithBrowserTTS(segment.text).catch(console.error);
       }
+    };
+    
+    this.currentAudioElement.onplay = () => {
+      this._emit('audio-started');
     };
     
     // Start playback with error handling
@@ -504,17 +522,20 @@ export class SessionManager {
       // Event handlers
       utterance.onstart = () => {
         console.log('[SESSION] Browser TTS started speaking segment');
+        this._emit('audio-started');
       };
       
       utterance.onend = () => {
         console.log('[SESSION] Browser TTS finished speaking segment');
         this.currentUtterance = null;
+        this._emit('audio-ended');
         this._handleSegmentEnd();
       };
       
       utterance.onerror = (event) => {
         console.log('[SESSION] Browser TTS error event:', event.error);
         this.currentUtterance = null;
+        this._emit('audio-error');
         if (event.error !== 'interrupted' && event.error !== 'canceled') {
           this._handleSegmentEnd();
         }

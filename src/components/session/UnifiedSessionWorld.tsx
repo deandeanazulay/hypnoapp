@@ -26,6 +26,15 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [sessionData, setSessionData] = useState<any>(null);
 
+  // Audio analysis state
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [audioFrequency, setAudioFrequency] = useState(0);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
   // Session state
   const [depth, setDepth] = useState(1);
   const [phase, setPhase] = useState('preparation');
@@ -40,6 +49,106 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   
   const breathingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const breathingAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize audio analysis
+  useEffect(() => {
+    const initAudioAnalysis = async () => {
+      try {
+        if (!window.AudioContext && !(window as any).webkitAudioContext) {
+          console.log('[AUDIO-ANALYSIS] Web Audio API not supported');
+          return;
+        }
+
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        audioContextRef.current = new AudioContextClass();
+        
+        // Create analyser for audio visualization
+        analyserRef.current = audioContextRef.current.createAnalyser();
+        analyserRef.current.fftSize = 256;
+        analyserRef.current.smoothingTimeConstant = 0.8;
+        
+        console.log('[AUDIO-ANALYSIS] Audio analysis initialized');
+      } catch (error) {
+        console.log('[AUDIO-ANALYSIS] Failed to initialize:', error);
+      }
+    };
+
+    initAudioAnalysis();
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
+
+  // Connect audio element to analyser when audio starts
+  const connectAudioToAnalyser = (audioElement: HTMLAudioElement) => {
+    if (!audioContextRef.current || !analyserRef.current || audioSourceRef.current) {
+      return;
+    }
+
+    try {
+      // Resume audio context if suspended
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+
+      // Create source from audio element
+      audioSourceRef.current = audioContextRef.current.createMediaElementSource(audioElement);
+      audioSourceRef.current.connect(analyserRef.current);
+      analyserRef.current.connect(audioContextRef.current.destination);
+      
+      // Start audio analysis
+      startAudioAnalysis();
+      
+      console.log('[AUDIO-ANALYSIS] Connected audio element to analyser');
+    } catch (error) {
+      console.log('[AUDIO-ANALYSIS] Failed to connect audio:', error);
+    }
+  };
+
+  // Start real-time audio analysis
+  const startAudioAnalysis = () => {
+    if (!analyserRef.current) return;
+
+    const bufferLength = analyserRef.current.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const analyze = () => {
+      if (!analyserRef.current) return;
+
+      analyserRef.current.getByteFrequencyData(dataArray);
+      
+      // Calculate average volume level
+      const average = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
+      const normalizedLevel = (average / 255) * 100;
+      
+      // Calculate dominant frequency
+      let maxIndex = 0;
+      let maxValue = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        if (dataArray[i] > maxValue) {
+          maxValue = dataArray[i];
+          maxIndex = i;
+        }
+      }
+      const dominantFreq = (maxIndex / bufferLength) * (audioContextRef.current?.sampleRate || 44100) / 2;
+      
+      // Update state
+      setAudioLevel(normalizedLevel);
+      setAudioFrequency(dominantFreq);
+      setIsSpeaking(normalizedLevel > 5); // Speaking threshold
+      
+      animationFrameRef.current = requestAnimationFrame(analyze);
+    };
+
+    analyze();
+  };
+
   // Auto-start session when opened
   useEffect(() => {
     if (isOpen && sessionHandle && sessionState.isInitialized && sessionState.playState === 'stopped') {
@@ -110,6 +219,25 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
       sessionHandle.on('end', () => {
         console.log('[SESSION-WORLD] Session completed');
         handleSessionComplete();
+      });
+
+      // Audio analysis events
+      sessionHandle.on('audio-element', (audioElement) => {
+        connectAudioToAnalyser(audioElement);
+      });
+
+      sessionHandle.on('audio-started', () => {
+        setIsSpeaking(true);
+      });
+
+      sessionHandle.on('audio-ended', () => {
+        setIsSpeaking(false);
+        setAudioLevel(0);
+      });
+
+      sessionHandle.on('audio-error', () => {
+        setIsSpeaking(false);
+        setAudioLevel(0);
       });
     }
   }, [sessionHandle, showToast, onClose]);
@@ -623,6 +751,9 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
             egoState={activeEgoState}
             size={window.innerWidth < 768 ? 320 : 480}
             variant="webgl"
+            isSpeaking={isSpeaking}
+            audioLevel={audioLevel}
+            audioFrequency={audioFrequency}
             className=""
             style={{ overflow: 'visible' }}
           />

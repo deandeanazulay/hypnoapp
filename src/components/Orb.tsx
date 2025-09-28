@@ -10,6 +10,9 @@ interface OrbProps {
   className?: string;
   afterglow?: boolean;
   variant?: 'webgl' | 'css' | 'auto';
+  isSpeaking?: boolean;
+  audioLevel?: number;
+  audioFrequency?: number;
 }
 
 // Orb evolution based on user progress
@@ -103,9 +106,25 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
   // Render the appropriate orb type - NEVER switch after initial render
   return useWebGL ? 
     <div style={{ overflow: 'visible', position: 'relative', zIndex: 10, width: size, height: size }}>
-      <WebGLOrb {...props} onTap={debugOnTap} size={size} evolutionLevel={evolutionLevel} />
+      <WebGLOrb 
+        {...props} 
+        onTap={debugOnTap} 
+        size={size} 
+        evolutionLevel={evolutionLevel}
+        isSpeaking={props.isSpeaking}
+        audioLevel={props.audioLevel}
+        audioFrequency={props.audioFrequency}
+      />
     </div> : 
     <div style={{ overflow: 'visible', position: 'relative', zIndex: 10, width: size, height: size }}>
-      <CSSOrb {...props} onTap={debugOnTap} size={size} evolutionLevel={evolutionLevel} />
+      <CSSOrb 
+        {...props} 
+        onTap={debugOnTap} 
+        size={size} 
+        evolutionLevel={evolutionLevel}
+        isSpeaking={props.isSpeaking}
+        audioLevel={props.audioLevel}
+        audioFrequency={props.audioFrequency}
+      />
     </div>;
 }

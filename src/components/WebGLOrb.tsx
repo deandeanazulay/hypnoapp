@@ -15,6 +15,9 @@ interface WebGLOrbProps {
   className?: string;
   afterglow?: boolean;
   evolutionLevel?: 'basic' | 'enhanced' | 'advanced' | 'master';
+  isSpeaking?: boolean;
+  audioLevel?: number;
+  audioFrequency?: number;
 }
 
 function supportsWebGL(): boolean {
@@ -40,7 +43,10 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     egoState = 'guardian',
     className = '',
     afterglow = false,
-    evolutionLevel = 'basic'
+    evolutionLevel = 'basic',
+    isSpeaking = false,
+    audioLevel = 0,
+    audioFrequency = 0
   } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,7 +75,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const sphereRadiusRef = useRef<number>(10);
 
   // State for animations
-  const [isSpeaking, setIsSpeaking] = React.useState(false);
+  const [internalSpeaking, setInternalSpeaking] = React.useState(false);
   const [isListening, setIsListening] = React.useState(false);
   const [currentState, setCurrentState] = React.useState<any>({});
 
@@ -78,7 +84,7 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       setCurrentState(state);
     },
     setSpeaking: (speaking: boolean) => {
-      setIsSpeaking(speaking);
+      setInternalSpeaking(speaking);
     },
     setListening: (listening: boolean) => {
       setIsListening(listening);
@@ -362,29 +368,43 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const shapeTransition = (alienState.geometryPhase % 1); // 0-1 transition between shapes
     const smoothTransition = 0.5 * (1 + Math.sin((shapeTransition - 0.5) * Math.PI)); // Smooth S-curve
     
+    // Audio-reactive scaling and movement
+    const isCurrentlySpeaking = isSpeaking || internalSpeaking;
+    const audioReactiveScale = isCurrentlySpeaking ? 
+      1.0 + (audioLevel / 100) * 0.15 + Math.sin(time * 12) * 0.05 : 1.0;
+    const audioReactiveIntensity = isCurrentlySpeaking ? 
+      1.0 + (audioLevel / 100) * 0.3 + Math.sin(time * 8) * 0.1 : 1.0;
+    
     if (orbMeshRef.current) {
       // Apply geometric transformation to vertices
       applyGeometricShape(orbMeshRef.current, alienState.currentShape, smoothTransition, sphereRadiusRef.current);
-      // Keep orb within bounds with subtle breathing
-      orbMeshRef.current.scale.setScalar(0.95 + alienState.pulse * 0.03); 
       
-      // Minimal rotation for visual interest, not spinning
-      orbMeshRef.current.rotation.x = Math.sin(time * 0.1) * 0.05;
-      orbMeshRef.current.rotation.y = Math.cos(time * 0.08) * 0.03;
-      orbMeshRef.current.rotation.z = Math.sin(time * 0.06) * 0.02;
+      // Audio-reactive scaling combined with breathing
+      const breathingScale = 0.95 + alienState.pulse * 0.03;
+      orbMeshRef.current.scale.setScalar(breathingScale * audioReactiveScale);
       
-      // Subtle organic movement that stays centered
-      orbMeshRef.current.position.x = Math.sin(time * 0.3) * 0.2;
-      orbMeshRef.current.position.y = Math.cos(time * 0.4) * 0.15;
-      orbMeshRef.current.position.z = Math.sin(time * 0.2) * 0.1;
+      // Audio-reactive rotation - more dynamic when speaking
+      const rotationMultiplier = isCurrentlySpeaking ? 2.0 + (audioLevel / 100) : 1.0;
+      orbMeshRef.current.rotation.x = Math.sin(time * 0.1 * rotationMultiplier) * 0.05;
+      orbMeshRef.current.rotation.y = Math.cos(time * 0.08 * rotationMultiplier) * 0.03;
+      orbMeshRef.current.rotation.z = Math.sin(time * 0.06 * rotationMultiplier) * 0.02;
+      
+      // Audio-reactive movement - more pronounced when speaking
+      const movementMultiplier = isCurrentlySpeaking ? 1.5 + (audioLevel / 100) * 0.5 : 1.0;
+      orbMeshRef.current.position.x = Math.sin(time * 0.3) * 0.2 * movementMultiplier;
+      orbMeshRef.current.position.y = Math.cos(time * 0.4) * 0.15 * movementMultiplier;
+      orbMeshRef.current.position.z = Math.sin(time * 0.2) * 0.1 * movementMultiplier;
       
       // Update material opacity for alien intensity
+      const baseOpacity = (afterglow ? 0.8 : 0.6) * alienState.intensity * (evolutionLevel === 'master' ? 1.3 : 1);
       const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
-      material.opacity = (afterglow ? 0.8 : 0.6) * alienState.intensity * (evolutionLevel === 'master' ? 1.3 : 1);
-
-      // Speaking indicator - alien excitement
-      if (isSpeaking) {
-        material.opacity = 0.4 + 0.15 * Math.sin(time * 8);
+      
+      if (isCurrentlySpeaking) {
+        // Audio-reactive opacity pulsing
+        const audioReactivePulse = 0.6 + 0.4 * (audioLevel / 100) + Math.sin(time * 10) * 0.2;
+        material.opacity = baseOpacity * audioReactivePulse;
+      } else {
+        material.opacity = baseOpacity;
       }
 
       // Listening indicator - alien attention mode
@@ -393,11 +413,12 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       }
     }
 
-    // Subtle camera movement that stays centered
+    // Audio-reactive camera movement
+    const cameraMovementMultiplier = isCurrentlySpeaking ? 1.2 + (audioLevel / 100) * 0.3 : 1.0;
     if (cameraRef.current) {
-      cameraRef.current.position.x = 1 * Math.sin(time * 0.12) + Math.sin(time * 0.8) * 0.2;
-      cameraRef.current.position.y = 0.8 * Math.cos(time * 0.18) + Math.cos(time * 1.1) * 0.15;
-      cameraRef.current.position.z = 30 + Math.sin(time * 0.05) * 1;
+      cameraRef.current.position.x = 1 * Math.sin(time * 0.12 * cameraMovementMultiplier) + Math.sin(time * 0.8) * 0.2;
+      cameraRef.current.position.y = 0.8 * Math.cos(time * 0.18 * cameraMovementMultiplier) + Math.cos(time * 1.1) * 0.15;
+      cameraRef.current.position.z = 30 + Math.sin(time * 0.05) * 1 * cameraMovementMultiplier;
       cameraRef.current.lookAt(0, 0, 0);
     }
 
