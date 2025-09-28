@@ -140,60 +140,60 @@ export function synthesizeWithBrowserTTS(
     utterance.pitch = voiceConfig.pitch ?? 0.8; // Lower for calming
     utterance.volume = voiceConfig.volume ?? 1.0;
 
-    // Set voice immediately
-    const voices = speechSynthesis.getVoices();
-    const preferredVoice = voices.find(voice => 
-      voice.name.includes('Samantha') ||
-      voice.name.includes('Karen') ||
-      voice.name.includes('Daniel') ||
-      voice.name.includes('Alex') ||
-      (voice.lang.includes('en') && !voice.name.toLowerCase().includes('google'))
-    ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
-    
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
-      console.log('[VOICE] Selected voice:', preferredVoice.name);
-    }
+    const setVoiceAndSpeak = () => {
+      // Set voice immediately
+      const voices = speechSynthesis.getVoices();
+      const preferredVoice = voices.find(voice => 
+        voice.name.includes('Samantha') ||
+        voice.name.includes('Karen') ||
+        voice.name.includes('Daniel') ||
+        voice.name.includes('Alex') ||
+        (voice.lang.includes('en') && !voice.name.toLowerCase().includes('google'))
+      ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
+      
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+        console.log('[VOICE] Selected voice:', preferredVoice.name);
+      }
 
-    utterance.onstart = () => {
-      console.log('[VOICE] Browser TTS started speaking');
-    };
+      utterance.onstart = () => {
+        console.log('[VOICE] Browser TTS started speaking');
+      };
 
-    utterance.onend = () => {
-      console.log('[VOICE] Browser TTS finished');
-      resolve();
-    };
-
-    utterance.onerror = (event) => {
-      console.error('[VOICE] Browser TTS error:', event.error);
-      if (event.error !== 'interrupted' && event.error !== 'canceled') {
-        reject(new Error(`Browser TTS failed: ${event.error}`));
-      } else {
+      utterance.onend = () => {
+        console.log('[VOICE] Browser TTS finished');
         resolve();
+      };
+
+      utterance.onerror = (event) => {
+        console.error('[VOICE] Browser TTS error:', event.error);
+        if (event.error !== 'interrupted' && event.error !== 'canceled') {
+          reject(new Error(`Browser TTS failed: ${event.error}`));
+        } else {
+          resolve();
+        }
+      };
+
+      // Start speech immediately
+      try {
+        console.log('[VOICE] Starting speech synthesis...');
+        speechSynthesis.speak(utterance);
+        
+        // Force start on mobile devices
+        setTimeout(() => {
+          if (!speechSynthesis.speaking && !speechSynthesis.pending) {
+            console.log('[VOICE] Forcing speech start for mobile...');
+            speechSynthesis.speak(utterance);
+          }
+        }, 100);
+        
+      } catch (error) {
+        console.error('[VOICE] Failed to start speech:', error);
+        reject(error);
       }
     };
 
-    // Start speech immediately
-    try {
-      console.log('[VOICE] Starting speech synthesis...');
-      speechSynthesis.speak(utterance);
-      
-      // Force start on mobile devices
-      setTimeout(() => {
-        if (!speechSynthesis.speaking && !speechSynthesis.pending) {
-          console.log('[VOICE] Forcing speech start for mobile...');
-          speechSynthesis.speak(utterance);
-        }
-      }, 100);
-      
-    } catch (error) {
-      console.error('[VOICE] Failed to start speech:', error);
-      reject(error);
-    }
-  });
-}
-
-
+    setTimeout(() => {
       // Handle voice loading with timeout
       if (speechSynthesis.getVoices().length === 0) {
         let voicesLoaded = false;
