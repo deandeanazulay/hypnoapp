@@ -1,6 +1,9 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import * as THREE from 'three';
 import { getEgoColor } from '../../config/theme';
+import { EffectComposer } from '../../lib/three-extensions/EffectComposer';
+import { RenderPass } from '../../lib/three-extensions/RenderPass';
+import { UnrealBloomPass } from '../../lib/three-extensions/UnrealBloomPass';
 
 export interface WormholeRef {
   updateState: (state: any) => void;
@@ -103,6 +106,7 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const composerRef = useRef<EffectComposer | null>(null);
   const tunnelMeshRef = useRef<THREE.Mesh | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const isActiveRef = useRef(true);
@@ -199,6 +203,18 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
     renderer.setSize(size, size);
     renderer.setClearColor(0x000000, 0);
     rendererRef.current = renderer;
+
+    // Post-processing setup
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(size, size), // Resolution
+      1.5, // Strength
+      0.4, // Radius
+      0.85 // Threshold
+    );
+    composer.addPass(bloomPass);
+    composerRef.current = composer;
 
     // WebGL context loss handling
     const canvas = renderer.domElement;
@@ -358,7 +374,7 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
     }
 
     try {
-      rendererRef.current.render(sceneRef.current, cameraRef.current);
+      composerRef.current.render(); // Use composer to render with effects
       
       if (isActiveRef.current) {
         animationIdRef.current = requestAnimationFrame(animate);
@@ -385,6 +401,10 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
       tunnelMeshRef.current.material?.dispose();
     }
 
+    if (composerRef.current) {
+      composerRef.current.dispose();
+    }
+
     if (rendererRef.current) {
       try {
         rendererRef.current.dispose();
@@ -396,6 +416,7 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
     sceneRef.current = null;
     rendererRef.current = null;
     cameraRef.current = null;
+    composerRef.current = null;
     tunnelMeshRef.current = null;
     initializedRef.current = false;
   };
