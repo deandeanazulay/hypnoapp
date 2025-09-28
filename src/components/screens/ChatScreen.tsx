@@ -503,7 +503,7 @@ export default function ChatScreen() {
       </div>
 
       {/* Quick Reply Suggestions */}
-      <div className="fixed left-0 right-0 bottom-0 z-40" style={{ bottom: 'calc(var(--total-nav-height, 128px) + 140px)' }}>
+      <div className="fixed left-0 right-0 z-40" style={{ bottom: 'calc(var(--total-nav-height, 128px) + 80px)' }}>
         <ChatSuggestions
           suggestions={suggestions}
           onSuggestionClick={setInputText}
