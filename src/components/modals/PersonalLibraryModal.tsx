@@ -81,14 +81,53 @@ export default function PersonalLibraryModal({ onProtocolSelect }: PersonalLibra
   };
 
   const handleProtocolStart = (protocol: CustomProtocol) => {
-    if (onProtocolSelect) {
-      onProtocolSelect(protocol);
+    try {
+      console.log('[LIBRARY] Starting custom protocol session:', protocol);
+      
+      // Close the modal first
+      closeModal('personalLibrary');
+      
+      // Start the session using the session store
+      startNewSession({
+        egoState: activeEgoState,
+        customProtocol: protocol,
+        goal: {
+          id: 'custom-' + protocol.id,
+          name: protocol.name
+        },
+        action: {
+          name: protocol.name,
+          id: 'custom-protocol'
+        },
+        method: {
+          name: protocol.induction,
+          id: protocol.induction
+        },
+        lengthSec: protocol.duration * 60,
+        userPrefs: {
+          level: user?.level || 1,
+          experience: user?.experience || 0,
+          customProtocol: protocol
+        }
+      });
+
+      showToast({
+        type: 'success',
+        message: `Starting "${protocol.name}" session...`
+      });
+
+      // Call the original callback if provided
+      if (onProtocolSelect) {
+        onProtocolSelect(protocol);
+      }
+
+    } catch (error) {
+      console.error('Error starting custom protocol session:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to start session. Please try again.'
+      });
     }
-    closeModal('personalLibrary');
-    showToast({
-      type: 'success',
-      message: `Starting "${protocol.name}" session`
-    });
   };
 
   const handleCopyProtocol = async (protocol: CustomProtocol) => {
