@@ -13,15 +13,13 @@ interface TTSRequest {
   speed?: number;
   response_format?: string;
 }
-
-Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
-  }
+  console.log('🎤 OpenAI TTS: Calling API with ash voice:', {
+    model: openaiRequest.model,
+    voice: openaiRequest.voice,
+    textLength: openaiRequest.input.length,
+    speed: openaiRequest.speed,
+    format: openaiRequest.response_format
+  });
 
   if (req.method !== 'POST') {
     return new Response(
