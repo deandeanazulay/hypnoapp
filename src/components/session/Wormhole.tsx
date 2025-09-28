@@ -365,8 +365,13 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
       const colorValue = egoColorInfo?.accent;
       const fallbackColor = '#00ffff'; // Cyan fallback
       
-      // Always assign a new THREE.Color instance to avoid internal Three.js errors
-      material.uniforms.color.value = new THREE.Color(colorValue && typeof colorValue === 'string' ? colorValue : fallbackColor);
+      // Ensure we have a valid color string and create new THREE.Color instance
+      const validColorValue = (colorValue && typeof colorValue === 'string') ? colorValue : fallbackColor;
+      
+      // Always assign a completely new THREE.Color instance to avoid any reference issues
+      const newColor = new THREE.Color();
+      newColor.set(validColorValue);
+      material.uniforms.color.value = newColor;
       
       // Update animation uniforms
       material.uniforms.time.value = animState.time;
@@ -531,5 +536,7 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
 
 export default Wormhole
 
+
+export default Wormhole
 
 export default Wormhole
