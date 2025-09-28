@@ -113,7 +113,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
         onProtocolCreate(data);
         showToast({ 
           type: 'success', 
-          message: `Protocol "${protocol.name}" created! (-${PROTOCOL_COST} tokens)`,
+          message: `✨ Protocol "${protocol.name}" created successfully! (-${PROTOCOL_COST} tokens)`,
           duration: 4000
         });
         
@@ -132,7 +132,7 @@ export default function CreateScreen({ onProtocolCreate, onShowAuth }: CreateScr
         console.error('[CREATE] Error deducting tokens:', tokenError);
         showToast({ 
           type: 'error', 
-          message: 'Protocol created but failed to deduct tokens. Please contact support.',
+          message: `Protocol created but failed to deduct tokens: ${tokenError.message}. Please contact support.`,
           duration: 6000
         });
       }
