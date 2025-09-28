@@ -207,6 +207,9 @@ export function synthesizeWithBrowserTTS(
         
         speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
         
+        // Try to trigger voice loading
+        window.speechSynthesis.getVoices();
+        
         // Fallback timeout
         setTimeout(() => {
           if (!voicesLoaded) {

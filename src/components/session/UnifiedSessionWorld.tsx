@@ -450,11 +450,19 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   const handleVolumeChange = (level: number) => {
     setAudioLevel(level);
     
-    // Apply volume to all audio elements
-    const audioElements = document.querySelectorAll('audio');
-    audioElements.forEach(audio => {
-      audio.volume = level / 100;
-    });
+    // Apply volume to current audio element
+    if (sessionHandle) {
+      const currentAudio = document.querySelector('audio');
+      if (currentAudio) {
+        currentAudio.volume = level / 100;
+      }
+    }
+    
+    // Apply to speech synthesis
+    if (window.speechSynthesis && window.speechSynthesis.speaking) {
+      // Note: speechSynthesis doesn't support volume control directly
+      // Volume is controlled through the utterance when created
+    }
     
     console.log('[SESSION] Volume updated to:', level);
   };
