@@ -180,6 +180,11 @@ export class UnrealBloomPass extends Pass {
     }
 
     render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, delta: number, maskActive: boolean) {
+        // Defensive check to ensure oldClearColor is properly initialized
+        if (!this.oldClearColor || !(this.oldClearColor instanceof Color)) {
+            this.oldClearColor = new Color();
+        }
+        
         this.oldClearColor.copy(renderer.getClearColor());
         this.oldClearAlpha = renderer.getClearAlpha();
         const oldAutoClear = renderer.autoClear;
