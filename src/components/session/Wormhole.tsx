@@ -214,6 +214,7 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
       0.85 // Threshold
     );
     composer.addPass(bloomPass);
+    composer.setSize(size, size);
     composerRef.current = composer;
 
     // WebGL context loss handling
@@ -231,8 +232,8 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
       setContextLost(false);
       setTimeout(() => {
         if (isActiveRef.current) {
-          initializeGeometry();
-          animate();
+          disposeScene();
+          initializeWormhole();
         }
       }, 100);
     });
@@ -374,7 +375,7 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
     }
 
     try {
-      composerRef.current.render(); // Use composer to render with effects
+      composerRef.current?.render(); // Use composer to render with effects
       
       if (isActiveRef.current) {
         animationIdRef.current = requestAnimationFrame(animate);
@@ -402,6 +403,12 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
     }
 
     if (composerRef.current) {
+      // Dispose of render targets and passes
+      composerRef.current.passes.forEach(pass => {
+        if (pass.dispose) {
+          pass.dispose();
+        }
+      });
       composerRef.current.dispose();
     }
 
