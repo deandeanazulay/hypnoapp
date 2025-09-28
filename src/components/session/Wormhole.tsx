@@ -360,10 +360,15 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
       
       // Update ego state color
       const egoColorInfo = getEgoColor(egoState);
+      
+      // Defensive check for valid color value
+      const colorValue = egoColorInfo?.accent;
+      const fallbackColor = '#00ffff'; // Cyan fallback
+      
       if (material.uniforms.color.value instanceof THREE.Color) {
-        material.uniforms.color.value.set(egoColorInfo.accent);
+        material.uniforms.color.value.set(colorValue && typeof colorValue === 'string' ? colorValue : fallbackColor);
       } else {
-        material.uniforms.color.value = new THREE.Color(egoColorInfo.accent);
+        material.uniforms.color.value = new THREE.Color(colorValue && typeof colorValue === 'string' ? colorValue : fallbackColor);
       }
       
       // Update animation uniforms
