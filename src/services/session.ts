@@ -413,38 +413,39 @@ export class SessionManager {
   private async _tryOpenAITTSLive(text: string) {
     try {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] 🎤 Attempting OpenAI TTS with ash voice for text:', text.substring(0, 50) + '...');
+        console.log('[SESSION] 🎤 Calling OpenAI TTS with ash voice for:', text.substring(0, 50) + '...');
       }
       
       const result = await synthesizeSegment(text, {
         voiceId: 'ash',
         cacheKey: `live-segment-${this.currentSegmentIndex}`,
         mode: 'live',
-        model: 'tts-1-hd' // Use HD model for better quality
+        model: 'tts-1' // Use standard model that works with chatgpt-chat
       });
 
       if (import.meta.env.DEV) {
-        console.log('[SESSION] OpenAI TTS result provider:', result.provider);
+        console.log('[SESSION] 🎤 TTS Result - Provider:', result.provider);
         if (result.audioUrl) {
-          console.log('[SESSION] ✅ Got OpenAI TTS audio URL, playing ash voice');
+          console.log('[SESSION] ✅ SUCCESS! Got OpenAI ash voice audio URL');
         } else {
-          console.log('[SESSION] ⚠️ No audio URL from OpenAI TTS, falling back to browser');
+          console.log('[SESSION] ❌ No OpenAI audio URL, using robotic browser TTS');
         }
       }
 
       if (result.provider === 'openai-tts' && result.audioUrl) {
+        console.log('[SESSION] 🔊 Playing OpenAI ash voice audio');
         this._playOpenAITTSAudio(result.audioUrl);
         return;
       }
 
       // Fall back to browser TTS
       if (import.meta.env.DEV) {
-        console.warn('[SESSION] OpenAI TTS not available, using browser TTS with ash-like voice');
+        console.warn('[SESSION] ⚠️ OpenAI TTS failed, falling back to robotic browser TTS');
       }
       await this._playWithBrowserTTS(text);
     } catch (error) {
       if (import.meta.env.DEV) {
-        console.error('[SESSION] OpenAI TTS error, falling back to browser TTS:', error);
+        console.error('[SESSION] ❌ OpenAI TTS error, using robotic fallback:', error);
       }
       await this._playWithBrowserTTS(text);
     }
@@ -493,16 +494,16 @@ export class SessionManager {
 
   private _playOpenAITTSAudio(audioUrl: string) {
     if (import.meta.env.DEV) {
-      console.log('[SESSION] 🔊 Setting up OpenAI ash voice audio element');
+      console.log('[SESSION] 🔊 Playing OpenAI ash voice audio from URL:', audioUrl);
     }
     
     // Create audio element for OpenAI TTS
     this.currentAudioElement = new Audio(audioUrl);
-    this.currentAudioElement.volume = 0.8; // Good volume for ash voice
+    this.currentAudioElement.volume = 1.0; // Full volume for ash voice
     this.currentAudioElement.preload = 'auto';
     this.currentAudioElement.crossOrigin = 'anonymous';
     
-    // Force load the audio
+    // Immediately load and prepare audio
     this.currentAudioElement.load();
     
     // Emit audio element for analysis
@@ -510,7 +511,7 @@ export class SessionManager {
     
     this.currentAudioElement.onended = () => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] ✅ Ash voice segment completed');
+        console.log('[SESSION] ✅ OpenAI ash voice segment finished');
       }
       this.currentAudioElement = null;
       this._emit('audio-ended');
@@ -518,57 +519,71 @@ export class SessionManager {
     };
     
     this.currentAudioElement.onerror = (event) => {
-      console.error('[SESSION] ❌ Ash voice audio error, falling back to browser TTS:', event);
+      console.error('[SESSION] ❌ OpenAI ash voice audio error:', event);
       this.currentAudioElement = null;
       this._emit('audio-error');
       
       // Fall back to browser TTS on audio error  
       const segment = this.segments[this.currentSegmentIndex];
       if (segment) {
+        console.log('[SESSION] Falling back to robotic browser TTS');
         this._playWithBrowserTTS(segment.text).catch(console.error);
       }
     };
     
     this.currentAudioElement.onplay = () => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] 🎤 Ash voice is now speaking!');
+        console.log('[SESSION] ✅ OpenAI ash voice is now speaking!');
       }
       this._emit('audio-started');
     };
     
-    this.currentAudioElement.oncanplay = () => {
+    this.currentAudioElement.oncanplaythrough = () => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] 🎤 Ash voice audio ready, starting playback');
+        console.log('[SESSION] OpenAI ash voice audio fully loaded and ready');
       }
       
-      // Play immediately when ready
+      // Immediately play when fully loaded
       if (this._state.playState === 'playing') {
         this.currentAudioElement?.play().then(() => {
           if (import.meta.env.DEV) {
-            console.log('[SESSION] ✅ Ash voice auto-play successful');
+            console.log('[SESSION] ✅ OpenAI ash voice auto-play successful');
           }
         }).catch(error => {
-          console.error('[SESSION] ❌ Ash voice auto-play failed:', error);
+          console.error('[SESSION] ❌ OpenAI ash voice auto-play failed:', error);
           // Fall back to browser TTS
           const segment = this.segments[this.currentSegmentIndex];
           if (segment) {
+            console.log('[SESSION] Using robotic browser TTS as fallback');
             this._playWithBrowserTTS(segment.text).catch(console.error);
           }
         });
       }
     };
     
-    // Try immediate play first, then rely on canplay for backup
+    // Try immediate play first, then rely on canplaythrough for backup
     this.currentAudioElement.play().then(() => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] ✅ Ash voice immediate play successful');
+        console.log('[SESSION] ✅ OpenAI ash voice immediate play successful');
       }
     }).catch(error => {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] Immediate play failed, waiting for canplay event:', error.message);
+        console.log('[SESSION] Immediate play failed, waiting for audio to load:', error.message);
       }
-      // The canplay event will handle playback when ready
+      // The canplaythrough event will handle playback when ready
     });
+    
+    // Additional fallback timer to ensure playback starts
+    setTimeout(() => {
+      if (this.currentAudioElement && this._state.playState === 'playing') {
+        this.currentAudioElement.play().catch(error => {
+          if (import.meta.env.DEV) {
+            console.log('[SESSION] Immediate play failed, waiting for canplay event:', error.message);
+          }
+          // The canplay event handler will try again
+        });
+      }
+    }, 100);
   }
 
   private async _playWithBrowserTTS(text: string) {
