@@ -27,10 +27,14 @@ interface WormholeProps {
 const vertexShader = `
   varying vec2 vUv;
   varying vec3 vPosition;
+  varying vec3 vNormal;
+  varying float vDistance;
   
   void main() {
     vUv = uv;
     vPosition = position;
+    vNormal = normalize(normalMatrix * normal);
+    vDistance = length(position);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
@@ -41,44 +45,111 @@ const fragmentShader = `
   uniform vec3 color;
   uniform float intensity;
   uniform float speed;
-  uniform float gridScale;
+  uniform float tunnelScale;
   uniform float breathingPulse;
   uniform float audioLevel;
+  uniform float turbulence;
+  uniform float spiralIntensity;
   
   varying vec2 vUv;
   varying vec3 vPosition;
+  varying vec3 vNormal;
+  varying float vDistance;
+  
+  // Noise function for turbulence
+  float noise(vec3 p) {
+    return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
+  }
+  
+  // Fractal noise for organic turbulence
+  float fbm(vec3 p) {
+    float value = 0.0;
+    float amplitude = 0.5;
+    for(int i = 0; i < 4; i++) {
+      value += amplitude * noise(p);
+      p *= 2.0;
+      amplitude *= 0.5;
+    }
+    return value;
+  }
   
   void main() {
     vec2 uv = vUv;
+    vec3 pos = vPosition;
     
-    // Create moving grid pattern
-    float gridX = sin((uv.x + time * speed) * gridScale * 3.14159) * 0.5 + 0.5;
-    float gridY = sin((uv.y + time * speed * 0.7) * gridScale * 3.14159) * 0.5 + 0.5;
+    // Epic waterslide spiral motion
+    float spiralTime = time * speed * 2.0;
+    float spiralAngle = atan(uv.y - 0.5, uv.x - 0.5);
+    float spiralRadius = length(uv - 0.5);
     
-    // Create depth-based fade
-    float depth = length(vPosition) / 20.0;
-    float depthFade = 1.0 - smoothstep(0.0, 1.0, depth);
+    // Create massive spiral waterslide effect
+    float spiral1 = sin(spiralAngle * 8.0 + spiralTime * 3.0 + pos.z * 0.1) * 0.5 + 0.5;
+    float spiral2 = sin(spiralAngle * 12.0 - spiralTime * 2.0 + pos.z * 0.15) * 0.5 + 0.5;
+    float spiral3 = sin(spiralAngle * 16.0 + spiralTime * 4.0 + pos.z * 0.08) * 0.5 + 0.5;
     
-    // Combine grid lines
-    float grid = max(
-      smoothstep(0.85, 0.95, gridX),
-      smoothstep(0.85, 0.95, gridY)
+    // Rollercoaster banking/tilting effect
+    float banking = sin(spiralTime * 0.5 + pos.z * 0.05) * 0.3;
+    float tiltedAngle = spiralAngle + banking;
+    
+    // Waterslide ridges and channels
+    float ridgePattern = sin(tiltedAngle * 24.0 + spiralTime * 1.5) * 0.5 + 0.5;
+    ridgePattern *= sin(spiralRadius * 20.0 + spiralTime * 2.0) * 0.5 + 0.5;
+    
+    // Turbulent water flow effect
+    vec3 turbulentPos = pos + vec3(
+      sin(spiralTime * 1.2 + pos.z * 0.1) * turbulence,
+      cos(spiralTime * 0.8 + pos.z * 0.12) * turbulence,
+      sin(spiralTime * 1.5 + pos.x * 0.1) * turbulence * 0.5
     );
+    float waterFlow = fbm(turbulentPos * 0.1 + vec3(spiralTime * 0.3, 0.0, 0.0));
     
-    // Add breathing pulse effect
-    float pulse = sin(time * 2.0 + breathingPulse * 6.28318) * 0.3 + 0.7;
+    // Black hole event horizon effect
+    float ringPattern = 0.0;
+    for(int i = 0; i < 5; i++) {
+      float ringZ = worldPos.z + float(i) * 20.0 + flowTime * 30.0;
+      float ringIntensity = sin(ringZ * 0.2) * 0.5 + 0.5;
+      float ringFade = 1.0 - smoothstep(0.3, 0.8, radialDist);
+    // Create rollercoaster track-like guides
+    float trackPattern = 0.0;
+    for(int i = 0; i < 4; i++) {
+      float trackAngle = float(i) * 1.570796; // 90 degrees apart
+      vec2 trackPos = center + vec2(cos(trackAngle), sin(trackAngle)) * 0.4;
+      float trackDist = length(uv - trackPos);
+      float trackLine = 1.0 - smoothstep(0.02, 0.06, trackDist);
+      trackPattern += trackLine;
+    }
     
-    // Add audio reactivity
-    float audioReactive = 1.0 + audioLevel * 0.5;
+    // Combine all patterns for waterslide effect
+    float finalPattern = streamPattern * 0.4 + 
+                        spiralFlow * 0.3 + 
+                        ringPattern * 0.2 + 
+                        trackPattern * 0.1 + 
+                        turbulentNoise * 0.2;
     
-    // Final color with all effects
-    vec3 finalColor = color * grid * depthFade * intensity * pulse * audioReactive;
+    // Enhanced breathing pulse for immersion
+    float breathingIntensity = sin(time * 2.0 + breathingPulse * 6.28318) * 0.4 + 0.8;
     
-    // Add tunnel glow effect
-    float tunnelGlow = 1.0 - smoothstep(0.0, 0.8, length(uv - 0.5));
-    finalColor += color * tunnelGlow * 0.3 * intensity;
+    // Audio reactivity for dynamic response
+    float audioReactive = 1.0 + audioLevel * 0.8 + sin(time * 15.0) * audioLevel * 0.3;
     
-    gl_FragColor = vec4(finalColor, grid * depthFade * intensity);
+    // Create intense tunnel glow like being inside energy
+    float tunnelGlow = pow(1.0 - radialDist, 2.0) * 0.6;
+    float edgeGlow = pow(radialDist, 3.0) * 0.4;
+    
+    // Combine everything for final waterslide/rollercoaster effect
+    vec3 finalColor = color * finalPattern * tunnelDepth * intensity * breathingIntensity * audioReactive;
+    
+    // Add glowing tunnel walls
+    finalColor += color * (tunnelGlow + edgeGlow) * intensity * 0.8;
+    
+    // Add speed streaks for rollercoaster feeling
+    float speedStreak = smoothstep(0.7, 1.0, finalPattern) * audioReactive;
+    finalColor += vec3(1.0, 0.8, 0.6) * speedStreak * 0.3;
+    
+    // Final alpha with depth and pattern
+    float alpha = (finalPattern + tunnelGlow) * tunnelDepth * intensity * 0.9;
+    
+    gl_FragColor = vec4(finalColor, alpha);
   }
 `;
 
@@ -270,11 +341,11 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
 
     // Create tunnel geometry - long cylinder to simulate infinite tunnel
     const tunnelGeometry = new THREE.CylinderGeometry(
-      15, // radiusTop
-      15, // radiusBottom  
-      200, // height (long tunnel)
-      32, // radialSegments
-      20, // heightSegments
+      25, // radiusTop - wider for waterslide feeling
+      25, // radiusBottom  
+      400, // height (much longer tunnel)
+      64, // radialSegments - more detail
+      40, // heightSegments - more segments for smooth flow
       true // openEnded
     );
 
@@ -290,24 +361,41 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
         color: { value: color },
         intensity: { value: 1.0 },
         speed: { value: 1.0 },
-        gridScale: { value: 8.0 },
+        tunnelScale: { value: 12.0 },
         breathingPulse: { value: 0 },
-        audioLevel: { value: 0 }
+        audioLevel: { value: 0 },
+        cameraZ: { value: 0 },
+        turbulence: { value: 0.5 }
       },
       transparent: true,
+      depthWrite: false,
       side: THREE.BackSide, // Render inside of cylinder
       blending: THREE.AdditiveBlending
     });
 
     // Create tunnel mesh
     const tunnelMesh = new THREE.Mesh(tunnelGeometry, tunnelMaterial);
-    tunnelMesh.position.z = -100; // Position tunnel ahead of camera
+    tunnelMesh.position.z = -200; // Position tunnel further ahead
     tunnelMeshRef.current = tunnelMesh;
     scene.add(tunnelMesh);
 
     // Add ambient lighting for depth
     const ambientLight = new THREE.AmbientLight(color, 0.2);
     scene.add(ambientLight);
+
+    // Add multiple tunnel segments for infinite effect
+    for (let i = 1; i < 4; i++) {
+      const segmentMesh = tunnelMesh.clone();
+      segmentMesh.position.z = -200 - (i * 400);
+      scene.add(segmentMesh);
+    }
+    
+    // Add particle system for rushing energy effect
+    const particleGeometry = new THREE.BufferGeometry();
+    const particleCount = 1000;
+    const positions = new Float32Array(particleCount * 3);
+    // Initialize particles along tunnel
+    // (particle system setup would go here)
 
     console.log('[WORMHOLE] Geometry initialized successfully');
   };
@@ -331,7 +419,7 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
     animState.breathingPulse = breathingPulseMap[breathingPhase] || 0;
 
     // Calculate tunnel speed based on depth (deeper = faster)
-    animState.tunnelSpeed = 0.5 + (depth / 5) * 1.5;
+    animState.tunnelSpeed = 1.5 + (depth / 5) * 3.0; // Much faster for rollercoaster feel
 
     // Audio-reactive effects
     const audioReactiveSpeed = isSpeaking ? 1.0 + (audioLevel / 100) * 0.5 : 1.0;
@@ -339,17 +427,20 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
 
     // Animate camera moving through tunnel
     animState.cameraZ -= finalSpeed * 0.3;
-    if (animState.cameraZ < -180) {
-      animState.cameraZ = 20; // Reset position for infinite tunnel effect
+    if (animState.cameraZ < -1200) {
+      animState.cameraZ = 50; // Reset position for infinite tunnel effect
     }
     
     if (cameraRef.current) {
       cameraRef.current.position.z = animState.cameraZ;
       
       // Subtle camera sway for immersion
-      cameraRef.current.position.x = Math.sin(animState.time * 0.5) * 0.5;
-      cameraRef.current.position.y = Math.cos(animState.time * 0.3) * 0.3;
+      const swayIntensity = 1.5 + (audioLevel / 100) * 2.0;
+      cameraRef.current.position.x = Math.sin(animState.time * 0.8) * swayIntensity;
+      cameraRef.current.position.y = Math.cos(animState.time * 0.6) * (swayIntensity * 0.7);
       
+      // Add slight roll for rollercoaster effect
+      cameraRef.current.rotation.z = Math.sin(animState.time * 0.4) * 0.1;
       // Look ahead into the tunnel
       cameraRef.current.lookAt(0, 0, animState.cameraZ - 50);
     }
@@ -376,13 +467,16 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
       // Update animation uniforms
       material.uniforms.time.value = animState.time;
       material.uniforms.speed.value = finalSpeed;
-      material.uniforms.intensity.value = 0.8 + (isSpeaking ? (audioLevel / 100) * 0.4 : 0);
+      material.uniforms.intensity.value = 1.2 + (isSpeaking ? (audioLevel / 100) * 0.6 : 0);
       material.uniforms.breathingPulse.value = animState.breathingPulse;
       material.uniforms.audioLevel.value = audioLevel / 100;
+      material.uniforms.cameraZ.value = animState.cameraZ;
+      material.uniforms.turbulence.value = 0.3 + (audioLevel / 100) * 0.4;
       
-      // Breathing-reactive grid scale
-      const breathingScale = 6.0 + Math.sin(animState.breathingPulse * Math.PI * 2) * 2.0;
-      material.uniforms.gridScale.value = breathingScale;
+      // Breathing-reactive tunnel scale for dynamic flow
+      const breathingScale = 8.0 + Math.sin(animState.breathingPulse * Math.PI * 2) * 4.0;
+      const audioScale = 1.0 + (audioLevel / 100) * 0.5;
+      material.uniforms.tunnelScale.value = breathingScale * audioScale;
     }
 
     try {
@@ -453,33 +547,34 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="absolute rounded-full border-2 animate-pulse-slow"
+            className="absolute rounded-full border-4 animate-pulse-slow"
             style={{
-              width: `${20 + i * 12}%`,
-              height: `${20 + i * 12}%`,
-              borderColor: `${egoColor.accent}${Math.floor((0.8 - i * 0.1) * 255).toString(16)}`,
+              width: `${15 + i * 15}%`,
+              height: `${15 + i * 15}%`,
+              borderColor: `${egoColor.accent}${Math.floor((0.9 - i * 0.1) * 255).toString(16)}`,
               animationDelay: `${i * 0.2}s`,
-              animationDuration: `${2 + i * 0.3}s`
+              animationDuration: `${1 + i * 0.2}s`,
+              borderStyle: i % 2 === 0 ? 'solid' : 'dashed'
             }}
           />
         ))}
         
-        {/* Central vortex */}
+        {/* Central rushing vortex */}
         <div
-          className="absolute w-16 h-16 rounded-full animate-spin-fast"
+          className="absolute w-24 h-24 rounded-full animate-spin-fast"
           style={{
-            background: `conic-gradient(from 0deg, ${egoColor.accent}, transparent, ${egoColor.accent})`,
-            animationDuration: `${isSpeaking ? '0.5s' : '2s'}`
+            background: `conic-gradient(from 0deg, ${egoColor.accent}, transparent, ${egoColor.accent}, transparent, ${egoColor.accent})`,
+            animationDuration: `${isSpeaking ? '0.3s' : '1s'}`
           }}
         />
         
-        {/* Breathing pulse overlay */}
+        {/* Intense energy pulse overlay */}
         <div
-          className="absolute w-full h-full rounded-full animate-pulse"
+          className="absolute w-full h-full rounded-full animate-pulse-fast"
           style={{
-            background: `radial-gradient(circle, ${egoColor.accent}20 0%, transparent 70%)`,
-            animationDuration: breathingPhase === 'inhale' ? '6s' : 
-                             breathingPhase === 'exhale' ? '4s' : '5s'
+            background: `radial-gradient(circle, ${egoColor.accent}40 0%, ${egoColor.accent}20 30%, transparent 70%)`,
+            animationDuration: breathingPhase === 'inhale' ? '3s' : 
+                             breathingPhase === 'exhale' ? '2s' : '2.5s'
           }}
         />
       </div>
