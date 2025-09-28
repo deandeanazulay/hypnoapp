@@ -5,6 +5,7 @@ import { useAppStore, getEgoState, EGO_STATES } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import PageShell from '../layout/PageShell';
 import { getEgoColor } from '../../config/theme';
+import { supabase } from '../../lib/supabase';
 
 interface ProfileScreenProps {
   selectedEgoState: string;
