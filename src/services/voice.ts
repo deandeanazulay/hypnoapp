@@ -27,12 +27,11 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
-  // More strict validation - ensure we have real Supabase config
+  // Check if Supabase is configured
   if (!supabaseUrl || !supabaseAnonKey || 
       supabaseUrl === 'YOUR_SUPABASE_URL' || 
       supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY' ||
-      supabaseUrl.trim() === '' || supabaseAnonKey.trim() === '' ||
-      supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1')) {
+      supabaseUrl.trim() === '' || supabaseAnonKey.trim() === '') {
     if (import.meta.env.DEV) {
       console.warn('[VOICE] Supabase not properly configured, falling back to browser TTS');
       console.warn('[VOICE] VITE_SUPABASE_URL:', supabaseUrl);
@@ -46,10 +45,11 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     
     if (import.meta.env.DEV) {
       console.log('[VOICE] Calling OpenAI TTS function at:', `${baseUrl}/functions/v1/tts`);
-      console.log('[VOICE] Using ash voice with model:', opts.model || 'tts-1');
+      console.log('[VOICE] Using ash voice with model:', opts.model || 'tts-1-hd');
       console.log('[VOICE] Text preview:', text.substring(0, 100) + '...');
     }
     
+    // Force OpenAI TTS call
     const response = await safeFetch(
       `${baseUrl}/functions/v1/tts`,
       {
@@ -61,7 +61,7 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
         body: JSON.stringify({ 
           text: text.trim(), 
           voice: "ash", // Force ash voice
-          model: opts.model || "tts-1",
+          model: opts.model || "tts-1-hd",
           speed: 0.9, // Slightly slower for hypnotherapy
           response_format: "mp3"
         }),
@@ -71,7 +71,7 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
         additionalContext: {
           textLength: text.length,
           voiceId: "ash",
-          model: opts.model
+          model: opts.model || "tts-1-hd"
         }
       }
     );
@@ -87,7 +87,8 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     if (contentType.includes("application/json")) {
       const fallbackData = await response.json();
       if (import.meta.env.DEV) {
-        console.warn('[VOICE] OpenAI TTS API returned error, falling back to browser TTS:', fallbackData);
+        console.warn('[VOICE] OpenAI TTS API returned JSON error response:', fallbackData);
+        console.warn('[VOICE] This means OPENAI_API_KEY is likely not configured in Supabase Edge Functions');
       }
       return { provider: "browser-tts", error: fallbackData.details || fallbackData.error };
     }
@@ -105,7 +106,7 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
       
       const audioUrl = URL.createObjectURL(audioBlob);
       if (import.meta.env.DEV) {
-        console.log('[VOICE] ✅ Successfully received OpenAI TTS audio with ash voice!');
+        console.log('[VOICE] ✅ SUCCESS! OpenAI TTS ash voice audio received!');
         console.log('[VOICE] Audio blob size:', audioBlob.size, 'bytes');
         console.log('[VOICE] Audio URL created:', audioUrl);
       }
@@ -113,6 +114,9 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     }
 
     // Unexpected content type
+    if (import.meta.env.DEV) {
+      console.error('[VOICE] Unexpected content type from TTS API:', contentType);
+    }
     throw new ApiError(
       'Unexpected response format from TTS service',
       500,
@@ -129,7 +133,8 @@ export async function synthesizeSegment(text: string, opts: SynthesizeSegmentOpt
     }
     
     if (import.meta.env.DEV) {
-      console.warn('[VOICE] Falling back to browser TTS due to OpenAI TTS failure');
+      console.warn('[VOICE] ⚠️ OpenAI TTS failed, falling back to robotic browser TTS');
+      console.warn('[VOICE] To fix: Set OPENAI_API_KEY in Supabase Edge Functions settings');
     }
     // Always fall back to browser TTS on error
     return { provider: 'browser-tts', error: error.message || 'TTS service unavailable' };
