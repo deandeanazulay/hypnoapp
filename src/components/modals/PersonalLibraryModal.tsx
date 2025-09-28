@@ -6,15 +6,17 @@ import { useGameState } from '../GameStateManager';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { supabase } from '../../lib/supabase';
 import { CustomProtocol } from '../../lib/supabase';
+import { useSessionStore } from '../../store/sessionStore';
 
 interface PersonalLibraryModalProps {
   onProtocolSelect?: (protocol: CustomProtocol) => void;
 }
 
 export default function PersonalLibraryModal({ onProtocolSelect }: PersonalLibraryModalProps) {
-  const { modals, closeModal, showToast, setActiveTab } = useAppStore();
+  const { modals, closeModal, showToast, setActiveTab, activeEgoState } = useAppStore();
   const { user } = useGameState();
   const { isAuthenticated } = useAuth();
+  const { startNewSession } = useSessionStore();
   const [protocols, setProtocols] = useState<CustomProtocol[]>([]);
   const [protocolsLoading, setProtocolsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
