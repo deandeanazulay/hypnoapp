@@ -29,17 +29,22 @@ const vertexShader = `
   varying vec3 vPosition;
   varying vec3 vNormal;
   varying float vDistance;
+  varying vec3 vWorldPosition;
   
   void main() {
     vUv = uv;
     vPosition = position;
     vNormal = normalize(normalMatrix * normal);
     vDistance = length(position);
+    
+    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+    vWorldPosition = worldPosition.xyz;
+    
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
 
-// Fragment shader for animated grid lines and depth
+// Fragment shader for epic waterslide/rollercoaster effect
 const fragmentShader = `
   uniform float time;
   uniform vec3 color;
@@ -50,11 +55,13 @@ const fragmentShader = `
   uniform float audioLevel;
   uniform float turbulence;
   uniform float spiralIntensity;
+  uniform float cameraZ;
   
   varying vec2 vUv;
   varying vec3 vPosition;
   varying vec3 vNormal;
   varying float vDistance;
+  varying vec3 vWorldPosition;
   
   // Noise function for turbulence
   float noise(vec3 p) {
@@ -75,40 +82,60 @@ const fragmentShader = `
   
   void main() {
     vec2 uv = vUv;
-    vec3 pos = vPosition;
+    vec3 worldPos = vWorldPosition;
+    
+    // Calculate center and radial distance for tunnel effect
+    vec2 center = vec2(0.5, 0.5);
+    float radialDist = length(uv - center);
     
     // Epic waterslide spiral motion
-    float spiralTime = time * speed * 2.0;
+    float flowTime = time * speed * 2.0;
     float spiralAngle = atan(uv.y - 0.5, uv.x - 0.5);
-    float spiralRadius = length(uv - 0.5);
+    float spiralRadius = radialDist;
     
-    // Create massive spiral waterslide effect
-    float spiral1 = sin(spiralAngle * 8.0 + spiralTime * 3.0 + pos.z * 0.1) * 0.5 + 0.5;
-    float spiral2 = sin(spiralAngle * 12.0 - spiralTime * 2.0 + pos.z * 0.15) * 0.5 + 0.5;
-    float spiral3 = sin(spiralAngle * 16.0 + spiralTime * 4.0 + pos.z * 0.08) * 0.5 + 0.5;
+    // Create massive spiral waterslide effect with multiple layers
+    float spiral1 = sin(spiralAngle * 8.0 + flowTime * 3.0 + worldPos.z * 0.1) * 0.5 + 0.5;
+    float spiral2 = sin(spiralAngle * 12.0 - flowTime * 2.0 + worldPos.z * 0.15) * 0.5 + 0.5;
+    float spiral3 = sin(spiralAngle * 16.0 + flowTime * 4.0 + worldPos.z * 0.08) * 0.5 + 0.5;
     
     // Rollercoaster banking/tilting effect
-    float banking = sin(spiralTime * 0.5 + pos.z * 0.05) * 0.3;
+    float banking = sin(flowTime * 0.5 + worldPos.z * 0.05) * 0.3;
     float tiltedAngle = spiralAngle + banking;
     
-    // Waterslide ridges and channels
-    float ridgePattern = sin(tiltedAngle * 24.0 + spiralTime * 1.5) * 0.5 + 0.5;
-    ridgePattern *= sin(spiralRadius * 20.0 + spiralTime * 2.0) * 0.5 + 0.5;
+    // Waterslide ridges and channels - like being inside a massive tube
+    float ridgePattern = sin(tiltedAngle * 24.0 + flowTime * 1.5) * 0.5 + 0.5;
+    ridgePattern *= sin(spiralRadius * 20.0 + flowTime * 2.0) * 0.5 + 0.5;
     
     // Turbulent water flow effect
-    vec3 turbulentPos = pos + vec3(
-      sin(spiralTime * 1.2 + pos.z * 0.1) * turbulence,
-      cos(spiralTime * 0.8 + pos.z * 0.12) * turbulence,
-      sin(spiralTime * 1.5 + pos.x * 0.1) * turbulence * 0.5
+    vec3 turbulentPos = worldPos + vec3(
+      sin(flowTime * 1.2 + worldPos.z * 0.1) * turbulence,
+      cos(flowTime * 0.8 + worldPos.z * 0.12) * turbulence,
+      sin(flowTime * 1.5 + worldPos.x * 0.1) * turbulence * 0.5
     );
-    float waterFlow = fbm(turbulentPos * 0.1 + vec3(spiralTime * 0.3, 0.0, 0.0));
+    float turbulentNoise = fbm(turbulentPos * 0.1 + vec3(flowTime * 0.3, 0.0, 0.0));
     
-    // Black hole event horizon effect
+    // Epic rushing water streams - 8 major streams flowing down
+    float streamPattern = 0.0;
+    for(int i = 0; i < 8; i++) {
+      float streamAngle = float(i) * 0.785398; // 45 degrees apart
+      float streamFlow = sin(spiralAngle - streamAngle + flowTime * 4.0 + worldPos.z * 0.2);
+      float streamWidth = 1.0 - smoothstep(0.0, 0.15, abs(streamFlow));
+      streamPattern += streamWidth * (0.8 + 0.2 * sin(flowTime * 6.0 + float(i)));
+    }
+    
+    // Massive spiral flow like water going down a drain
+    float spiralFlow = sin(spiralAngle * 6.0 + flowTime * 5.0 + spiralRadius * 15.0) * 0.5 + 0.5;
+    spiralFlow *= (1.0 - spiralRadius) * 2.0; // Stronger in center
+    
+    // Black hole event horizon rings
     float ringPattern = 0.0;
     for(int i = 0; i < 5; i++) {
       float ringZ = worldPos.z + float(i) * 20.0 + flowTime * 30.0;
       float ringIntensity = sin(ringZ * 0.2) * 0.5 + 0.5;
       float ringFade = 1.0 - smoothstep(0.3, 0.8, radialDist);
+      ringPattern += ringIntensity * ringFade * 0.3;
+    }
+    
     // Create rollercoaster track-like guides
     float trackPattern = 0.0;
     for(int i = 0; i < 4; i++) {
@@ -119,7 +146,11 @@ const fragmentShader = `
       trackPattern += trackLine;
     }
     
-    // Combine all patterns for waterslide effect
+    // Tunnel depth effect for infinite feeling
+    float tunnelDepth = 1.0 - smoothstep(0.0, 1.0, radialDist);
+    tunnelDepth = pow(tunnelDepth, 0.5); // Softer falloff
+    
+    // Combine all patterns for epic waterslide effect
     float finalPattern = streamPattern * 0.4 + 
                         spiralFlow * 0.3 + 
                         ringPattern * 0.2 + 
@@ -365,7 +396,8 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
         breathingPulse: { value: 0 },
         audioLevel: { value: 0 },
         cameraZ: { value: 0 },
-        turbulence: { value: 0.5 }
+        turbulence: { value: 0.5 },
+        spiralIntensity: { value: 1.0 }
       },
       transparent: true,
       depthWrite: false,
@@ -389,13 +421,6 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
       segmentMesh.position.z = -200 - (i * 400);
       scene.add(segmentMesh);
     }
-    
-    // Add particle system for rushing energy effect
-    const particleGeometry = new THREE.BufferGeometry();
-    const particleCount = 1000;
-    const positions = new Float32Array(particleCount * 3);
-    // Initialize particles along tunnel
-    // (particle system setup would go here)
 
     console.log('[WORMHOLE] Geometry initialized successfully');
   };
@@ -419,14 +444,14 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
     animState.breathingPulse = breathingPulseMap[breathingPhase] || 0;
 
     // Calculate tunnel speed based on depth (deeper = faster)
-    animState.tunnelSpeed = 1.5 + (depth / 5) * 3.0; // Much faster for rollercoaster feel
+    animState.tunnelSpeed = 2.5 + (depth / 5) * 4.0; // Much faster for rollercoaster feel
 
     // Audio-reactive effects
-    const audioReactiveSpeed = isSpeaking ? 1.0 + (audioLevel / 100) * 0.5 : 1.0;
+    const audioReactiveSpeed = isSpeaking ? 1.0 + (audioLevel / 100) * 0.8 : 1.0;
     const finalSpeed = animState.tunnelSpeed * audioReactiveSpeed;
 
-    // Animate camera moving through tunnel
-    animState.cameraZ -= finalSpeed * 0.3;
+    // Animate camera moving through tunnel with epic speed
+    animState.cameraZ -= finalSpeed * 0.5;
     if (animState.cameraZ < -1200) {
       animState.cameraZ = 50; // Reset position for infinite tunnel effect
     }
@@ -434,48 +459,43 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
     if (cameraRef.current) {
       cameraRef.current.position.z = animState.cameraZ;
       
-      // Subtle camera sway for immersion
-      const swayIntensity = 1.5 + (audioLevel / 100) * 2.0;
-      cameraRef.current.position.x = Math.sin(animState.time * 0.8) * swayIntensity;
-      cameraRef.current.position.y = Math.cos(animState.time * 0.6) * (swayIntensity * 0.7);
+      // Epic camera sway for waterslide immersion
+      const swayIntensity = 2.5 + (audioLevel / 100) * 3.0;
+      cameraRef.current.position.x = Math.sin(animState.time * 1.2) * swayIntensity;
+      cameraRef.current.position.y = Math.cos(animState.time * 0.8) * (swayIntensity * 0.8);
       
-      // Add slight roll for rollercoaster effect
-      cameraRef.current.rotation.z = Math.sin(animState.time * 0.4) * 0.1;
-      // Look ahead into the tunnel
-      cameraRef.current.lookAt(0, 0, animState.cameraZ - 50);
+      // Add intense roll for rollercoaster banking effect
+      cameraRef.current.rotation.z = Math.sin(animState.time * 0.6) * 0.2 + Math.cos(animState.time * 0.4) * 0.15;
+      
+      // Look ahead into the tunnel with slight offset for realism
+      const lookAheadX = Math.sin(animState.time * 0.3) * 5;
+      const lookAheadY = Math.cos(animState.time * 0.25) * 3;
+      cameraRef.current.lookAt(lookAheadX, lookAheadY, animState.cameraZ - 50);
     }
 
-    // Update shader uniforms
+    // Update shader uniforms for all tunnel segments
     if (tunnelMeshRef.current) {
       const material = tunnelMeshRef.current.material as THREE.ShaderMaterial;
       
       // Update ego state color
       const egoColorInfo = getEgoColor(egoState);
-      
-      // Defensive check for valid color value
-      const colorValue = egoColorInfo?.accent;
-      const fallbackColor = '#00ffff'; // Cyan fallback
-      
-      // Ensure we have a valid color string and create new THREE.Color instance
-      const validColorValue = (colorValue && typeof colorValue === 'string') ? colorValue : fallbackColor;
-      
-      // Always assign a completely new THREE.Color instance to avoid any reference issues
-      const newColor = new THREE.Color();
-      newColor.set(validColorValue);
+      const colorValue = egoColorInfo?.accent || '#00ffff';
+      const newColor = new THREE.Color(colorValue);
       material.uniforms.color.value = newColor;
       
       // Update animation uniforms
       material.uniforms.time.value = animState.time;
       material.uniforms.speed.value = finalSpeed;
-      material.uniforms.intensity.value = 1.2 + (isSpeaking ? (audioLevel / 100) * 0.6 : 0);
+      material.uniforms.intensity.value = 1.5 + (isSpeaking ? (audioLevel / 100) * 0.8 : 0);
       material.uniforms.breathingPulse.value = animState.breathingPulse;
       material.uniforms.audioLevel.value = audioLevel / 100;
       material.uniforms.cameraZ.value = animState.cameraZ;
-      material.uniforms.turbulence.value = 0.3 + (audioLevel / 100) * 0.4;
+      material.uniforms.turbulence.value = 0.4 + (audioLevel / 100) * 0.6;
+      material.uniforms.spiralIntensity.value = 1.0 + (audioLevel / 100) * 0.5;
       
       // Breathing-reactive tunnel scale for dynamic flow
-      const breathingScale = 8.0 + Math.sin(animState.breathingPulse * Math.PI * 2) * 4.0;
-      const audioScale = 1.0 + (audioLevel / 100) * 0.5;
+      const breathingScale = 10.0 + Math.sin(animState.breathingPulse * Math.PI * 2) * 6.0;
+      const audioScale = 1.0 + (audioLevel / 100) * 0.7;
       material.uniforms.tunnelScale.value = breathingScale * audioScale;
     }
 
@@ -533,50 +553,87 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
     initializedRef.current = false;
   };
 
-  // CSS Fallback Component
+  // CSS Fallback Component for epic waterslide effect
   const CSSWormholeFallback = () => {
     const egoColor = getEgoColor(egoState);
     
     return (
       <div 
-        className={`relative flex items-center justify-center ${className}`}
+        className={`relative flex items-center justify-center overflow-hidden ${className}`}
         style={{ width: size, height: size }}
         onClick={onTap}
       >
-        {/* Tunnel rings */}
-        {Array.from({ length: 8 }).map((_, i) => (
+        {/* Epic tunnel rings - multiple layers for depth */}
+        {Array.from({ length: 12 }).map((_, i) => (
           <div
             key={i}
             className="absolute rounded-full border-4 animate-pulse-slow"
             style={{
-              width: `${15 + i * 15}%`,
-              height: `${15 + i * 15}%`,
-              borderColor: `${egoColor.accent}${Math.floor((0.9 - i * 0.1) * 255).toString(16)}`,
-              animationDelay: `${i * 0.2}s`,
-              animationDuration: `${1 + i * 0.2}s`,
-              borderStyle: i % 2 === 0 ? 'solid' : 'dashed'
+              width: `${10 + i * 12}%`,
+              height: `${10 + i * 12}%`,
+              borderColor: `${egoColor.accent}${Math.floor((1.0 - i * 0.08) * 255).toString(16)}`,
+              animationDelay: `${i * 0.15}s`,
+              animationDuration: `${0.8 + i * 0.1}s`,
+              borderStyle: i % 3 === 0 ? 'solid' : i % 3 === 1 ? 'dashed' : 'dotted',
+              borderWidth: `${Math.max(1, 4 - i * 0.3)}px`
             }}
           />
         ))}
         
-        {/* Central rushing vortex */}
+        {/* Spiral waterslide streams */}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={`stream-${i}`}
+            className="absolute animate-spin-fast"
+            style={{
+              width: `${60 + i * 8}%`,
+              height: `${60 + i * 8}%`,
+              background: `conic-gradient(from ${i * 45}deg, ${egoColor.accent}60, transparent 10%, ${egoColor.accent}40, transparent 20%, ${egoColor.accent}60)`,
+              borderRadius: '50%',
+              animationDuration: `${0.5 + i * 0.2}s`,
+              animationDirection: i % 2 === 0 ? 'normal' : 'reverse'
+            }}
+          />
+        ))}
+        
+        {/* Central rushing vortex - black hole effect */}
         <div
-          className="absolute w-24 h-24 rounded-full animate-spin-fast"
+          className="absolute w-32 h-32 rounded-full animate-spin-fastest"
           style={{
-            background: `conic-gradient(from 0deg, ${egoColor.accent}, transparent, ${egoColor.accent}, transparent, ${egoColor.accent})`,
-            animationDuration: `${isSpeaking ? '0.3s' : '1s'}`
+            background: `radial-gradient(circle, ${egoColor.accent} 0%, ${egoColor.accent}80 20%, transparent 40%), 
+                        conic-gradient(from 0deg, ${egoColor.accent}, transparent, ${egoColor.accent}, transparent, ${egoColor.accent})`,
+            animationDuration: `${isSpeaking ? '0.2s' : '0.6s'}`
           }}
         />
         
-        {/* Intense energy pulse overlay */}
+        {/* Intense energy pulse overlay - breathing reactive */}
         <div
-          className="absolute w-full h-full rounded-full animate-pulse-fast"
+          className="absolute w-full h-full rounded-full animate-pulse-intense"
           style={{
-            background: `radial-gradient(circle, ${egoColor.accent}40 0%, ${egoColor.accent}20 30%, transparent 70%)`,
-            animationDuration: breathingPhase === 'inhale' ? '3s' : 
-                             breathingPhase === 'exhale' ? '2s' : '2.5s'
+            background: `radial-gradient(circle, ${egoColor.accent}60 0%, ${egoColor.accent}30 25%, ${egoColor.accent}15 50%, transparent 75%)`,
+            animationDuration: breathingPhase === 'inhale' ? '2s' : 
+                             breathingPhase === 'exhale' ? '1.5s' : '2.2s'
           }}
         />
+        
+        {/* Speed streaks for rollercoaster effect */}
+        {Array.from({ length: 16 }).map((_, i) => (
+          <div
+            key={`streak-${i}`}
+            className="absolute animate-pulse-fast"
+            style={{
+              width: '2px',
+              height: `${20 + i * 5}%`,
+              background: `linear-gradient(to bottom, transparent, ${egoColor.accent}80, transparent)`,
+              left: '50%',
+              top: '50%',
+              transformOrigin: 'center bottom',
+              transform: `translate(-50%, -50%) rotate(${i * 22.5}deg)`,
+              animationDelay: `${i * 0.05}s`,
+              animationDuration: `${0.3 + (i % 4) * 0.1}s`
+            }}
+          />
+        ))}
       </div>
     );
   };
@@ -627,8 +684,6 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
   );
 });
 
+Wormhole.displayName = 'Wormhole';
 
-
-
-
-export default Wormhole
+export default Wormhole;
