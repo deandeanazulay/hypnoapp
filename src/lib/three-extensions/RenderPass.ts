@@ -1,16 +1,23 @@
 // src/lib/three-extensions/RenderPass.ts
-import * as THREE from 'three';
+import { 
+  Scene, 
+  Camera, 
+  Material, 
+  Color, 
+  WebGLRenderer, 
+  WebGLRenderTarget 
+} from 'three';
 import { Pass } from './Pass';
 
 export class RenderPass extends Pass {
-    scene: THREE.Scene;
-    camera: THREE.Camera;
-    overrideMaterial: THREE.Material | null;
-    clearColor: THREE.Color | null;
+    scene: Scene;
+    camera: Camera;
+    overrideMaterial: Material | null;
+    clearColor: Color | null;
     clearAlpha: number;
     clearDepth: boolean;
 
-    constructor(scene: THREE.Scene, camera: THREE.Camera, overrideMaterial?: THREE.Material, clearColor?: THREE.Color, clearAlpha?: number) {
+    constructor(scene: Scene, camera: Camera, overrideMaterial?: Material, clearColor?: Color, clearAlpha?: number) {
         super();
 
         this.scene = scene;
@@ -23,13 +30,13 @@ export class RenderPass extends Pass {
         this.needsSwap = false;
     }
 
-    render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget, delta: number, maskActive: boolean) {
+    render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, delta: number, maskActive: boolean) {
         const oldAutoClear = renderer.autoClear;
         renderer.autoClear = false;
 
         this.scene.overrideMaterial = this.overrideMaterial;
 
-        let oldClearColor: THREE.Color | undefined;
+        let oldClearColor: Color | undefined;
         let oldClearAlpha: number | undefined;
 
         if (this.clearColor) {

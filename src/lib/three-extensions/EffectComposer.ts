@@ -1,31 +1,37 @@
 // src/lib/three-extensions/EffectComposer.ts
-import * as THREE from 'three';
+import { 
+  WebGLRenderer, 
+  WebGLRenderTarget, 
+  LinearFilter, 
+  RGBAFormat, 
+  Vector2 
+} from 'three';
 import { Pass } from './Pass';
 import { ShaderPass } from './ShaderPass';
 import { CopyShader } from './CopyShader';
 
 export class EffectComposer {
-    renderer: THREE.WebGLRenderer;
-    renderTarget1: THREE.WebGLRenderTarget;
-    renderTarget2: THREE.WebGLRenderTarget;
-    writeBuffer: THREE.WebGLRenderTarget;
-    readBuffer: THREE.WebGLRenderTarget;
+    renderer: WebGLRenderer;
+    renderTarget1: WebGLRenderTarget;
+    renderTarget2: WebGLRenderTarget;
+    writeBuffer: WebGLRenderTarget;
+    readBuffer: WebGLRenderTarget;
     passes: Pass[];
     copyPass: ShaderPass;
 
-    constructor(renderer: THREE.WebGLRenderer, renderTarget?: THREE.WebGLRenderTarget) {
+    constructor(renderer: WebGLRenderer, renderTarget?: WebGLRenderTarget) {
         this.renderer = renderer;
 
         if (renderTarget === undefined) {
             const parameters = {
-                minFilter: THREE.LinearFilter,
-                magFilter: THREE.LinearFilter,
-                format: THREE.RGBAFormat,
+                minFilter: LinearFilter,
+                magFilter: LinearFilter,
+                format: RGBAFormat,
                 stencilBuffer: false
             };
 
-            const size = renderer.getDrawingBufferSize(new THREE.Vector2());
-            renderTarget = new THREE.WebGLRenderTarget(size.width, size.height, parameters);
+            const size = renderer.getDrawingBufferSize(new Vector2());
+            renderTarget = new WebGLRenderTarget(size.width, size.height, parameters);
             renderTarget.texture.name = 'EffectComposer.rt1';
         }
 
@@ -49,7 +55,7 @@ export class EffectComposer {
 
     addPass(pass: Pass) {
         this.passes.push(pass);
-        const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+        const size = this.renderer.getDrawingBufferSize(new Vector2());
         pass.setSize(size.width, size.height);
     }
 
@@ -89,9 +95,9 @@ export class EffectComposer {
         }
     }
 
-    reset(renderTarget?: THREE.WebGLRenderTarget) {
+    reset(renderTarget?: WebGLRenderTarget) {
         if (renderTarget === undefined) {
-            const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+            const size = this.renderer.getDrawingBufferSize(new Vector2());
             renderTarget = this.renderTarget1.clone();
             renderTarget.setSize(size.width, size.height);
         }
