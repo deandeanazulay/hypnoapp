@@ -413,39 +413,39 @@ export class SessionManager {
   private async _tryOpenAITTSLive(text: string) {
     try {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] 🎤 Calling OpenAI TTS with ash voice for:', text.substring(0, 50) + '...');
+        console.log('[SESSION] 🎤 FORCING OpenAI ash voice TTS for:', text.substring(0, 50) + '...');
       }
       
       const result = await synthesizeSegment(text, {
         voiceId: 'ash',
-        cacheKey: `live-segment-${this.currentSegmentIndex}`,
-        mode: 'live',
-        model: 'tts-1' // Use standard model that works with chatgpt-chat
+        model: 'tts-1-hd'
       });
 
       if (import.meta.env.DEV) {
-        console.log('[SESSION] 🎤 TTS Result - Provider:', result.provider);
+        console.log('[SESSION] 🎤 TTS result provider:', result.provider);
         if (result.audioUrl) {
-          console.log('[SESSION] ✅ SUCCESS! Got OpenAI ash voice audio URL');
+          console.log('[SESSION] 🎤 ✅ Got OpenAI ash voice audio URL!');
         } else {
-          console.log('[SESSION] ❌ No OpenAI audio URL, using robotic browser TTS');
+          console.log('[SESSION] 🎤 ❌ No audio URL from OpenAI TTS');
         }
       }
 
       if (result.provider === 'openai-tts' && result.audioUrl) {
+        console.log('[SESSION] 🎤 ✅ PLAYING OPENAI ASH VOICE');
         console.log('[SESSION] 🔊 Playing OpenAI ash voice audio');
         this._playOpenAITTSAudio(result.audioUrl);
         return;
       }
 
-      // Fall back to browser TTS
+      // Only fall back if OpenAI TTS actually failed
       if (import.meta.env.DEV) {
-        console.warn('[SESSION] ⚠️ OpenAI TTS failed, falling back to robotic browser TTS');
+        console.warn('[SESSION] 🎤 ❌ OpenAI ash voice failed, using robotic browser TTS');
+        console.warn('[SESSION] 🎤 Result was:', result);
       }
       await this._playWithBrowserTTS(text);
     } catch (error) {
       if (import.meta.env.DEV) {
-        console.error('[SESSION] ❌ OpenAI TTS error, using robotic fallback:', error);
+        console.error('[SESSION] 🎤 ❌ OpenAI TTS error:', error.message);
       }
       await this._playWithBrowserTTS(text);
     }
