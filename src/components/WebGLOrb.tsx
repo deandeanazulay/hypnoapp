@@ -68,7 +68,12 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     organicOffset: 0,
     fractalPhase: 0,
     geometryPhase: 0,
-    currentShape: 0
+    currentShape: 0,
+    shapeBlend: 0,
+    nextShape: 1,
+    morphSpeed: 0.8,
+    randomOffset: Math.random() * 1000,
+    chaosLevel: 0.5
   });
 
   // Store sphere radius for animation access
@@ -347,26 +352,36 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     const time = Date.now() * 0.001; // Time in seconds
     const alienState = alienStateRef.current;
 
-    // Update alien state with smooth animation
-    alienState.pulse = Math.sin(time * 0.8) * 0.5 + Math.cos(time * 0.3) * 0.3;
-    alienState.intensity = 0.8 + 0.2 * Math.sin(time * 0.5);
-    alienState.colorShift = time * 0.1;
-    alienState.organicOffset = time * 0.2;
-    alienState.fractalPhase = time * 0.15;
+    // Update alien state with chaotic, unpredictable animation
+    const randomTime = time + alienState.randomOffset;
+    alienState.pulse = Math.sin(randomTime * 1.3) * 0.6 + Math.cos(randomTime * 0.7) * 0.4 + Math.sin(randomTime * 2.1) * 0.2;
+    alienState.intensity = 0.7 + 0.3 * Math.sin(randomTime * 0.9) + 0.1 * Math.cos(randomTime * 1.7);
+    alienState.colorShift = randomTime * 0.15 + Math.sin(randomTime * 0.4) * 0.05;
+    alienState.organicOffset = randomTime * 0.3 + Math.cos(randomTime * 0.6) * 0.1;
+    alienState.fractalPhase = randomTime * 0.2 + Math.sin(randomTime * 1.1) * 0.08;
     
-    // Geometric shape transformation (changes every 3 seconds)
-    alienState.geometryPhase = time * 0.33; // Slower transformation
-    alienState.currentShape = Math.floor(alienState.geometryPhase) % 9;
+    // Continuous shape morphing - never stops, always blending between shapes
+    alienState.morphSpeed = 0.6 + 0.4 * Math.sin(randomTime * 0.3); // Variable morph speed
+    alienState.geometryPhase += alienState.morphSpeed * 0.016; // Continuous increment
+    
+    // Constantly changing shapes with smooth blending
+    const shapeIndex = alienState.geometryPhase;
+    alienState.currentShape = Math.floor(shapeIndex) % 12; // Increased to 12 shapes
+    alienState.nextShape = (alienState.currentShape + 1) % 12;
+    alienState.shapeBlend = shapeIndex % 1; // 0-1 blend between current and next shape
+    
+    // Add chaos level that varies over time
+    alienState.chaosLevel = 0.3 + 0.7 * Math.sin(randomTime * 0.2) + 0.2 * Math.cos(randomTime * 0.8);
 
-    // Alien breathing - more dramatic and irregular
+    // Alien breathing - chaotic and unpredictable
     const evolutionComplexity = evolutionLevel === 'basic' ? 1 : evolutionLevel === 'enhanced' ? 1.5 : evolutionLevel === 'advanced' ? 2 : 3;
-    const primaryPulse = 0.9 + 0.1 * Math.sin(time * 0.6 * evolutionComplexity);  // Gentler heartbeat
-    const secondaryPulse = 1 + alienState.pulse * (0.05 * evolutionComplexity);       // Subtle alien pulse
-    const breathingScale = primaryPulse * secondaryPulse;
+    const primaryPulse = 0.85 + 0.15 * Math.sin(randomTime * 0.9 * evolutionComplexity);
+    const secondaryPulse = 1 + alienState.pulse * (0.08 * evolutionComplexity);
+    const chaosPulse = 1 + Math.sin(randomTime * 1.4) * 0.06 * alienState.chaosLevel;
+    const breathingScale = primaryPulse * secondaryPulse * chaosPulse;
     
-    // Geometric shape transformation instead of rotation
-    const shapeTransition = (alienState.geometryPhase % 1); // 0-1 transition between shapes
-    const smoothTransition = 0.5 * (1 + Math.sin((shapeTransition - 0.5) * Math.PI)); // Smooth S-curve
+    // Smooth shape blending with alien unpredictability
+    const smoothTransition = 0.5 * (1 + Math.sin((alienState.shapeBlend - 0.5) * Math.PI));
     
     // Audio-reactive scaling and movement
     const isCurrentlySpeaking = isSpeaking || internalSpeaking;
@@ -377,23 +392,25 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     
     if (orbMeshRef.current) {
       // Apply geometric transformation to vertices
-      applyGeometricShape(orbMeshRef.current, alienState.currentShape, smoothTransition, sphereRadiusRef.current);
+      applyAlienShapeBlending(orbMeshRef.current, alienState.currentShape, alienState.nextShape, smoothTransition, sphereRadiusRef.current, alienState.chaosLevel);
       
       // Audio-reactive scaling combined with breathing
-      const breathingScale = 0.95 + alienState.pulse * 0.03;
-      orbMeshRef.current.scale.setScalar(breathingScale * audioReactiveScale);
+      const alienBreathingScale = 0.92 + alienState.pulse * 0.08 + Math.sin(randomTime * 1.6) * 0.03;
+      orbMeshRef.current.scale.setScalar(alienBreathingScale * audioReactiveScale);
       
-      // Audio-reactive rotation - more dynamic when speaking
-      const rotationMultiplier = isCurrentlySpeaking ? 2.0 + (audioLevel / 100) : 1.0;
-      orbMeshRef.current.rotation.x = Math.sin(time * 0.1 * rotationMultiplier) * 0.05;
-      orbMeshRef.current.rotation.y = Math.cos(time * 0.08 * rotationMultiplier) * 0.03;
-      orbMeshRef.current.rotation.z = Math.sin(time * 0.06 * rotationMultiplier) * 0.02;
+      // Alien rotation - chaotic and unpredictable
+      const rotationMultiplier = isCurrentlySpeaking ? 2.5 + (audioLevel / 100) : 1.2;
+      const chaosRotation = alienState.chaosLevel * 0.1;
+      orbMeshRef.current.rotation.x = Math.sin(randomTime * 0.13 * rotationMultiplier) * (0.08 + chaosRotation) + Math.cos(randomTime * 0.31) * 0.03;
+      orbMeshRef.current.rotation.y = Math.cos(randomTime * 0.11 * rotationMultiplier) * (0.06 + chaosRotation) + Math.sin(randomTime * 0.27) * 0.04;
+      orbMeshRef.current.rotation.z = Math.sin(randomTime * 0.09 * rotationMultiplier) * (0.04 + chaosRotation) + Math.cos(randomTime * 0.23) * 0.02;
       
-      // Audio-reactive movement - more pronounced when speaking
-      const movementMultiplier = isCurrentlySpeaking ? 1.5 + (audioLevel / 100) * 0.5 : 1.0;
-      orbMeshRef.current.position.x = Math.sin(time * 0.3) * 0.2 * movementMultiplier;
-      orbMeshRef.current.position.y = Math.cos(time * 0.4) * 0.15 * movementMultiplier;
-      orbMeshRef.current.position.z = Math.sin(time * 0.2) * 0.1 * movementMultiplier;
+      // Alien movement - erratic and organic
+      const movementMultiplier = isCurrentlySpeaking ? 2.0 + (audioLevel / 100) * 0.8 : 1.3;
+      const chaosMovement = alienState.chaosLevel * 0.3;
+      orbMeshRef.current.position.x = Math.sin(randomTime * 0.37) * (0.4 + chaosMovement) * movementMultiplier + Math.cos(randomTime * 0.71) * 0.15;
+      orbMeshRef.current.position.y = Math.cos(randomTime * 0.43) * (0.3 + chaosMovement) * movementMultiplier + Math.sin(randomTime * 0.83) * 0.12;
+      orbMeshRef.current.position.z = Math.sin(randomTime * 0.29) * (0.2 + chaosMovement) * movementMultiplier + Math.cos(randomTime * 0.67) * 0.08;
       
       // Update material opacity for alien intensity
       const baseOpacity = (afterglow ? 0.8 : 0.6) * alienState.intensity * (evolutionLevel === 'master' ? 1.3 : 1);
@@ -401,24 +418,25 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       
       if (isCurrentlySpeaking) {
         // Audio-reactive opacity pulsing
-        const audioReactivePulse = 0.6 + 0.4 * (audioLevel / 100) + Math.sin(time * 10) * 0.2;
+        const audioReactivePulse = 0.5 + 0.5 * (audioLevel / 100) + Math.sin(randomTime * 12) * 0.25 + Math.cos(randomTime * 8.3) * 0.15;
         material.opacity = baseOpacity * audioReactivePulse;
       } else {
-        material.opacity = baseOpacity;
+        material.opacity = baseOpacity * (0.9 + 0.1 * Math.sin(randomTime * 0.6));
       }
 
       // Listening indicator - alien attention mode
       if (isListening) {
-        material.opacity = 0.3 + 0.25 * Math.sin(time * 10);
+        material.opacity = 0.2 + 0.4 * Math.sin(randomTime * 15) + 0.2 * Math.cos(randomTime * 11.7);
       }
     }
 
-    // Audio-reactive camera movement
-    const cameraMovementMultiplier = isCurrentlySpeaking ? 1.2 + (audioLevel / 100) * 0.3 : 1.0;
+    // Alien camera movement - subtle but unpredictable
+    const cameraMovementMultiplier = isCurrentlySpeaking ? 1.4 + (audioLevel / 100) * 0.5 : 1.1;
+    const cameraChaosFactor = alienState.chaosLevel * 0.2;
     if (cameraRef.current) {
-      cameraRef.current.position.x = 1 * Math.sin(time * 0.12 * cameraMovementMultiplier) + Math.sin(time * 0.8) * 0.2;
-      cameraRef.current.position.y = 0.8 * Math.cos(time * 0.18 * cameraMovementMultiplier) + Math.cos(time * 1.1) * 0.15;
-      cameraRef.current.position.z = 30 + Math.sin(time * 0.05) * 1 * cameraMovementMultiplier;
+      cameraRef.current.position.x = (1 + cameraChaosFactor) * Math.sin(randomTime * 0.14 * cameraMovementMultiplier) + Math.sin(randomTime * 0.9) * 0.25;
+      cameraRef.current.position.y = (0.8 + cameraChaosFactor) * Math.cos(randomTime * 0.19 * cameraMovementMultiplier) + Math.cos(randomTime * 1.3) * 0.18;
+      cameraRef.current.position.z = 30 + Math.sin(randomTime * 0.07) * (1.2 + cameraChaosFactor) * cameraMovementMultiplier;
       cameraRef.current.lookAt(0, 0, 0);
     }
 
@@ -438,8 +456,8 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     }
   };
 
-  // Apply geometric shape transformations to the orb
-  const applyGeometricShape = (mesh: THREE.LineSegments, shapeIndex: number, transition: number, baseRadius: number) => {
+  // Apply alien shape blending with continuous morphing
+  const applyAlienShapeBlending = (mesh: THREE.LineSegments, currentShape: number, nextShape: number, blend: number, baseRadius: number, chaosLevel: number) => {
     const geometry = mesh.geometry as THREE.WireframeGeometry;
     const positionAttribute = geometry.attributes.position;
     
@@ -447,6 +465,8 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     
     const positions = positionAttribute.array as Float32Array;
     const vertexCount = positions.length / 3;
+    
+    const time = Date.now() * 0.001;
     
     for (let i = 0; i < vertexCount; i++) {
       const x = positions[i * 3];
@@ -458,44 +478,53 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       const theta = Math.atan2(y, x);
       const phi = Math.acos(z / radius);
       
-      // Define 9 different organic shapes that stay within bounds
-      let newRadius = radius;
+      // Define 12 different alien organic shapes
+      const getAlienRadius = (shapeIndex: number, theta: number, phi: number, chaos: number) => {
+        const chaosNoise = Math.sin(theta * 7 + time * 2) * Math.cos(phi * 5 + time * 1.5) * chaos * 0.15;
+        
+        switch (shapeIndex % 12) {
+          case 0: // Pulsing blob
+            return baseRadius * (0.8 + 0.2 * Math.sin(3 * theta + time * 2) * Math.sin(2 * phi + time * 1.5) + chaosNoise);
+          case 1: // Flowing organic
+            return baseRadius * (0.85 + 0.15 * Math.cos(4 * theta + phi + time) + chaosNoise);
+          case 2: // Twisted alien
+            return baseRadius * (0.9 + 0.1 * Math.sin(5 * theta + time * 1.2) * Math.cos(3 * phi + time * 0.8) + chaosNoise);
+          case 3: // Spiral organism
+            return baseRadius * (0.88 + 0.12 * Math.sin(theta + phi * 1.5 + time * 1.8) + chaosNoise);
+          case 4: // Undulating creature
+            return baseRadius * (0.82 + 0.18 * Math.sin(6 * theta + time * 0.7) * Math.sin(phi + time * 1.1) + chaosNoise);
+          case 5: // Star-like alien
+            return baseRadius * (0.85 + 0.15 * Math.sin(8 * theta + time * 1.3) + chaosNoise);
+          case 6: // Organic twist
+            return baseRadius * (0.87 + 0.13 * Math.sin(theta * 2 + phi * 1.8 + time * 0.9) + chaosNoise);
+          case 7: // Complex organism
+            return baseRadius * (0.83 + 0.17 * Math.sin(7 * theta + time * 1.6) * Math.cos(4 * phi + time * 0.6) + chaosNoise);
+          case 8: // Flowing tentacle-like
+            return baseRadius * (0.86 + 0.14 * Math.cos(3 * theta + time * 2.1) * Math.sin(5 * phi + time * 1.4) + chaosNoise);
+          case 9: // Alien pod
+            return baseRadius * (0.84 + 0.16 * Math.sin(theta * 4 + time * 1.7) * Math.cos(phi * 2 + time * 1.2) + chaosNoise);
+          case 10: // Morphing creature
+            return baseRadius * (0.81 + 0.19 * Math.cos(theta * 6 + time * 0.5) * Math.sin(phi * 3 + time * 2.2) + chaosNoise);
+          case 11: // Chaotic alien
+            return baseRadius * (0.79 + 0.21 * Math.sin(theta * 9 + time * 1.9) * Math.cos(phi * 7 + time * 0.4) + chaosNoise);
+          default:
+            return baseRadius * (0.85 + chaosNoise);
+        }
+      };
       
-      switch (shapeIndex) {
-        case 0: // Sphere (original)
-          newRadius = baseRadius;
-          break;
-        case 1: // Organic blob 1
-          newRadius = baseRadius * (0.8 + 0.2 * Math.sin(3 * theta) * Math.sin(2 * phi));
-          break;
-        case 2: // Flowing form
-          newRadius = baseRadius * (0.85 + 0.15 * Math.cos(4 * theta + phi));
-          break;
-        case 3: // Pulsing organic
-          newRadius = baseRadius * (0.9 + 0.1 * Math.sin(5 * theta) * Math.cos(3 * phi));
-          break;
-        case 4: // Twisted organic
-          newRadius = baseRadius * (0.88 + 0.12 * Math.sin(theta + phi * 1.5));
-          break;
-        case 5: // Flowing waves
-          newRadius = baseRadius * (0.82 + 0.18 * Math.sin(6 * theta) * Math.sin(phi));
-          break;
-        case 6: // Gentle star
-          newRadius = baseRadius * (0.85 + 0.15 * Math.sin(6 * theta));
-          break;
-        case 7: // Organic twist
-          newRadius = baseRadius * (0.87 + 0.13 * Math.sin(theta + phi * 1.8));
-          break;
-        case 8: // Complex organic
-          newRadius = baseRadius * (0.83 + 0.17 * Math.sin(7 * theta) * Math.cos(4 * phi));
-          break;
-      }
+      // Get current and next shape radii
+      const currentRadius = getAlienRadius(currentShape, theta, phi, chaosLevel);
+      const nextRadius = getAlienRadius(nextShape, theta, phi, chaosLevel);
       
-      // Smooth transition between shapes
-      const currentRadius = radius + (newRadius - radius) * transition;
+      // Blend between current and next shape
+      const blendedRadius = currentRadius + (nextRadius - currentRadius) * blend;
+      
+      // Add per-vertex chaos for alien-like irregularity
+      const vertexChaos = Math.sin(i * 0.1 + time * 3) * Math.cos(i * 0.07 + time * 2.3) * chaosLevel * 0.05;
+      const finalRadius = blendedRadius + vertexChaos * baseRadius;
       
       // Apply new position based on shape transformation
-      const scale = currentRadius / radius;
+      const scale = finalRadius / radius;
       positions[i * 3] = x * scale;
       positions[i * 3 + 1] = y * scale;
       positions[i * 3 + 2] = z * scale;
