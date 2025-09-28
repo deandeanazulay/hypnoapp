@@ -360,7 +360,11 @@ const Wormhole = forwardRef<WormholeRef, WormholeProps>(({
       
       // Update ego state color
       const egoColorInfo = getEgoColor(egoState);
-      material.uniforms.color.value = new THREE.Color(egoColorInfo.accent);
+      if (material.uniforms.color.value instanceof THREE.Color) {
+        material.uniforms.color.value.set(egoColorInfo.accent);
+      } else {
+        material.uniforms.color.value = new THREE.Color(egoColorInfo.accent);
+      }
       
       // Update animation uniforms
       material.uniforms.time.value = animState.time;
