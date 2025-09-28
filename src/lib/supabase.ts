@@ -69,6 +69,7 @@ export interface CustomProtocol {
   goals: string[]
   metaphors: string[]
   duration: number
+  script?: any
   created_at: string
   updated_at: string
 }
