@@ -413,39 +413,39 @@ export class SessionManager {
   private async _tryOpenAITTSLive(text: string) {
     try {
       if (import.meta.env.DEV) {
-        console.log('[SESSION] 🎤 FORCING OpenAI ash voice TTS for:', text.substring(0, 50) + '...');
+        console.log('[SESSION] 🎤 Calling OpenAI TTS with ash voice for:', text.substring(0, 50) + '...');
       }
       
       const result = await synthesizeSegment(text, {
         voiceId: 'ash',
-        model: 'tts-1-hd'
+        cacheKey: `live-segment-${this.currentSegmentIndex}`,
+        mode: 'live',
+        model: 'tts-1' // Use standard model that works with chatgpt-chat
       });
 
       if (import.meta.env.DEV) {
-        console.log('[SESSION] 🎤 TTS result provider:', result.provider);
+        console.log('[SESSION] 🎤 TTS Result - Provider:', result.provider);
         if (result.audioUrl) {
-          console.log('[SESSION] 🎤 ✅ Got OpenAI ash voice audio URL!');
+          console.log('[SESSION] ✅ SUCCESS! Got OpenAI ash voice audio URL');
         } else {
-          console.log('[SESSION] 🎤 ❌ No audio URL from OpenAI TTS');
+          console.log('[SESSION] ❌ No OpenAI audio URL, using robotic browser TTS');
         }
       }
 
       if (result.provider === 'openai-tts' && result.audioUrl) {
-        console.log('[SESSION] 🎤 ✅ PLAYING OPENAI ASH VOICE');
         console.log('[SESSION] 🔊 Playing OpenAI ash voice audio');
         this._playOpenAITTSAudio(result.audioUrl);
         return;
       }
 
-      // Only fall back if OpenAI TTS actually failed
+      // Fall back to browser TTS
       if (import.meta.env.DEV) {
-        console.warn('[SESSION] 🎤 ❌ OpenAI ash voice failed, using robotic browser TTS');
-        console.warn('[SESSION] 🎤 Result was:', result);
+        console.warn('[SESSION] ⚠️ OpenAI TTS failed, falling back to robotic browser TTS');
       }
       await this._playWithBrowserTTS(text);
     } catch (error) {
       if (import.meta.env.DEV) {
-        console.error('[SESSION] 🎤 ❌ OpenAI TTS error:', error.message);
+        console.error('[SESSION] ❌ OpenAI TTS error, using robotic fallback:', error);
       }
       await this._playWithBrowserTTS(text);
     }
@@ -594,6 +594,10 @@ export class SessionManager {
     }
 
     try {
+      if (import.meta.env.DEV) {
+        console.log('[SESSION] 🎤 ❌ USING ROBOTIC BROWSER TTS (OpenAI failed)');
+      }
+      
       // Stop any existing speech and ensure clean state
       window.speechSynthesis.cancel();
       
@@ -616,14 +620,14 @@ export class SessionManager {
       // Event handlers
       utterance.onstart = () => {
         if (import.meta.env.DEV) {
-          console.log('[SESSION] ✅ Browser TTS started with ash-like voice');
+          console.log('[SESSION] 🎤 ❌ ROBOTIC browser TTS started (not ash voice)');
         }
         this._emit('audio-started');
       };
       
       utterance.onend = () => {
         if (import.meta.env.DEV) {
-          console.log('[SESSION] Browser TTS segment completed');
+          console.log('[SESSION] 🎤 Robotic browser TTS segment completed');
         }
         this.currentUtterance = null;
         this._emit('audio-ended');
@@ -631,7 +635,7 @@ export class SessionManager {
       };
       
       utterance.onerror = (event) => {
-        console.error('[SESSION] Browser TTS error:', event.error);
+        console.error('[SESSION] 🎤 ❌ Browser TTS error:', event.error);
         this.currentUtterance = null;
         this._emit('audio-error');
         if (event.error !== 'interrupted' && event.error !== 'canceled') {
@@ -644,12 +648,12 @@ export class SessionManager {
       
       // Start speech synthesis
       if (import.meta.env.DEV) {
-        console.log('[SESSION] Starting browser TTS with ash-like voice settings');
+        console.log('[SESSION] 🎤 ❌ Starting ROBOTIC browser TTS (OpenAI ash voice failed)');
       }
       window.speechSynthesis.speak(utterance);
       
     } catch (error) {
-      console.error('[SESSION] Browser TTS setup failed:', error);
+      console.error('[SESSION] 🎤 ❌ Browser TTS setup failed:', error);
       this.currentUtterance = null;
       this._handleSegmentEnd();
     }
