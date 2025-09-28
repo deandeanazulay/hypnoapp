@@ -80,7 +80,7 @@ export class UnrealBloomPass extends Pass {
         });
 
         this.separableBlurMaterials = [];
-        const kernelSizeArray =;
+        const kernelSizeArray = [3, 5, 7, 9, 11];
         resx = Math.round(this.resolution.x / 2);
         resy = Math.round(this.resolution.y / 2);
 
