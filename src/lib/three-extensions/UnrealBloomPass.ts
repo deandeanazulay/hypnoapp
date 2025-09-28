@@ -141,7 +141,7 @@ export class UnrealBloomPass extends Pass {
         this.enabled = true;
         this.needsSwap = false;
 
-        this.oldClearColor = new Color();
+        this.oldClearColor = new Color(0, 0, 0);
         this.oldClearAlpha = 1;
 
         this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -180,18 +180,20 @@ export class UnrealBloomPass extends Pass {
     }
 
     render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, delta: number, maskActive: boolean) {
-        // Defensive check to ensure oldClearColor is properly initialized
+        // Ensure oldClearColor is always a valid Color instance
         if (!this.oldClearColor || !(this.oldClearColor instanceof Color)) {
-            this.oldClearColor = new Color();
+            this.oldClearColor = new Color(0, 0, 0);
         }
         
-        // Get the current clear color and ensure it's a valid Color instance
-        const currentClearColor = renderer.getClearColor();
-        if (currentClearColor && typeof currentClearColor.copy === 'function') {
-            this.oldClearColor.copy(currentClearColor);
+        // Get the current clear color and validate it's a proper Color instance
+        const currentRendererClearColor = renderer.getClearColor();
+        if (currentRendererClearColor && 
+            currentRendererClearColor instanceof Color && 
+            typeof currentRendererClearColor.copy === 'function') {
+            this.oldClearColor.copy(currentRendererClearColor);
         } else {
-            // Fallback to black if renderer's clear color is invalid
-            this.oldClearColor.setRGB(0, 0, 0);
+            // Fallback: set to black if renderer's clear color is invalid
+            this.oldClearColor.set(0x000000);
         }
         
         this.oldClearAlpha = renderer.getClearAlpha();
