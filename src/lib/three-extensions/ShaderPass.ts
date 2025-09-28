@@ -40,7 +40,7 @@ export class ShaderPass extends Pass {
         this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
         this.scene = new THREE.Scene();
 
-        this.quad = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), null as any); // Cast to any to satisfy type checking for null material
+        this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), null as any); // Cast to any to satisfy type checking for null material
         this.quad.frustumCulled = false;
         this.scene.add(this.quad);
     }

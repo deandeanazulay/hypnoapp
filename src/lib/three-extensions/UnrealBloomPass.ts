@@ -132,7 +132,7 @@ export class UnrealBloomPass extends Pass {
 
         this.basic = new THREE.MeshBasicMaterial();
 
-        this.quad = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), null as any); // Cast to any
+        this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), null as any); // Cast to any
         this.quad.frustumCulled = false;
         this.scene.add(this.quad);
     }
