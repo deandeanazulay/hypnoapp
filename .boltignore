@@ -1,0 +1,82 @@
+# Lock all documentation and non-essential files
+docs/
+README.md
+
+# Lock configuration files that are working
+package.json
+tsconfig.json
+tsconfig.app.json
+tsconfig.node.json
+vite.config.ts
+tailwind.config.js
+postcss.config.js
+eslint.config.js
+.prettierrc.json
+.prettierignore
+
+# Lock working authentication and core infrastructure
+src/hooks/useSimpleAuth.ts
+src/lib/supabase.ts
+src/components/GameStateManager.tsx
+src/components/ErrorBoundary.tsx
+src/main.tsx
+index.html
+
+# Lock working UI components
+src/components/NavigationTabs.tsx
+src/components/layout/
+src/components/auth/
+src/components/chat/
+src/components/HUD/
+src/components/modals/
+src/components/journey/
+
+# Lock working screens
+src/components/screens/HomeScreen.tsx
+src/components/screens/ChatScreen.tsx
+src/components/screens/CreateScreen.tsx
+src/components/screens/ProfileScreen.tsx
+src/components/screens/JourneyMapScreen.tsx
+
+# Lock working services
+src/services/analytics.ts
+src/services/voice.ts
+src/services/session.ts
+src/services/chatgpt.ts
+
+# Lock working stores
+src/store/
+src/state/
+
+# Lock working utilities
+src/utils/
+src/hooks/useViewportLayout.ts
+
+# Lock working data and config
+src/data/
+src/config/
+src/types/
+
+# Lock working styles
+src/styles/
+src/index.css
+
+# Lock working Supabase functions
+supabase/functions/
+
+# Lock working database migrations
+supabase/migrations/
+
+# Lock working Stripe integration
+src/lib/stripe.ts
+
+# Lock working prompts
+src/prompts/
+
+# Lock build outputs
+dist/
+public/
+
+# Lock package files
+package-lock.json
+node_modules/
