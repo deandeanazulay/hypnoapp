@@ -22,12 +22,11 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   const { activeEgoState, showToast } = useAppStore();
   const { user, updateUser, addExperience, incrementStreak, updateEgoStateUsage } = useGameState();
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
-  const [audioLevel, setAudioLevel] = useState(80);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [sessionData, setSessionData] = useState<any>(null);
 
   // Audio analysis state
-  const [audioLevel, setAudioLevel] = useState(0);
+  const [analyserAudioLevel, setAnalyserAudioLevel] = useState(0);
   const [audioFrequency, setAudioFrequency] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -38,6 +37,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   // Session state
   const [depth, setDepth] = useState(1);
   const [phase, setPhase] = useState('preparation');
+  const [audioLevel, setAudioLevel] = useState(80);
 
   // Breathing pattern state (4-4-6-4 pattern)
   const [breathingState, setBreathingState] = useState<BreathingState>({
@@ -139,7 +139,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
       const dominantFreq = (maxIndex / bufferLength) * (audioContextRef.current?.sampleRate || 44100) / 2;
       
       // Update state
-      setAudioLevel(normalizedLevel);
+      setAnalyserAudioLevel(normalizedLevel);
       setAudioFrequency(dominantFreq);
       setIsSpeaking(normalizedLevel > 5); // Speaking threshold
       
@@ -232,12 +232,12 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
 
       sessionHandle.on('audio-ended', () => {
         setIsSpeaking(false);
-        setAudioLevel(0);
+        setAnalyserAudioLevel(0);
       });
 
       sessionHandle.on('audio-error', () => {
         setIsSpeaking(false);
-        setAudioLevel(0);
+        setAnalyserAudioLevel(0);
       });
     }
   }, [sessionHandle, showToast, onClose]);
@@ -752,7 +752,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
             size={window.innerWidth < 768 ? 320 : 480}
             variant="webgl"
             isSpeaking={isSpeaking}
-            audioLevel={audioLevel}
+            audioLevel={analyserAudioLevel}
             audioFrequency={audioFrequency}
             className=""
             style={{ overflow: 'visible' }}
