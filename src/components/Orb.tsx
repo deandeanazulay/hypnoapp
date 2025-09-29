@@ -164,6 +164,7 @@ const Orb = React.forwardRef<OrbRef, OrbProps>(({ variant = 'auto', size = 560, 
       />
     </div>;
 }
+)
 
 Orb.displayName = 'Orb';
 export default Orb;
