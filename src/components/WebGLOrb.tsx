@@ -73,7 +73,11 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     nextShape: 1,
     morphSpeed: 0.8,
     randomOffset: Math.random() * 1000,
-    chaosLevel: 0.5
+    chaosLevel: 0.5,
+    tunnelMode: false,
+    tunnelDepth: 0,
+    cameraMovement: { x: 0, y: 0, z: 0 },
+    tunnelSpeed: 1.0
   });
 
   // Store sphere radius for animation access
@@ -83,10 +87,19 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
   const [internalSpeaking, setInternalSpeaking] = React.useState(false);
   const [isListening, setIsListening] = React.useState(false);
   const [currentState, setCurrentState] = React.useState<any>({});
+  const [tunnelMode, setTunnelMode] = React.useState(false);
 
   useImperativeHandle(ref, () => ({
     updateState: (state: any) => {
       setCurrentState(state);
+      // Activate tunnel mode when session is playing
+      if (state.playState === 'playing') {
+        setTunnelMode(true);
+        animationStateRef.current.tunnelMode = true;
+      } else {
+        setTunnelMode(false);
+        animationStateRef.current.tunnelMode = false;
+      }
     },
     setSpeaking: (speaking: boolean) => {
       setInternalSpeaking(speaking);
@@ -373,6 +386,22 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     // Add chaos level that varies over time
     alienState.chaosLevel = 0.3 + 0.7 * Math.sin(randomTime * 0.2) + 0.2 * Math.cos(randomTime * 0.8);
 
+    // Tunnel mode transformations
+    if (alienState.tunnelMode) {
+      // Increase tunnel speed and depth over time
+      alienState.tunnelSpeed = 2.0 + Math.sin(randomTime * 0.1) * 0.5;
+      alienState.tunnelDepth += alienState.tunnelSpeed * 0.016; // ~60fps
+      
+      // Epic camera movement through tunnel
+      alienState.cameraMovement.x = Math.sin(randomTime * 0.8) * 3.0 + Math.cos(randomTime * 1.2) * 1.5;
+      alienState.cameraMovement.y = Math.cos(randomTime * 0.6) * 2.5 + Math.sin(randomTime * 1.4) * 1.2;
+      alienState.cameraMovement.z = -alienState.tunnelDepth * 0.5;
+      
+      // Increase chaos and morphing for tunnel effect
+      alienState.chaosLevel = Math.min(1.0, alienState.chaosLevel + 0.01);
+      alienState.morphSpeed = 1.5 + Math.sin(randomTime * 0.4) * 0.8;
+    }
+
     // Alien breathing - chaotic and unpredictable
     const evolutionComplexity = evolutionLevel === 'basic' ? 1 : evolutionLevel === 'enhanced' ? 1.5 : evolutionLevel === 'advanced' ? 2 : 3;
     const primaryPulse = 0.85 + 0.15 * Math.sin(randomTime * 0.9 * evolutionComplexity);
@@ -392,28 +421,33 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
     
     if (orbMeshRef.current) {
       // Apply geometric transformation to vertices
-      applyAlienShapeBlending(orbMeshRef.current, alienState.currentShape, alienState.nextShape, smoothTransition, sphereRadiusRef.current, alienState.chaosLevel);
+      if (alienState.tunnelMode) {
+        applyTunnelTransformation(orbMeshRef.current, alienState, sphereRadiusRef.current, time);
+      } else {
+        applyAlienShapeBlending(orbMeshRef.current, alienState.currentShape, alienState.nextShape, smoothTransition, sphereRadiusRef.current, alienState.chaosLevel);
+      }
       
       // Audio-reactive scaling combined with breathing
-      const alienBreathingScale = 0.92 + alienState.pulse * 0.08 + Math.sin(randomTime * 1.6) * 0.03;
+      const baseScale = alienState.tunnelMode ? 1.2 : 0.92;
+      const alienBreathingScale = baseScale + alienState.pulse * 0.08 + Math.sin(randomTime * 1.6) * 0.03;
       orbMeshRef.current.scale.setScalar(alienBreathingScale * audioReactiveScale);
       
       // Alien rotation - chaotic and unpredictable
-      const rotationMultiplier = isCurrentlySpeaking ? 2.5 + (audioLevel / 100) : 1.2;
+      const rotationMultiplier = (isCurrentlySpeaking ? 2.5 + (audioLevel / 100) : 1.2) * (alienState.tunnelMode ? 2.0 : 1.0);
       const chaosRotation = alienState.chaosLevel * 0.1;
       orbMeshRef.current.rotation.x = Math.sin(randomTime * 0.13 * rotationMultiplier) * (0.08 + chaosRotation) + Math.cos(randomTime * 0.31) * 0.03;
       orbMeshRef.current.rotation.y = Math.cos(randomTime * 0.11 * rotationMultiplier) * (0.06 + chaosRotation) + Math.sin(randomTime * 0.27) * 0.04;
       orbMeshRef.current.rotation.z = Math.sin(randomTime * 0.09 * rotationMultiplier) * (0.04 + chaosRotation) + Math.cos(randomTime * 0.23) * 0.02;
       
       // Alien movement - erratic and organic
-      const movementMultiplier = isCurrentlySpeaking ? 2.0 + (audioLevel / 100) * 0.8 : 1.3;
+      const movementMultiplier = (isCurrentlySpeaking ? 2.0 + (audioLevel / 100) * 0.8 : 1.3) * (alienState.tunnelMode ? 0.5 : 1.0);
       const chaosMovement = alienState.chaosLevel * 0.3;
       orbMeshRef.current.position.x = Math.sin(randomTime * 0.37) * (0.4 + chaosMovement) * movementMultiplier + Math.cos(randomTime * 0.71) * 0.15;
       orbMeshRef.current.position.y = Math.cos(randomTime * 0.43) * (0.3 + chaosMovement) * movementMultiplier + Math.sin(randomTime * 0.83) * 0.12;
       orbMeshRef.current.position.z = Math.sin(randomTime * 0.29) * (0.2 + chaosMovement) * movementMultiplier + Math.cos(randomTime * 0.67) * 0.08;
       
       // Update material opacity for alien intensity
-      const baseOpacity = (afterglow ? 0.8 : 0.6) * alienState.intensity * (evolutionLevel === 'master' ? 1.3 : 1);
+      const baseOpacity = (afterglow ? 0.8 : 0.6) * alienState.intensity * (evolutionLevel === 'master' ? 1.3 : 1) * (alienState.tunnelMode ? 1.5 : 1.0);
       const material = orbMeshRef.current.material as THREE.LineBasicMaterial;
       
       if (isCurrentlySpeaking) {
@@ -430,14 +464,34 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       }
     }
 
-    // Alien camera movement - subtle but unpredictable
-    const cameraMovementMultiplier = isCurrentlySpeaking ? 1.4 + (audioLevel / 100) * 0.5 : 1.1;
-    const cameraChaosFactor = alienState.chaosLevel * 0.2;
+    // Camera movement - tunnel mode vs normal mode
     if (cameraRef.current) {
-      cameraRef.current.position.x = (1 + cameraChaosFactor) * Math.sin(randomTime * 0.14 * cameraMovementMultiplier) + Math.sin(randomTime * 0.9) * 0.25;
-      cameraRef.current.position.y = (0.8 + cameraChaosFactor) * Math.cos(randomTime * 0.19 * cameraMovementMultiplier) + Math.cos(randomTime * 1.3) * 0.18;
-      cameraRef.current.position.z = 30 + Math.sin(randomTime * 0.07) * (1.2 + cameraChaosFactor) * cameraMovementMultiplier;
-      cameraRef.current.lookAt(0, 0, 0);
+      if (alienState.tunnelMode) {
+        // Epic rollercoaster camera movement through tunnel
+        const tunnelCameraMultiplier = isCurrentlySpeaking ? 2.0 + (audioLevel / 100) : 1.5;
+        cameraRef.current.position.x = alienState.cameraMovement.x * tunnelCameraMultiplier;
+        cameraRef.current.position.y = alienState.cameraMovement.y * tunnelCameraMultiplier;
+        cameraRef.current.position.z = Math.max(15, 30 + alienState.cameraMovement.z);
+        
+        // Banking and tilting like a rollercoaster
+        const banking = Math.sin(randomTime * 0.3) * 0.3;
+        const tilting = Math.cos(randomTime * 0.4) * 0.2;
+        cameraRef.current.rotation.z = banking + tilting;
+        
+        // Look ahead into the tunnel with dynamic offset
+        const lookAheadX = Math.sin(randomTime * 0.5) * 8;
+        const lookAheadY = Math.cos(randomTime * 0.3) * 6;
+        cameraRef.current.lookAt(lookAheadX, lookAheadY, -50);
+      } else {
+        // Normal alien camera movement - subtle but unpredictable
+        const cameraMovementMultiplier = isCurrentlySpeaking ? 1.4 + (audioLevel / 100) * 0.5 : 1.1;
+        const cameraChaosFactor = alienState.chaosLevel * 0.2;
+        cameraRef.current.position.x = (1 + cameraChaosFactor) * Math.sin(randomTime * 0.14 * cameraMovementMultiplier) + Math.sin(randomTime * 0.9) * 0.25;
+        cameraRef.current.position.y = (0.8 + cameraChaosFactor) * Math.cos(randomTime * 0.19 * cameraMovementMultiplier) + Math.cos(randomTime * 1.3) * 0.18;
+        cameraRef.current.position.z = 30 + Math.sin(randomTime * 0.07) * (1.2 + cameraChaosFactor) * cameraMovementMultiplier;
+        cameraRef.current.rotation.z = 0;
+        cameraRef.current.lookAt(0, 0, 0);
+      }
     }
 
     try {
@@ -525,6 +579,52 @@ const WebGLOrb = React.forwardRef<WebGLOrbRef, WebGLOrbProps>((props, ref) => {
       
       // Apply new position based on shape transformation
       const scale = finalRadius / radius;
+      positions[i * 3] = x * scale;
+      positions[i * 3 + 1] = y * scale;
+      positions[i * 3 + 2] = z * scale;
+    }
+    
+    positionAttribute.needsUpdate = true;
+  };
+
+  // Apply tunnel transformation for immersive wormhole effect
+  const applyTunnelTransformation = (mesh: THREE.LineSegments, alienState: any, baseRadius: number, time: number) => {
+    const geometry = mesh.geometry as THREE.WireframeGeometry;
+    const positionAttribute = geometry.attributes.position;
+    
+    if (!positionAttribute) return;
+    
+    const positions = positionAttribute.array as Float32Array;
+    const vertexCount = positions.length / 3;
+    
+    for (let i = 0; i < vertexCount; i++) {
+      const x = positions[i * 3];
+      const y = positions[i * 3 + 1]; 
+      const z = positions[i * 3 + 2];
+      
+      // Calculate original spherical coordinates
+      const radius = Math.sqrt(x * x + y * y + z * z);
+      const theta = Math.atan2(y, x);
+      const phi = Math.acos(z / radius);
+      
+      // Create tunnel effect - expand outward like being inside a tube
+      const tunnelRadius = baseRadius * (2.0 + Math.sin(phi * 4 + time * 2) * 0.3);
+      
+      // Add flowing tunnel ridges like a waterslide
+      const ridgePattern = Math.sin(theta * 8 + time * 3 + z * 0.1) * 0.2;
+      const flowPattern = Math.sin(theta * 12 - time * 4 + phi * 6) * 0.15;
+      
+      // Spiral flow effect
+      const spiralFlow = Math.sin(theta * 6 + time * 5 + radius * 0.2) * 0.25;
+      
+      // Combine all tunnel effects
+      const finalRadius = tunnelRadius + (ridgePattern + flowPattern + spiralFlow) * baseRadius;
+      
+      // Add depth-based scaling for infinite tunnel feeling
+      const depthScale = 1.0 + Math.sin(z * 0.1 + time * 2) * 0.1;
+      
+      // Apply transformation
+      const scale = (finalRadius / radius) * depthScale;
       positions[i * 3] = x * scale;
       positions[i * 3 + 1] = y * scale;
       positions[i * 3 + 2] = z * scale;

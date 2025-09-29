@@ -15,6 +15,12 @@ interface OrbProps {
   audioFrequency?: number;
 }
 
+export interface OrbRef {
+  updateState: (state: any) => void;
+  setSpeaking: (speaking: boolean) => void;
+  setListening: (listening: boolean) => void;
+}
+
 // Orb evolution based on user progress
 function getOrbEvolutionLevel(userLevel: number): 'basic' | 'enhanced' | 'advanced' | 'master' {
   if (userLevel >= 15) return 'master';
@@ -32,10 +38,37 @@ function supportsWebGL(): boolean {
   }
 }
 
-export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps) {
+const Orb = React.forwardRef<OrbRef, OrbProps>(({ variant = 'auto', size = 560, ...props }, ref) => {
   const { user } = useGameState();
   const [useWebGL, setUseWebGL] = useState<boolean | null>(null);
   const [evolutionLevel, setEvolutionLevel] = useState<'basic' | 'enhanced' | 'advanced' | 'master'>('basic');
+  const webglOrbRef = useRef<WebGLOrbRef>(null);
+  const cssOrbRef = useRef<any>(null);
+
+  // Expose methods through ref
+  React.useImperativeHandle(ref, () => ({
+    updateState: (state: any) => {
+      if (webglOrbRef.current) {
+        webglOrbRef.current.updateState(state);
+      } else if (cssOrbRef.current) {
+        cssOrbRef.current.updateState(state);
+      }
+    },
+    setSpeaking: (speaking: boolean) => {
+      if (webglOrbRef.current) {
+        webglOrbRef.current.setSpeaking(speaking);
+      } else if (cssOrbRef.current) {
+        cssOrbRef.current.setSpeaking(speaking);
+      }
+    },
+    setListening: (listening: boolean) => {
+      if (webglOrbRef.current) {
+        webglOrbRef.current.setListening(listening);
+      } else if (cssOrbRef.current) {
+        cssOrbRef.current.setListening(listening);
+      }
+    }
+  }));
 
   // Debug wrapper for onTap
   const debugOnTap = () => {
@@ -107,6 +140,7 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
   return useWebGL ? 
     <div style={{ overflow: 'visible', position: 'relative', zIndex: 10, width: size, height: size }}>
       <WebGLOrb 
+        ref={webglOrbRef}
         {...props} 
         onTap={debugOnTap} 
         size={size} 
@@ -118,6 +152,7 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
     </div> : 
     <div style={{ overflow: 'visible', position: 'relative', zIndex: 10, width: size, height: size }}>
       <CSSOrb 
+        ref={cssOrbRef}
         {...props} 
         onTap={debugOnTap} 
         size={size} 
@@ -128,3 +163,4 @@ export default function Orb({ variant = 'auto', size = 560, ...props }: OrbProps
       />
     </div>;
 }
+)

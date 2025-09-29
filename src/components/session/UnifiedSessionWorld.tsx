@@ -752,6 +752,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
             : 'inset-0 flex items-center justify-center scale-100 opacity-100'
         }`} style={{ overflow: 'visible' }}>
           <Orb
+            ref={orbRef}
             onTap={handlePlayPause}
             egoState={activeEgoState}
             size={sessionState.playState === 'playing' 
