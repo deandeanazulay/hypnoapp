@@ -275,7 +275,8 @@ export class UnrealBloomPass extends Pass {
                     gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
                 }",
             fragmentShader:
-                "#include <common>\
+                "varying vec2 vUv;\n\
+                #include <common>\
                 varying vec2 vUv;\n\
                 uniform sampler2D colorTexture;\n\
                 uniform vec2 texSize;\

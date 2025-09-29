@@ -47,6 +47,25 @@ export class EffectComposer {
         this.copyPass = new ShaderPass(CopyShader);
     }
 
+    dispose() {
+        // Dispose of render targets
+        this.renderTarget1.dispose();
+        this.renderTarget2.dispose();
+        
+        // Dispose of passes that have a dispose method
+        for (let i = 0; i < this.passes.length; i++) {
+            const pass = this.passes[i];
+            if (pass.dispose && typeof pass.dispose === 'function') {
+                pass.dispose();
+            }
+        }
+        
+        // Dispose of copy pass
+        if (this.copyPass.dispose) {
+            this.copyPass.dispose();
+        }
+    }
+
     swapBuffers() {
         const tmp = this.readBuffer;
         this.readBuffer = this.writeBuffer;
