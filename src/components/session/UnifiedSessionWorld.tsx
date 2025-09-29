@@ -5,7 +5,6 @@ import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
 import { supabase } from '../../lib/supabase';
 import Orb from '../Orb';
-import Wormhole from './Wormhole';
 
 interface UnifiedSessionWorldProps {
   isOpen: boolean;
@@ -22,6 +21,7 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
   const { sessionHandle, sessionState, play, pause, nextSegment, prevSegment, disposeSession } = useSessionStore();
   const { activeEgoState, showToast } = useAppStore();
   const { user, updateUser, addExperience, incrementStreak, updateEgoStateUsage } = useGameState();
+  const orbRef = useRef(null);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [sessionData, setSessionData] = useState<any>(null);
