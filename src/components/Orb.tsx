@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useRef } from 'react';
 import WebGLOrb, { WebGLOrbRef } from './WebGLOrb';
 import CSSOrb from './ui/CSSOrb';
 import { useGameState } from './GameStateManager';
@@ -163,4 +164,7 @@ const Orb = React.forwardRef<OrbRef, OrbProps>(({ variant = 'auto', size = 560, 
       />
     </div>;
 }
+
+Orb.displayName = 'Orb';
+export default Orb;
 )
