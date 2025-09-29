@@ -746,11 +746,18 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
         </div>
 
         {/* Central Orb */}
-        <div className="absolute inset-0 flex items-center justify-center z-20" style={{ overflow: 'visible' }}>
+        <div className={`absolute transition-all duration-2000 ease-out z-20 ${
+          sessionState.playState === 'playing' 
+            ? 'inset-0 scale-[4] opacity-30' 
+            : 'inset-0 flex items-center justify-center scale-100 opacity-100'
+        }`} style={{ overflow: 'visible' }}>
           <Orb
             onTap={handlePlayPause}
             egoState={activeEgoState}
-            size={window.innerWidth < 768 ? 320 : 480}
+            size={sessionState.playState === 'playing' 
+              ? Math.max(window.innerWidth, window.innerHeight) 
+              : (window.innerWidth < 768 ? 320 : 480)
+            }
             variant="webgl"
             isSpeaking={isSpeaking}
             audioLevel={analyserAudioLevel}
