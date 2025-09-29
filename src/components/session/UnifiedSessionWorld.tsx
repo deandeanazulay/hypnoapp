@@ -747,31 +747,18 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
 
         {/* Central Orb */}
         <div className="absolute inset-0 flex items-center justify-center z-20" style={{ overflow: 'visible' }}>
-          {sessionState.playState === 'playing' ? (
-            <Wormhole
-              onTap={handlePlayPause}
-              egoState={activeEgoState}
-              size={window.innerWidth < 768 ? 320 : 480}
-              breathingPhase={breathingState.phase}
-              depth={depth}
-              isSpeaking={isSpeaking}
-              audioLevel={analyserAudioLevel}
-              audioFrequency={audioFrequency}
-              className=""
-            />
-          ) : (
-            <Orb
-              onTap={handlePlayPause}
-              egoState={activeEgoState}
-              size={window.innerWidth < 768 ? 320 : 480}
-              variant="webgl"
-              isSpeaking={isSpeaking}
-              audioLevel={analyserAudioLevel}
-              audioFrequency={audioFrequency}
-              className=""
-              style={{ overflow: 'visible' }}
-            />
-          )}
+          <Orb
+            onTap={handlePlayPause}
+            egoState={activeEgoState}
+            size={window.innerWidth < 768 ? 320 : 480}
+            variant="webgl"
+            isSpeaking={isSpeaking}
+            audioLevel={analyserAudioLevel}
+            audioFrequency={audioFrequency}
+            className=""
+            afterglow={sessionState.playState === 'playing'}
+            style={{ overflow: 'visible' }}
+          />
         </div>
 
 
