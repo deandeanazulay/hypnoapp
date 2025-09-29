@@ -354,5 +354,3 @@ export class UnrealBloomPass extends Pass {
         });
     }
 }
-
-export { UnrealBloomPass }
