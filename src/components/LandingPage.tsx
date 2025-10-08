@@ -4,6 +4,7 @@ import Orb from './Orb';
 import { paymentService, STRIPE_PRODUCTS } from '../lib/stripe';
 import { useAppStore } from '../store';
 import { LIBERO_BRAND } from '../config/theme';
+import { ApiError, getUserFriendlyErrorMessage } from '../utils/apiErrorHandler';
 
 interface LandingPageProps {
   onEnterApp: () => void;
@@ -59,9 +60,38 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
       setIsProcessingPayment(true);
       const { url } = await paymentService.createCheckoutSession('mystic-subscription');
       window.location.href = url;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Payment error:', error);
-      if (error.message === 'User not authenticated') {
+      if (error instanceof ApiError) {
+        if (error.statusCode === 401 || error.message === 'User not authenticated') {
+          onShowAuth();
+          showToast({
+            type: 'info',
+            message: 'Please sign in to upgrade to premium',
+            duration: 4000
+          });
+          return;
+        }
+
+        if (error.code === 'ORIGIN_UNAVAILABLE' || error.code === 'INVALID_ORIGIN') {
+          showToast({
+            type: 'error',
+            message: error.suggestion || 'Unable to start checkout because the site origin is not configured.',
+            duration: 6000
+          });
+          return;
+        }
+
+        showToast({
+          type: 'error',
+          message: getUserFriendlyErrorMessage(error),
+          duration: 5000
+        });
+        return;
+      }
+
+      const fallbackMessage = error instanceof Error ? error.message : 'Failed to start checkout. Please try again.';
+      if (fallbackMessage === 'User not authenticated') {
         onShowAuth();
         showToast({
           type: 'info',
@@ -71,7 +101,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
       } else {
         showToast({
           type: 'error',
-          message: error.message || 'Failed to start checkout. Please try again.',
+          message: fallbackMessage,
           duration: 5000
         });
       }

@@ -1,4 +1,4 @@
-import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../utils/apiErrorHandler';
+import { safeFetch, ApiError } from '../utils/apiErrorHandler';
 
 // Client-side Stripe Configuration
 export const STRIPE_PRODUCTS = {
@@ -38,6 +38,8 @@ export class PaymentService {
 
     const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
     
+    const origin = this.resolveOrigin();
+
     try {
       const response = await safeFetch(
         `${baseUrl}/functions/v1/stripe-checkout`,
@@ -49,8 +51,8 @@ export class PaymentService {
           },
           body: JSON.stringify({
             price_id: product.priceId,
-            success_url: `${window.location.origin}/payment-success`,
-            cancel_url: `${window.location.origin}/payment-cancelled`,
+            success_url: `${origin}/payment-success`,
+            cancel_url: `${origin}/payment-cancelled`,
             mode: product.mode
           })
         },
@@ -59,7 +61,8 @@ export class PaymentService {
           additionalContext: {
             productKey,
             priceId: product.priceId,
-            mode: product.mode
+            mode: product.mode,
+            origin
           }
         }
       );
@@ -89,6 +92,51 @@ export class PaymentService {
         'CHECKOUT_FAILED',
         error.message,
         'Try again or contact support'
+      );
+    }
+  }
+
+  private resolveOrigin(): string {
+    const envCandidates = [
+      import.meta.env.VITE_PUBLIC_APP_ORIGIN,
+      import.meta.env.VITE_PUBLIC_SITE_URL,
+      import.meta.env.VITE_APP_ORIGIN,
+      import.meta.env.VITE_APP_URL,
+      import.meta.env.VITE_SITE_URL,
+      import.meta.env.VITE_VERCEL_URL ? `https://${import.meta.env.VITE_VERCEL_URL}` : undefined,
+    ];
+
+    const fallbackOrigin = envCandidates.find((value): value is string => typeof value === 'string' && value.trim().length > 0);
+
+    const rawOrigin =
+      typeof window !== 'undefined' && window.location?.origin
+        ? window.location.origin
+        : fallbackOrigin;
+
+    if (!rawOrigin) {
+      throw new ApiError(
+        'Unable to determine application origin',
+        500,
+        'ORIGIN_UNAVAILABLE',
+        'No browser origin available and no fallback origin configured',
+        'Configure the application origin and try again'
+      );
+    }
+
+    const originWithProtocol = rawOrigin.startsWith('http://') || rawOrigin.startsWith('https://')
+      ? rawOrigin
+      : `https://${rawOrigin}`;
+
+    try {
+      const url = new URL(originWithProtocol);
+      return url.origin;
+    } catch (error) {
+      throw new ApiError(
+        'Invalid application origin configuration',
+        500,
+        'INVALID_ORIGIN',
+        error instanceof Error ? error.message : 'Origin could not be parsed as a valid URL',
+        'Update the application origin configuration and try again'
       );
     }
   }
