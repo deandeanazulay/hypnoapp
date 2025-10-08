@@ -86,7 +86,8 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
 
     // Add user message to conversation
     const userMessage = { role: 'user' as const, content: input, timestamp: Date.now() };
-    setConversation(prev => [...prev, userMessage]);
+    const updatedConversation = [...conversation, userMessage];
+    setConversation(updatedConversation);
     setTextInput('');
     setIsThinking(true);
 
@@ -114,7 +115,7 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
             depth: sessionState.depth,
             breathing: sessionState.breathing,
             userProfile: { level: 1 }, // TODO: Get from user state
-            conversationHistory: conversation.map(msg => ({
+            conversationHistory: updatedConversation.map(msg => ({
               role: msg.role === 'ai' ? 'assistant' : 'user',
               content: msg.content
             }))
@@ -124,10 +125,11 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
       });
 
       const data = await response.json();
-      
+
       if (data.response) {
         const aiMessage = { role: 'ai' as const, content: data.response, timestamp: Date.now() };
-        setConversation(prev => [...prev, aiMessage]);
+        const conversationWithAI = [...updatedConversation, aiMessage];
+        setConversation(conversationWithAI);
         
         // Apply any session updates from AI
         if (data.sessionUpdates && Object.keys(data.sessionUpdates).length > 0) {
@@ -145,7 +147,8 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
         ? "Connection not available. Please continue with your breathing practice."
         : "I'm here with you. Continue breathing and trust the process.";
       const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
-      setConversation(prev => [...prev, aiMessage]);
+      const conversationWithAI = [...updatedConversation, aiMessage];
+      setConversation(conversationWithAI);
       
       if (isVoiceEnabled) {
         speakText(fallbackMessage);
