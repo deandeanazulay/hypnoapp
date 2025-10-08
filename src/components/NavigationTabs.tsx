@@ -17,6 +17,23 @@ const iconMap = {
 };
 
 export default function NavigationTabs({ activeTab, onTabChange }: NavigationTabsProps) {
+  const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(() => {
+    if (typeof document !== 'undefined' && document.body) {
+      return document.body;
+    }
+    return null;
+  });
+
+  React.useEffect(() => {
+    if (!portalTarget && typeof document !== 'undefined' && document.body) {
+      setPortalTarget(document.body);
+    }
+  }, [portalTarget]);
+
+  if (!portalTarget) {
+    return null;
+  }
+
   const handleTabClick = (tabId: TabId) => {
     onTabChange(tabId);
   };
@@ -69,5 +86,5 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
     </nav>
   );
 
-  return createPortal(navigationContent, document.body);
+  return createPortal(navigationContent, portalTarget);
 }
