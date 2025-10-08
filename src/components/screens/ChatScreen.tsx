@@ -24,18 +24,29 @@ interface ChatMessage {
 // Local storage for chat persistence
 const CHAT_STORAGE_KEY = 'libero-chat-messages';
 
+const isStorageAvailable = () =>
+  typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+
 const saveMessagesToStorage = (messages: ChatMessage[]) => {
+  if (!isStorageAvailable()) {
+    return;
+  }
+
   try {
     const messagesToSave = messages.filter(msg => !msg.isLoading);
-    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messagesToSave));
+    window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messagesToSave));
   } catch (error) {
     console.error('Failed to save chat messages:', error);
   }
 };
 
 const loadMessagesFromStorage = (): ChatMessage[] => {
+  if (!isStorageAvailable()) {
+    return [];
+  }
+
   try {
-    const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+    const saved = window.localStorage.getItem(CHAT_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
       return parsed.map((msg: any) => ({
@@ -49,6 +60,14 @@ const loadMessagesFromStorage = (): ChatMessage[] => {
   return [];
 };
 
+const getOrbSize = () => {
+  if (typeof window === 'undefined') {
+    return 320;
+  }
+
+  return window.innerWidth < 768 ? 240 : 320;
+};
+
 export default function ChatScreen() {
   const { isAuthenticated } = useAuth();
   const { activeEgoState, showToast, openModal } = useAppStore();
@@ -57,6 +76,7 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [orbSize, setOrbSize] = useState<number>(() => getOrbSize());
   
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -77,9 +97,26 @@ export default function ChatScreen() {
     }
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleResize = () => {
+      setOrbSize(getOrbSize());
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   // Save messages to storage
   useEffect(() => {
-    if (isAuthenticated && messages.length > 0) {
+    if (isAuthenticated && messages.length > 0 && isStorageAvailable()) {
       saveMessagesToStorage(messages);
     }
   }, [messages, isAuthenticated]);
@@ -410,8 +447,10 @@ export default function ChatScreen() {
 
   const clearChat = () => {
     setMessages([]);
-    localStorage.removeItem(CHAT_STORAGE_KEY);
-    
+    if (isStorageAvailable()) {
+      window.localStorage.removeItem(CHAT_STORAGE_KEY);
+    }
+
     setTimeout(() => {
       const welcomeMessage: ChatMessage = {
         id: 'welcome-' + Date.now(),
@@ -477,7 +516,7 @@ export default function ChatScreen() {
               <Orb
                 onTap={() => {}}
                 egoState={activeEgoState}
-                size={window.innerWidth < 768 ? 240 : 320}
+                size={orbSize}
                 variant="webgl"
                 afterglow={false}
               />
