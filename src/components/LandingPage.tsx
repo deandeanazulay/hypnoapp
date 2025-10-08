@@ -17,6 +17,21 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const { showToast } = useAppStore();
 
+  const getOrbSize = () => (typeof window !== 'undefined' && window.innerWidth < 768 ? 300 : 420);
+  const [orbSize, setOrbSize] = useState(() => getOrbSize());
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleResize = () => setOrbSize(getOrbSize());
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   // Dynamic data that should be loaded from CMS or API
   const [features, setFeatures] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
@@ -25,7 +40,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
 
   useEffect(() => {
     setIsLoaded(true);
-    
+
     // Only set up testimonial rotation if we have testimonials
     let interval: NodeJS.Timeout | null = null;
     if (testimonials.length > 0) {
@@ -179,7 +194,7 @@ export default function LandingPage({ onEnterApp, onShowAuth }: LandingPageProps
           <div className={`mb-6 md:mb-12 transition-all duration-1000 flex justify-center ${isLoaded ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
             <Orb
               onTap={() => {}}
-              size={window.innerWidth < 768 ? 300 : 420}
+              size={orbSize}
               variant="webgl"
               egoState="sage"
             />
