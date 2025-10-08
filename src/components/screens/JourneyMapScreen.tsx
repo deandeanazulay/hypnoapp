@@ -19,6 +19,7 @@ interface HorizontalMilestoneRoadmapProps {
 }
 
 function HorizontalMilestoneRoadmap({ user, onMilestoneSelect }: HorizontalMilestoneRoadmapProps) {
+  const { showToast } = useAppStore();
   // Calculate dynamic milestone status based on real user data
   const getTotalSessions = () => {
     return Object.values(user?.ego_state_usage || {}).reduce((sum, count) => sum + count, 0);
