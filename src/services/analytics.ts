@@ -5,6 +5,61 @@ interface AnalyticsEvent {
   sessionId?: string;
 }
 
+function getNavigator(): Navigator | undefined {
+  return typeof navigator !== 'undefined' ? navigator : undefined;
+}
+
+function getWindow(): Window | undefined {
+  return typeof window !== 'undefined' ? window : undefined;
+}
+
+function getPerformance(): Performance | undefined {
+  return typeof performance !== 'undefined' ? performance : undefined;
+}
+
+function getProcessEnv(): Record<string, string | undefined> | undefined {
+  const globalProcess = typeof globalThis !== 'undefined' ? (globalThis as any).process : undefined;
+
+  if (globalProcess && typeof globalProcess.env === 'object') {
+    return globalProcess.env as Record<string, string | undefined>;
+  }
+
+  return undefined;
+}
+
+function isDevEnvironment(): boolean {
+  const metaEnv = (import.meta as any)?.env;
+
+  if (typeof metaEnv?.DEV === 'boolean') {
+    return metaEnv.DEV;
+  }
+
+  const processEnv = getProcessEnv();
+
+  if (processEnv) {
+    const nodeEnv = processEnv.NODE_ENV;
+    return !nodeEnv || nodeEnv !== 'production';
+  }
+
+  return false;
+}
+
+function getAnalyticsEndpoint(): string | undefined {
+  const metaEnv = (import.meta as any)?.env;
+
+  if (typeof metaEnv?.VITE_ANALYTICS_ENDPOINT === 'string') {
+    return metaEnv.VITE_ANALYTICS_ENDPOINT;
+  }
+
+  const processEnv = getProcessEnv();
+
+  if (processEnv?.VITE_ANALYTICS_ENDPOINT) {
+    return processEnv.VITE_ANALYTICS_ENDPOINT;
+  }
+
+  return undefined;
+}
+
 class AnalyticsQueue {
   private queue: AnalyticsEvent[] = [];
   private flushTimer: NodeJS.Timeout | null = null;
@@ -17,8 +72,10 @@ class AnalyticsQueue {
     this.sessionId = this.generateSessionId();
     
     // Flush on page unload
-    if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', () => {
+    const globalWindow = getWindow();
+
+    if (globalWindow?.addEventListener) {
+      globalWindow.addEventListener('beforeunload', () => {
         this.flush(true); // Synchronous flush on unload
       });
     }
@@ -33,9 +90,9 @@ class AnalyticsQueue {
       event,
       payload: {
         ...payload,
-        userAgent: navigator.userAgent,
+        userAgent: getNavigator()?.userAgent ?? '',
         timestamp: Date.now(),
-        url: window.location.href
+        url: getWindow()?.location?.href ?? ''
       },
       timestamp: Date.now(),
       sessionId: this.sessionId
@@ -56,7 +113,7 @@ class AnalyticsQueue {
     }
 
     // Console log for development
-    if (import.meta.env.DEV) {
+    if (isDevEnvironment()) {
       // Reduced analytics logging in dev mode
     }
   }
@@ -73,15 +130,17 @@ class AnalyticsQueue {
 
     try {
       if (synchronous) {
-        if (navigator.sendBeacon) {
+        const globalNavigator = getNavigator();
+
+        if (globalNavigator?.sendBeacon) {
           const data = JSON.stringify({ events: eventsToSend });
-          navigator.sendBeacon('/api/analytics', data);
+          globalNavigator.sendBeacon('/api/analytics', data);
         }
       } else {
         // Regular fetch for asynchronous sending
         await this.sendEvents(eventsToSend);
       }
-      if (import.meta.env.DEV) {
+      if (isDevEnvironment()) {
         console.log('Analytics: Flushed ' + eventsToSend.length + ' events');
       }
     } catch (error) {
@@ -100,11 +159,11 @@ class AnalyticsQueue {
 
   private async sendEvents(events: AnalyticsEvent[]): Promise<void> {
     // Check if we have a configured analytics endpoint
-    const analyticsEndpoint = import.meta.env.VITE_ANALYTICS_ENDPOINT;
-    
+    const analyticsEndpoint = getAnalyticsEndpoint();
+
     if (!analyticsEndpoint) {
       // No analytics endpoint configured - just log to console in development
-      if (import.meta.env.DEV) {
+      if (isDevEnvironment()) {
         console.log('Analytics: No endpoint configured, events:', events);
       }
       return;
@@ -182,19 +241,26 @@ export function trackError(
     message: error.message,
     stack: error.stack,
     name: error.name,
-    
+
     // Browser environment
-    userAgent: navigator.userAgent,
-    url: window.location.href,
+    userAgent: getNavigator()?.userAgent ?? '',
+    url: getWindow()?.location?.href ?? '',
     timestamp: new Date().toISOString(),
-    
+
     // Performance context
-    memory: (performance as any).memory ? {
-      usedJSHeapSize: (performance as any).memory.usedJSHeapSize,
-      totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
-      jsHeapSizeLimit: (performance as any).memory.jsHeapSizeLimit,
-    } : undefined,
-    
+    memory: (() => {
+      const perf = getPerformance();
+      const perfMemory = (perf as any)?.memory;
+
+      return perfMemory
+        ? {
+            usedJSHeapSize: perfMemory.usedJSHeapSize,
+            totalJSHeapSize: perfMemory.totalJSHeapSize,
+            jsHeapSizeLimit: perfMemory.jsHeapSizeLimit,
+          }
+        : undefined;
+    })(),
+
     // Custom context
     ...context
   };
@@ -206,7 +272,7 @@ export function trackError(
   });
 
   // Also log to console with structured format for development
-  if (import.meta.env.DEV) {
+  if (isDevEnvironment()) {
     console.group(`🔥 Error: ${error.name}`);
     console.error('Message:', error.message);
     console.error('Stack:', error.stack);
