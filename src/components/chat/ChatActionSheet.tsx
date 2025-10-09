@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useCallback } from 'react';
+import { useAppStore } from '../../store';
+import { useChatSessionStore } from '../../store/chatSessionStore';
 
 interface ChatActionSheetProps {
   isOpen: boolean;
@@ -11,6 +13,9 @@ export default function ChatActionSheet({
   onClose,
   onStartHypnosisSession,
 }: ChatActionSheetProps) {
+  const resetChat = useChatSessionStore((state) => state.resetChat);
+  const showToast = useAppStore((state) => state.showToast);
+
   if (!isOpen) {
     return null;
   }
@@ -39,11 +44,24 @@ export default function ChatActionSheet({
     onClose();
   };
 
-  const handleResetChat = () => {
-    console.log('[CHAT_ACTION_SHEET] TODO: reset current chat conversation');
-    // TODO: Clear current chat history
+  const handleResetChat = useCallback(() => {
+    resetChat();
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const keysToClear = ['libero-chat-messages', 'libero-chat-session'];
+
+      keysToClear.forEach((key) => {
+        try {
+          window.localStorage.removeItem(key);
+        } catch (error) {
+          console.warn(`[CHAT_ACTION_SHEET] Failed to remove persisted key "${key}"`, error);
+        }
+      });
+    }
+
+    showToast({ type: 'success', message: 'Chat reset successfully' });
     onClose();
-  };
+  }, [resetChat, showToast, onClose]);
 
   return (
     <div className="fixed inset-0 z-[1150] flex flex-col justify-end bg-black/40 backdrop-blur-sm">
@@ -110,7 +128,7 @@ export default function ChatActionSheet({
             className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-colors"
           >
             <span className="text-white/90 font-medium">Reset Chat</span>
-            <span className="text-white/50 text-sm">Coming soon</span>
+            <span className="text-white/60 text-sm">Clear conversation history</span>
           </button>
         </div>
 
