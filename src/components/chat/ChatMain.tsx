@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ChatScreen from '../screens/ChatScreen';
-import ChatActionSheet from './ChatActionSheet';
-import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
+import Orb from '../Orb';
 import { useAppStore } from '../../store';
-import { useGameState } from '../GameStateManager';
-import SessionSelectionModal from '../modals/SessionSelectionModal';
+import { useOrbSize } from '../../hooks/useOrbSize';
+import { OrbBackgroundContext } from '../layout/OrbBackgroundLayer';
 
 /**
  * Main chat route entry point. This component wraps the legacy ChatScreen
@@ -13,55 +11,73 @@ import SessionSelectionModal from '../modals/SessionSelectionModal';
  * existing chat implementation.
  */
 export default function ChatMain() {
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [showSessionMenu, setShowSessionMenu] = useState(false);
-  const { isAuthenticated } = useAuth();
-  const { openModal, activeEgoState } = useAppStore();
-  const { user } = useGameState();
+  const { activeEgoState } = useAppStore();
+  const responsiveOrbSize = useOrbSize();
+  const [orbSize, setOrbSize] = useState(responsiveOrbSize);
+  const [orbTapHandler, setOrbTapHandler] = useState<(() => void) | null>(null);
 
-  const handleStartHypnosis = () => {
-    if (!isAuthenticated) {
-      openModal('auth');
-      return;
+  useEffect(() => {
+    setOrbSize(responsiveOrbSize);
+  }, [responsiveOrbSize]);
+
+  const handleSetOrbTapHandler = useCallback((handler: (() => void) | null) => {
+    setOrbTapHandler(() => handler);
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({
+      orbSize,
+      setOrbSize,
+      setOrbTapHandler: handleSetOrbTapHandler,
+    }),
+    [handleSetOrbTapHandler, orbSize, setOrbSize]
+  );
+
+  const handleOrbTap = useCallback(() => {
+    if (orbTapHandler) {
+      orbTapHandler();
     }
-
-    setIsSheetOpen(false);
-    setShowSessionMenu(true);
-  };
-
-  const handleSessionSelect = (session: any) => {
-    setShowSessionMenu(false);
-    // TODO: Integrate chat-initiated session start flow
-    console.log('[CHAT_ACTION_SHEET] TODO: start selected session from chat entry point', session);
-  };
+  }, [orbTapHandler]);
 
   return (
-    <div className="relative h-full">
-      <ChatScreen />
-
-      <div className="fixed bottom-[88px] right-6 z-[1200]">
-        <button
-          type="button"
-          onClick={() => setIsSheetOpen(true)}
-          className="w-12 h-12 rounded-full bg-teal-500/80 hover:bg-teal-500 shadow-lg shadow-teal-500/40 text-black flex items-center justify-center transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-teal-300"
+    <OrbBackgroundContext.Provider value={contextValue}>
+      <div className="relative h-full overflow-hidden">
+        <div
+          className="pointer-events-none absolute inset-0"
+          aria-hidden
         >
-          <Plus size={22} />
-        </button>
+          <div className="absolute inset-x-0 top-0 flex justify-center">
+            <div
+              className="relative rounded-full bg-teal-500/20 blur-[180px]"
+              style={{
+                width: Math.min(orbSize * 1.25, 520),
+                height: Math.min(orbSize * 1.25, 520),
+                transform: 'translateY(-33%)',
+              }}
+            />
+          </div>
+
+          <div
+            className="absolute left-1/2 top-[18vh] -translate-x-1/2 -translate-y-1/2"
+            style={{ width: orbSize, height: orbSize }}
+          >
+            <div className="pointer-events-auto relative" style={{ width: orbSize, height: orbSize }}>
+              <div className="absolute inset-0 rounded-full bg-teal-400/15 blur-3xl" />
+              <Orb
+                size={orbSize}
+                egoState={activeEgoState}
+                variant="css"
+                afterglow
+                onTap={handleOrbTap}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex h-full flex-col">
+          <ChatScreen />
+        </div>
       </div>
-
-      <ChatActionSheet
-        isOpen={isSheetOpen}
-        onClose={() => setIsSheetOpen(false)}
-        onStartHypnosisSession={handleStartHypnosis}
-      />
-
-      <SessionSelectionModal
-        isOpen={showSessionMenu}
-        onClose={() => setShowSessionMenu(false)}
-        onSessionSelect={handleSessionSelect}
-        user={user}
-        activeEgoState={activeEgoState}
-      />
-    </div>
+    </OrbBackgroundContext.Provider>
   );
 }

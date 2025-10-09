@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import Orb from '../Orb';
+import { getResponsiveOrbSize } from '../../hooks/useOrbSize';
 
 type OrbVariant = 'webgl' | 'css' | 'auto';
 
@@ -32,16 +33,6 @@ interface OrbBackgroundLayerProps {
   className?: string;
 }
 
-function calculateResponsiveSize(): number {
-  if (typeof window === 'undefined') {
-    return defaultContextValue.orbSize;
-  }
-  const { innerWidth, innerHeight } = window;
-  const minDimension = Math.min(innerWidth, innerHeight);
-  const base = minDimension * 0.75;
-  return Math.max(320, Math.min(640, Math.round(base)));
-}
-
 export default function OrbBackgroundLayer({
   children,
   onOrbTap,
@@ -50,7 +41,7 @@ export default function OrbBackgroundLayer({
   afterglow = false,
   className = '',
 }: OrbBackgroundLayerProps) {
-  const [orbSize, setOrbSize] = useState<number>(() => calculateResponsiveSize());
+  const [orbSize, setOrbSize] = useState<number>(() => getResponsiveOrbSize({ fallbackSize: defaultContextValue.orbSize }));
   const [overrideTap, setOverrideTap] = useState<(() => void) | null>(null);
 
   useEffect(() => {
@@ -59,7 +50,7 @@ export default function OrbBackgroundLayer({
     }
 
     const handleResize = () => {
-      setOrbSize(calculateResponsiveSize());
+      setOrbSize(getResponsiveOrbSize({ fallbackSize: defaultContextValue.orbSize }));
     };
 
     handleResize();
