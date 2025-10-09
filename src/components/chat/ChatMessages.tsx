@@ -1,15 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import ChatBubble from './ChatBubble';
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'libero';
-  content: string;
-  timestamp: Date;
-  isLoading?: boolean;
-  error?: boolean;
-  audioUrl?: string;
-}
+import type { ChatMessage } from '../../store/chatSessionStore';
 
 interface ChatMessagesProps {
   messages: ChatMessage[];

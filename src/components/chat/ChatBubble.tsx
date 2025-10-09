@@ -1,16 +1,7 @@
 import React from 'react';
 import { User, Copy } from 'lucide-react';
 import Orb from '../Orb';
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'libero';
-  content: string;
-  timestamp: Date;
-  isLoading?: boolean;
-  error?: boolean;
-  audioUrl?: string;
-}
+import type { ChatMessage } from '../../store/chatSessionStore';
 
 interface ChatBubbleProps {
   message: ChatMessage;
