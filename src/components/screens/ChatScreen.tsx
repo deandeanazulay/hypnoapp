@@ -4,12 +4,12 @@ import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useAppStore, EGO_STATES } from '../../store';
 import { useGameState } from '../GameStateManager';
 import PageShell from '../layout/PageShell';
-import Orb from '../Orb';
 import ChatMessages from '../chat/ChatMessages';
 import ChatSuggestions from '../chat/ChatSuggestions';
 import ChatInput from '../chat/ChatInput';
 import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../../utils/apiErrorHandler';
 import { HYPNOSIS_PROTOCOLS, PROTOCOL_CATEGORIES } from '../../data/protocols';
+import { useOrbBackground } from '../layout/OrbBackgroundLayer';
 
 interface ChatMessage {
   id: string;
@@ -60,14 +60,6 @@ const loadMessagesFromStorage = (): ChatMessage[] => {
   return [];
 };
 
-const getOrbSize = () => {
-  if (typeof window === 'undefined') {
-    return 320;
-  }
-
-  return window.innerWidth < 768 ? 240 : 320;
-};
-
 export default function ChatScreen() {
   const { isAuthenticated } = useAuth();
   const { activeEgoState, showToast, openModal } = useAppStore();
@@ -76,7 +68,8 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [orbSize, setOrbSize] = useState<number>(() => getOrbSize());
+  const { orbSize } = useOrbBackground();
+  const topPadding = Math.max(Math.round(orbSize * 0.25), 160);
   
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -96,23 +89,6 @@ export default function ChatScreen() {
       }
     }
   }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const handleResize = () => {
-      setOrbSize(getOrbSize());
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
 
   // Save messages to storage
   useEffect(() => {
@@ -473,14 +449,18 @@ export default function ChatScreen() {
 
   if (!isAuthenticated) {
     return (
-      <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
+      <div className="relative h-full">
+        <div
+          className="pointer-events-none absolute inset-0 bg-black/75 backdrop-blur-3xl"
+          aria-hidden
+        >
+          <div className="absolute left-1/2 top-[22vh] h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-500/25 blur-[160px]" />
         </div>
 
         <PageShell
+          className="relative z-10"
           body={
-            <div className="h-full flex items-center justify-center p-4">
+            <div className="h-full flex items-center justify-center p-4" style={{ paddingTop: `${topPadding}px` }}>
               <div className="text-center max-w-sm">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
                   <MessageCircle size={32} className="text-purple-400" />
@@ -503,27 +483,29 @@ export default function ChatScreen() {
   const hasRealMessages = messages.some(msg => !msg.isLoading);
 
   return (
-    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
+    <div className="relative h-full">
+      <div
+        className="pointer-events-none absolute inset-0 bg-black/75 backdrop-blur-3xl"
+        aria-hidden
+      >
+        <div className="absolute left-1/2 top-[22vh] h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-teal-500/20 blur-[180px]" />
       </div>
 
-      <div className="relative z-10 h-full flex flex-col">
-        {/* Welcome Orb - Show when no conversation */}
+      <div
+        className="relative z-10 flex h-full flex-col"
+        style={{ paddingTop: `${topPadding}px` }}
+      >
+        {/* Welcome prompt - shown before the first message */}
         {!hasRealMessages && (
           <div className="flex-1 flex items-center justify-center py-8">
-            <div className="text-center">
-              <Orb
-                onTap={() => {}}
-                egoState={activeEgoState}
-                size={orbSize}
-                variant="webgl"
-                afterglow={false}
-              />
-              <div className="mt-4">
+            <div className="text-center space-y-3 px-6">
+              <div className="mx-auto w-full max-w-xs rounded-3xl border border-white/10 bg-black/60 p-6 backdrop-blur-xl shadow-xl shadow-teal-500/10">
                 <h2 className="text-white text-lg font-light mb-2">Chat with Libero</h2>
-                <p className="text-white/70 text-sm">Your consciousness guide is ready to help</p>
+                <p className="text-white/70 text-sm leading-relaxed">
+                  Tap the glowing orb to begin a new conversation or ask for guidance.
+                </p>
               </div>
+              <p className="text-white/60 text-xs">Try asking about your current ego state or daily focus.</p>
             </div>
           </div>
         )}

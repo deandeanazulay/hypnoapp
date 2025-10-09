@@ -10,6 +10,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import GlobalHUD from './components/HUD/GlobalHUD';
 import NavigationTabs from './components/NavigationTabs';
 import ToastManager from './components/layout/ToastManager';
+import AppFrame from './components/layout/AppFrame';
 import LandingPage from './components/LandingPage';
 
 // Screens
@@ -161,12 +162,12 @@ export default function App() {
   return (
     <Router>
       <ErrorBoundary>
-        <div className="min-h-screen bg-black" style={{ overflow: 'visible' }}>
+        <AppFrame onOrbTap={handleOrbTap} egoState={activeEgoState}>
           {/* Global HUD */}
           <GlobalHUD />
-          
+
           {/* Main Content */}
-          <div className="h-screen pt-16" style={{ overflow: 'visible' }}>
+          <div className="flex-1 pt-16" style={{ overflow: 'visible' }}>
             <Routes>
               <Route path="/payment-success" element={
                 <div className="h-full bg-black flex items-center justify-center">
@@ -253,19 +254,19 @@ export default function App() {
           <FavoritesModal onSessionSelect={handleFavoriteSelect} />
           <DocumentationHubModal />
           <PersonalLibraryModal />
-          
+
           {/* Toast System */}
           <ToastManager />
-          
+
           {/* Session World */}
-          <UnifiedSessionWorld 
+          <UnifiedSessionWorld
             isOpen={!!sessionHandle}
             onClose={() => {
               // Handle session close
               console.log('[APP] Closing session world');
             }}
           />
-        </div>
+        </AppFrame>
       </ErrorBoundary>
     </Router>
   );

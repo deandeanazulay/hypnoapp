@@ -6,6 +6,7 @@ import { useGameState } from '../GameStateManager';
 import PageShell from '../layout/PageShell';
 import OnboardingWizard from '../journey/OnboardingWizard';
 import DailyTasks from '../journey/DailyTasks';
+import { useOrbBackground } from '../layout/OrbBackgroundLayer';
 
 interface JourneyMapScreenProps {
   onProtocolSelect: (protocol: any) => void;
@@ -273,6 +274,9 @@ export default function JourneyMapScreen({ onProtocolSelect }: JourneyMapScreenP
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [userGoals, setUserGoals] = useState<any>(null);
   const [journeyData, setJourneyData] = useState<any>(null);
+  const { orbSize } = useOrbBackground();
+  const onboardingPadding = Math.max(Math.round(orbSize * 0.25), 160);
+  const authPromptPadding = Math.max(Math.round(orbSize * 0.2), 140);
 
   // Check if user has completed onboarding
   useEffect(() => {
@@ -325,14 +329,21 @@ export default function JourneyMapScreen({ onProtocolSelect }: JourneyMapScreenP
 
   if (!isAuthenticated) {
     return (
-      <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
+      <div className="relative h-full">
+        <div
+          className="pointer-events-none absolute inset-0 bg-black/75 backdrop-blur-3xl"
+          aria-hidden
+        >
+          <div className="absolute left-1/3 top-[20vh] h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-purple-500/20 blur-[140px]" />
         </div>
 
         <PageShell
+          className="relative z-10"
           body={
-            <div className="h-full flex items-center justify-center p-4">
+            <div
+              className="h-full flex items-center justify-center p-4"
+              style={{ paddingTop: `${authPromptPadding}px` }}
+            >
               <div className="text-center max-w-sm">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
                   <Target size={32} className="text-purple-400" />
@@ -353,15 +364,25 @@ export default function JourneyMapScreen({ onProtocolSelect }: JourneyMapScreenP
   }
 
   return (
-    <div className="h-full bg-gradient-to-br from-black via-blue-950/20 to-purple-950/20 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/5 rounded-full blur-3xl" />
+    <div className="relative h-full">
+      <div
+        className="pointer-events-none absolute inset-0 bg-black/70 backdrop-blur-3xl"
+        aria-hidden
+      >
+        <div className="absolute right-1/4 top-[20vh] h-[460px] w-[460px] translate-x-1/4 rounded-full bg-indigo-500/25 blur-[180px]" />
+        <div className="absolute left-[-120px] bottom-[-80px] h-[320px] w-[320px] rounded-full bg-cyan-500/15 blur-[160px]" />
       </div>
 
       <PageShell
+        className="relative z-10"
         body={
-          <div className="relative z-10 h-full overflow-y-auto pb-32" style={{ paddingTop: '60px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)' }}>
+          <div
+            className="relative z-10 h-full overflow-y-auto pb-32"
+            style={{
+              paddingTop: `${onboardingPadding}px`,
+              paddingBottom: 'calc(var(--total-nav-height, 128px) + 2rem)',
+            }}
+          >
             {!hasCompletedOnboarding ? (
               /* Onboarding Entry Point */
               <div className="px-4 h-full flex items-center justify-center">
