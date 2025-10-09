@@ -1,7 +1,10 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Plus } from 'lucide-react';
 import ChatScreen from '../screens/ChatScreen';
 import { useOrbSize } from '../../hooks/useOrbSize';
 import { useOrbBackground } from '../layout/OrbBackgroundLayer';
+import { useChatSessionStore } from '../../store/chatSessionStore';
+import ChatActionSheet from './ChatActionSheet';
 
 /**
  * Main chat route entry point. This component wraps the legacy ChatScreen
@@ -11,6 +14,9 @@ import { useOrbBackground } from '../layout/OrbBackgroundLayer';
 export default function ChatMain() {
   const responsiveOrbSize = useOrbSize();
   const { orbSize, setOrbSize } = useOrbBackground();
+  const fallbackStartSession = useChatSessionStore((state) => state.startSession);
+  const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
+  const [startHypnosisSession, setStartHypnosisSession] = useState<(() => void) | null>(null);
 
   useEffect(() => {
     setOrbSize(responsiveOrbSize);
@@ -32,6 +38,20 @@ export default function ChatMain() {
     }),
     [orbSize]
   );
+
+  const handleQuickSessionReady = useCallback((trigger: () => void) => {
+    setStartHypnosisSession(() => trigger);
+  }, []);
+
+  const handleStartHypnosisSession = useCallback(() => {
+    if (startHypnosisSession) {
+      startHypnosisSession();
+    } else {
+      fallbackStartSession('hypnosis', { status: 'active', resetMessages: false });
+    }
+
+    setIsActionSheetOpen(false);
+  }, [startHypnosisSession, fallbackStartSession]);
 
   return (
     <div className="relative h-full overflow-hidden">
@@ -55,8 +75,23 @@ export default function ChatMain() {
       </div>
 
       <div className="relative z-10 flex h-full flex-col">
-        <ChatScreen />
+        <ChatScreen onQuickSessionReady={handleQuickSessionReady} />
       </div>
+
+      <button
+        type="button"
+        onClick={() => setIsActionSheetOpen(true)}
+        className="fixed bottom-[calc(var(--total-nav-height,64px)+88px)] right-6 z-[1100] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-teal-400 to-cyan-400 text-black shadow-xl shadow-teal-500/40 transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
+        aria-label="Open actions"
+      >
+        <Plus size={28} strokeWidth={2.5} />
+      </button>
+
+      <ChatActionSheet
+        isOpen={isActionSheetOpen}
+        onClose={() => setIsActionSheetOpen(false)}
+        onStartHypnosisSession={handleStartHypnosisSession}
+      />
     </div>
   );
 }

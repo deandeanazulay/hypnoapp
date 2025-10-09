@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useAppStore, EGO_STATES } from '../../store';
@@ -17,7 +17,11 @@ import {
   type ChatMessage,
 } from '../../store/chatSessionStore';
 
-export default function ChatScreen() {
+interface ChatScreenProps {
+  onQuickSessionReady?: (trigger: () => void) => void;
+}
+
+export default function ChatScreen({ onQuickSessionReady }: ChatScreenProps = {}) {
   const { isAuthenticated } = useAuth();
   const { activeEgoState, showToast, openModal } = useAppStore();
   const { user } = useGameState();
@@ -356,6 +360,16 @@ export default function ChatScreen() {
     navigator.clipboard.writeText(content);
     showToast({ type: 'success', message: 'Copied to clipboard' });
   };
+
+  const startHypnosisSession = useCallback(() => {
+    startSession('hypnosis', { status: 'active', resetMessages: false });
+  }, [startSession]);
+
+  useEffect(() => {
+    if (onQuickSessionReady) {
+      onQuickSessionReady(startHypnosisSession);
+    }
+  }, [onQuickSessionReady, startHypnosisSession]);
 
   const clearChat = () => {
     resetChat();
