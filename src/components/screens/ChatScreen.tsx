@@ -70,6 +70,7 @@ export default function ChatScreen() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const { orbSize } = useOrbBackground();
   const topPadding = Math.max(Math.round(orbSize * 0.25), 160);
+  const orbGlowSize = Math.min(Math.round(orbSize * 1.05), 520);
   
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -454,7 +455,10 @@ export default function ChatScreen() {
           className="pointer-events-none absolute inset-0 bg-black/75 backdrop-blur-3xl"
           aria-hidden
         >
-          <div className="absolute left-1/2 top-[22vh] h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-500/25 blur-[160px]" />
+          <div
+            className="absolute left-1/2 top-[22vh] -translate-x-1/2 rounded-full bg-purple-500/25 blur-[160px]"
+            style={{ width: orbGlowSize, height: orbGlowSize }}
+          />
         </div>
 
         <PageShell
@@ -488,7 +492,10 @@ export default function ChatScreen() {
         className="pointer-events-none absolute inset-0 bg-black/75 backdrop-blur-3xl"
         aria-hidden
       >
-        <div className="absolute left-1/2 top-[22vh] h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-teal-500/20 blur-[180px]" />
+        <div
+          className="absolute left-1/2 top-[22vh] -translate-x-1/2 rounded-full bg-teal-500/20 blur-[180px]"
+          style={{ width: orbGlowSize, height: orbGlowSize }}
+        />
       </div>
 
       <div
@@ -497,9 +504,9 @@ export default function ChatScreen() {
       >
         {/* Welcome prompt - shown before the first message */}
         {!hasRealMessages && (
-          <div className="flex-1 flex items-center justify-center py-8">
-            <div className="text-center space-y-3 px-6">
-              <div className="mx-auto w-full max-w-xs rounded-3xl border border-white/10 bg-black/60 p-6 backdrop-blur-xl shadow-xl shadow-teal-500/10">
+          <div className="flex-1 flex items-center justify-center py-8 px-4">
+            <div className="text-center space-y-3 w-full max-w-md">
+              <div className="mx-auto w-full rounded-3xl border border-white/10 bg-black/70 p-6 backdrop-blur-2xl shadow-2xl shadow-teal-500/10">
                 <h2 className="text-white text-lg font-light mb-2">Chat with Libero</h2>
                 <p className="text-white/70 text-sm leading-relaxed">
                   Tap the glowing orb to begin a new conversation or ask for guidance.
@@ -512,13 +519,19 @@ export default function ChatScreen() {
 
         {/* Chat Messages */}
         {hasRealMessages && (
-          <div className="flex-1 flex flex-col min-h-0" style={{ paddingTop: '40px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 140px + 1rem)' }}>
-            <ChatMessages
-              messages={messages}
-              onCopyMessage={copyMessage}
-              activeEgoState={activeEgoState}
-              isSpeaking={isSpeaking}
-            />
+          <div
+            className="flex-1 flex flex-col min-h-0 px-4"
+            style={{ paddingTop: '40px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 140px + 1rem)' }}
+          >
+            <div className="relative flex-1 overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-b from-black/85 via-black/65 to-black/90 backdrop-blur-2xl shadow-[0_40px_120px_-60px_rgba(14,165,233,0.55)]">
+              <div className="pointer-events-none absolute inset-0 rounded-[32px] bg-gradient-to-b from-white/5 via-transparent to-black/60" />
+              <ChatMessages
+                messages={messages}
+                onCopyMessage={copyMessage}
+                activeEgoState={activeEgoState}
+                isSpeaking={isSpeaking}
+              />
+            </div>
           </div>
         )}
       </div>
