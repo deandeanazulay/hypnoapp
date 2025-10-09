@@ -2,8 +2,8 @@ import React from 'react';
 import { MessageSquare } from 'lucide-react';
 import {
   useChatSessionStore,
-  selectChatMessages,
-  selectCurrentChatSession,
+  selectChatThreads,
+  selectCurrentThreadId,
 } from '../../store/chatSessionStore';
 import { useChatNavigator } from '../../hooks/useChatNavigator';
 
@@ -36,35 +36,47 @@ function formatTimestamp(timestamp: Date | null) {
 
 export default function ChatThreadList() {
   const navigate = useChatNavigator();
-  const currentSession = useChatSessionStore(selectCurrentChatSession);
-  const messages = useChatSessionStore(selectChatMessages);
+  const threadsRecord = useChatSessionStore(selectChatThreads);
+  const currentThreadId = useChatSessionStore(selectCurrentThreadId);
+  const switchThread = useChatSessionStore((state) => state.switchThread);
 
   const threads = React.useMemo<ThreadListItem[]>(() => {
-    if (!currentSession) {
+    const record = threadsRecord ?? {};
+    const threadsArray = Object.keys(record).map((threadId) => record[threadId]);
+
+    if (threadsArray.length === 0) {
       return [];
     }
 
-    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+    return threadsArray
+      .map((thread) => {
+        const lastMessage = thread.messages[thread.messages.length - 1] ?? null;
 
-    return [
-      {
-        id: currentSession.id,
-        title: currentSession.title,
-        lastMessage:
-          lastMessage?.content ||
-          'No messages yet. Start a conversation to see it appear here.',
-        timestamp:
-          lastMessage?.timestamp ||
-          (currentSession.startedAt ? new Date(currentSession.startedAt) : null),
-      },
-    ];
-  }, [currentSession, messages]);
+        return {
+          id: thread.id,
+          title: thread.session.title,
+          lastMessage:
+            lastMessage?.content?.trim?.() ||
+            'No messages yet. Start a conversation to see it appear here.',
+          timestamp:
+            lastMessage?.timestamp ||
+            (thread.session.startedAt ? new Date(thread.session.startedAt) : null),
+        };
+      })
+      .sort((a, b) => {
+        const aTime = a.timestamp ? a.timestamp.getTime() : 0;
+        const bTime = b.timestamp ? b.timestamp.getTime() : 0;
+
+        return bTime - aTime;
+      });
+  }, [threadsRecord]);
 
   const handleSelectThread = React.useCallback(
     (threadId: string) => {
+      switchThread(threadId);
       navigate(`/chat/threads/${threadId}`);
     },
-    [navigate]
+    [navigate, switchThread]
   );
 
   return (
@@ -86,34 +98,43 @@ export default function ChatThreadList() {
         </div>
       ) : (
         <ul className="flex-1 divide-y divide-white/10 overflow-y-auto">
-          {threads.map((thread) => (
-            <li key={thread.id}>
-              <button
-                type="button"
-                onClick={() => handleSelectThread(thread.id)}
-                className="flex w-full items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
-              >
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white/70">
-                  <MessageSquare className="h-5 w-5" aria-hidden />
-                </div>
+          {threads.map((thread) => {
+            const isActive = thread.id === currentThreadId;
+            const buttonClassName = [
+              'flex w-full items-start gap-4 px-5 py-4 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200',
+              isActive ? 'bg-white/10 text-white' : 'hover:bg-white/5',
+            ].join(' ');
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <h4 className="text-base font-medium text-white truncate">
-                      {thread.title}
-                    </h4>
-                    <span className="flex-shrink-0 text-xs text-white/50">
-                      {formatTimestamp(thread.timestamp)}
-                    </span>
+            return (
+              <li key={thread.id}>
+                <button
+                  type="button"
+                  onClick={() => handleSelectThread(thread.id)}
+                  className={buttonClassName}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white/70">
+                    <MessageSquare className="h-5 w-5" aria-hidden />
                   </div>
 
-                  <p className="mt-1 text-sm text-white/60 truncate">
-                    {thread.lastMessage}
-                  </p>
-                </div>
-              </button>
-            </li>
-          ))}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <h4 className="text-base font-medium text-white truncate">
+                        {thread.title}
+                      </h4>
+                      <span className="flex-shrink-0 text-xs text-white/50">
+                        {formatTimestamp(thread.timestamp)}
+                      </span>
+                    </div>
+
+                    <p className="mt-1 text-sm text-white/60 truncate">
+                      {thread.lastMessage}
+                    </p>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

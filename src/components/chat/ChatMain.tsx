@@ -3,7 +3,7 @@ import { Plus, MessageSquareMore } from 'lucide-react';
 import ChatScreen from '../screens/ChatScreen';
 import { useOrbSize } from '../../hooks/useOrbSize';
 import { useOrbBackground } from '../layout/OrbBackgroundLayer';
-import { useChatSessionStore } from '../../store/chatSessionStore';
+import { useChatSessionStore, selectChatMessages } from '../../store/chatSessionStore';
 import ChatActionSheet from './ChatActionSheet';
 import { useChatNavigator } from '../../hooks/useChatNavigator';
 
@@ -44,7 +44,7 @@ export default function ChatMain() {
   const responsiveOrbSize = useOrbSize();
   const { setOrbSize } = useOrbBackground();
   const fallbackStartSession = useChatSessionStore((state) => state.startSession);
-  const messages = useChatSessionStore((state) => state.messages);
+  const messages = useChatSessionStore(selectChatMessages);
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
   const [startHypnosisSession, setStartHypnosisSession] = useState<(() => void) | null>(null);
   const navigateChat = useChatNavigator();
