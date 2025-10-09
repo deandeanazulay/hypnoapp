@@ -48,7 +48,7 @@ type ChatLocationState = {
   backgroundLocation?: Location;
 };
 
-interface AppFrameProps {
+interface AppRootProps {
   isAuthenticated: boolean;
   showLanding: boolean;
   setShowLanding: React.Dispatch<React.SetStateAction<boolean>>;
@@ -78,7 +78,7 @@ export default function App() {
 
   return (
     <Router>
-      <AppFrame
+      <AppRoot
         isAuthenticated={isAuthenticated}
         showLanding={showLanding}
         setShowLanding={setShowLanding}
@@ -87,7 +87,7 @@ export default function App() {
   );
 }
 
-function AppFrame({ isAuthenticated, showLanding, setShowLanding }: AppFrameProps) {
+function AppRoot({ isAuthenticated, showLanding, setShowLanding }: AppRootProps) {
   const {
     activeTab,
     setActiveTab,
@@ -173,12 +173,12 @@ function AppFrame({ isAuthenticated, showLanding, setShowLanding }: AppFrameProp
   if (showLanding) {
     return (
       <ErrorBoundary>
-        <div className="min-h-screen">
+        <AppFrame onOrbTap={handleOrbTap} egoState={activeEgoState}>
           <Routes location={baseLocation}>
             <Route
               path="/payment-success"
               element={
-                <div className="h-full bg-black flex items-center justify-center">
+                <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-white text-2xl font-light mb-4">Payment Successful!</div>
                     <AIVoiceSystem
@@ -195,7 +195,7 @@ function AppFrame({ isAuthenticated, showLanding, setShowLanding }: AppFrameProp
             <Route
               path="/payment-cancelled"
               element={
-                <div className="h-full bg-black flex items-center justify-center">
+                <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-white text-2xl font-light mb-4">Payment Cancelled</div>
                     <AIVoiceSystem
@@ -219,7 +219,7 @@ function AppFrame({ isAuthenticated, showLanding, setShowLanding }: AppFrameProp
               }
             />
           </Routes>
-        </div>
+        </AppFrame>
         {location.pathname.startsWith('/chat') && (
           <Routes>
             <Route path="/chat/*" element={<ChatShellOverlay onClose={handleChatClose} />} />
@@ -231,7 +231,7 @@ function AppFrame({ isAuthenticated, showLanding, setShowLanding }: AppFrameProp
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-black" style={{ overflow: 'visible' }}>
+      <AppFrame onOrbTap={handleOrbTap} egoState={activeEgoState}>
         <GlobalHUD />
 
         <div className="h-screen pt-16" style={{ overflow: 'visible' }}>
@@ -239,7 +239,7 @@ function AppFrame({ isAuthenticated, showLanding, setShowLanding }: AppFrameProp
             <Route
               path="/payment-success"
               element={
-                <div className="h-full bg-black flex items-center justify-center">
+                <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-white text-2xl font-light mb-4">Payment Successful!</div>
                     <AIVoiceSystem
@@ -256,7 +256,7 @@ function AppFrame({ isAuthenticated, showLanding, setShowLanding }: AppFrameProp
             <Route
               path="/payment-cancelled"
               element={
-                <div className="h-full bg-black flex items-center justify-center">
+                <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-white text-2xl font-light mb-4">Payment Cancelled</div>
                     <AIVoiceSystem
@@ -334,7 +334,7 @@ function AppFrame({ isAuthenticated, showLanding, setShowLanding }: AppFrameProp
             console.log('[APP] Closing session world');
           }}
         />
-      </div>
+      </AppFrame>
 
       {location.pathname.startsWith('/chat') && (
         <Routes>
