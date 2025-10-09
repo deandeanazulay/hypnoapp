@@ -10,61 +10,23 @@ import ChatInput from '../chat/ChatInput';
 import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../../utils/apiErrorHandler';
 import { HYPNOSIS_PROTOCOLS, PROTOCOL_CATEGORIES } from '../../data/protocols';
 import { useOrbBackground } from '../layout/OrbBackgroundLayer';
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'libero';
-  content: string;
-  timestamp: Date;
-  isLoading?: boolean;
-  error?: boolean;
-  audioUrl?: string;
-}
-
-// Local storage for chat persistence
-const CHAT_STORAGE_KEY = 'libero-chat-messages';
-
-const isStorageAvailable = () =>
-  typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
-
-const saveMessagesToStorage = (messages: ChatMessage[]) => {
-  if (!isStorageAvailable()) {
-    return;
-  }
-
-  try {
-    const messagesToSave = messages.filter(msg => !msg.isLoading);
-    window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messagesToSave));
-  } catch (error) {
-    console.error('Failed to save chat messages:', error);
-  }
-};
-
-const loadMessagesFromStorage = (): ChatMessage[] => {
-  if (!isStorageAvailable()) {
-    return [];
-  }
-
-  try {
-    const saved = window.localStorage.getItem(CHAT_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed.map((msg: any) => ({
-        ...msg,
-        timestamp: new Date(msg.timestamp)
-      }));
-    }
-  } catch (error) {
-    console.error('Failed to load chat messages:', error);
-  }
-  return [];
-};
+import {
+  useChatSessionStore,
+  selectChatMessages,
+  selectCurrentChatSession,
+  type ChatMessage,
+} from '../../store/chatSessionStore';
 
 export default function ChatScreen() {
   const { isAuthenticated } = useAuth();
   const { activeEgoState, showToast, openModal } = useAppStore();
   const { user } = useGameState();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const messages = useChatSessionStore(selectChatMessages);
+  const currentSession = useChatSessionStore(selectCurrentChatSession);
+  const appendMessage = useChatSessionStore(state => state.appendMessage);
+  const clearLoadingMessages = useChatSessionStore(state => state.clearLoadingMessages);
+  const resetChat = useChatSessionStore(state => state.resetChat);
+  const startSession = useChatSessionStore(state => state.startSession);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -80,23 +42,6 @@ export default function ChatScreen() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
-
-  // Load messages from storage
-  useEffect(() => {
-    if (isAuthenticated) {
-      const savedMessages = loadMessagesFromStorage();
-      if (savedMessages.length > 0) {
-        setMessages(savedMessages);
-      }
-    }
-  }, [isAuthenticated]);
-
-  // Save messages to storage
-  useEffect(() => {
-    if (isAuthenticated && messages.length > 0 && isStorageAvailable()) {
-      saveMessagesToStorage(messages);
-    }
-  }, [messages, isAuthenticated]);
 
   // Initialize media recorder
   useEffect(() => {
@@ -143,21 +88,6 @@ export default function ChatScreen() {
       }
     };
   }, [isAuthenticated]);
-
-  // Send welcome message
-  useEffect(() => {
-    if (isAuthenticated && messages.length === 0 && loadMessagesFromStorage().length === 0) {
-      setTimeout(() => {
-        const welcomeMessage: ChatMessage = {
-          id: 'welcome-' + Date.now(),
-          role: 'libero',
-          content: `Hello! I'm Libero, your consciousness guide. I can help you with hypnotherapy sessions, ego state exploration, and transformation techniques.\n\nWhat would you like to explore today?`,
-          timestamp: new Date()
-        };
-        setMessages([welcomeMessage]);
-      }, 1000);
-    }
-  }, [isAuthenticated, messages.length]);
 
   const buildKnowledgeBase = () => {
     return {
@@ -292,6 +222,11 @@ export default function ChatScreen() {
   const sendMessage = async (message: string, audioUrl?: string) => {
     if (!message.trim()) return;
 
+    const sessionType = currentSession?.type ?? 'hypnosis';
+    if (!currentSession || currentSession.status !== 'active') {
+      startSession(sessionType, { status: 'active', resetMessages: false });
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -300,7 +235,7 @@ export default function ChatScreen() {
       audioUrl
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    appendMessage(userMessage);
     setInputText('');
     setIsLoading(true);
 
@@ -312,7 +247,7 @@ export default function ChatScreen() {
       timestamp: new Date(),
       isLoading: true
     };
-    setMessages(prev => [...prev, typingMessage]);
+    appendMessage(typingMessage);
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -365,8 +300,8 @@ export default function ChatScreen() {
       const data = await response.json();
       
       // Remove typing indicator
-      setMessages(prev => prev.filter(msg => !msg.isLoading));
-      
+      clearLoadingMessages();
+
       if (!data.response) {
         throw new ApiError(
           'No response from chat service',
@@ -384,11 +319,11 @@ export default function ChatScreen() {
         timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, aiMessage]);
+      appendMessage(aiMessage);
 
     } catch (error: any) {
-      setMessages(prev => prev.filter(msg => !msg.isLoading));
-      
+      clearLoadingMessages();
+
       let userFriendlyMessage = 'Connection temporarily unavailable';
       if (error instanceof ApiError) {
         userFriendlyMessage = getUserFriendlyErrorMessage(error);
@@ -402,7 +337,7 @@ export default function ChatScreen() {
         error: true
       };
 
-      setMessages(prev => [...prev, errorResponse]);
+      appendMessage(errorResponse);
       showToast({ type: 'error', message: userFriendlyMessage });
     } finally {
       setIsLoading(false);
@@ -423,20 +358,8 @@ export default function ChatScreen() {
   };
 
   const clearChat = () => {
-    setMessages([]);
-    if (isStorageAvailable()) {
-      window.localStorage.removeItem(CHAT_STORAGE_KEY);
-    }
-
-    setTimeout(() => {
-      const welcomeMessage: ChatMessage = {
-        id: 'welcome-' + Date.now(),
-        role: 'libero',
-        content: `Hello! I'm Libero, your consciousness guide. I can help you with hypnotherapy sessions, ego state exploration, and transformation techniques.\n\nWhat would you like to explore today?`,
-        timestamp: new Date()
-      };
-      setMessages([welcomeMessage]);
-    }, 500);
+    resetChat();
+    startSession('hypnosis', { status: 'idle', startedAt: null, completedAt: null });
   };
 
   const suggestions = [
