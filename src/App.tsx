@@ -17,6 +17,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import GlobalHUD from './components/HUD/GlobalHUD';
 import NavigationTabs from './components/NavigationTabs';
 import ToastManager from './components/layout/ToastManager';
+import AppFrame from './components/layout/AppFrame';
 import LandingPage from './components/LandingPage';
 
 // Screens

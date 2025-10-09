@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   CheckCircle, Lock, Play, Star, Trophy, Zap, Target,
   Flame, Crown, ArrowRight, Heart, Sparkles, ChevronRight
 } from 'lucide-react';
-import Orb from '../Orb';
 import { EGO_STATES, useAppStore } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useProtocolStore } from '../../state/protocolStore';
@@ -11,6 +10,7 @@ import { useGameState } from '../GameStateManager';
 import { TabId } from '../../types/Navigation';
 import { getEgoColor } from '../../config/theme';
 import SessionSelectionModal from '../modals/SessionSelectionModal';
+import { useOrbBackground } from '../layout/OrbBackgroundLayer';
 
 interface HomeScreenProps {
   onOrbTap: () => void;
@@ -506,13 +506,13 @@ export default function HomeScreen({
 
   const currentState = EGO_STATES.find(s => s.id === activeEgoState) || EGO_STATES[0];
 
-  const handleOrbTap = () => {
+  const handleOrbTap = useCallback(() => {
     if (!isAuthenticated) {
       onShowAuth();
       return;
     }
     setShowSessionMenu(true);
-  };
+  }, [isAuthenticated, onShowAuth]);
 
   const handleQuickSessionTap = () => {
     if (!isAuthenticated) {
@@ -531,42 +531,38 @@ export default function HomeScreen({
     // TODO: Start the actual session
     console.log('Starting session:', session);
   };
-  // Safe size calc (prevents layout jumps & dead space)
-  const orbSize = Math.round(Math.min(typeof window !== 'undefined' ? window.innerWidth : 360, 480) * 1);
+  const { orbSize, setOrbTapHandler } = useOrbBackground();
+  useEffect(() => {
+    setOrbTapHandler(handleOrbTap);
+    return () => setOrbTapHandler(null);
+  }, [handleOrbTap, setOrbTapHandler]);
+  const topPadding = Math.max(Math.round(orbSize * 0.35), 220);
 
   return (
-    <div className="h-full bg-gradient-to-br from-black via-purple-950/20 to-indigo-950/20 relative" style={{ overflow: 'visible' }}>
-      {/* Subtle BG */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 rounded-full blur-3xl" />
+    <div className="relative h-full" style={{ overflow: 'visible' }}>
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/80 backdrop-blur-3xl"
+        aria-hidden
+      >
+        <div className="absolute left-1/2 top-[22vh] h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-teal-500/20 blur-[160px]" />
+        <div className="absolute -left-10 bottom-0 h-[320px] w-[320px] rounded-full bg-purple-500/15 blur-[140px]" />
       </div>
 
       {/* NOTE: no justify-center on the whole page to avoid giant top/bottom gaps */}
-      <div className="relative z-10 min-h-0 h-auto flex flex-col items-center px-4 pt-2 pb-[calc(var(--total-nav-height,96px)+4px)]" style={{ minHeight: '100vh', overflow: 'visible' }}>
+      <div
+        className="relative z-10 flex min-h-full flex-col items-center px-4"
+        style={{
+          paddingTop: `${topPadding}px`,
+          paddingBottom: 'calc(var(--total-nav-height, 96px) + 56px)',
+          overflow: 'visible',
+        }}
+      >
         {/* Tagline */}
         <div className="text-center mb-1">
           <h2 className="text-white text-[15px] font-light leading-tight">
             Enter with Libero in {currentState.name}
           </h2>
           <p className="text-white/70 text-[11px] leading-tight">Tap to begin with Libero</p>
-        </div>
-
-        {/* Orb */}
-        <div className="relative flex items-center justify-center" style={{ 
-          zIndex: 10, 
-          width: orbSize, 
-          height: orbSize,
-          margin: '20px auto',
-          overflow: 'visible'
-        }}>
-          <Orb
-            onTap={handleOrbTap}
-            egoState={currentState.id}
-            size={orbSize}
-            variant="webgl"
-            afterglow={false}
-            className=""
-          />
         </div>
 
         {/* Milestones (only when signed in) */}
