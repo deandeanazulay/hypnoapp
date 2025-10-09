@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import ChatScreen from '../screens/ChatScreen';
 import { useOrbSize } from '../../hooks/useOrbSize';
@@ -11,9 +11,37 @@ import ChatActionSheet from './ChatActionSheet';
  * so the shell overlay can host additional routes without changing the
  * existing chat implementation.
  */
+function ChatOrbGlowOverlay() {
+  const { orbSize } = useOrbBackground();
+
+  const haloSize = Math.min(orbSize * 1.25, 520);
+
+  return (
+    <div className="pointer-events-none absolute inset-0" aria-hidden>
+      <div className="absolute inset-x-0 top-0 flex justify-center">
+        <div
+          className="relative rounded-full bg-teal-500/20 blur-[180px]"
+          style={{
+            width: haloSize,
+            height: haloSize,
+            transform: 'translateY(-33%)',
+          }}
+        />
+      </div>
+
+      <div
+        className="absolute left-1/2 top-[18vh] -translate-x-1/2 -translate-y-1/2"
+        style={{ width: orbSize, height: orbSize }}
+      >
+        <div className="absolute inset-0 rounded-full bg-teal-400/15 blur-3xl" />
+      </div>
+    </div>
+  );
+}
+
 export default function ChatMain() {
   const responsiveOrbSize = useOrbSize();
-  const { orbSize, setOrbSize } = useOrbBackground();
+  const { setOrbSize } = useOrbBackground();
   const fallbackStartSession = useChatSessionStore((state) => state.startSession);
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
   const [startHypnosisSession, setStartHypnosisSession] = useState<(() => void) | null>(null);
@@ -21,23 +49,6 @@ export default function ChatMain() {
   useEffect(() => {
     setOrbSize(responsiveOrbSize);
   }, [responsiveOrbSize, setOrbSize]);
-
-  const haloDimensions = useMemo(() => {
-    const size = Math.min(orbSize * 1.25, 520);
-
-    return {
-      width: size,
-      height: size,
-    };
-  }, [orbSize]);
-
-  const orbOverlayDimensions = useMemo(
-    () => ({
-      width: orbSize,
-      height: orbSize,
-    }),
-    [orbSize]
-  );
 
   const handleQuickSessionReady = useCallback((trigger: () => void) => {
     setStartHypnosisSession(() => trigger);
@@ -55,24 +66,7 @@ export default function ChatMain() {
 
   return (
     <div className="relative h-full overflow-hidden">
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute inset-x-0 top-0 flex justify-center">
-          <div
-            className="relative rounded-full bg-teal-500/20 blur-[180px]"
-            style={{
-              ...haloDimensions,
-              transform: 'translateY(-33%)',
-            }}
-          />
-        </div>
-
-        <div
-          className="absolute left-1/2 top-[18vh] -translate-x-1/2 -translate-y-1/2"
-          style={orbOverlayDimensions}
-        >
-          <div className="absolute inset-0 rounded-full bg-teal-400/15 blur-3xl" />
-        </div>
-      </div>
+      <ChatOrbGlowOverlay />
 
       <div className="relative z-10 flex h-full flex-col">
         <ChatScreen onQuickSessionReady={handleQuickSessionReady} />
