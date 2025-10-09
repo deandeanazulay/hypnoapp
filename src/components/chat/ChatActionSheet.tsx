@@ -6,12 +6,14 @@ interface ChatActionSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onStartHypnosisSession: () => void;
+  onShowThreadList?: () => void;
 }
 
 export default function ChatActionSheet({
   isOpen,
   onClose,
   onStartHypnosisSession,
+  onShowThreadList,
 }: ChatActionSheetProps) {
   const resetChat = useChatSessionStore((state) => state.resetChat);
   const showToast = useAppStore((state) => state.showToast);
@@ -39,8 +41,12 @@ export default function ChatActionSheet({
   };
 
   const handleNewChat = () => {
-    console.log('[CHAT_ACTION_SHEET] TODO: start a new chat thread');
-    // TODO: Implement new chat thread creation
+    if (onShowThreadList) {
+      onShowThreadList();
+    } else {
+      console.log('[CHAT_ACTION_SHEET] TODO: start a new chat thread');
+    }
+
     onClose();
   };
 

@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, MessageSquareMore } from 'lucide-react';
 import ChatScreen from '../screens/ChatScreen';
 import { useOrbSize } from '../../hooks/useOrbSize';
 import { useOrbBackground } from '../layout/OrbBackgroundLayer';
 import { useChatSessionStore } from '../../store/chatSessionStore';
 import ChatActionSheet from './ChatActionSheet';
+import { useChatNavigator } from '../../hooks/useChatNavigator';
 
 /**
  * Main chat route entry point. This component wraps the legacy ChatScreen
@@ -43,8 +44,10 @@ export default function ChatMain() {
   const responsiveOrbSize = useOrbSize();
   const { setOrbSize } = useOrbBackground();
   const fallbackStartSession = useChatSessionStore((state) => state.startSession);
+  const messages = useChatSessionStore((state) => state.messages);
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
   const [startHypnosisSession, setStartHypnosisSession] = useState<(() => void) | null>(null);
+  const navigateChat = useChatNavigator();
 
   const handleToggleActionSheet = useCallback(() => {
     setIsActionSheetOpen((previous) => !previous);
@@ -72,6 +75,12 @@ export default function ChatMain() {
     handleCloseActionSheet();
   }, [startHypnosisSession, fallbackStartSession, handleCloseActionSheet]);
 
+  const handleOpenThreads = useCallback(() => {
+    navigateChat('threads');
+  }, [navigateChat]);
+
+  const hasThreadHistory = messages.length > 0;
+
   return (
     <div className="relative h-full overflow-hidden">
       <ChatOrbGlowOverlay />
@@ -79,6 +88,17 @@ export default function ChatMain() {
       <div className="relative z-10 flex h-full flex-col">
         <ChatScreen onQuickSessionReady={handleQuickSessionReady} />
       </div>
+
+      {hasThreadHistory && (
+        <button
+          type="button"
+          onClick={handleOpenThreads}
+          className="fixed top-[calc(env(safe-area-inset-top,0)+20px)] right-6 z-[1100] flex items-center gap-2 rounded-full border border-white/20 bg-black/70 px-4 py-2 text-sm text-white/80 backdrop-blur hover:border-white/40 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
+        >
+          <MessageSquareMore className="h-4 w-4" aria-hidden />
+          Threads
+        </button>
+      )}
 
       <button
         type="button"
@@ -93,6 +113,7 @@ export default function ChatMain() {
         isOpen={isActionSheetOpen}
         onClose={handleCloseActionSheet}
         onStartHypnosisSession={handleStartHypnosisSession}
+        onShowThreadList={handleOpenThreads}
       />
     </div>
   );
