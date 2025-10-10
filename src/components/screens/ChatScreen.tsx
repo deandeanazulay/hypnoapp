@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import { useAppStore, EGO_STATES } from '../../store';
@@ -43,55 +43,71 @@ export default function ChatScreen({ onQuickSessionReady }: ChatScreenProps = {}
   const [hasRecording, setHasRecording] = useState(false);
   const [isPlayingRecording, setIsPlayingRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // Initialize media recorder
-  useEffect(() => {
-    const initializeRecorder = async () => {
-      try {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          console.warn('Media recording not supported');
-          return;
-        }
-
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
-        
-        recorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            setRecordedBlob(event.data);
-            setHasRecording(true);
-          }
-        };
-        
-        recorder.onstop = () => {
-          stream.getTracks().forEach(track => track.stop());
-          setIsRecording(false);
-          if (recordingTimer) {
-            clearInterval(recordingTimer);
-            setRecordingTimer(null);
-          }
-        };
-        
-        setMediaRecorder(recorder);
-      } catch (error) {
-        console.warn('Media recorder initialization failed:', error);
-        setMediaRecorder(null);
+  const clearRecordingTimer = useCallback(() => {
+    setRecordingTimer((existingTimer) => {
+      if (existingTimer) {
+        clearInterval(existingTimer);
       }
-    };
+      return null;
+    });
+  }, []);
 
-    if (isAuthenticated) {
-      initializeRecorder();
+  const releaseMediaStream = useCallback(() => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+  }, []);
+
+  const cleanupAfterStop = useCallback(() => {
+    clearRecordingTimer();
+    releaseMediaStream();
+    mediaRecorderRef.current = null;
+    setIsRecording(false);
+  }, [clearRecordingTimer, releaseMediaStream]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      cleanupAfterStop();
+      setRecordedBlob(null);
+      setHasRecording(false);
     }
 
     return () => {
-      if (recordingTimer) {
-        clearInterval(recordingTimer);
-      }
+      cleanupAfterStop();
     };
-  }, [isAuthenticated]);
+  }, [cleanupAfterStop, isAuthenticated]);
+
+  const getRecordingErrorMessage = useCallback((error: unknown) => {
+    if (error instanceof ApiError) {
+      return getUserFriendlyErrorMessage(error);
+    }
+
+    if (error instanceof DOMException) {
+      if (error.name === 'NotAllowedError') {
+        return 'Microphone access was denied. Please allow microphone access and try again.';
+      }
+
+      if (error.name === 'NotFoundError') {
+        return 'No microphone was found. Please connect a microphone and try again.';
+      }
+
+      if (error.name === 'NotReadableError' || error.name === 'AbortError') {
+        return 'We could not access your microphone. Please make sure no other app is using it and try again.';
+      }
+    }
+
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return 'Unable to start voice recording. Please try again.';
+  }, []);
 
   const buildKnowledgeBase = () => {
     return {
@@ -132,33 +148,78 @@ export default function ChatScreen({ onQuickSessionReady }: ChatScreenProps = {}
   };
 
   // Voice recording functions
-  const startRecording = () => {
-    if (!mediaRecorder || isRecording) return;
-    
-    setIsRecording(true);
-    setRecordingDuration(0);
-    setHasRecording(false);
-    setRecordedBlob(null);
-    
-    const timer = setInterval(() => {
-      setRecordingDuration(prev => prev + 1);
-    }, 1000);
-    setRecordingTimer(timer);
-    
-    mediaRecorder.start();
-  };
-
-  const stopRecording = () => {
-    if (!mediaRecorder || !isRecording) return;
-    
-    mediaRecorder.stop();
-    setIsRecording(false);
-    
-    if (recordingTimer) {
-      clearInterval(recordingTimer);
-      setRecordingTimer(null);
+  const startRecording = useCallback(async () => {
+    if (isRecording) {
+      return;
     }
-  };
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showToast({ type: 'error', message: 'Audio recording is not supported in this browser.' });
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          setRecordedBlob(event.data);
+          setHasRecording(true);
+        }
+      };
+
+      recorder.onstop = () => {
+        cleanupAfterStop();
+      };
+
+      setIsRecording(true);
+      setRecordingDuration(0);
+      setHasRecording(false);
+      setRecordedBlob(null);
+
+      const timer = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+      setRecordingTimer(timer);
+
+      try {
+        recorder.start();
+      } catch (error) {
+        cleanupAfterStop();
+        showToast({ type: 'error', message: getRecordingErrorMessage(error) });
+      }
+    } catch (error) {
+      cleanupAfterStop();
+      showToast({ type: 'error', message: getRecordingErrorMessage(error) });
+    }
+  }, [cleanupAfterStop, getRecordingErrorMessage, isRecording, showToast]);
+
+  const stopRecording = useCallback(() => {
+    clearRecordingTimer();
+    setIsRecording(false);
+
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) {
+      cleanupAfterStop();
+      return;
+    }
+
+    if (recorder.state === 'inactive') {
+      cleanupAfterStop();
+      return;
+    }
+
+    try {
+      recorder.stop();
+    } catch (error) {
+      cleanupAfterStop();
+      showToast({ type: 'error', message: getRecordingErrorMessage(error) });
+    }
+  }, [cleanupAfterStop, clearRecordingTimer, getRecordingErrorMessage, showToast]);
 
   const playRecording = () => {
     if (!recordedBlob) return;
@@ -182,14 +243,11 @@ export default function ChatScreen({ onQuickSessionReady }: ChatScreenProps = {}
     setHasRecording(false);
     setRecordedBlob(null);
     setRecordingDuration(0);
-    
-    if (isRecording && mediaRecorder) {
-      mediaRecorder.stop();
-      setIsRecording(false);
-      if (recordingTimer) {
-        clearInterval(recordingTimer);
-        setRecordingTimer(null);
-      }
+
+    if (isRecording) {
+      stopRecording();
+    } else {
+      cleanupAfterStop();
     }
   };
 
