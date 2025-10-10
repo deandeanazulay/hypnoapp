@@ -10,113 +10,105 @@ interface ChatBubbleProps {
   isSpeaking?: boolean;
 }
 
+const baseBubbleStyles =
+  'relative w-full rounded-2xl border px-4 py-3 text-sm leading-6 shadow-sm transition-colors duration-150';
+
 export default function ChatBubble({ message, onCopy, activeEgoState, isSpeaking = false }: ChatBubbleProps) {
   const [isPlayingAudio, setIsPlayingAudio] = React.useState(false);
+  const isUser = message.role === 'user';
 
   const playAudioMessage = () => {
     if (!message.audioUrl) return;
-    
+
     const audio = new Audio(message.audioUrl);
     setIsPlayingAudio(true);
-    
+
     audio.onended = () => {
       setIsPlayingAudio(false);
     };
-    
+
     audio.onerror = () => {
       setIsPlayingAudio(false);
     };
-    
+
     audio.play();
   };
 
+  const containerAlignment = isUser ? 'flex-row-reverse text-right' : 'flex-row text-left';
+  const messageSurface = isUser
+    ? 'bg-[#343541] border-white/10 text-white'
+    : message.error
+    ? 'bg-[#5c1f1f] border-[#ff8b8b]/40 text-white'
+    : message.isLoading
+    ? 'bg-[#444654] border-[#565869] text-white'
+    : 'bg-[#444654] border-[#565869] text-white';
+  const bubbleClasses = `${baseBubbleStyles} group ${messageSurface}`;
+
   return (
-    <div className={`flex gap-2 w-full ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-      {/* AvatarCell - Fixed 60x60, no grow/shrink */}
-      {message.role === 'libero' && (
-        <div className="flex-shrink-0 w-[60px] h-[60px] relative overflow-visible">
-          <div className="transition-all duration-300" 
-               style={{ transform: 'translateX(-75px) translateY(-60px)' }}>
+    <div className={`flex w-full items-start gap-4 ${containerAlignment}`}>
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#444654] text-white">
+        {isUser ? (
+          <User size={18} className="text-white/80" aria-hidden />
+        ) : (
+          <div className="relative flex h-10 w-10 items-center justify-center overflow-visible">
             <Orb
               onTap={() => {}}
               egoState={activeEgoState}
-              size={200}
+              size={72}
               variant="webgl"
+              isSpeaking={isSpeaking || Boolean(message.isLoading)}
             />
           </div>
-          {(message.isLoading || isSpeaking) && (
-            <div className="transition-all duration-300" 
-                 style={{ transform: 'translateX(-70px) translateY(-40px)' }}>
-              <Orb
-                onTap={() => {}}
-                egoState={activeEgoState}
-                size={200}
-                variant="webgl"
-              />
-            </div>
-          )}
-        </div>
-      )}
-      
-      {/* BubbleCell - Flexible width, max 78% */}
-      <div className={`flex-1 max-w-[78%] flex flex-col ${message.role === 'user' ? 'self-end items-end' : 'self-start items-start'}`}>
-        <div className={`rounded-2xl p-4 border group relative ${
-          message.role === 'user'
-            ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border-teal-500/30 text-white rounded-tr-md'
-            : message.isLoading
-            ? 'bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border-purple-500/20 text-white rounded-tl-md'
-            : message.error
-            ? 'bg-gradient-to-br from-red-500/15 to-orange-500/15 border-red-500/30 text-white rounded-tl-md'
-            : 'bg-gradient-to-br from-purple-500/15 to-indigo-500/15 border-purple-500/30 text-white rounded-tl-md'
-        }`}>
-          {/* Loading State */}
+        )}
+      </div>
+
+      <div className={`flex-1 ${isUser ? 'items-end' : 'items-start'} flex flex-col gap-2`}>
+
+        <div className={bubbleClasses}>
           {message.isLoading ? (
-            <div className="flex items-center space-x-3">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-              </div>
-              <span className="text-sm text-white/80 font-medium">Libero is thinking...</span>
+            <div className="flex items-center gap-2 text-sm text-white/70">
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-white/60" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-white/60" style={{ animationDelay: '0.15s' }} />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-white/60" style={{ animationDelay: '0.3s' }} />
+              </span>
+              <span>Libero is thinking…</span>
             </div>
           ) : (
             <>
-              {/* Audio Message Player */}
               {message.audioUrl && (
-                <div className="flex items-center space-x-3 mb-3 p-2 bg-black/20 rounded-lg border border-white/10">
+                <div className="mb-3 flex items-center gap-3 rounded-lg border border-white/10 bg-black/20 p-2">
                   <button
                     onClick={playAudioMessage}
-                    className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center hover:bg-blue-500/30 transition-all"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-400/50 bg-cyan-500/20 transition hover:bg-cyan-500/30"
+                    type="button"
                   >
                     {isPlayingAudio ? (
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-200" />
                     ) : (
-                      <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                      <span className="h-3 w-3 rounded-full bg-cyan-200" />
                     )}
                   </button>
-                  <span className="text-white/70 text-sm">Voice message</span>
+                  <span className="text-xs uppercase tracking-wide text-white/70">Voice message</span>
                 </div>
               )}
 
-              {/* Message Content */}
-              <div className="text-sm leading-relaxed whitespace-pre-wrap text-white/95">
-                {message.content}
-              </div>
+              <div className="whitespace-pre-wrap text-sm leading-relaxed text-white/95">{message.content}</div>
 
-              {/* Copy Button */}
               <button
+                type="button"
                 onClick={() => onCopy(message.content)}
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 hover:bg-black/20 rounded-lg transition-all hover:scale-110"
+                className="absolute -right-2 -top-2 hidden rounded-full border border-white/10 bg-[#343541]/90 p-1 text-white/60 transition hover:text-white/90 group-hover:flex"
+                aria-label="Copy message"
               >
-                <Copy size={12} className="text-white/40 hover:text-white/70" />
+                <Copy size={14} />
               </button>
             </>
           )}
         </div>
-        
-        {/* Timestamp - Below bubble, aligned with bubble */}
-        <div className={`text-xs text-white/50 mt-1 px-2 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-          <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+
+        <div className={`text-xs text-white/40 ${isUser ? 'text-right' : 'text-left'}`}>
+          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
     </div>

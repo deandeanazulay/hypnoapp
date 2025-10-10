@@ -9,7 +9,6 @@ import ChatSuggestions from '../chat/ChatSuggestions';
 import ChatInput from '../chat/ChatInput';
 import { safeFetch, ApiError, getUserFriendlyErrorMessage } from '../../utils/apiErrorHandler';
 import { HYPNOSIS_PROTOCOLS, PROTOCOL_CATEGORIES } from '../../data/protocols';
-import { useOrbBackground } from '../layout/OrbBackgroundLayer';
 import {
   useChatSessionStore,
   selectChatMessages,
@@ -34,9 +33,6 @@ export default function ChatScreen({ onQuickSessionReady }: ChatScreenProps = {}
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const { orbSize } = useOrbBackground();
-  const topPadding = Math.max(Math.round(orbSize * 0.25), 160);
-  const orbGlowSize = Math.min(Math.round(orbSize * 1.05), 520);
   
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -387,120 +383,115 @@ export default function ChatScreen({ onQuickSessionReady }: ChatScreenProps = {}
 
   if (!isAuthenticated) {
     return (
-      <div className="relative h-full">
-        <div
-          className="pointer-events-none absolute inset-0 bg-black/75 backdrop-blur-3xl"
-          aria-hidden
-        >
-          <div
-            className="absolute left-1/2 top-[22vh] -translate-x-1/2 rounded-full bg-purple-500/25 blur-[160px]"
-            style={{ width: orbGlowSize, height: orbGlowSize }}
-          />
-        </div>
-
-        <PageShell
-          className="relative z-10"
-          body={
-            <div className="h-full flex items-center justify-center p-4" style={{ paddingTop: `${topPadding}px` }}>
-              <div className="text-center max-w-sm">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
-                  <MessageCircle size={32} className="text-purple-400" />
-                </div>
-                <h3 className="text-white text-xl font-light mb-4">Sign in to chat with Libero</h3>
-                <button
-                  onClick={() => openModal('auth')}
-                  className="px-6 py-3 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-xl text-black font-semibold hover:scale-105 transition-transform duration-200"
-                >
-                  Sign In
-                </button>
+      <PageShell
+        className="bg-[#343541] text-white"
+        body={
+          <div className="flex h-full items-center justify-center px-4">
+            <div className="w-full max-w-sm space-y-6 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/20 bg-[#40414f]">
+                <MessageCircle size={28} />
               </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-semibold">Sign in to chat with Libero</h3>
+                <p className="text-sm text-white/60">
+                  Access personalized hypnosis guidance and keep track of your sessions.
+                </p>
+              </div>
+              <button
+                onClick={() => openModal('auth')}
+                className="w-full rounded-full bg-[#10a37f] px-6 py-3 text-sm font-medium text-black transition hover:bg-[#12b187]"
+              >
+                Sign in
+              </button>
             </div>
-          }
-        />
-      </div>
+          </div>
+        }
+      />
     );
   }
 
-  const hasRealMessages = messages.some(msg => !msg.isLoading);
+  const hasRealMessages = messages.some((msg) => !msg.isLoading);
 
   return (
-    <div className="relative h-full">
-      <div
-        className="pointer-events-none absolute inset-0 bg-black/75 backdrop-blur-3xl"
-        aria-hidden
-      >
-        <div
-          className="absolute left-1/2 top-[22vh] -translate-x-1/2 rounded-full bg-teal-500/20 blur-[180px]"
-          style={{ width: orbGlowSize, height: orbGlowSize }}
-        />
-      </div>
-
-      <div
-        className="relative z-10 flex h-full flex-col"
-        style={{ paddingTop: `${topPadding}px` }}
-      >
-        {/* Welcome prompt - shown before the first message */}
-        {!hasRealMessages && (
-          <div className="flex-1 flex items-center justify-center py-8 px-4">
-            <div className="text-center space-y-3 w-full max-w-md">
-              <div className="mx-auto w-full rounded-3xl border border-white/10 bg-black/70 p-6 backdrop-blur-2xl shadow-2xl shadow-teal-500/10">
-                <h2 className="text-white text-lg font-light mb-2">Chat with Libero</h2>
-                <p className="text-white/70 text-sm leading-relaxed">
-                  Tap the glowing orb to begin a new conversation or ask for guidance.
-                </p>
+    <PageShell
+      className="bg-[#343541] text-white"
+      body={
+        <div className="flex h-full flex-col">
+          <header className="border-b border-[#565869]/60 bg-[#343541]/90">
+            <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-4">
+              <div>
+                <h1 className="text-lg font-medium">Libero</h1>
+                <p className="text-xs text-white/60">Your hypnotic companion</p>
               </div>
-              <p className="text-white/60 text-xs">Try asking about your current ego state or daily focus.</p>
+              <div className="text-xs text-white/50">
+                {currentSession?.type ? currentSession.type.charAt(0).toUpperCase() + currentSession.type.slice(1) : 'Hypnosis'} session
+              </div>
             </div>
-          </div>
-        )}
+          </header>
 
-        {/* Chat Messages */}
-        {hasRealMessages && (
-          <div
-            className="flex-1 flex flex-col min-h-0 px-4"
-            style={{ paddingTop: '40px', paddingBottom: 'calc(var(--total-nav-height, 128px) + 140px + 1rem)' }}
-          >
-            <div className="relative flex-1 overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-b from-black/85 via-black/65 to-black/90 backdrop-blur-2xl shadow-[0_40px_120px_-60px_rgba(14,165,233,0.55)]">
-              <div className="pointer-events-none absolute inset-0 rounded-[32px] bg-gradient-to-b from-white/5 via-transparent to-black/60" />
+          <div className="flex-1 overflow-hidden">
+            {hasRealMessages ? (
               <ChatMessages
                 messages={messages}
                 onCopyMessage={copyMessage}
                 activeEgoState={activeEgoState}
                 isSpeaking={isSpeaking}
               />
-            </div>
+            ) : (
+              <div className="flex h-full items-center justify-center px-4 pb-6">
+                <div className="mx-auto w-full max-w-3xl space-y-8 text-center">
+                  <div className="space-y-2">
+                    <h2 className="text-3xl font-semibold">ChatGPT-style conversations</h2>
+                    <p className="text-sm text-white/60">
+                      Ask Libero anything about hypnosis, ego states, or your current focus and receive clear guidance.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 text-left sm:grid-cols-2">
+                    {suggestions.slice(0, 4).map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() => setInputText(suggestion)}
+                        className="rounded-2xl border border-[#565869] bg-[#40414f] p-4 text-left text-sm text-white/80 transition hover:border-white/50 hover:text-white"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Quick Reply Suggestions */}
-      <div className="fixed left-0 right-0 z-40" style={{ bottom: 'calc(var(--total-nav-height, 128px) + 80px)' }}>
-        <ChatSuggestions
-          suggestions={suggestions}
-          onSuggestionClick={setInputText}
-          isLoading={isLoading}
-          show={messages.length <= 1}
-        />
-      </div>
+          <div className="bg-[#343541]/95 py-4">
+            <ChatSuggestions
+              suggestions={suggestions}
+              onSuggestionClick={setInputText}
+              isLoading={isLoading}
+              show={messages.length <= 1}
+            />
+          </div>
 
-      {/* Chat Input */}
-      <ChatInput
-        inputText={inputText}
-        onInputChange={setInputText}
-        onSubmit={handleSubmit}
-        onClearChat={clearChat}
-        onStartRecording={startRecording}
-        onStopRecording={stopRecording}
-        onPlayRecording={playRecording}
-        onDeleteRecording={deleteRecording}
-        onSendRecording={sendRecording}
-        isLoading={isLoading}
-        isRecording={isRecording}
-        hasRecording={hasRecording}
-        isPlayingRecording={isPlayingRecording}
-        recordingDuration={recordingDuration}
-        hasMessages={messages.length > 1}
-      />
-    </div>
+          <ChatInput
+            inputText={inputText}
+            onInputChange={setInputText}
+            onSubmit={handleSubmit}
+            onClearChat={clearChat}
+            onStartRecording={startRecording}
+            onStopRecording={stopRecording}
+            onPlayRecording={playRecording}
+            onDeleteRecording={deleteRecording}
+            onSendRecording={sendRecording}
+            isLoading={isLoading}
+            isRecording={isRecording}
+            hasRecording={hasRecording}
+            isPlayingRecording={isPlayingRecording}
+            recordingDuration={recordingDuration}
+            hasMessages={messages.length > 1}
+          />
+        </div>
+      }
+    />
   );
 }
