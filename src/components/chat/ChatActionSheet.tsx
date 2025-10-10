@@ -11,6 +11,9 @@ interface ChatActionSheetProps {
   onClose: () => void;
   onStartHypnosisSession: () => void;
   onShowThreadList?: () => void;
+  onStartBreathwork?: () => void | boolean | Promise<void | boolean>;
+  onBuildProtocol?: () => void | boolean | Promise<void | boolean>;
+  onCreateWorkout?: () => void | boolean | Promise<void | boolean>;
 }
 
 export default function ChatActionSheet({
@@ -18,6 +21,9 @@ export default function ChatActionSheet({
   onClose,
   onStartHypnosisSession,
   onShowThreadList,
+  onStartBreathwork,
+  onBuildProtocol,
+  onCreateWorkout,
 }: ChatActionSheetProps) {
   const resetChat = useChatSessionStore((state) => state.resetChat);
   const createThread = useChatSessionStore((state) => state.createThread);
@@ -30,21 +36,33 @@ export default function ChatActionSheet({
     return null;
   }
 
-  const handleBreathwork = () => {
-    console.log('[CHAT_ACTION_SHEET] TODO: launch breathwork experience');
-    // TODO: Integrate breathwork experience trigger
+  const handleBreathwork = async () => {
+    if (onStartBreathwork) {
+      const result = await onStartBreathwork();
+      if (result === false) {
+        return;
+      }
+    }
     onClose();
   };
 
-  const handleBuildProtocol = () => {
-    console.log('[CHAT_ACTION_SHEET] TODO: open protocol builder flow');
-    // TODO: Navigate to protocol builder
+  const handleBuildProtocol = async () => {
+    if (onBuildProtocol) {
+      const result = await onBuildProtocol();
+      if (result === false) {
+        return;
+      }
+    }
     onClose();
   };
 
-  const handleCreateWorkout = () => {
-    console.log('[CHAT_ACTION_SHEET] TODO: open workout creation flow');
-    // TODO: Implement workout creation entry point
+  const handleCreateWorkout = async () => {
+    if (onCreateWorkout) {
+      const result = await onCreateWorkout();
+      if (result === false) {
+        return;
+      }
+    }
     onClose();
   };
 
