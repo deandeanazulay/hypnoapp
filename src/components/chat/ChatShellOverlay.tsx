@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ChatMain from './ChatMain';
-import ChatThreadPlaceholder from './ChatThreadPlaceholder';
+import ChatThreadView from './ChatThreadView';
 import ChatThreadList from './ChatThreadList';
 
 interface ChatShellOverlayProps {
@@ -29,7 +29,7 @@ export default function ChatShellOverlay({ onClose }: ChatShellOverlayProps) {
         <Routes>
           <Route index element={<ChatMain />} />
           <Route path="threads" element={<ChatThreadList />} />
-          <Route path="threads/:threadId" element={<ChatThreadPlaceholder />} />
+          <Route path="threads/:threadId" element={<ChatThreadView />} />
           <Route path="*" element={<Navigate to="." replace />} />
         </Routes>
       </div>
