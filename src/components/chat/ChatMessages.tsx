@@ -26,12 +26,12 @@ export default function ChatMessages({
   }, [messages]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-4">
-      <div className="flex flex-col space-y-2">
+    <div className="flex-1 overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
         {messages.map((message, index) => (
           <div key={message.id} style={{ animationDelay: `${index * 50}ms` }}>
-            <ChatBubble 
-              message={message} 
+            <ChatBubble
+              message={message}
               onCopy={onCopyMessage}
               activeEgoState={activeEgoState}
               isSpeaking={isSpeaking && message.role === 'libero' && index === messages.length - 1}
