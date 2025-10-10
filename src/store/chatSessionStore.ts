@@ -195,6 +195,7 @@ export const useChatSessionStore = create<ChatSessionStore>()(
       createThread: (type, options = {}) => {
         const title = options.title || SESSION_TITLES[type] || 'Guided Session';
         const threadId = options.id || `chat-${type}-${Date.now()}`;
+        const shouldSeedWithWelcome = options.resetMessages !== false;
 
         const session: ChatSessionMeta = {
           id: threadId,
@@ -218,7 +219,7 @@ export const useChatSessionStore = create<ChatSessionStore>()(
               [threadId]: {
                 id: threadId,
                 session,
-                messages: [createWelcomeMessage()],
+                messages: shouldSeedWithWelcome ? [createWelcomeMessage()] : [],
               },
             },
           };
