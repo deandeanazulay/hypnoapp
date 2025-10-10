@@ -1,6 +1,10 @@
 import React, { useCallback } from 'react';
 import { useAppStore } from '../../store';
-import { useChatSessionStore } from '../../store/chatSessionStore';
+import {
+  useChatSessionStore,
+  selectCurrentChatSession,
+} from '../../store/chatSessionStore';
+import { useChatNavigator } from '../../hooks/useChatNavigator';
 
 interface ChatActionSheetProps {
   isOpen: boolean;
@@ -16,7 +20,11 @@ export default function ChatActionSheet({
   onShowThreadList,
 }: ChatActionSheetProps) {
   const resetChat = useChatSessionStore((state) => state.resetChat);
+  const createThread = useChatSessionStore((state) => state.createThread);
+  const switchThread = useChatSessionStore((state) => state.switchThread);
+  const currentSession = useChatSessionStore(selectCurrentChatSession);
   const showToast = useAppStore((state) => state.showToast);
+  const navigateChat = useChatNavigator();
 
   if (!isOpen) {
     return null;
@@ -40,15 +48,27 @@ export default function ChatActionSheet({
     onClose();
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = useCallback(() => {
+    const sessionType = currentSession?.type ?? 'hypnosis';
+    const threadId = `chat-${sessionType}-${Date.now()}`;
+
+    createThread(sessionType, { id: threadId });
+    switchThread(threadId);
     if (onShowThreadList) {
       onShowThreadList();
-    } else {
-      console.log('[CHAT_ACTION_SHEET] TODO: start a new chat thread');
     }
-
+    navigateChat(`/chat/threads/${threadId}`);
+    showToast({ type: 'success', message: 'New chat started' });
     onClose();
-  };
+  }, [
+    createThread,
+    currentSession?.type,
+    navigateChat,
+    onClose,
+    onShowThreadList,
+    showToast,
+    switchThread,
+  ]);
 
   const handleResetChat = useCallback(() => {
     resetChat();
