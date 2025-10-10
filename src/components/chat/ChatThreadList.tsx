@@ -9,7 +9,8 @@ import { useChatNavigator } from '../../hooks/useChatNavigator';
 
 interface ThreadListItem {
   id: string;
-  title: string;
+  title: string | null;
+  fallbackTitle: string;
   lastMessage: string;
   timestamp: Date | null;
 }
@@ -51,13 +52,15 @@ export default function ChatThreadList() {
     return threadsArray
       .map((thread) => {
         const lastMessage = thread.messages[thread.messages.length - 1] ?? null;
+        const snippet =
+          lastMessage?.content?.trim?.() ||
+          'No messages yet. Start a conversation to see it appear here.';
 
         return {
           id: thread.id,
-          title: thread.session.title,
-          lastMessage:
-            lastMessage?.content?.trim?.() ||
-            'No messages yet. Start a conversation to see it appear here.',
+          title: thread.session.title?.trim?.() || null,
+          fallbackTitle: snippet,
+          lastMessage: snippet,
           timestamp:
             lastMessage?.timestamp ||
             (thread.session.startedAt ? new Date(thread.session.startedAt) : null),
@@ -100,6 +103,9 @@ export default function ChatThreadList() {
         <ul className="flex-1 divide-y divide-white/10 overflow-y-auto">
           {threads.map((thread) => {
             const isActive = thread.id === currentThreadId;
+            const displayTitle = thread.title ?? thread.fallbackTitle;
+            const shouldShowLastMessage =
+              Boolean(thread.lastMessage) && (thread.title !== null || thread.lastMessage !== displayTitle);
             const buttonClassName = [
               'flex w-full items-start gap-4 px-5 py-4 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200',
               isActive ? 'bg-white/10 text-white' : 'hover:bg-white/5',
@@ -120,16 +126,18 @@ export default function ChatThreadList() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-3">
                       <h4 className="text-base font-medium text-white truncate">
-                        {thread.title}
+                        {displayTitle}
                       </h4>
                       <span className="flex-shrink-0 text-xs text-white/50">
                         {formatTimestamp(thread.timestamp)}
                       </span>
                     </div>
 
-                    <p className="mt-1 text-sm text-white/60 truncate">
-                      {thread.lastMessage}
-                    </p>
+                    {shouldShowLastMessage ? (
+                      <p className="mt-1 text-sm text-white/60 truncate">
+                        {thread.lastMessage}
+                      </p>
+                    ) : null}
                   </div>
                 </button>
               </li>

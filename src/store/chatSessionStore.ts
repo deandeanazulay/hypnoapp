@@ -113,6 +113,51 @@ const createWelcomeMessage = (): ChatMessage => ({
   timestamp: new Date(),
 });
 
+const FALLBACK_TITLE_SNIPPET_LIMIT = 80;
+
+const formatFallbackTimestamp = (date: Date) => {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(date);
+  } catch (error) {
+    console.warn('[chatSessionStore] Failed to format fallback title timestamp', error);
+    return date.toLocaleString();
+  }
+};
+
+const getSessionLabel = (type: ChatSessionType | undefined) => {
+  if (!type) {
+    return 'Guided Session';
+  }
+
+  return SESSION_TITLES[type] ?? 'Guided Session';
+};
+
+const generateFallbackThreadTitle = (
+  type: ChatSessionType | undefined,
+  messages: ChatMessage[] = [],
+  startedAt?: string | null
+) => {
+  const firstUserMessage = messages.find((message) => message.role === 'user' && message.content.trim());
+
+  if (firstUserMessage) {
+    const trimmed = firstUserMessage.content.trim();
+    if (trimmed.length <= FALLBACK_TITLE_SNIPPET_LIMIT) {
+      return trimmed;
+    }
+    return `${trimmed.slice(0, FALLBACK_TITLE_SNIPPET_LIMIT - 1)}…`;
+  }
+
+  const label = getSessionLabel(type);
+  const timestampSource = startedAt ? new Date(startedAt) : new Date();
+  const timestamp = Number.isNaN(timestampSource.getTime()) ? new Date() : timestampSource;
+  const formattedTimestamp = formatFallbackTimestamp(timestamp);
+
+  return `${label} • ${formattedTimestamp}`;
+};
+
 const createDefaultSessionMeta = (): ChatSessionMeta => ({
   id: 'sample-hypnosis-seed',
   type: 'hypnosis',
@@ -151,7 +196,6 @@ export const useChatSessionStore = create<ChatSessionStore>()(
       ...createInitialState(),
 
       startSession: (type, options = {}) => {
-        const title = options.title || SESSION_TITLES[type] || 'Guided Session';
         const resetMessages = options.resetMessages ?? false;
 
         set((state) => {
@@ -159,15 +203,22 @@ export const useChatSessionStore = create<ChatSessionStore>()(
           const targetThreadId = options.id || state.currentThreadId || fallbackThread.id;
           const existingThread = state.threads[targetThreadId];
 
+          const startedAt =
+            options.startedAt !== undefined
+              ? options.startedAt
+              : existingThread?.session.startedAt || new Date().toISOString();
+
+          const title =
+            options.title?.trim?.() ||
+            existingThread?.session.title?.trim?.() ||
+            generateFallbackThreadTitle(type, existingThread?.messages ?? [], startedAt);
+
           const session: ChatSessionMeta = {
             id: targetThreadId,
             type,
             title,
             status: options.status || existingThread?.session.status || 'active',
-            startedAt:
-              options.startedAt !== undefined
-                ? options.startedAt
-                : existingThread?.session.startedAt || new Date().toISOString(),
+            startedAt,
             completedAt:
               options.completedAt !== undefined
                 ? options.completedAt
@@ -193,17 +244,21 @@ export const useChatSessionStore = create<ChatSessionStore>()(
       },
 
       createThread: (type, options = {}) => {
-        const title = options.title || SESSION_TITLES[type] || 'Guided Session';
         const threadId = options.id || `chat-${type}-${Date.now()}`;
         const shouldSeedWithWelcome = options.resetMessages !== false;
+        const startedAt =
+          options.startedAt !== undefined ? options.startedAt : new Date().toISOString();
+
+        const fallbackTitle =
+          options.title?.trim?.() ||
+          generateFallbackThreadTitle(type, [], startedAt);
 
         const session: ChatSessionMeta = {
           id: threadId,
           type,
-          title,
+          title: fallbackTitle,
           status: options.status || 'active',
-          startedAt:
-            options.startedAt !== undefined ? options.startedAt : new Date().toISOString(),
+          startedAt,
           completedAt: options.completedAt !== undefined ? options.completedAt : null,
         };
 
@@ -355,19 +410,41 @@ export const useChatSessionStore = create<ChatSessionStore>()(
 
         if ('threads' in typed && typed.threads) {
           const hydratedThreads = Object.fromEntries(
-            Object.entries(typed.threads).map(([threadId, thread]) => [
-              threadId,
-              {
-                id: threadId,
-                session: thread.session,
-                messages: thread.messages
-                  ? thread.messages.map((message) => ({
-                      ...message,
-                      timestamp: message.timestamp ? new Date(message.timestamp) : new Date(),
-                    }))
-                  : [],
-              },
-            ])
+            Object.entries(typed.threads).map(([threadId, thread]) => {
+              const messages: ChatMessage[] = thread.messages
+                ? thread.messages.map((message) => ({
+                    ...message,
+                    timestamp: message.timestamp ? new Date(message.timestamp) : new Date(),
+                  }))
+                : [];
+
+              const persistedSession = thread.session ?? ({} as Partial<ChatSessionMeta>);
+              const hydratedSession: ChatSessionMeta = {
+                id: persistedSession.id ?? threadId,
+                type: persistedSession.type ?? 'hypnosis',
+                title:
+                  persistedSession.title?.trim?.() ||
+                  generateFallbackThreadTitle(persistedSession.type, messages, persistedSession.startedAt),
+                status: persistedSession.status ?? 'active',
+                startedAt:
+                  persistedSession.startedAt !== undefined
+                    ? persistedSession.startedAt
+                    : null,
+                completedAt:
+                  persistedSession.completedAt !== undefined
+                    ? persistedSession.completedAt
+                    : null,
+              };
+
+              return [
+                threadId,
+                {
+                  id: threadId,
+                  session: hydratedSession,
+                  messages,
+                },
+              ];
+            })
           );
 
           const availableThreadIds = Object.keys(hydratedThreads);
