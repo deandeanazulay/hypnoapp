@@ -6,6 +6,10 @@ import { useOrbBackground } from '../layout/OrbBackgroundLayer';
 import { useChatSessionStore, selectChatMessages } from '../../store/chatSessionStore';
 import ChatActionSheet from './ChatActionSheet';
 import { useChatNavigator } from '../../hooks/useChatNavigator';
+import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
+import { useAppStore } from '../../store';
+import { useNavigate } from 'react-router-dom';
+import { track } from '../../services/analytics';
 
 /**
  * Main chat route entry point. This component wraps the legacy ChatScreen
@@ -42,6 +46,9 @@ function ChatOrbGlowOverlay() {
 
 export default function ChatMain() {
   const responsiveOrbSize = useOrbSize();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { openModal, setActiveTab, showToast } = useAppStore();
   const { setOrbSize } = useOrbBackground();
   const fallbackStartSession = useChatSessionStore((state) => state.startSession);
   const messages = useChatSessionStore(selectChatMessages);
@@ -74,6 +81,63 @@ export default function ChatMain() {
 
     handleCloseActionSheet();
   }, [startHypnosisSession, fallbackStartSession, handleCloseActionSheet]);
+
+  const handleStartBreathworkSession = useCallback(() => {
+    if (!isAuthenticated) {
+      openModal('auth');
+      track('chat_action_blocked', {
+        action: 'start_breathwork',
+        reason: 'unauthenticated',
+      });
+      return false;
+    }
+
+    fallbackStartSession('breathwork', { status: 'active', resetMessages: false });
+    track('session_start', {
+      type: 'breathwork',
+      source: 'chat_action_sheet',
+    });
+    showToast({ type: 'success', message: 'Breathwork session starting...' });
+    return true;
+  }, [fallbackStartSession, isAuthenticated, openModal, showToast]);
+
+  const handleOpenProtocolBuilder = useCallback(() => {
+    if (!isAuthenticated) {
+      openModal('auth');
+      track('chat_action_blocked', {
+        action: 'open_protocol_builder',
+        reason: 'unauthenticated',
+      });
+      return false;
+    }
+
+    setActiveTab('create');
+    navigate('/', { replace: false });
+    track('navigation', { tab: 'create', source: 'chat_action_sheet' });
+    showToast({ type: 'success', message: 'Opening protocol builder...' });
+    return true;
+  }, [isAuthenticated, navigate, openModal, setActiveTab, showToast]);
+
+  const handleOpenWorkoutCreator = useCallback(() => {
+    if (!isAuthenticated) {
+      openModal('auth');
+      track('chat_action_blocked', {
+        action: 'open_workout_creator',
+        reason: 'unauthenticated',
+      });
+      return false;
+    }
+
+    setActiveTab('create');
+    navigate('/', { replace: false });
+    track('chat_action', {
+      action: 'open_workout_creator',
+      destination: 'create',
+      source: 'chat_action_sheet',
+    });
+    showToast({ type: 'success', message: 'Opening workout creator...' });
+    return true;
+  }, [isAuthenticated, navigate, openModal, setActiveTab, showToast]);
 
   const handleOpenThreads = useCallback(() => {
     navigateChat('threads');
@@ -114,6 +178,9 @@ export default function ChatMain() {
         onClose={handleCloseActionSheet}
         onStartHypnosisSession={handleStartHypnosisSession}
         onShowThreadList={handleOpenThreads}
+        onStartBreathwork={handleStartBreathworkSession}
+        onBuildProtocol={handleOpenProtocolBuilder}
+        onCreateWorkout={handleOpenWorkoutCreator}
       />
     </div>
   );
