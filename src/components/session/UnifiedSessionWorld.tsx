@@ -598,14 +598,14 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
 
   // Store session configuration when session starts
   useEffect(() => {
-    if (sessionHandle && sessionState.scriptPlan) {
+    if (sessionHandle && sessionState.plan) {
       setSessionData({
-        action: sessionState.scriptPlan.title || 'Transformation Session',
+        action: sessionState.plan.summary || 'Transformation Session',
         egoState: activeEgoState,
-        protocol: sessionState.scriptPlan.metadata || {}
+        protocol: sessionState.script?.metadata || {}
       });
     }
-  }, [sessionHandle, sessionState.scriptPlan, activeEgoState]);
+  }, [sessionHandle, sessionState.plan, sessionState.script, activeEgoState]);
   if (!isOpen || !sessionHandle) {
     return null;
   }

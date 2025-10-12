@@ -1,8 +1,20 @@
-import { track } from './analytics';
 import { SessionScript, getSessionScript } from './chatgpt';
 import { synthesizeSegment } from './voice';
 import { AI } from '../config/ai';
 import { supabase } from '../lib/supabase';
+import {
+  SessionPlan,
+  PlanStep,
+  PlanStepStatus,
+  StepFeedback,
+  createSessionPlan,
+  materializePlanWithSegments,
+  updatePlanStepStatus,
+  findPlanStep,
+  allSegmentStepsComplete
+} from './planning';
+
+export type { SessionPlan, StepFeedback } from './planning';
 
 export interface ScriptSegment { 
   id: string;
@@ -25,10 +37,13 @@ export interface SessionState {
   currentSegmentIndex: number;
   currentSegmentId: string | null;
   totalSegments: number;
-  scriptPlan: any;
+  plan: SessionPlan | null;
+  script: SessionScript | null;
   bufferedAhead: number;
   error: string | null;
   isInitialized: boolean;
+  awaitingPlanConfirmation: boolean;
+  awaitingFeedbackForStepId: string | null;
 }
 
 export interface StartSessionOptions {
@@ -52,6 +67,8 @@ export interface SessionHandle {
   dispose: () => void;
   on: (event: string, listener: Function) => void;
   getCurrentState: () => SessionState;
+  confirmPlan: (planPatch?: Partial<SessionPlan>) => void;
+  submitStepFeedback: (feedback: StepFeedback) => Promise<void>;
 }
 
 export class SessionManager {
@@ -60,21 +77,31 @@ export class SessionManager {
     currentSegmentIndex: 0,
     currentSegmentId: null,
     totalSegments: 0,
-    scriptPlan: null,
+    plan: null,
+    script: null,
     bufferedAhead: 0,
     error: null,
-    isInitialized: false
+    isInitialized: false,
+    awaitingPlanConfirmation: false,
+    awaitingFeedbackForStepId: null
   };
 
   private segments: (PlayableSegment | null)[] = [];
   private currentAudioElement: HTMLAudioElement | null = null;
   private eventListeners: Record<string, Function[]> = {};
   private currentSegmentIndex = 0;
-  private scriptPlan: any = null;
+  private plan: SessionPlan | null = null;
+  private sessionScript: SessionScript | null = null;
   private _initializationPromise: Promise<void> | null = null;
   private _isInitialized = false;
   private _isDisposed = false;
   private userId: string | null = null;
+  private userContext: any = null;
+  private segmentStepMap: Map<string, string> = new Map();
+  private planConfirmed = false;
+  private autoResumeAfterFeedback = false;
+  private pendingSessionCompletion = false;
+  private allowAutoPlanConfirmation = true;
   
   // Simplified TTS management
   private currentUtterance: SpeechSynthesisUtterance | null = null;
@@ -101,6 +128,8 @@ export class SessionManager {
     }
 
     try {
+      this._preparePlan(userContext);
+
       // Generate script through API only - NO HARDCODED FALLBACKS
       await this._initializeSession(userContext);
       
@@ -120,42 +149,255 @@ export class SessionManager {
       throw error;
     }
   }
+
+  private _preparePlan(userContext: any) {
+    this.userContext = userContext;
+    this.plan = createSessionPlan(userContext);
+
+    const gatherStep = this.plan.steps.find(step => step.type === 'gather_context');
+    if (gatherStep) {
+      this.plan = updatePlanStepStatus(this.plan, gatherStep.id, 'complete');
+    }
+
+    this.planConfirmed = false;
+    this.segmentStepMap.clear();
+    this.sessionScript = null;
+    this.pendingSessionCompletion = false;
+    this.autoResumeAfterFeedback = false;
+
+    this._setPlan(this.plan);
+    this._updateState({
+      script: null,
+      awaitingPlanConfirmation: this.plan?.needsConfirmation ?? false,
+      awaitingFeedbackForStepId: null
+    });
+
+    this._emit('plan-created', this.plan);
+  }
+
+  private _setPlan(plan: SessionPlan | null) {
+    this.plan = plan;
+    this._updateState({ plan });
+    if (plan) {
+      this._emit('plan-updated', plan);
+    }
+  }
+
+  private _updatePlanStep(stepId: string | undefined, status: PlanStepStatus, patch: Partial<PlanStep> = {}) {
+    if (!this.plan || !stepId) {
+      return;
+    }
+    const nextPlan = updatePlanStepStatus(this.plan, stepId, status, patch);
+    this._setPlan(nextPlan);
+  }
+
+  private _bindSegmentsToPlan(segments: ScriptSegment[]) {
+    if (!this.plan) {
+      return;
+    }
+
+    const nextPlan = materializePlanWithSegments(this.plan, segments);
+    this.segmentStepMap.clear();
+
+    nextPlan.steps.forEach(step => {
+      if (step.type === 'play_segment' && step.data?.segmentId) {
+        this.segmentStepMap.set(step.data.segmentId, step.id);
+      }
+    });
+
+    this._setPlan(nextPlan);
+  }
+
+  private _markCurrentSegmentInProgress() {
+    const segment = this.segments[this.currentSegmentIndex];
+    if (!segment) {
+      return;
+    }
+
+    const stepId = this.segmentStepMap.get(segment.id);
+    if (!stepId) {
+      return;
+    }
+
+    const step = findPlanStep(this.plan, stepId);
+    if (step && step.status !== 'in-progress') {
+      this._updatePlanStep(stepId, 'in-progress');
+    }
+  }
+
+  confirmPlan(planPatch: Partial<SessionPlan> = {}) {
+    if (!this.plan) {
+      return;
+    }
+
+    const updatedPlan = { ...this.plan, ...planPatch, needsConfirmation: false };
+    this.planConfirmed = true;
+    this._setPlan(updatedPlan);
+    this._updateState({ awaitingPlanConfirmation: false });
+    this._emit('plan-confirmed', updatedPlan);
+  }
+
+  get awaitingFeedbackStep(): PlanStep | null {
+    return findPlanStep(this.plan, this._state.awaitingFeedbackForStepId || undefined);
+  }
+
+  async submitStepFeedback(feedback: StepFeedback) {
+    if (!feedback) {
+      return;
+    }
+
+    const stepId = feedback.stepId || this._state.awaitingFeedbackForStepId;
+    if (!stepId) {
+      return;
+    }
+
+    const step = findPlanStep(this.plan, stepId);
+    if (!step) {
+      return;
+    }
+
+    if (feedback.approved) {
+      this._updatePlanStep(stepId, 'complete', {
+        data: {
+          ...(step.data || {}),
+          feedback: feedback.notes || null
+        }
+      });
+
+      this._updateState({ awaitingFeedbackForStepId: null });
+
+      if (this.pendingSessionCompletion && allSegmentStepsComplete(this.plan)) {
+        this._completeSessionWrapUp();
+        return;
+      }
+
+      if (this.autoResumeAfterFeedback) {
+        this.autoResumeAfterFeedback = false;
+        this._resumeFromFeedback();
+      }
+
+      return;
+    }
+
+    this._updatePlanStep(stepId, 'needs-revision', {
+      data: {
+        ...(step.data || {}),
+        feedback: feedback.notes || null,
+        revisionReason: feedback.reason || 'unspecified'
+      }
+    });
+
+    const revisedPlan = createSessionPlan(this.userContext, {
+      revisionOf: this.plan?.id || null,
+      feedback
+    });
+
+    this.planConfirmed = false;
+    this.pendingSessionCompletion = false;
+    this.autoResumeAfterFeedback = false;
+
+    const revisedWithSegments = materializePlanWithSegments(revisedPlan, this.sessionScript?.segments || []);
+    this.segmentStepMap.clear();
+    revisedWithSegments.steps.forEach(step => {
+      if (step.type === 'play_segment' && step.data?.segmentId) {
+        this.segmentStepMap.set(step.data.segmentId, step.id);
+      }
+    });
+    this._setPlan(revisedWithSegments);
+    this._updateState({ awaitingPlanConfirmation: true, awaitingFeedbackForStepId: null });
+    this._emit('plan-revision', this.plan);
+  }
+
+  private _resumeFromFeedback() {
+    if (this._isDisposed) {
+      return;
+    }
+
+    if (this.pendingSessionCompletion) {
+      this._completeSessionWrapUp();
+      return;
+    }
+
+    if (this.currentSegmentIndex >= this.segments.length) {
+      this._completeSessionWrapUp();
+      return;
+    }
+
+    const segment = this.segments[this.currentSegmentIndex];
+    if (!segment) {
+      this._completeSessionWrapUp();
+      return;
+    }
+
+    this._updateState({
+      playState: 'playing',
+      currentSegmentIndex: this.currentSegmentIndex,
+      currentSegmentId: segment.id
+    });
+
+    this._stopCurrentAudio();
+    this._playCurrentSegment();
+  }
+
+  private _completeSessionWrapUp() {
+    const wrapStepId = this.plan?.steps.find(step => step.type === 'wrap_up')?.id;
+    this._updatePlanStep(wrapStepId, 'complete');
+    this.pendingSessionCompletion = false;
+    this.autoResumeAfterFeedback = false;
+    this.currentSegmentIndex = Math.max(0, this.segments.length - 1);
+    this._updateState({
+      playState: 'stopped',
+      currentSegmentId: null,
+      currentSegmentIndex: Math.max(0, this.segments.length - 1)
+    });
+    this._emit('end');
+  }
         
   private async _initializeSession(userContext: any) {
     try {
+      const generateStepId = this.plan?.steps.find(step => step.type === 'generate_script')?.id;
+      this._updatePlanStep(generateStepId, 'in-progress');
+
       // Check if this is a saved protocol first
       let savedScript = null;
       if (this.userId && userContext.customProtocol?.id && userContext.sessionType === 'custom_protocol') {
         savedScript = await this._loadSavedScript(userContext.customProtocol.id);
       }
-      
+
       if (savedScript) {
         console.log('[SESSION] Using saved script from personal library');
-        this.scriptPlan = savedScript;
+        this.sessionScript = savedScript;
       } else {
         console.log('[SESSION] Generating new script with AI');
-        this.scriptPlan = await getSessionScript(userContext);
-        
+        this.sessionScript = await getSessionScript(userContext);
+
         // Save the generated script to personal library if user is authenticated and it's a custom protocol
-        if (this.userId && this.scriptPlan && userContext.customProtocol?.id) {
-          await this._saveScriptToLibrary(userContext, this.scriptPlan);
+        if (this.userId && this.sessionScript && userContext.customProtocol?.id) {
+          await this._saveScriptToLibrary(userContext, this.sessionScript);
         }
       }
-      
-      if (!this.scriptPlan || !this.scriptPlan.segments || this.scriptPlan.segments.length === 0) {
+
+      if (!this.sessionScript || !this.sessionScript.segments || this.sessionScript.segments.length === 0) {
         throw new Error('Script generation failed - no segments returned from API');
       }
 
+      this._updatePlanStep(generateStepId, 'complete', {
+        data: {
+          ...(findPlanStep(this.plan, generateStepId)?.data || {}),
+          segmentCount: this.sessionScript.segments.length
+        }
+      });
+
     } catch (error: any) {
       console.error('Session: Script generation FAILED - NO FALLBACK:', error.message);
-      this._updateState({ 
-        error: `Script generation failed: ${error.message}. Check GEMINI_API_KEY in Supabase settings.` 
+      this._updateState({
+        error: `Script generation failed: ${error.message}. Check GEMINI_API_KEY in Supabase settings.`
       });
       throw error;
     }
 
     // Initialize segments array
-    this.segments = this.scriptPlan.segments.map((segment: any) => ({
+    this.segments = this.sessionScript.segments.map((segment: any) => ({
       ...segment,
       id: segment.id,
       text: segment.text,
@@ -164,11 +406,13 @@ export class SessionManager {
       ttsProvider: 'none' as const,
       isBuffered: false
     }));
-    
+
+    this._bindSegmentsToPlan(this.sessionScript.segments);
+
     // Update state with total segments
     this._updateState({
       totalSegments: this.segments.length,
-      scriptPlan: this.scriptPlan,
+      script: this.sessionScript,
       currentSegmentId: this.segments[0]?.id || null
     });
 
@@ -349,6 +593,21 @@ export class SessionManager {
       return;
     }
 
+    if (this._state.awaitingPlanConfirmation && !this.planConfirmed) {
+      this._emit('plan-confirmation-needed', this.plan);
+      if (this.allowAutoPlanConfirmation) {
+        this.confirmPlan();
+      } else {
+        return;
+      }
+    }
+
+    if (this._state.awaitingFeedbackForStepId) {
+      const step = findPlanStep(this.plan, this._state.awaitingFeedbackForStepId);
+      this._emit('feedback-required', step);
+      return;
+    }
+
     // Wait for initialization if needed
     if (!this._isInitialized && this._initializationPromise) {
       try {
@@ -380,16 +639,16 @@ export class SessionManager {
     }
     
     // Update state to show current segment
-    this._updateState({ 
+    this._updateState({
       playState: 'playing',
       currentSegmentIndex: this.currentSegmentIndex,
       currentSegmentId: segment.id
     });
     this._emit('play');
-    
+
     // Clear any previous TTS before starting new segment
     this._stopCurrentAudio();
-    
+
     // Start playing audio immediately
     this._playCurrentSegment();
   }
@@ -399,7 +658,9 @@ export class SessionManager {
     if (!segment) {
       return;
     }
-    
+
+    this._markCurrentSegmentInProgress();
+
     // Try pre-buffered OpenAI TTS first
     if (segment.ttsProvider === 'openai-tts' && segment.audio) {
       this._playPreBufferedAudio(segment.audio);
@@ -695,16 +956,48 @@ export class SessionManager {
     if (this._isDisposed) {
       return;
     }
-    
+
+    const finishedIndex = this.currentSegmentIndex;
+    const finishedSegment = this.segments[finishedIndex];
+    const finishedStepId = finishedSegment ? this.segmentStepMap.get(finishedSegment.id) : undefined;
+
     // Move to next segment
     this.currentSegmentIndex++;
-    
-    if (this.currentSegmentIndex < this.segments.length) {
-      this._updateState({ 
-        currentSegmentIndex: this.currentSegmentIndex,
-        currentSegmentId: this.segments[this.currentSegmentIndex]?.id || null
+
+    const hasMore = this.currentSegmentIndex < this.segments.length;
+    const nextSegmentId = hasMore ? this.segments[this.currentSegmentIndex]?.id || null : null;
+
+    if (finishedStepId) {
+      const finishedStep = findPlanStep(this.plan, finishedStepId);
+      this.autoResumeAfterFeedback = this._state.playState === 'playing';
+      this.pendingSessionCompletion = !hasMore;
+
+      this._updatePlanStep(finishedStepId, 'awaiting-feedback', {
+        data: {
+          ...(finishedStep?.data || {}),
+          completedAt: new Date().toISOString(),
+          awaitingFeedback: true
+        }
       });
-      
+
+      this._updateState({
+        currentSegmentIndex: this.currentSegmentIndex,
+        currentSegmentId: nextSegmentId,
+        playState: 'paused',
+        awaitingFeedbackForStepId: finishedStepId
+      });
+
+      const updatedStep = findPlanStep(this.plan, finishedStepId);
+      this._emit('feedback-required', updatedStep);
+      return;
+    }
+
+    if (hasMore) {
+      this._updateState({
+        currentSegmentIndex: this.currentSegmentIndex,
+        currentSegmentId: nextSegmentId
+      });
+
       if (this._state.playState === 'playing') {
         setTimeout(() => {
           if (this._state.playState === 'playing' && !this._isDisposed) {
@@ -713,8 +1006,8 @@ export class SessionManager {
         }, 500);
       }
     } else {
-      this._updateState({ playState: 'stopped' });
-      this._emit('end');
+      this.pendingSessionCompletion = true;
+      this._completeSessionWrapUp();
     }
   }
 
@@ -728,33 +1021,85 @@ export class SessionManager {
 
   next() {
     this._stopCurrentAudio();
-    
+
+    if (this._state.awaitingFeedbackForStepId) {
+      this.submitStepFeedback({
+        stepId: this._state.awaitingFeedbackForStepId,
+        approved: true,
+        notes: 'Auto-approved via next()'
+      }).catch(console.error);
+      return;
+    }
+
+    const currentSegment = this.segments[this.currentSegmentIndex];
+    const currentStepId = currentSegment ? this.segmentStepMap.get(currentSegment.id) : undefined;
+
+    if (currentStepId) {
+      const currentStep = findPlanStep(this.plan, currentStepId);
+      this._updatePlanStep(currentStepId, 'complete', {
+        data: {
+          ...(currentStep?.data || {}),
+          skipped: true,
+          completedAt: new Date().toISOString()
+        }
+      });
+    }
+
     if (this.currentSegmentIndex < this.segments.length - 1) {
       this.currentSegmentIndex++;
-      
-      this._updateState({ 
+
+      this._updateState({
         currentSegmentIndex: this.currentSegmentIndex,
         currentSegmentId: this.segments[this.currentSegmentIndex]?.id || null
       });
-      
+
       if (this._state.playState === 'playing') {
         setTimeout(() => {
           this._playCurrentSegment();
         }, 300);
       }
     } else {
-      this._updateState({ playState: 'stopped' });
-      this._emit('end');
+      this.pendingSessionCompletion = true;
+      this._completeSessionWrapUp();
     }
   }
 
   prev() {
     this._stopCurrentAudio();
-    
+
+    if (this._state.awaitingFeedbackForStepId) {
+      const stepId = this._state.awaitingFeedbackForStepId;
+      const step = findPlanStep(this.plan, stepId);
+      this._updatePlanStep(stepId, 'pending', {
+        data: {
+          ...(step?.data || {}),
+          revisitedAt: new Date().toISOString(),
+          awaitingFeedback: false
+        }
+      });
+      this._updateState({ awaitingFeedbackForStepId: null });
+      this.autoResumeAfterFeedback = false;
+      this.pendingSessionCompletion = false;
+    }
+
     if (this.currentSegmentIndex > 0) {
       this.currentSegmentIndex--;
-      
-      this._updateState({ 
+
+      const segment = this.segments[this.currentSegmentIndex];
+      const stepId = segment ? this.segmentStepMap.get(segment.id) : undefined;
+      if (stepId) {
+        const step = findPlanStep(this.plan, stepId);
+        if (step && step.status === 'complete') {
+          this._updatePlanStep(stepId, 'pending', {
+            data: {
+              ...(step.data || {}),
+              revisitedAt: new Date().toISOString()
+            }
+          });
+        }
+      }
+
+      this._updateState({
         currentSegmentIndex: this.currentSegmentIndex,
         currentSegmentId: this.segments[this.currentSegmentIndex]?.id || null
       });
@@ -785,16 +1130,25 @@ export class SessionManager {
   dispose() {
     this._isDisposed = true;
     this._stopCurrentAudio();
-    
+
     // Clean up audio URLs to prevent memory leaks
     this.segments.forEach(segment => {
       if (segment?.audio?.src) {
         URL.revokeObjectURL(segment.audio.src);
       }
     });
-    
+
+    this.segmentStepMap.clear();
+    this.plan = null;
+    this.sessionScript = null;
     this.eventListeners = {};
-    this._updateState({ playState: 'stopped' });
+    this._updateState({
+      playState: 'stopped',
+      plan: null,
+      script: null,
+      awaitingFeedbackForStepId: null,
+      awaitingPlanConfirmation: false
+    });
   }
 
   on(event: string, listener: Function) {
@@ -854,7 +1208,9 @@ export function startSession(options: StartSessionOptions): SessionHandle {
     prev: () => manager.prev(),
     dispose: () => manager.dispose(),
     on: (event: string, listener: Function) => manager.on(event, listener),
-    getCurrentState: () => manager.getCurrentState()
+    getCurrentState: () => manager.getCurrentState(),
+    confirmPlan: (planPatch?: Partial<SessionPlan>) => manager.confirmPlan(planPatch || {}),
+    submitStepFeedback: (feedback: StepFeedback) => manager.submitStepFeedback(feedback)
   };
 }
 
