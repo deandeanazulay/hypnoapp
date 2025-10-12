@@ -2,6 +2,8 @@ import { SessionScript, getSessionScript } from './chatgpt';
 import { synthesizeSegment } from './voice';
 import { AI } from '../config/ai';
 import { supabase } from '../lib/supabase';
+import { loadUserMemory, mergeMemoryIntoContext, saveSessionOutcome } from './userMemory';
+import type { UserMemory } from './userMemory';
 import {
   SessionPlan,
   PlanStep,
@@ -102,6 +104,9 @@ export class SessionManager {
   private autoResumeAfterFeedback = false;
   private pendingSessionCompletion = false;
   private allowAutoPlanConfirmation = true;
+  private userMemory: UserMemory | null = null;
+  private sessionStartTimestamp: number | null = null;
+  private hasPersistedOutcome = false;
   
   // Simplified TTS management
   private currentUtterance: SpeechSynthesisUtterance | null = null;
@@ -112,12 +117,13 @@ export class SessionManager {
     this.voicesLoadedPromise = this._ensureVoicesLoaded();
   }
 
-  async initialize(userContext: any, userId?: string) {
+  async initialize(userContext: any, userId?: string, userMemory?: UserMemory | null) {
     if (this._initializationPromise) {
       return this._initializationPromise;
     }
-    
+
     this.userId = userId || null;
+    this.userMemory = userMemory || null;
     this._initializationPromise = this._doInitialization(userContext);
     return this._initializationPromise;
   }
@@ -164,6 +170,8 @@ export class SessionManager {
     this.sessionScript = null;
     this.pendingSessionCompletion = false;
     this.autoResumeAfterFeedback = false;
+    this.hasPersistedOutcome = false;
+    this.sessionStartTimestamp = null;
 
     this._setPlan(this.plan);
     this._updateState({
@@ -350,7 +358,44 @@ export class SessionManager {
       currentSegmentId: null,
       currentSegmentIndex: Math.max(0, this.segments.length - 1)
     });
+    void this._persistSessionOutcome();
     this._emit('end');
+  }
+
+  private async _persistSessionOutcome() {
+    if (this.hasPersistedOutcome) {
+      this.sessionStartTimestamp = null;
+      return;
+    }
+
+    if (!this.userId) {
+      this.hasPersistedOutcome = true;
+      this.sessionStartTimestamp = null;
+      return;
+    }
+
+    this.hasPersistedOutcome = true;
+
+    const startedAt = this.sessionStartTimestamp;
+    const durationMs = typeof startedAt === 'number' ? Math.max(0, Date.now() - startedAt) : null;
+    const fallbackDuration = typeof this.userContext?.lengthSec === 'number' ? this.userContext.lengthSec : undefined;
+    const durationSec = durationMs !== null ? Math.max(60, Math.floor(durationMs / 1000)) : fallbackDuration;
+
+    try {
+      this.userMemory = await saveSessionOutcome({
+        userId: this.userId,
+        context: this.userContext,
+        plan: this.plan,
+        script: this.sessionScript,
+        durationSec,
+        completedAt: new Date().toISOString(),
+        previousMemory: this.userMemory
+      });
+    } catch (error) {
+      console.error('[SESSION] Failed to persist session outcome:', error);
+    } finally {
+      this.sessionStartTimestamp = null;
+    }
   }
         
   private async _initializeSession(userContext: any) {
@@ -637,7 +682,11 @@ export class SessionManager {
       console.error('No segment available');
       return;
     }
-    
+
+    if (!this.sessionStartTimestamp) {
+      this.sessionStartTimestamp = Date.now();
+    }
+
     // Update state to show current segment
     this._updateState({
       playState: 'playing',
@@ -1141,6 +1190,9 @@ export class SessionManager {
     this.segmentStepMap.clear();
     this.plan = null;
     this.sessionScript = null;
+    this.userMemory = null;
+    this.sessionStartTimestamp = null;
+    this.hasPersistedOutcome = false;
     this.eventListeners = {};
     this._updateState({
       playState: 'stopped',
@@ -1171,7 +1223,7 @@ export function startSession(options: StartSessionOptions): SessionHandle {
   const userId = options.userPrefs?.userId || options.userId;
   
   // Map options to user context for script generation
-  const userContext = {
+  const baseContext = {
     egoState: options.egoState,
     goalId: options.goalId || options.goal?.id || 'transformation',
     goalName: options.goal?.name || options.goalId || 'personal transformation',
@@ -1195,9 +1247,26 @@ export function startSession(options: StartSessionOptions): SessionHandle {
     sessionType: options.customProtocol ? 'custom_protocol' : options.protocol ? 'predefined_protocol' : 'guided_session',
     customProtocol: options.customProtocol
   };
-  
-  // Initialize asynchronously
-  manager.initialize(userContext, userId).catch(error => {
+
+  const initializeSession = async () => {
+    let memory: UserMemory | null = null;
+    let contextToUse = baseContext;
+
+    if (userId) {
+      try {
+        memory = await loadUserMemory(userId);
+        contextToUse = mergeMemoryIntoContext(baseContext, memory);
+      } catch (error) {
+        console.warn('Session: Failed to load user memory, continuing with defaults:', error);
+        contextToUse = baseContext;
+        memory = null;
+      }
+    }
+
+    await manager.initialize(contextToUse, userId, memory);
+  };
+
+  initializeSession().catch(error => {
     console.error('Session initialization failed:', error);
   });
 
