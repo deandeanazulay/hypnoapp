@@ -370,13 +370,16 @@ function HorizontalMilestoneRoadmap({ user, onMilestoneSelect, onTabChange }: Ho
   const displayMilestones = milestones.slice(0, 5);
 
   const handleMilestoneClick = (milestone: any) => {
-    if (!milestone.unlocked) return;
+    if (!milestone.unlocked) {
       const requirements = getMilestoneRequirements(milestone.id);
       showToast({
         type: 'info',
         message: `Unlock requirement: ${requirements}`,
         duration: 4000
       });
+      return;
+    }
+
     onMilestoneSelect(milestone);
   };
 
