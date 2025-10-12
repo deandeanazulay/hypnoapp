@@ -87,6 +87,10 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
     // Add user message to conversation
     const userMessage = { role: 'user' as const, content: input, timestamp: Date.now() };
     const updatedConversation = [...conversation, userMessage];
+    const conversationHistory = conversation.map(msg => ({
+      role: msg.role === 'ai' ? 'assistant' : 'user',
+      content: msg.content
+    }));
     setConversation(updatedConversation);
     setTextInput('');
     setIsThinking(true);
@@ -100,6 +104,21 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
       
       const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
       
+      const payload = {
+        message: input,
+        sessionContext: {
+          egoState: sessionConfig.egoState,
+          phase: sessionState.phase,
+          depth: sessionState.depth,
+          breathing: sessionState.breathing,
+          userProfile: { level: 1 }, // TODO: Get from user state
+          conversationHistory
+        },
+        requestType: 'guidance'
+      };
+
+      console.log('Sending AI payload:', payload);
+
       // Call AI hypnosis function
       const response = await fetch(`${baseUrl}/functions/v1/ai-hypnosis`, {
         method: 'POST',
@@ -107,21 +126,7 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          message: input,
-          sessionContext: {
-            egoState: sessionConfig.egoState,
-            phase: sessionState.phase,
-            depth: sessionState.depth,
-            breathing: sessionState.breathing,
-            userProfile: { level: 1 }, // TODO: Get from user state
-            conversationHistory: updatedConversation.map(msg => ({
-              role: msg.role === 'ai' ? 'assistant' : 'user',
-              content: msg.content
-            }))
-          },
-          requestType: 'guidance'
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
