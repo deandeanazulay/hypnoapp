@@ -157,8 +157,8 @@ export function synthesizeWithBrowserTTS(
       
       if (preferredVoice) {
         utterance.voice = preferredVoice;
-        if (import.meta.env.DEV) {
-          console.log('[VOICE] Selected browser voice for ash-like experience:', selectedVoice.name);
+        if (preferredVoice && import.meta.env.DEV) {
+          console.log('[VOICE] Selected browser voice for ash-like experience:', preferredVoice.name);
         }
       }
 
