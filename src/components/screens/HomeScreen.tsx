@@ -125,6 +125,8 @@ function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPrevie
     }
   ];
 
+  const displayMilestones = currentMilestones.slice(0, 5);
+
   return (
     <div className="bg-black/90 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl shadow-purple-500/10">
       {/* Header */}
@@ -228,19 +230,19 @@ function CurrentRoadmapPreview({ user, onMilestoneSelect }: CurrentRoadmapPrevie
       <div className="grid grid-cols-3 gap-3 text-center">
         <div className="bg-green-500/10 rounded-lg p-3 border border-green-500/20">
           <div className="text-green-400 text-lg font-bold">
-            {milestones.filter(m => m.completed).length}
+            {currentMilestones.filter(m => m.completed).length}
           </div>
           <div className="text-white/60 text-xs">Completed</div>
         </div>
         <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/20">
           <div className="text-orange-400 text-lg font-bold">
-            {milestones.filter(m => m.active).length}
+            {currentMilestones.filter(m => m.active).length}
           </div>
           <div className="text-white/60 text-xs">Active</div>
         </div>
         <div className="bg-white/5 rounded-lg p-3 border border-white/10">
           <div className="text-white text-lg font-bold">
-            {milestones.filter(m => !m.unlocked).length}
+            {currentMilestones.filter(m => !m.unlocked).length}
           </div>
           <div className="text-white/60 text-xs">Locked</div>
         </div>
