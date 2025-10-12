@@ -3,7 +3,6 @@ import { X, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-
 import { useSessionStore } from '../../store/sessionStore';
 import { useAppStore } from '../../store';
 import { useGameState } from '../GameStateManager';
-import { supabase } from '../../lib/supabase';
 import Orb from '../Orb';
 
 interface UnifiedSessionWorldProps {
@@ -281,20 +280,8 @@ export default function UnifiedSessionWorld({ isOpen, onClose }: UnifiedSessionW
         completed_at: new Date().toISOString()
       };
 
-      // Save session to database
-      const { error: sessionError } = await supabase
-        .from('sessions')
-        .insert(sessionRecord);
-
-      if (sessionError) {
-        console.error('[SESSION-WORLD] Error saving session:', sessionError);
-        showToast({
-          type: 'error',
-          message: 'Session completed but failed to save progress'
-        });
-      } else {
-        console.log('[SESSION-WORLD] Session saved successfully');
-      }
+      // Persistence is handled by the session memory service. Log for telemetry.
+      console.log('[SESSION-WORLD] Session completed, awaiting memory persistence', sessionRecord);
 
       // Award experience points
       await addExperience(rewards.xp);
