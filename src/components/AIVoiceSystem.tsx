@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, MessageCircle, Brain, Send, Loader } from 'lucide-react';
+import { safeFetch } from '../utils/apiErrorHandler';
 
 interface AIVoiceSystemProps {
   isActive: boolean;
@@ -101,6 +102,11 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
       if (!supabaseUrl) {
         throw new Error('Supabase URL not configured');
       }
+
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseAnonKey) {
+        throw new Error('Supabase anonymous key not configured');
+      }
       
       const baseUrl = supabaseUrl.startsWith('http') ? supabaseUrl : `https://${supabaseUrl}`;
       
@@ -120,14 +126,25 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
       console.log('Sending AI payload:', payload);
 
       // Call AI hypnosis function
-      const response = await fetch(`${baseUrl}/functions/v1/ai-hypnosis`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
+      const response = await safeFetch(
+        `${baseUrl}/functions/v1/ai-hypnosis`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
         },
-        body: JSON.stringify(payload)
-      });
+        {
+          operation: 'AI hypnosis guidance request',
+          additionalContext: {
+            sessionType,
+            egoState: sessionConfig.egoState,
+            phase: sessionState.phase,
+          }
+        }
+      );
 
       const data = await response.json();
 
@@ -148,7 +165,8 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
       }
     } catch (error) {
       console.error('AI conversation error:', error);
-      const fallbackMessage = error instanceof Error && error.message === 'Supabase URL not configured'
+      const fallbackMessage = error instanceof Error &&
+        (error.message === 'Supabase URL not configured' || error.message === 'Supabase anonymous key not configured')
         ? "Connection not available. Please continue with your breathing practice."
         : "I'm here with you. Continue breathing and trust the process.";
       const aiMessage = { role: 'ai' as const, content: fallbackMessage, timestamp: Date.now() };
