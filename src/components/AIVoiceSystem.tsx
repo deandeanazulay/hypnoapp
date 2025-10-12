@@ -32,6 +32,7 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const welcomeTimeoutRef = useRef<number | null>(null);
 
   // Initialize speech systems
   useEffect(() => {
@@ -67,19 +68,43 @@ export default function AIVoiceSystem({ isActive, sessionType, onStateChange, se
 
   // Auto-start AI guidance
   useEffect(() => {
+    if (welcomeTimeoutRef.current !== null) {
+      clearTimeout(welcomeTimeoutRef.current);
+      welcomeTimeoutRef.current = null;
+    }
+
     if (isActive && conversation.length === 0) {
-      setTimeout(() => {
+      const timeoutId = window.setTimeout(() => {
+        welcomeTimeoutRef.current = null;
+
         const welcomeMessage = `Welcome to your ${sessionConfig.egoState} session. I'm Libero, and I'll be guiding you through this transformation journey. Take a deep breath and let me know - what would you like to work on today?`;
-        
+
         const aiMessage = { role: 'ai' as const, content: welcomeMessage, timestamp: Date.now() };
-        setConversation([aiMessage]);
-        
-        if (isVoiceEnabled) {
+        let shouldSpeak = false;
+
+        setConversation(prev => {
+          if (!isActive || prev.length > 0) {
+            return prev;
+          }
+          shouldSpeak = true;
+          return [aiMessage];
+        });
+
+        if (shouldSpeak && isVoiceEnabled) {
           speakText(welcomeMessage);
         }
       }, 2000);
+
+      welcomeTimeoutRef.current = timeoutId;
     }
-  }, [isActive, sessionConfig, isVoiceEnabled]);
+
+    return () => {
+      if (welcomeTimeoutRef.current !== null) {
+        clearTimeout(welcomeTimeoutRef.current);
+        welcomeTimeoutRef.current = null;
+      }
+    };
+  }, [conversation, isActive, isVoiceEnabled, sessionConfig]);
 
   // Handle user input (text or voice)
   const handleUserInput = async (input: string) => {
