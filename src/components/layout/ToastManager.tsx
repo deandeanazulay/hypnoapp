@@ -16,6 +16,20 @@ const colorMap = {
   info: 'from-blue-500/20 to-cyan-500/20 border-blue-500/30'
 };
 
+const iconColorClass = {
+  success: 'text-green-400',
+  error: 'text-red-400',
+  warning: 'text-yellow-400',
+  info: 'text-blue-400'
+};
+
+const progressColorClass = {
+  success: 'bg-green-400',
+  error: 'bg-red-400',
+  warning: 'bg-yellow-400',
+  info: 'bg-blue-400'
+};
+
 export default function ToastManager() {
   const { toasts, removeToast } = useAppStore();
 
@@ -59,7 +73,10 @@ function ToastItem({ toast, Icon, onRemove, index }: ToastItemProps) {
       }}
     >
       <div className="flex items-start space-x-3">
-        <Icon size={20} className={`text-${toast.type === 'success' ? 'green' : toast.type === 'error' ? 'red' : toast.type === 'warning' ? 'yellow' : 'blue'}-400 flex-shrink-0 mt-0.5`} />
+        <Icon
+          size={20}
+          className={`${iconColorClass[toast.type]} flex-shrink-0 mt-0.5`}
+        />
         <div className="flex-1 min-w-0">
           <p className="text-white text-sm font-medium leading-relaxed">
             {toast.message}
@@ -75,8 +92,8 @@ function ToastItem({ toast, Icon, onRemove, index }: ToastItemProps) {
       
       {/* Progress bar */}
       <div className="mt-3 w-full h-1 bg-white/10 rounded-full overflow-hidden">
-        <div 
-          className={`h-full bg-${toast.type === 'success' ? 'green' : toast.type === 'error' ? 'red' : toast.type === 'warning' ? 'yellow' : 'blue'}-400 rounded-full`}
+        <div
+          className={`h-full ${progressColorClass[toast.type]} rounded-full`}
           style={{
             animation: `shrink ${toast.duration || 4000}ms linear`
           }}
