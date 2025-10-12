@@ -293,6 +293,8 @@ export default function ChatScreen({ onQuickSessionReady }: ChatScreenProps = {}
       audioUrl
     };
 
+    const conversationHistory = [...messages, userMessage];
+
     appendMessage(userMessage);
     setInputText('');
     setIsLoading(true);
@@ -337,7 +339,7 @@ export default function ChatScreen({ onQuickSessionReady }: ChatScreenProps = {}
           body: JSON.stringify({
             message: message,
             knowledgeBase: buildKnowledgeBase(),
-            conversationHistory: messages
+            conversationHistory: conversationHistory
               .filter(msg => !msg.isLoading && !msg.error)
               .map(msg => ({
                 role: msg.role === 'libero' ? 'assistant' : 'user',
@@ -349,7 +351,7 @@ export default function ChatScreen({ onQuickSessionReady }: ChatScreenProps = {}
           operation: 'Chat with Libero',
           additionalContext: {
             messageLength: message.length,
-            conversationLength: messages.length,
+            conversationLength: conversationHistory.length,
             activeEgoState: activeEgoState
           }
         }
