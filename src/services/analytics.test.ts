@@ -33,11 +33,16 @@ describe('AnalyticsQueue in non-browser environments', () => {
 
     track('test_event', { foo: 'bar' });
 
-    expect(getAnalyticsStatus().queueSize).toBe(1);
+    const statusAfterTrack = getAnalyticsStatus();
+    expect(statusAfterTrack.queueSize).toBe(1);
+    expect(statusAfterTrack.pendingFlush).toBe(true);
+    expect(statusAfterTrack.maxQueueSize).toBeGreaterThan(0);
 
     await flushAnalytics();
 
-    expect(getAnalyticsStatus().queueSize).toBe(0);
+    const statusAfterFlush = getAnalyticsStatus();
+    expect(statusAfterFlush.queueSize).toBe(0);
+    expect(statusAfterFlush.pendingFlush).toBe(false);
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const fetchBody = fetchMock.mock.calls[0]?.[1]?.body as string;
