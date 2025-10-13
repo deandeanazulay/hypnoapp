@@ -1,0 +1,10 @@
+Step title: {{title}}
+Step type: {{type}}
+Current status: {{status}}
+Details: {{details}}
+
+Respond with JSON containing:
+- approved: boolean (true to keep moving forward)
+- notes: optional text summarizing the evaluation
+- reason: optional short tag describing any concern
+- adjustments: optional object describing structured changes to make

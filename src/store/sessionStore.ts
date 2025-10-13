@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import { SessionHandle, SessionPlan, SessionState, StartSessionOptions, StepFeedback, startSession } from '../services/session';
+import { startSession } from '../services/session';
+import type { SessionHandle, SessionPlan, SessionState, StartSessionOptions, StepFeedback } from '../services/session';
+import type { PlanStep } from '../services/planning';
+import { ResearchPlannerAgent } from '../autonomy/ResearchPlannerAgent';
 
 interface SessionStore {
   sessionHandle: SessionHandle | null;
@@ -37,6 +40,20 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 
     const handle = startSession(options);
     set({ sessionHandle: handle });
+
+    const researchAgent = new ResearchPlannerAgent(handle);
+
+    handle.on('plan-confirmation-needed', (plan: SessionPlan) => {
+      researchAgent.handlePlanConfirmation(plan).catch(error => {
+        console.error('[ResearchPlannerAgent] Plan confirmation failed:', error);
+      });
+    });
+
+    handle.on('feedback-required', (step: PlanStep | null) => {
+      researchAgent.handleFeedbackRequest(step).catch(error => {
+        console.error('[ResearchPlannerAgent] Feedback handling failed:', error);
+      });
+    });
 
     // Subscribe to state changes from the session handle
     handle.on('state-change', (newState: SessionState) => {

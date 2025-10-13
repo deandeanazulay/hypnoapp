@@ -1,0 +1,10 @@
+Session intent: {{intent}}
+Plan summary: {{summary}}
+
+Planned steps:
+{{steps}}
+
+Respond with JSON containing:
+- confirm: boolean (true if the plan can proceed)
+- planNotes: string summary of research insights (optional)
+- stepTransitions: array of { stepId, status, notes?, data? } updates to apply before playback begins
