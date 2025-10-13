@@ -15,6 +15,7 @@ import {
   findPlanStep,
   allSegmentStepsComplete
 } from './planning';
+import { mapStartOptionsToContext } from './sessionContext';
 
 export type { SessionPlan, StepFeedback } from './planning';
 
@@ -1218,35 +1219,12 @@ export class SessionManager {
 // Export the startSession function
 export function startSession(options: StartSessionOptions): SessionHandle {
   const manager = new SessionManager();
-  
+
   // Extract user ID for script saving
   const userId = options.userPrefs?.userId || options.userId;
-  
+
   // Map options to user context for script generation
-  const baseContext = {
-    egoState: options.egoState,
-    goalId: options.goalId || options.goal?.id || 'transformation',
-    goalName: options.goal?.name || options.goalId || 'personal transformation',
-    actionName: options.action?.name || options.action?.id || 'transformation',
-    methodName: options.method?.name || options.method?.id || 'guided relaxation',
-    protocolName: options.protocol?.name || options.customProtocol?.name || 'custom session',
-    lengthSec: options.lengthSec || 600,
-    // Convert complex objects to clean strings
-    customProtocolGoals: options.customProtocol?.goals?.join(', ') || '',
-    customProtocolInduction: options.customProtocol?.induction || '',
-    customProtocolDuration: options.customProtocol?.duration || options.lengthSec || 600,
-    protocolDescription: options.protocol?.description || '',
-    protocolDuration: options.protocol?.duration || options.lengthSec || 600,
-    // Keep only essential user preferences as strings
-    userLevel: options.userPrefs?.level || 1,
-    userExperience: options.userPrefs?.experience || 'beginner',
-    currentTime: new Date().toISOString(),
-    sessionUniqueId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    promptVariation: Math.floor(Math.random() * 5) + 1,
-    // Session type for AI context
-    sessionType: options.customProtocol ? 'custom_protocol' : options.protocol ? 'predefined_protocol' : 'guided_session',
-    customProtocol: options.customProtocol
-  };
+  const baseContext = mapStartOptionsToContext(options);
 
   const initializeSession = async () => {
     let memory: UserMemory | null = null;
