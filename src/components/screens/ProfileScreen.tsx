@@ -5,7 +5,7 @@ import { useAppStore, getEgoState, EGO_STATES } from '../../store';
 import { useSimpleAuth as useAuth } from '../../hooks/useSimpleAuth';
 import PageShell from '../layout/PageShell';
 import { getEgoColor } from '../../config/theme';
-import { supabase } from '../../lib/supabase';
+import { runInsightSummarizer, type InsightSummaryResult } from '../../autonomy/InsightSummarizerAgent';
 
 interface ProfileScreenProps {
   selectedEgoState: string;
@@ -19,6 +19,8 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [recentSessions, setRecentSessions] = useState<any[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [insightSummary, setInsightSummary] = useState<InsightSummaryResult | null>(null);
+  const [insightError, setInsightError] = useState<string | null>(null);
 
   const currentEgoState = getEgoState(activeEgoState);
   const egoColor = getEgoColor(activeEgoState);
@@ -32,57 +34,78 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
   const achievements = user?.achievements || [];
   const totalAchievements = 9; // Actual available achievements
 
-  // Fetch recent sessions
-  useEffect(() => {
-    const fetchRecentSessions = async () => {
-      if (!isAuthenticated || !user?.id) return;
-      
-      setSessionsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('sessions')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('completed_at', { ascending: false })
-          .limit(5);
-
-        if (error) {
-          console.error('Error fetching recent sessions:', error);
-        } else {
-          const formattedSessions = (data || []).map(session => ({
-            id: session.id,
-            name: session.action,
-            ago: formatTimeAgo(session.completed_at),
-            xp: session.experience_gained,
-            egoState: session.ego_state,
-            duration: session.duration
-          }));
-          setRecentSessions(formattedSessions);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setSessionsLoading(false);
-      }
-    };
-
-    fetchRecentSessions();
-  }, [isAuthenticated, user?.id]);
-
-  const formatTimeAgo = (dateString: string) => {
+  const formatTimeAgo = React.useCallback((dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays === 1) return 'Yesterday';
     if (diffInDays < 7) return `${diffInDays}d ago`;
-    
+
     return date.toLocaleDateString();
-  };
+  }, []);
+
+  // Fetch insight summaries and recent sessions from the agent
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchInsights = async () => {
+      if (!isAuthenticated || !user?.id) {
+        setInsightSummary(null);
+        setRecentSessions([]);
+        setInsightError(null);
+        setSessionsLoading(false);
+        return;
+      }
+
+      setSessionsLoading(true);
+      setInsightError(null);
+
+      try {
+        const report = await runInsightSummarizer({ userId: user.id, channels: ['coach'] });
+        if (cancelled) return;
+
+        setInsightSummary(report);
+
+        const formattedSessions = (report.memory.recentSessions || [])
+          .slice(0, 5)
+          .map((session) => ({
+            id: session.id,
+            name: session.action,
+            ago: formatTimeAgo(session.completedAt),
+            xp: session.experienceGained,
+            egoState: session.egoState,
+            duration: session.durationMinutes
+          }));
+        setRecentSessions(formattedSessions);
+      } catch (error) {
+        console.error('[PROFILE] Error generating insights:', error);
+        if (!cancelled) {
+          setInsightSummary(null);
+          setInsightError('Unable to load insights right now.');
+        }
+      } finally {
+        if (!cancelled) {
+          setSessionsLoading(false);
+        }
+      }
+    };
+
+    fetchInsights();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, user?.id, formatTimeAgo]);
+
+  const coachBrief = insightSummary?.briefs.find((brief) => brief.channel === 'coach');
+  const coachBriefLines = coachBrief ? coachBrief.body.split('\n') : [];
+  const coachBriefIntro = coachBriefLines[0] || '';
+  const coachBriefBullets = coachBriefLines.slice(1);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -361,6 +384,40 @@ export default function ProfileScreen({ selectedEgoState, onEgoStateChange }: Pr
                   <h4 className="text-white font-semibold text-sm mb-1">Settings</h4>
                   <p className="text-white/70 text-sm">Preferences</p>
                 </button>
+              </div>
+
+              {/* Momentum Brief */}
+              <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl p-4 border border-teal-500/20">
+                <h3 className="text-white font-semibold text-lg mb-3 flex items-center space-x-2">
+                  <TrendingUp size={18} className="text-teal-300" />
+                  <span>Momentum Brief</span>
+                </h3>
+                {sessionsLoading ? (
+                  <div className="text-center py-4">
+                    <div className="w-8 h-8 border-2 border-teal-400/30 border-t-teal-400 rounded-full animate-spin mx-auto mb-2" />
+                    <p className="text-white/60 text-sm">Syncing insights...</p>
+                  </div>
+                ) : insightError ? (
+                  <p className="text-red-400 text-sm">{insightError}</p>
+                ) : coachBrief ? (
+                  <div className="space-y-3">
+                    <p className="text-white/70 text-sm">{coachBriefIntro}</p>
+                    <ul className="space-y-2">
+                      {coachBriefBullets.length > 0 ? (
+                        coachBriefBullets.map((line, index) => (
+                          <li key={index} className="text-white/80 text-sm flex items-start space-x-2">
+                            <span className="text-teal-300 mt-0.5">•</span>
+                            <span>{line.replace(/^•\s*/, '')}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-white/70 text-sm">Momentum looks steady—keep guiding sessions to deepen the trend.</li>
+                      )}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="text-white/60 text-sm">Insights will appear after your first session.</p>
+                )}
               </div>
 
               {/* Recent Sessions */}
